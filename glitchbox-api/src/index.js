@@ -298,6 +298,8 @@ export class Hub extends DurableObject {
     if (!info.sub) throw new HttpError(401, "no subject");
     const now = Date.now();
     const existing = this.userOf(info.sub);
+    // Signing in again must not hand a banned account a fresh session.
+    if (existing && existing.banned) throw new HttpError(403, "banned:" + (existing.ban_reason || ""));
     // A chosen arcade icon outranks the Google photo — otherwise every sign-in would
     // quietly reset the player's avatar back to their Google account picture.
     const picture = isIcon(existing && existing.picture) ? existing.picture : (info.picture || "");

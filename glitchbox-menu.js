@@ -25,6 +25,11 @@
   if (window.__glitchboxMenu) return;            // never inject twice
   window.__glitchboxMenu = true;
 
+  // A banned player gets bounced back to the hub, which shows them the ban screen.
+  // Same key the hub writes when the server answers "banned".
+  try { if (localStorage.getItem('glitchbox.banned') !== null) { location.replace('index.html'); return; } }
+  catch (_) {}
+
   var pos = (document.currentScript && document.currentScript.dataset.pos) || 'top-left';
 
   // Favorites are shared with the hub (index.html): same localStorage key, same

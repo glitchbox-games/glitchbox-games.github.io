@@ -328,6 +328,17 @@ body::before {
   background-size:40px 40px;
 }
 .auth-overlay.hidden { display:none; }
+/* Sits just under the auth overlay, so "use a different account" can open on top. */
+.ban-screen { position:fixed; inset:0; z-index:9998; display:none; align-items:center; justify-content:center;
+  padding:24px; background:radial-gradient(ellipse at 50% 30%,rgba(255,0,60,0.18),transparent 60%),#05030a; }
+.ban-screen.show { display:flex; }
+.ban-screen .auth-card { border-color:rgba(255,0,80,0.45); }
+.ban-title { font-family:'Press Start 2P',monospace; font-size:15px; color:#ff0050; margin:6px 0 16px;
+  text-shadow:0 0 14px rgba(255,0,80,0.6); }
+.ban-reason { font-size:14px; color:var(--text); margin:0 0 18px; line-height:1.5; }
+.ban-btn { display:block; width:100%; margin-top:10px; padding:11px; cursor:pointer; font:inherit; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; background:transparent; color:var(--cyan); border:1px solid rgba(0,245,255,0.35); }
+.ban-btn:hover { background:rgba(0,245,255,0.08); }
 .auth-card {
   position:relative; z-index:1; width:100%; max-width:400px; background:rgba(8,11,20,0.92);
   border:1px solid rgba(0,245,255,0.18); padding:38px 32px 32px; text-align:center;
@@ -651,6 +662,16 @@ body.sb-pinned { padding-left:var(--rail-open); }
       4. Copy the Client ID and paste it into <code>GOOGLE_CLIENT_ID</code> in this file.
     </div>
     <div class="auth-note">🔒 We only read your name, email &amp; profile photo — verified by Google.</div>
+  </div>
+</div>
+<div class="ban-screen" id="ban-screen">
+  <div class="auth-card">
+    <div class="auth-logo-icon" style="border-color:#ff0050">⛔</div>
+    <div class="ban-title">BANNED</div>
+    <div class="ban-reason" id="ban-reason"></div>
+    <div class="auth-desc">This account can't use GLITCHBOX any more.</div>
+    <button class="ban-btn" onclick="checkBan()">Check again</button>
+    <button class="ban-btn" onclick="openAuth('login')">Use a different Google account</button>
   </div>
 </div>
 <nav class="sidebar">
@@ -1418,14 +1439,37 @@ function handleCredential(response){
   backendLogin(response.credential);
 }
 
+// ── bans ── the server answers every call from a banned account with 403
+// "banned:<reason>". The flag is kept locally so it survives sign-out and blocks
+// guest play too (glitchbox-menu.js bounces game pages here); only a successful
+// sign-in or /api/me from a non-banned account clears it.
+const BAN_KEY = 'glitchbox.banned';
+function banReason(e){ const m = /^banned:([\s\S]*)$/.exec((e && e.message) || ''); return m ? m[1] : null; }
+function showBan(reason){
+  try { localStorage.setItem(BAN_KEY, reason || ''); localStorage.removeItem('glitchbox_session'); } catch(e){}
+  document.getElementById('ban-reason').textContent = reason ? 'Reason: “' + reason + '”' : 'No reason was given.';
+  document.getElementById('ban-screen').classList.add('show');
+  closeAuth();
+}
+function clearBan(){
+  try { localStorage.removeItem(BAN_KEY); } catch(e){}
+  document.getElementById('ban-screen').classList.remove('show');
+}
+// An unban only shows once Google vouches for the account again.
+function checkBan(){ openAuth('login'); if(window.google && google.accounts && google.accounts.id) google.accounts.id.prompt(); }
+
 async function backendLogin(credential){
   try {
     const res = await api('/api/login', { method:'POST', body:{ idToken:credential } });
+    clearBan();
     localStorage.setItem('glitchbox_session', res.sessionToken);
     if(res.profile) lastState.profile = res.profile;
     console.log(res.isNew ? 'Registered new player' : 'Welcome back');
     await refreshState();
-  } catch(e){ console.warn('Backend login failed:', e.message); }
+  } catch(e){
+    if(banReason(e) !== null) return showBan(banReason(e));
+    console.warn('Backend login failed:', e.message);
+  }
 }
 
 function applyUser(user){
@@ -1444,6 +1488,7 @@ async function refreshState(){
   if(!getSession()) return;
   try {
     lastState = await api('/api/me');
+    clearBan();
     applyGifts(lastState.gifts);
     // The server is the source of truth for your icon, so a pick made on your phone
     // shows up here too.
@@ -1455,6 +1500,7 @@ async function refreshState(){
     }
     renderAll();
   } catch(e){
+    if(banReason(e) !== null) return showBan(banReason(e));
     if(e.status === 401){
       localStorage.removeItem('glitchbox_session');
       if(window.google && google.accounts && google.accounts.id){ google.accounts.id.prompt(); }
@@ -1937,6 +1983,7 @@ function initGoogleAuth(){
   // Catalog is always open — never lock the body or force the overlay.
   document.body.classList.remove('locked');
   document.getElementById('auth-overlay').classList.add('hidden');
+  try { const b = localStorage.getItem(BAN_KEY); if(b !== null) showBan(b); } catch(e){}
 
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem('glitchbox_user')||'null'); } catch(e){}

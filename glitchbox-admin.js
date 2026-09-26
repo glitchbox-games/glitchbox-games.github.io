@@ -367,8 +367,10 @@
         } catch (err) { $('adm-claim-msg').textContent = err.message; }
       }
       else if (act === 'ban') {
-        const p = players.find(x => x.sub === sub);
-        const reason = prompt('Ban ' + ((p && p.name) || 'this player') + ' — reason (optional):');
+        // Reachable from the Reports tab too, where the player list may never have loaded.
+        const p = (players || []).find(x => x.sub === sub);
+        const r = (reports || []).find(x => x.reported_sub === sub);
+        const reason = prompt('Ban ' + ((p && p.name) || (r && r.reported) || 'this player') + ' — reason (optional):');
         if (reason === null) return;
         await call('/api/admin/ban', { method:'POST', body:{ sub, banned:true, reason } });
         players = null; reports = null; render();
@@ -378,7 +380,7 @@
         players = null; render();
       }
       else if (act === 'del') {
-        const p = players.find(x => x.sub === sub);
+        const p = (players || []).find(x => x.sub === sub);
         const name = (p && p.name) || 'this player';
         if (!confirm('Delete ' + name + ' permanently?\n\nTheir account, friendships, invites and cloud saves are ' +
                      'erased. This cannot be undone.')) return;
@@ -499,4 +501,133 @@
   });
 
   window.glitchAdmin = { open, close, toggle };
+
+  // ── #adminsmoke ── clicks every button in the console against a fake server.
+  if (location.hash.indexOf('adminsmoke') !== -1) window.addEventListener('load', () => setTimeout(async () => {
+    let pass = 0, fail = 0;
+    const lines = [], sent = [], dialogs = [];
+    const t = (name, cond) => { if (cond) { pass++; lines.push('ok   ' + name); } else { fail++; lines.push('FAIL ' + name); } };
+    const wait = () => new Promise(r => setTimeout(r, 30));
+    const now = Date.now();
+    const db = {
+      players: [
+        { sub:'me', name:'Owner', email:'o@x.com', code:'OOOO', friends:0, saves:0, reports:0, gifts:0, created:now, last_seen:now },
+        { sub:'s1', name:'Dave',  email:'d@x.com', code:'AAAA', friends:1, saves:2, reports:1, gifts:1, created:now, last_seen:now },
+        { sub:'s2', name:'Eve',   email:'e@x.com', code:'BBBB', friends:0, saves:0, reports:0, gifts:0, created:now, last_seen:now, banned:1, ban_reason:'rude' },
+      ],
+      reports: [{ id:7, reason:'cheating', created:now, reporter:'Eve', reported:'Dave', reported_sub:'s1', banned:0 }],
+    };
+    window.api = async (path, opts) => {
+      sent.push({ path, body: opts && opts.body });
+      if (path.indexOf('/api/admin/players') === 0) return { players: db.players };
+      if (path === '/api/admin/overview') return { counts:{ players:3, online:1, newToday:1, friendships:0, invites:0,
+        saves:2, reports:1, banned:1 }, recent:[{ name:'Dave', created:now }], topGames:[{ game:'gridlock', players:2 }] };
+      if (path === '/api/admin/reports') return { reports: db.reports };
+      if (path === '/api/admin/gift') return { ok:true, players: opts.body.sub === '*' ? 2 : 1 };
+      return { ok:true };
+    };
+    window.prompt = (m, d) => { dialogs.push(m); return 'spam'; };
+    window.confirm = m => { dialogs.push(m); return true; };
+    window.alert = m => { dialogs.push('ALERT ' + m); };
+    const click = async sel => { const el = document.querySelector('#adm-body ' + sel); if (el) el.click(); await wait(); await wait(); return !!el; };
+    const bodyHas = re => re.test($('adm-body').textContent);
+    const post = p => sent.filter(s => s.path === p).pop();
+    const alerts = () => dialogs.filter(d => /^ALERT/.test(d));
+
+    currentUser = { sub:'me', name:'Owner', email:'o@x.com' };
+    lastState.isOwner = true;
+    await new Promise(r => setTimeout(r, 1600));      // let the owner poll notice
+    t('the sidebar gets an owner item', !!$('adm-nav-item'));
+    open(); await wait(); await wait();
+    t('overview loads its counts', bodyHas(/Online now/) && bodyHas(/gridlock/));
+    t('refresh reloads the overview', await click('[data-act="reload"]') && bodyHas(/Players/));
+
+    tab = 'players'; render(); await wait(); await wait();
+    t('players are listed', bodyHas(/Dave/) && bodyHas(/Eve/));
+    t('pending gifts show on the row', bodyHas(/1 gift waiting/));
+    t('you get no ban button on yourself', !document.querySelector('#adm-body [data-act="ban"][data-sub="me"]'));
+    sent.length = 0;
+    await click('[data-act="ban"][data-sub="s1"]');
+    t('ban posts the player and reason', post('/api/admin/ban') && post('/api/admin/ban').body.sub === 's1' &&
+      post('/api/admin/ban').body.banned === true && post('/api/admin/ban').body.reason === 'spam');
+    await click('[data-act="unban"][data-sub="s2"]');
+    t('unban clears the flag', post('/api/admin/ban').body.sub === 's2' && post('/api/admin/ban').body.banned === false);
+    await click('[data-act="del"][data-sub="s1"]');
+    t('delete confirms and posts', post('/api/admin/delete') && post('/api/admin/delete').body.sub === 's1');
+
+    await click('[data-act="give"][data-sub="s1"]');
+    t('give opens the gift form for that player', bodyHas(/GIFT → Dave/));
+    await click('[data-act="gtok"][data-n="1000"]');
+    t('a preset fills the amount', $('adm-gtok').value === '1000');
+    const gbox = document.querySelector('#adm-body input[name="g"]'), ibox = document.querySelector('#adm-body input[name="i"]');
+    if (gbox) gbox.checked = true;
+    if (ibox) ibox.checked = true;
+    $('adm-gnote').value = 'nice';
+    await click('[data-act="giftsend"]');
+    const gift = post('/api/admin/gift');
+    t('the gift carries tokens, a game, icons and the note', gift && gift.body.sub === 's1' && gift.body.tokens === 1000 &&
+      gift.body.games.length === (gbox ? 1 : 0) && (!ibox || gift.body.icons.length > 0) && gift.body.note === 'nice');
+    t('sending closes the form', !bodyHas(/GIFT →/));
+    await click('[data-act="give"][data-sub="*"]');
+    $('adm-gtok').value = '0';
+    sent.length = 0;
+    await click('[data-act="giftsend"]');
+    t('an empty gift is refused', !post('/api/admin/gift') && bodyHas(/Nothing to give/));
+    $('adm-gtok').value = '50';
+    await click('[data-act="giftsend"]');
+    t('give everyone posts sub *', post('/api/admin/gift') && post('/api/admin/gift').body.sub === '*');
+    await click('[data-act="give"][data-sub="s1"]');
+    await click('[data-act="giftcancel"]');
+    t('cancel closes the gift form', !bodyHas(/GIFT →/) && bodyHas(/Dave/));
+
+    // Reports, opened cold: the player list has never been fetched this session.
+    players = null; tab = 'reports'; render(); await wait(); await wait();
+    t('reports are listed', bodyHas(/cheating/));
+    players = null; sent.length = 0; dialogs.length = 0;
+    await click('[data-act="ban"][data-sub="s1"]');
+    t('ban from reports works with no player list loaded', post('/api/admin/ban') && post('/api/admin/ban').body.sub === 's1' && !alerts().length);
+    t('and names the reported player', dialogs.some(d => /Ban Dave/.test(d)));
+    await click('[data-act="dismiss"]');
+    t('dismiss posts the report id', post('/api/admin/dismiss-report') && post('/api/admin/dismiss-report').body.id === '7');
+
+    tab = 'god'; render(); await wait();
+    if (hasTokens()) {
+      const was = tokens(), K = tokKeys(), snap = {};
+      Object.keys(K).forEach(k => snap[k] = localStorage.getItem(K[k]));
+      setTokens(10);
+      await click('[data-act="tok"][data-n="100"]');
+      t('+100 adds', tokens() === 110);
+      await click('[data-act="tokset"]');   // prompt answers 'spam' → not a number
+      t('set exact with rubbish zeroes rather than NaN', tokens() === 0);
+      await click('[data-act="tok"][data-n="1000"]');
+      await click('[data-act="tokzero"]');
+      t('zero it zeroes', tokens() === 0);
+      await click('[data-act="unlockgames"]');
+      t('unlock every game', GAMES.filter(g => g.price).every(g => isOwned(g.file)));
+      await click('[data-act="unlockicons"]');
+      t('unlock every icon', Object.keys(ICON_BY_ID).every(id => iconsOwned().indexOf(id) !== -1));
+      setTokens(500);
+      await click('[data-act="wipeecon"]');
+      t('reset economy leaves 0 and relocks', tokens() === 0 && GAMES.filter(g => g.price).every(g => !isOwned(g.file)));
+      Object.keys(K).forEach(k => snap[k] === null ? localStorage.removeItem(K[k]) : localStorage.setItem(K[k], snap[k]));
+      void was;
+    }
+
+    tab = 'dev'; render(); await wait();
+    t('dev lists games to jump to', document.querySelectorAll('#adm-jump option').length === GAMES.length);
+    await click('[data-act="refresh"]');
+    t('force refresh does not throw', !alerts().length);
+
+    lastState.isOwner = false; await new Promise(r => setTimeout(r, 1600));
+    tab = 'players'; render(); await wait();
+    t('a non-owner sees the claim/owner panel instead', !bodyHas(/Dave/));
+    t('no alerts fired anywhere', !alerts().length || (lines.push('   alerts: ' + alerts().join(' | ')), false));
+
+    close();
+    const out = document.createElement('pre');
+    out.id = 'smokeout';
+    out.textContent = lines.join('\n') + '\n\nSMOKE ' + (fail ? 'FAIL' : 'PASS') + ' ' + pass + '/' + (pass + fail);
+    document.body.appendChild(out);
+    document.title = 'SMOKE ' + (fail ? 'FAIL' : 'PASS') + ' ' + pass + '/' + (pass + fail);
+  }, 600));
 })();
