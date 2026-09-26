@@ -243,10 +243,10 @@
 
     reset: { usage:'reset', about:'clear tokens, unlocks, streak and play history', run() {
       askConfirm('Reset the whole economy on this device?', () => {
-        const K = tokKeys();
-        Object.keys(K).forEach(k => localStorage.removeItem(K[k]));
+        if (typeof resetEconomy === 'function') resetEconomy();
+        else { const K = tokKeys(); Object.keys(K).forEach(k => localStorage.removeItem(K[k])); }
         repaint();
-        ok('economy reset');
+        ok('economy reset — balance 0');
       });
     }},
 
@@ -335,6 +335,43 @@
           await call('/api/admin/delete', { method:'POST', body:{ sub:p.sub } });
           ok('deleted ' + p.name);
         });
+    }},
+
+    give: { usage:'give <player|everyone> [tokens] [games|icons|all] [<game>…]',
+            about:'send tokens or unlocks to a player', owner:true, async run(a) {
+      if (a.length < 2) { bad('usage: give <player|everyone> [tokens] [games|icons|all] [<game>…]'); return; }
+      const paidIcons = () => (typeof ICON_SETS !== 'undefined' && typeof ICON_PRICE !== 'undefined')
+        ? ICON_SETS.filter(s => ICON_PRICE[s.cat]).reduce((l, s) => l.concat(s.icons.map(i => i.id)), []) : [];
+      const body = { tokens: 0, games: [], icons: [] };
+      const paidGames = () => gameList().filter(g => g.price).map(g => g.file);
+      for (const w of a.slice(1)) {
+        const lw = w.toLowerCase();
+        if (/^[+-]?\d+$/.test(w)) body.tokens += parseInt(w, 10);
+        else if (lw === 'games') body.games = body.games.concat(paidGames());
+        else if (lw === 'icons') body.icons = paidIcons();
+        else if (lw === 'all') { body.games = body.games.concat(paidGames()); body.icons = paidIcons(); }
+        else {
+          const g = findGame(w);
+          if (!g) { bad('no game matches "' + w + '"'); return; }
+          body.games.push(g.file);
+        }
+      }
+      body.games = [...new Set(body.games)];
+      const summary = [body.tokens ? body.tokens + ' tokens' : '', body.games.length ? body.games.length + ' game(s)' : '',
+                       body.icons.length ? body.icons.length + ' icon(s)' : ''].filter(Boolean).join(', ');
+      if (!summary) { bad('nothing to give'); return; }
+      const who = a[0].toLowerCase();
+      if (who === 'everyone' || who === 'all' || who === '*') {
+        askConfirm('Give ' + summary + ' to every player?', async () => {
+          const r = await call('/api/admin/gift', { method:'POST', body: Object.assign({ sub:'*' }, body) });
+          ok('gift queued for ' + r.players + ' players: ' + summary);
+        });
+        return;
+      }
+      const p = await pickPlayer(a[0]);
+      if (!p) return;
+      await call('/api/admin/gift', { method:'POST', body: Object.assign({ sub:p.sub }, body) });
+      ok('gift queued for ' + p.name + ': ' + summary + ' — lands on their next check-in');
     }},
 
     reports: { usage:'reports', about:'open player reports', owner:true, async run() {
@@ -674,6 +711,31 @@
     await run('unban davina@x.com');
     const unban = seen.find(s => s.path === '/api/admin/ban');
     t('unban clears the flag', unban && unban.body.banned === false);
+
+    // ── gifts ──
+    seen.length = 0;
+    await run('give dave@x.com 500');
+    const gift = seen.find(s => s.path === '/api/admin/gift');
+    t('give sends tokens to the right account', gift && gift.body.sub === 's1' && gift.body.tokens === 500);
+    seen.length = 0;
+    await run('give dave@x.com -50 gridlock');
+    const g2 = seen.find(s => s.path === '/api/admin/gift');
+    t('give takes negatives and names a game', g2 && g2.body.tokens === -50 && g2.body.games[0] === 'gridlock.html');
+    seen.length = 0;
+    await run('give dave@x.com zzzznope');
+    t('give refuses an unknown game', said(/no game matches "zzzznope"/) && !seen.some(s => s.path === '/api/admin/gift'));
+    await run('give everyone 100');
+    t('giving everyone asks first', said(/every player/) && !seen.some(s => s.path === '/api/admin/gift'));
+    await run('confirm');
+    const g3 = seen.find(s => s.path === '/api/admin/gift');
+    t('and then goes to everyone', g3 && g3.body.sub === '*' && g3.body.tokens === 100);
+
+    // ── reset ──
+    if (typeof resetEconomy === 'function') {
+      setTokens(300);
+      await run('reset'); await run('confirm');
+      t('reset leaves the wallet at zero', tokens() === 0 && localStorage.getItem(tokKeys().bal) === '0');
+    }
 
     // ── reports ──
     await run('reports');

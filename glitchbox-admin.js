@@ -25,6 +25,7 @@
   // null means "not fetched yet"; an empty array means "fetched, nothing there".
   let built = false, isOwner = false, tab = 'overview';
   let players = null, reports = null, overview = null, filter = '';
+  let giftTo = null;   // { sub, name } while the gift form is open; sub '*' = everyone
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
     c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -193,9 +194,11 @@
 
   function viewPlayers() {
     if (!isOwner) return claimPanel();
+    if (giftTo) return viewGift();
     const head = '<div class="adm-actions">' +
       '<input class="adm-in" id="adm-search" data-act="search" placeholder="Search name, email or friend code…" style="flex:1;min-width:200px">' +
-      '<button class="adm-btn" data-act="reload">↻</button></div>';
+      '<button class="adm-btn" data-act="reload">↻</button>' +
+      '<button class="adm-btn warn" data-act="give" data-sub="*">🎁 Give everyone</button></div>';
     if (players === null) { loadPlayers(); return head + '<div class="adm-empty">Loading…</div>'; }
     if (!players.length) return head + '<div class="adm-empty">No players match.</div>';
     const me = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.sub : '';
@@ -208,13 +211,42 @@
           (p.banned ? ' <span class="adm-tag">banned</span>' : '') + '</div>' +
         '<div class="adm-meta">' + esc(p.email) + ' · code ' + esc(p.code || '—') + '</div>' +
         '<div class="adm-meta">' + p.friends + ' friends · ' + p.saves + ' saves · ' + p.reports +
-          ' reports · seen ' + ago(p.last_seen) + (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div></div>' +
+          ' reports · seen ' + ago(p.last_seen) + (p.gifts ? ' · ' + p.gifts + ' gift' + (p.gifts > 1 ? 's' : '') + ' waiting' : '') +
+          (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div></div>' +
+        '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' +
         (self ? '' :
           '<button class="adm-btn ' + (p.banned ? 'warn' : 'danger') + '" data-act="' + (p.banned ? 'unban' : 'ban') +
             '" data-sub="' + esc(p.sub) + '">' + (p.banned ? 'Unban' : 'Ban') + '</button>' +
           '<button class="adm-btn danger" data-act="del" data-sub="' + esc(p.sub) + '">Delete</button>') +
         '</div>';
     }).join('');
+  }
+
+  // Gifts are queued on the server and banked by the player's hub on its next
+  // poll — the wallet itself only exists in their browser.
+  function viewGift() {
+    const all = giftTo.sub === '*';
+    const paid = (typeof GAMES !== 'undefined' ? GAMES : []).filter(g => g.price);
+    const sets = (typeof ICON_SETS !== 'undefined' && typeof ICON_PRICE !== 'undefined')
+      ? ICON_SETS.filter(s => ICON_PRICE[s.cat]) : [];
+    const box = (name, val, label) =>
+      '<label class="adm-meta" style="display:inline-flex;gap:6px;align-items:center;margin:0 14px 8px 0;cursor:pointer">' +
+      '<input type="checkbox" name="' + name + '" value="' + esc(val) + '">' + label + '</label>';
+    return '<div class="adm-h">// GIFT → ' + esc(all ? 'EVERY PLAYER' : giftTo.name) + '</div>' +
+      '<div class="adm-note">Tokens (negative takes them away):</div>' +
+      '<div class="adm-actions"><input class="adm-in" id="adm-gtok" type="number" value="100" style="max-width:160px">' +
+        [100, 500, 1000, 10000].map(n => '<button class="adm-btn warn" data-act="gtok" data-n="' + n + '">' + n + '</button>').join('') +
+      '</div>' +
+      (paid.length ? '<div class="adm-note">Unlock games:</div><div id="adm-ggames">' +
+        paid.map(g => box('g', g.file, esc(g.name) + ' <span style="opacity:.6">(' + g.price + ')</span>')).join('') + '</div>' : '') +
+      (sets.length ? '<div class="adm-note">Unlock icon sets:</div><div id="adm-gicons">' +
+        sets.map(s => box('i', s.cat, esc(s.cat) + ' <span style="opacity:.6">(' + s.icons.length + ')</span>')).join('') + '</div>' : '') +
+      '<div class="adm-note">Message they\'ll see (optional):</div>' +
+      '<div class="adm-actions"><input class="adm-in" id="adm-gnote" maxlength="120" placeholder="e.g. thanks for the bug report"></div>' +
+      '<div class="adm-actions"><button class="adm-btn" data-act="giftsend">Send gift</button>' +
+        '<button class="adm-btn danger" data-act="giftcancel">Cancel</button></div>' +
+      '<div class="adm-note" id="adm-gmsg">' + (all ? 'Goes to every player who isn\'t banned. ' : '') +
+        'It lands the next time their hub checks in (within about 20 seconds if they\'re online).</div>';
   }
 
   function viewReports() {
@@ -253,7 +285,8 @@
         '<button class="adm-btn" data-act="unlockicons">Unlock all ' + icons + ' icons</button>' +
         '<button class="adm-btn danger" data-act="wipeecon">Reset economy</button>' +
       '</div>' +
-      '<div class="adm-note">Reset clears tokens, unlocks, daily streak and play history on this device.</div>';
+      '<div class="adm-note">Reset sets tokens to 0 and clears unlocks, daily streak and play history on this device. ' +
+        'To give another player something, use 🎁 on the Players tab.</div>';
   }
 
   function viewDev() {
@@ -280,6 +313,14 @@
   function claimPanel() {
     if (typeof currentUser === 'undefined' || !currentUser)
       return '<div class="adm-empty">Sign in first — the console follows the account, not the browser.</div>';
+    // OWNER_EMAIL is set on the Worker: one account owns this arcade and the claim
+    // code is dead, so offering an input here would just be a box that always fails.
+    if (typeof lastState !== 'undefined' && lastState && lastState.ownerPinned)
+      return '<div class="adm-h">// OWNER ONLY</div>' +
+        '<div class="adm-note">This arcade is pinned to a single owner account. You are signed in as ' +
+          '<b>' + esc(currentUser.email || currentUser.name) + '</b>, which is not it.</div>' +
+        '<div class="adm-note">Sign out and sign back in with the owner\'s Google account — the server ' +
+          're-checks the address on every request, so there is nothing to unlock from this side.</div>';
     return '<div class="adm-h">// CLAIM OWNERSHIP</div>' +
       '<div class="adm-note">This account isn\'t the owner yet. Enter the claim code (a Worker secret) once and ' +
         'this account becomes the permanent owner — the claim can\'t be repeated afterwards.</div>' +
@@ -344,6 +385,27 @@
         await call('/api/admin/delete', { method:'POST', body:{ sub } });
         players = null; overview = null; render();
       }
+      else if (act === 'give') {
+        const p = (players || []).find(x => x.sub === sub);
+        giftTo = { sub, name: sub === '*' ? 'everyone' : ((p && p.name) || 'this player') };
+        render();
+      }
+      else if (act === 'gtok') { $('adm-gtok').value = el.dataset.n; }
+      else if (act === 'giftcancel') { giftTo = null; render(); }
+      else if (act === 'giftsend') {
+        const checked = n => [...$('adm-body').querySelectorAll('input[name="' + n + '"]:checked')].map(i => i.value);
+        const cats = checked('i');
+        const icons = (typeof ICON_SETS !== 'undefined' ? ICON_SETS : [])
+          .filter(s => cats.indexOf(s.cat) !== -1).reduce((a, s) => a.concat(s.icons.map(ic => ic.id)), []);
+        const body = { sub: giftTo.sub, tokens: parseInt($('adm-gtok').value, 10) || 0,
+                       games: checked('g'), icons, note: ($('adm-gnote').value || '').trim() };
+        if (!body.tokens && !body.games.length && !body.icons.length) { $('adm-gmsg').textContent = 'Nothing to give — add tokens or tick something.'; return; }
+        if (giftTo.sub === '*' && !confirm('Send this gift to every player?')) return;
+        const r = await call('/api/admin/gift', { method:'POST', body });
+        const who = giftTo.name;
+        giftTo = null; players = null; render();
+        if (typeof tokenToast === 'function') tokenToast('🎁', 'Gift queued for ' + (r.players > 1 ? r.players + ' players' : who));
+      }
       else if (act === 'dismiss') {
         await call('/api/admin/dismiss-report', { method:'POST', body:{ id: el.dataset.id } });
         reports = null; render();
@@ -363,7 +425,8 @@
       }
       else if (act === 'wipeecon') {
         if (!confirm('Reset tokens, unlocks and play history on this device?')) return;
-        Object.keys(K).forEach(k => localStorage.removeItem(K[k]));
+        if (typeof resetEconomy === 'function') resetEconomy();
+        else Object.keys(K).forEach(k => localStorage.removeItem(K[k]));
         repaint();
       }
       else if (act === 'jump')    { const s = $('adm-jump'); if (s && s.value) location.href = s.value; }
@@ -406,9 +469,16 @@
     a.id = 'adm-nav-item';
     a.className = 'nav-item adm-nav';
     a.href = '#';
-    a.innerHTML = '<span class="nav-icon">⚙</span> Owner Console';
+    // .nav-text is what the hover-to-unfold sidebar fades; a bare text node would
+    // stay visible and get clipped mid-word in the 64px rail.
+    a.innerHTML = '<span class="nav-icon">⚙</span><span class="nav-text">Owner Console</span>';
     a.addEventListener('click', ev => { ev.preventDefault(); open(); });
-    anchor.parentNode.insertBefore(a, anchor);
+    const sec = document.createElement('div');
+    sec.className = 'sidebar-section';
+    sec.style.paddingTop = '6px';
+    sec.innerHTML = '<div class="sidebar-label">OWNER</div>';
+    sec.appendChild(a);
+    anchor.parentNode.insertBefore(sec, anchor);
   }
 
   // The server decides who the owner is; /api/me carries the verdict, so the console

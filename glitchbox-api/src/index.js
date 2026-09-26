@@ -110,6 +110,11 @@ export class Hub extends DurableObject {
         sub TEXT, game TEXT, box TEXT, updated INTEGER,
         PRIMARY KEY (sub, game))`);
       this.sql.exec(`CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)`);
+      // Owner gifts waiting to be banked. The wallet lives in each player's browser,
+      // so a gift only sits here until their hub picks it up and acks it.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS gifts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, sub TEXT, tokens INTEGER,
+        games TEXT, icons TEXT, note TEXT, created INTEGER)`);
       // Defensive: add `code` column if this DO predates the friend-code feature.
       try { this.sql.exec("ALTER TABLE users ADD COLUMN code TEXT"); } catch (e) { /* already there */ }
       // …and the moderation columns, for a DO that predates the admin console.
@@ -347,7 +352,10 @@ export class Hub extends DurableObject {
     const invitesOut = this.sql.exec(
       `SELECT i.game, i.room, i.created, u.sub, u.name, u.picture FROM invites i
        JOIN users u ON u.sub = i.to_sub WHERE i.from_sub = ? ORDER BY i.created DESC`, me).toArray();
-    return { profile, friends, incoming, outgoing, blocked, invitesIn, invitesOut,
+    const gifts = this.sql.exec(
+      "SELECT id, tokens, games, icons, note, created FROM gifts WHERE sub = ? ORDER BY id", me).toArray()
+      .map(g => ({ ...g, games: JSON.parse(g.games || "[]"), icons: JSON.parse(g.icons || "[]") }));
+    return { profile, friends, incoming, outgoing, blocked, invitesIn, invitesOut, gifts,
              // `ownerPinned` lets the console explain *why* a non-owner can't claim.
              // The address itself is never sent — knowing it isn't the client's business.
              isOwner: this.isOwnerSub(me), ownerPinned: !!ownerPin(this.env),
@@ -355,6 +363,14 @@ export class Hub extends DurableObject {
              // row and neither reveals the pinned address, but together they turn a
              // locked-out owner's "it just doesn't work" into one readable line.
              ownerCheck: this.ownerCheck(me) };
+  }
+
+  // The hub banked these gifts; drop them so no other device banks them again.
+  async claimGifts(token, ids) {
+    const me = await this.verifySession(token);
+    for (const id of (Array.isArray(ids) ? ids : []).slice(0, 200))
+      this.sql.exec("DELETE FROM gifts WHERE sub = ? AND id = ?", me, Number(id) || 0);
+    return { ok: true };
   }
 
   // ══ ADMIN ══ Everything below answers only to the owner account.
@@ -407,7 +423,8 @@ export class Hub extends DurableObject {
                 u.banned, u.ban_reason,
                 (SELECT COUNT(*) FROM friends f WHERE f.a = u.sub)      AS friends,
                 (SELECT COUNT(*) FROM saves s   WHERE s.sub = u.sub)    AS saves,
-                (SELECT COUNT(*) FROM reports r WHERE r.reported = u.sub) AS reports
+                (SELECT COUNT(*) FROM reports r WHERE r.reported = u.sub) AS reports,
+                (SELECT COUNT(*) FROM gifts g   WHERE g.sub = u.sub)    AS gifts
          FROM users u
          WHERE ? = '%%' OR LOWER(u.name) LIKE ? OR LOWER(u.email) LIKE ? OR LOWER(u.code) LIKE ?
          ORDER BY u.last_seen DESC LIMIT ?`,
@@ -455,8 +472,30 @@ export class Hub extends DurableObject {
       "DELETE FROM reports WHERE reporter = ? OR reported = ?",
     ]) this.sql.exec(q, sub, sub);
     this.sql.exec("DELETE FROM saves WHERE sub = ?", sub);
+    this.sql.exec("DELETE FROM gifts WHERE sub = ?", sub);
     this.sql.exec("DELETE FROM users WHERE sub = ?", sub);
     return { ok: true, sub };
+  }
+
+  // Queue tokens and/or unlocks for one player, or for every player with sub "*".
+  // Negative tokens take them away. Games and icons are ids the hub already knows;
+  // the shape is checked here, and the hub ignores any id it doesn't recognise.
+  async adminGift(token, sub, tokens, games, icons, note) {
+    await this.requireOwner(token);
+    const n = Math.trunc(Number(tokens) || 0);
+    if (Math.abs(n) > 1000000) throw new HttpError(400, "keep it under a million tokens");
+    const ids = (v, re) => [...new Set((Array.isArray(v) ? v : []).map(String).filter(x => re.test(x)))].slice(0, 200);
+    const g = ids(games, /^[a-z0-9-]{1,60}\.html$/i), ic = ids(icons, /^[a-z0-9-]{1,24}$/);
+    if (!n && !g.length && !ic.length) throw new HttpError(400, "that gift is empty");
+    let targets;
+    if (sub === "*") targets = this.sql.exec("SELECT sub FROM users WHERE banned IS NULL OR banned = 0").toArray().map(r => r.sub);
+    else if (sub && this.userOf(sub)) targets = [sub];
+    else throw new HttpError(404, "no such player");
+    const now = Date.now(), gj = JSON.stringify(g), ij = JSON.stringify(ic), msg = String(note || "").slice(0, 120);
+    for (const t of targets)
+      this.sql.exec("INSERT INTO gifts (sub, tokens, games, icons, note, created) VALUES (?, ?, ?, ?, ?, ?)",
+        t, n, gj, ij, msg, now);
+    return { ok: true, players: targets.length };
   }
 
   async adminDismissReport(token, id) {
@@ -732,6 +771,8 @@ export default {
         if (path === "/api/admin/claim")  return json(await stub.adminClaim(auth, body.code), 200, origin);
         if (path === "/api/admin/ban")    return json(await stub.adminBan(auth, body.sub, body.banned, body.reason), 200, origin);
         if (path === "/api/admin/delete") return json(await stub.adminDeletePlayer(auth, body.sub), 200, origin);
+        if (path === "/api/admin/gift")   return json(await stub.adminGift(auth, body.sub, body.tokens, body.games, body.icons, body.note), 200, origin);
+        if (path === "/api/gifts/claim")  return json(await stub.claimGifts(auth, body.ids), 200, origin);
         if (path === "/api/admin/dismiss-report") return json(await stub.adminDismissReport(auth, body.id), 200, origin);
         if (path === "/api/add-by-code") return json(await stub.addByCode(auth, body.code), 200, origin);
         if (path === "/api/accept")   return json(await stub.accept(auth, body.sub), 200, origin);

@@ -906,11 +906,12 @@ addEventListener('storage',e=>{ if(e.key===FAV_KEY){ updateCounts(); renderGames
 //   glitchbox.fpaid    number   friends already paid out (referral high-water mark)
 //   glitchbox.queue    [{amt,why}] gains earned on the way out of a game,
 //                                  shown as toasts the next time the hub loads
+//   glitchbox.gifts    number[] owner gifts already banked on this device
 const TOK={
   bal:'glitchbox.tokens', own:'glitchbox.owned', seen:'glitchbox.seen',
   ts:'glitchbox.playts', daily:'glitchbox.daily', streak:'glitchbox.streak',
   queue:'glitchbox.queue', icons:'glitchbox.icons', fpaid:'glitchbox.fpaid',
-  ref:'glitchbox.ref', refadded:'glitchbox.refadded',
+  ref:'glitchbox.ref', refadded:'glitchbox.refadded', gifts:'glitchbox.gifts',
 };
 const WELCOME_GRANT = 50;   // enough to reach the cheapest shelf right away
 const FIRST_PLAY    = 10;   // bonus the first time you open any game
@@ -1095,6 +1096,47 @@ function claimStartup(){
     q.slice(-4).forEach((e,i)=>setTimeout(()=>tokenToast('+'+e.amt,e.why),260*i));
   }
   paintTokens();
+}
+
+// Back to a fresh wallet on this device. The anti-farming marks (friend high-water
+// mark, invite link, banked gifts) deliberately survive: wiping them re-pays every
+// existing friend on the next /api/me poll. And the balance is zeroed rather than
+// removed, because a missing balance reads as a first visit and re-grants the welcome.
+function resetEconomy(){
+  ['own','seen','ts','daily','streak','queue','icons'].forEach(k=>{ try{ localStorage.removeItem(TOK[k]); }catch(e){} });
+  setTokens(0);
+  paintDaily(); updateCounts(); renderGames();
+  if(document.getElementById('shop-modal').classList.contains('show')) renderShop();
+}
+
+// Owner gifts ride in on /api/me. Banked ids are remembered here before the ack,
+// so an ack that never lands can't pay the same gift twice.
+function applyGifts(list){
+  if(!Array.isArray(list) || !list.length) return;
+  const done=jsonGet(TOK.gifts,[]), ids=[];
+  list.forEach(g=>{
+    ids.push(g.id);
+    if(done.indexOf(g.id)!==-1) return;
+    done.push(g.id);
+    const why = g.note ? 'From the owner — '+g.note : 'Gift from the owner';
+    const n = g.tokens|0;
+    if(n>0) grant(n, why);
+    else if(n<0){ setTokens(tokens()+n); tokenToast(String(n), why, true); }
+    const games=(g.games||[]).filter(f=>GAMES.some(x=>x.file===f) && !isOwned(f));
+    if(games.length){
+      jsonSet(TOK.own, ownedList().concat(games));
+      tokenToast('🎁', 'Unlocked '+(games.length===1 ? GAMES.find(x=>x.file===games[0]).name : games.length+' games')+' — '+why);
+    }
+    const icons=(g.icons||[]).filter(id=>ICON_BY_ID[id] && iconsOwned().indexOf(id)===-1);
+    if(icons.length){
+      jsonSet(TOK.icons, iconsOwned().concat(icons));
+      tokenToast('🎁', 'Unlocked '+icons.length+' icon'+(icons.length>1?'s':'')+' — '+why);
+    }
+  });
+  jsonSet(TOK.gifts, done.slice(-300));
+  updateCounts(); renderGames(); renderIconPicker();
+  if(document.getElementById('shop-modal').classList.contains('show')) renderShop();
+  api('/api/gifts/claim', { method:'POST', body:{ ids } }).catch(()=>{});
 }
 
 // Called as a game tile is clicked, immediately before navigation.
@@ -1402,6 +1444,7 @@ async function refreshState(){
   if(!getSession()) return;
   try {
     lastState = await api('/api/me');
+    applyGifts(lastState.gifts);
     // The server is the source of truth for your icon, so a pick made on your phone
     // shows up here too.
     const srv = lastState.profile && lastState.profile.picture;
@@ -1976,6 +2019,29 @@ if(location.hash==='#tokencheck'){
     lastState.profile=null;
     ok('signed out, the link is just the arcade', inviteLink().indexOf('?ref=')===-1);
     lastState.profile=savedProfile;
+
+    wipe(); setTokens(0);
+    rewardFriends(2); buyGame(paid.file)||(setTokens(paid.price),buyGame(paid.file));
+    resetEconomy();
+    ok('reset zeroes the wallet', tokens()===0 && localStorage.getItem(TOK.bal)==='0');
+    ok('reset relocks games', isLocked(paid));
+    rewardFriends(2);
+    ok('reset never re-pays old friends', tokens()===0);
+
+    wipe(); setTokens(10);
+    const realApi=api, acks=[]; api=async(p,o)=>{ acks.push(o&&o.body); return {ok:true}; };
+    const gIcon=ICON_SETS.find(s=>ICON_PRICE[s.cat]).icons[1];
+    applyGifts([{ id:901, tokens:500, games:[paid.file,'nope.html'], icons:[gIcon.id,'nope'], note:'' }]);
+    ok('a gift pays its tokens', tokens()===510);
+    ok('a gift unlocks its game', !isLocked(paid));
+    ok('a gift unlocks its icon', iconOwned(gIcon));
+    ok('unknown ids in a gift are ignored', ownedList().indexOf('nope.html')===-1 && iconsOwned().indexOf('nope')===-1);
+    ok('the gift is acked', acks.length===1 && acks[0].ids[0]===901);
+    applyGifts([{ id:901, tokens:500, games:[], icons:[] }]);
+    ok('a gift never banks twice', tokens()===510);
+    applyGifts([{ id:902, tokens:-1000, games:[], icons:[] }]);
+    ok('a negative gift takes tokens, floored at zero', tokens()===0);
+    api=realApi;
 
     wipe(); setTokens(0);
     const free=ICON_SETS.find(s=>!ICON_PRICE[s.cat]).icons[0];
