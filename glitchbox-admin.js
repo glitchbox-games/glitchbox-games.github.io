@@ -26,6 +26,11 @@
   let built = false, isOwner = false, tab = 'overview';
   let players = null, reports = null, overview = null, filter = '';
   let giftTo = null;   // { sub, name } while the gift form is open; sub '*' = everyone
+  // Questions are asked in the panel, never with prompt()/confirm(): Chrome can
+  // suppress those, and a suppressed prompt reads as "cancel" — a ban that silently
+  // never happens. `ask` is { text, yes, input?, run(value) }; `notice` shows the
+  // last result or error at the top of the panel.
+  let ask = null, notice = null;
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
     c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -141,7 +146,7 @@
     $('adm-x').addEventListener('click', close);
     $('adm-tabs').addEventListener('click', e => {
       const b = e.target.closest('.adm-tab');
-      if (b) { tab = b.dataset.tab; render(); }
+      if (b) { tab = b.dataset.tab; ask = null; notice = null; render(); }
     });
     $('adm-body').addEventListener('click', onAction);
   }
@@ -161,12 +166,32 @@
     $('adm-tabs').innerHTML = TABS.map(t =>
       '<button class="adm-tab' + (tab === t.id ? ' on' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>').join('');
     const body = $('adm-body');
-    if (tab === 'overview') body.innerHTML = viewOverview();
-    else if (tab === 'players') { body.innerHTML = viewPlayers(); const s = $('adm-search'); if (s) { s.value = filter; s.focus(); } }
-    else if (tab === 'reports') body.innerHTML = viewReports();
-    else if (tab === 'god') body.innerHTML = viewGod();
-    else body.innerHTML = viewDev();
+    const view = tab === 'overview' ? viewOverview() : tab === 'players' ? viewPlayers()
+      : tab === 'reports' ? viewReports() : tab === 'god' ? viewGod() : viewDev();
+    body.innerHTML = askBar() + view;
+    const s = $('adm-search');
+    if (s) s.value = filter;
+    if (ask) {
+      $('adm-ask').scrollIntoView({ block:'nearest' });
+      const i = $('adm-ask-in');
+      if (i) i.focus();
+    } else if (s) s.focus();
   }
+
+  function askBar() {
+    let h = '';
+    if (notice) h += '<div class="adm-note" id="adm-notice" style="color:' + (notice.bad ? '#ff0080' : '#00ff88') +
+      ';border:1px solid currentColor;padding:9px 12px">' + esc(notice.text) + '</div>';
+    if (ask) h += '<div id="adm-ask" style="border:1px solid rgba(255,0,128,.5);background:rgba(255,0,128,.07);padding:12px;margin-bottom:14px">' +
+      '<div class="adm-name" style="margin-bottom:8px;white-space:pre-line">' + esc(ask.text) + '</div>' +
+      '<div class="adm-actions" style="margin:0">' +
+        (ask.input != null ? '<input class="adm-in" id="adm-ask-in" placeholder="' + esc(ask.input) + '" value="' +
+          esc(ask.value || '') + '" style="flex:1;min-width:180px">' : '') +
+        '<button class="adm-btn danger" data-act="askyes">' + esc(ask.yes) + '</button>' +
+        '<button class="adm-btn warn" data-act="askno">Cancel</button></div></div>';
+    return h;
+  }
+  function askFor(a) { ask = a; notice = null; render(); }
 
   // ── tabs ───────────────────────────────────────────────────────────────────
   function viewOverview() {
@@ -370,22 +395,37 @@
         // Reachable from the Reports tab too, where the player list may never have loaded.
         const p = (players || []).find(x => x.sub === sub);
         const r = (reports || []).find(x => x.reported_sub === sub);
-        const reason = prompt('Ban ' + ((p && p.name) || (r && r.reported) || 'this player') + ' — reason (optional):');
-        if (reason === null) return;
-        await call('/api/admin/ban', { method:'POST', body:{ sub, banned:true, reason } });
-        players = null; reports = null; render();
+        const name = (p && p.name) || (r && r.reported) || 'this player';
+        askFor({ text:'Ban ' + name + '? They are kicked out within a few seconds, even mid-game.', input:'Reason (optional)',
+                 yes:'Ban ' + name, run: async reason => {
+          await call('/api/admin/ban', { method:'POST', body:{ sub, banned:true, reason } });
+          players = null; reports = null; overview = null;
+          notice = { text: name + ' is banned.' };
+        }});
+      }
+      else if (act === 'askno') { ask = null; render(); }
+      else if (act === 'askyes') {
+        const a = ask, i = $('adm-ask-in');
+        if (!a) return;
+        el.disabled = true;
+        try { await a.run(i ? i.value.trim() : ''); ask = null; }
+        catch (err) { ask = null; notice = { text: err.message || 'request failed', bad:true }; }
+        render();
       }
       else if (act === 'unban') {
         await call('/api/admin/ban', { method:'POST', body:{ sub, banned:false } });
-        players = null; render();
+        const p = (players || []).find(x => x.sub === sub);
+        players = null; overview = null; notice = { text: ((p && p.name) || 'Player') + ' is unbanned.' };
+        render();
       }
       else if (act === 'del') {
         const p = (players || []).find(x => x.sub === sub);
         const name = (p && p.name) || 'this player';
-        if (!confirm('Delete ' + name + ' permanently?\n\nTheir account, friendships, invites and cloud saves are ' +
-                     'erased. This cannot be undone.')) return;
-        await call('/api/admin/delete', { method:'POST', body:{ sub } });
-        players = null; overview = null; render();
+        askFor({ text:'Delete ' + name + ' permanently?\nTheir account, friendships, invites and cloud saves are ' +
+                      'erased. This cannot be undone.', yes:'Delete ' + name, run: async () => {
+          await call('/api/admin/delete', { method:'POST', body:{ sub } });
+          players = null; overview = null; notice = { text: name + ' was deleted.' };
+        }});
       }
       else if (act === 'give') {
         const p = (players || []).find(x => x.sub === sub);
@@ -402,18 +442,24 @@
         const body = { sub: giftTo.sub, tokens: parseInt($('adm-gtok').value, 10) || 0,
                        games: checked('g'), icons, note: ($('adm-gnote').value || '').trim() };
         if (!body.tokens && !body.games.length && !body.icons.length) { $('adm-gmsg').textContent = 'Nothing to give — add tokens or tick something.'; return; }
-        if (giftTo.sub === '*' && !confirm('Send this gift to every player?')) return;
-        const r = await call('/api/admin/gift', { method:'POST', body });
         const who = giftTo.name;
-        giftTo = null; players = null; render();
-        if (typeof tokenToast === 'function') tokenToast('🎁', 'Gift queued for ' + (r.players > 1 ? r.players + ' players' : who));
+        const send = async () => {
+          const r = await call('/api/admin/gift', { method:'POST', body });
+          giftTo = null; players = null;
+          notice = { text: '🎁 Gift queued for ' + (body.sub === '*' ? r.players + ' players' : who) + '.' };
+        };
+        if (body.sub === '*') askFor({ text:'Send this gift to every player?', yes:'Send to everyone', run: send });
+        else { await send(); render(); }
       }
       else if (act === 'dismiss') {
         await call('/api/admin/dismiss-report', { method:'POST', body:{ id: el.dataset.id } });
         reports = null; render();
       }
       else if (act === 'tok')     { setTokens(tokens() + (+el.dataset.n || 0)); repaint(); }
-      else if (act === 'tokset')  { const n = prompt('Set token balance to:', tokens()); if (n !== null) { setTokens(parseInt(n, 10) || 0); repaint(); } }
+      else if (act === 'tokset')  {
+        askFor({ text:'Set this device\'s token balance to:', input:'Tokens', value:String(tokens()), yes:'Set',
+                 run: async n => { setTokens(parseInt(n, 10) || 0); repaint(); } });
+      }
       else if (act === 'tokzero') { setTokens(0); repaint(); }
       else if (act === 'unlockgames') {
         const files = (typeof GAMES !== 'undefined' ? GAMES : []).map(g => g.file);
@@ -426,10 +472,12 @@
         repaint();
       }
       else if (act === 'wipeecon') {
-        if (!confirm('Reset tokens, unlocks and play history on this device?')) return;
-        if (typeof resetEconomy === 'function') resetEconomy();
-        else Object.keys(K).forEach(k => localStorage.removeItem(K[k]));
-        repaint();
+        askFor({ text:'Reset tokens, unlocks and play history on this device?', yes:'Reset economy', run: async () => {
+          if (typeof resetEconomy === 'function') resetEconomy();
+          else Object.keys(K).forEach(k => localStorage.removeItem(K[k]));
+          notice = { text:'Economy reset — balance 0.' };
+          repaint();
+        }});
       }
       else if (act === 'jump')    { const s = $('adm-jump'); if (s && s.value) location.href = s.value; }
       else if (act === 'refresh') { if (typeof refreshState === 'function') await refreshState(); render(); }
@@ -439,11 +487,13 @@
         catch (err) { el.textContent = 'Clipboard blocked'; }
       }
       else if (act === 'nuke') {
-        if (!confirm('Clear ALL GLITCHBOX data on this device (including your sign-in)?')) return;
-        Object.keys(localStorage).filter(k => k.indexOf('glitchbox') === 0).forEach(k => localStorage.removeItem(k));
-        location.reload();
+        askFor({ text:'Clear ALL GLITCHBOX data on this device (including your sign-in)?', yes:'Clear everything',
+                 run: async () => {
+          Object.keys(localStorage).filter(k => k.indexOf('glitchbox') === 0).forEach(k => localStorage.removeItem(k));
+          location.reload();
+        }});
       }
-    } catch (err) { alert(err.message); }
+    } catch (err) { notice = { text: err.message || 'request failed', bad:true }; render(); }
   }
 
   // Search is debounced through the same delegated listener the buttons use.
@@ -495,6 +545,8 @@
   }, 1500);
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target && e.target.id === 'adm-ask-in') { const y = document.querySelector('[data-act="askyes"]'); if (y) y.click(); return; }
+    if (e.key === 'Escape' && ask && built && $('adm-wrap').classList.contains('show')) { ask = null; render(); return; }
     if (e.key === 'Escape' && built && $('adm-wrap').classList.contains('show')) { close(); return; }
     // Ctrl+Shift+A only — Cmd+Shift+A is Chrome's own tab search on a Mac.
     if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) { e.preventDefault(); toggle(); }
@@ -526,13 +578,16 @@
       if (path === '/api/admin/gift') return { ok:true, players: opts.body.sub === '*' ? 2 : 1 };
       return { ok:true };
     };
-    window.prompt = (m, d) => { dialogs.push(m); return 'spam'; };
-    window.confirm = m => { dialogs.push(m); return true; };
-    window.alert = m => { dialogs.push('ALERT ' + m); };
+    // Native dialogs must never be used — a suppressed prompt() silently cancels.
+    window.prompt = window.confirm = window.alert = m => { dialogs.push('NATIVE ' + m); return null; };
+    const answer = async (text) => {
+      const i = $('adm-ask-in'); if (i && text != null) i.value = text;
+      await click('[data-act="askyes"]');
+    };
     const click = async sel => { const el = document.querySelector('#adm-body ' + sel); if (el) el.click(); await wait(); await wait(); return !!el; };
     const bodyHas = re => re.test($('adm-body').textContent);
     const post = p => sent.filter(s => s.path === p).pop();
-    const alerts = () => dialogs.filter(d => /^ALERT/.test(d));
+    const alerts = () => dialogs.filter(d => /^NATIVE/.test(d));
 
     currentUser = { sub:'me', name:'Owner', email:'o@x.com' };
     lastState.isOwner = true;
@@ -548,11 +603,20 @@
     t('you get no ban button on yourself', !document.querySelector('#adm-body [data-act="ban"][data-sub="me"]'));
     sent.length = 0;
     await click('[data-act="ban"][data-sub="s1"]');
+    t('ban asks in the panel, not a pop-up', !!$('adm-ask-in') && /Ban Dave/.test($('adm-ask').textContent) && !post('/api/admin/ban'));
+    await answer('spam');
     t('ban posts the player and reason', post('/api/admin/ban') && post('/api/admin/ban').body.sub === 's1' &&
       post('/api/admin/ban').body.banned === true && post('/api/admin/ban').body.reason === 'spam');
     await click('[data-act="unban"][data-sub="s2"]');
     t('unban clears the flag', post('/api/admin/ban').body.sub === 's2' && post('/api/admin/ban').body.banned === false);
+    t('the result shows in the panel', /unbanned/.test(($('adm-notice') || {}).textContent || ''));
+    await click('[data-act="ban"][data-sub="s1"]');
+    sent.length = 0;
+    await click('[data-act="askno"]');
+    t('cancel sends nothing', !post('/api/admin/ban') && !$('adm-ask'));
     await click('[data-act="del"][data-sub="s1"]');
+    t('delete asks first', !post('/api/admin/delete') && !!$('adm-ask'));
+    await answer();
     t('delete confirms and posts', post('/api/admin/delete') && post('/api/admin/delete').body.sub === 's1');
 
     await click('[data-act="give"][data-sub="s1"]');
@@ -575,6 +639,7 @@
     t('an empty gift is refused', !post('/api/admin/gift') && bodyHas(/Nothing to give/));
     $('adm-gtok').value = '50';
     await click('[data-act="giftsend"]');
+    await answer();
     t('give everyone posts sub *', post('/api/admin/gift') && post('/api/admin/gift').body.sub === '*');
     await click('[data-act="give"][data-sub="s1"]');
     await click('[data-act="giftcancel"]');
@@ -585,8 +650,9 @@
     t('reports are listed', bodyHas(/cheating/));
     players = null; sent.length = 0; dialogs.length = 0;
     await click('[data-act="ban"][data-sub="s1"]');
+    t('and names the reported player', /Ban Dave/.test(($('adm-ask') || {}).textContent || ''));
+    await answer('');
     t('ban from reports works with no player list loaded', post('/api/admin/ban') && post('/api/admin/ban').body.sub === 's1' && !alerts().length);
-    t('and names the reported player', dialogs.some(d => /Ban Dave/.test(d)));
     await click('[data-act="dismiss"]');
     t('dismiss posts the report id', post('/api/admin/dismiss-report') && post('/api/admin/dismiss-report').body.id === '7');
 
@@ -597,7 +663,9 @@
       setTokens(10);
       await click('[data-act="tok"][data-n="100"]');
       t('+100 adds', tokens() === 110);
-      await click('[data-act="tokset"]');   // prompt answers 'spam' → not a number
+      await click('[data-act="tokset"]'); await answer('777');
+      t('set exact sets the balance', tokens() === 777);
+      await click('[data-act="tokset"]'); await answer('rubbish');
       t('set exact with rubbish zeroes rather than NaN', tokens() === 0);
       await click('[data-act="tok"][data-n="1000"]');
       await click('[data-act="tokzero"]');
@@ -607,7 +675,7 @@
       await click('[data-act="unlockicons"]');
       t('unlock every icon', Object.keys(ICON_BY_ID).every(id => iconsOwned().indexOf(id) !== -1));
       setTokens(500);
-      await click('[data-act="wipeecon"]');
+      await click('[data-act="wipeecon"]'); await answer();
       t('reset economy leaves 0 and relocks', tokens() === 0 && GAMES.filter(g => g.price).every(g => !isOwned(g.file)));
       Object.keys(K).forEach(k => snap[k] === null ? localStorage.removeItem(K[k]) : localStorage.setItem(K[k], snap[k]));
       void was;
@@ -621,7 +689,15 @@
     lastState.isOwner = false; await new Promise(r => setTimeout(r, 1600));
     tab = 'players'; render(); await wait();
     t('a non-owner sees the claim/owner panel instead', !bodyHas(/Dave/));
-    t('no alerts fired anywhere', !alerts().length || (lines.push('   alerts: ' + alerts().join(' | ')), false));
+    // a server error lands in the panel instead of an alert
+    const realApi = window.api;
+    window.api = async () => { const e = new Error('not the owner'); e.status = 403; throw e; };
+    lastState.isOwner = true; await new Promise(r => setTimeout(r, 1600));
+    tab = 'players'; players = []; render(); await wait();
+    db.players = []; await click('[data-act="reload"]');
+    window.api = realApi;
+    t('a server error shows in the panel', /not the owner/.test($('adm-body').textContent));
+    t('no native pop-up was ever used', !alerts().length || (lines.push('   native: ' + alerts().join(' | ')), false));
 
     close();
     const out = document.createElement('pre');

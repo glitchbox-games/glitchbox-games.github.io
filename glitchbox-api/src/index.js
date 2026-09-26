@@ -367,6 +367,14 @@ export class Hub extends DurableObject {
              ownerCheck: this.ownerCheck(me) };
   }
 
+  // Cheap "am I still allowed in?" for game pages, which don't poll /api/me. A banned
+  // session fails inside verifySession with 403 "banned:<reason>".
+  async ping(token) {
+    const me = await this.verifySession(token);
+    this.sql.exec("UPDATE users SET last_seen = ? WHERE sub = ?", Date.now(), me);
+    return { ok: true };
+  }
+
   // The hub banked these gifts; drop them so no other device banks them again.
   async claimGifts(token, ids) {
     const me = await this.verifySession(token);
@@ -752,6 +760,7 @@ export default {
         return json(await stub.login(body.idToken), 200, origin);
       }
       if (path === "/api/me") return json(await stub.state(auth), 200, origin);
+      if (path === "/api/ping") return json(await stub.ping(auth), 200, origin);
 
       // Game saves — the cloud half of glitchbox-save.js.
       if (path === "/api/load") {

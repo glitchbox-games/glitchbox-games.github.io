@@ -29,6 +29,26 @@
   // Same key the hub writes when the server answers "banned".
   try { if (localStorage.getItem('glitchbox.banned') !== null) { location.replace('index.html'); return; } }
   catch (_) {}
+  // The hub isn't open mid-game, so the game page asks the server itself — on load
+  // (so a refresh catches a ban) and every few seconds after.
+  var BAN_API = window.GLITCHBOX_API || 'https://glitchbox-api.levtheduck.workers.dev';
+  function banCheck() {
+    var s = '';
+    try { s = localStorage.getItem('glitchbox_session') || ''; } catch (_) {}
+    if (!s || document.hidden || !window.fetch) return;
+    fetch(BAN_API + '/api/ping', { headers: { Authorization: 'Bearer ' + s } }).then(function (r) {
+      if (r.status !== 403) return;
+      return r.json().then(function (d) {
+        var m = /^banned:([\s\S]*)$/.exec((d && d.error) || '');
+        if (!m) return;
+        try { localStorage.setItem('glitchbox.banned', m[1]); localStorage.removeItem('glitchbox_session'); } catch (_) {}
+        location.replace('index.html');
+      });
+    }).catch(function () {});
+  }
+  banCheck();
+  setInterval(banCheck, 8000);
+  document.addEventListener('visibilitychange', banCheck);
 
   var pos = (document.currentScript && document.currentScript.dataset.pos) || 'top-left';
 

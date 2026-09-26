@@ -1280,6 +1280,8 @@ function closeShop(){ document.getElementById('shop-modal').classList.remove('sh
 addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeShop(); closeInvite(); } });
 // wallet changed in another tab (or in a game) — keep this view honest
 addEventListener('storage',e=>{
+  // Another tab (a game, or the hub) learned this account is banned.
+  if(e.key==='glitchbox.banned' && e.newValue!==null){ showBan(e.newValue); return; }
   if(e.key===TOK.bal||e.key===TOK.own){ paintTokens(); updateCounts(); renderGames();
     if(document.getElementById('shop-modal').classList.contains('show')) renderShop(); }
 });
