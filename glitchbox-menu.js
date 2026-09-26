@@ -30,19 +30,26 @@
   try { if (localStorage.getItem('glitchbox.banned') !== null) { location.replace('index.html'); return; } }
   catch (_) {}
   // The hub isn't open mid-game, so the game page asks the server itself — on load
-  // (so a refresh catches a ban) and every few seconds after.
+  // (so a refresh catches a ban) and every few seconds after. The ping also tells
+  // the owner console which game you're in, and closes the game during maintenance
+  // (for everyone but the owner). Self-test hashes stay offline.
   var BAN_API = window.GLITCHBOX_API || 'https://glitchbox-api.levtheduck.workers.dev';
+  var PING_GAME = (location.pathname.split('/').pop() || '');
   function banCheck() {
     var s = '';
     try { s = localStorage.getItem('glitchbox_session') || ''; } catch (_) {}
-    if (!s || document.hidden || !window.fetch) return;
-    fetch(BAN_API + '/api/ping', { headers: { Authorization: 'Bearer ' + s } }).then(function (r) {
-      if (r.status !== 403) return;
+    if (document.hidden || !window.fetch || /smoke|check|debug|menuquit/.test(location.hash)) return;
+    fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME),
+          s ? { headers: { Authorization: 'Bearer ' + s } } : {}).then(function (r) {
       return r.json().then(function (d) {
-        var m = /^banned:([\s\S]*)$/.exec((d && d.error) || '');
-        if (!m) return;
-        try { localStorage.setItem('glitchbox.banned', m[1]); localStorage.removeItem('glitchbox_session'); } catch (_) {}
-        location.replace('index.html');
+        if (r.status === 403) {
+          var m = /^banned:([\s\S]*)$/.exec((d && d.error) || '');
+          if (!m) return;
+          try { localStorage.setItem('glitchbox.banned', m[1]); localStorage.removeItem('glitchbox_session'); } catch (_) {}
+          location.replace('index.html');
+        } else if (d && d.maintenance && !d.isOwner) {
+          location.replace('index.html');       // the hub shows the closed sign
+        }
       });
     }).catch(function () {});
   }

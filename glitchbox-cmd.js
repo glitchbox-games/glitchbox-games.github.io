@@ -374,6 +374,45 @@
       ok('gift queued for ' + p.name + ': ' + summary + ' — lands on their next check-in');
     }},
 
+    msg: { usage:'msg <player> <message>', about:'pop a message up on a player\'s screen', owner:true, async run(a) {
+      const text = a.slice(1).join(' ').trim();
+      if (!text) { bad('usage: msg <player> <message>'); return; }
+      const p = await pickPlayer(a[0]);
+      if (!p) return;
+      await call('/api/admin/gift', { method:'POST', body:{ sub:p.sub, note:text } });
+      ok('✉ sent to ' + p.name);
+    }},
+
+    announce: { usage:'announce <text> | announce off', about:'banner across every hub', owner:true, async run(a) {
+      const text = a.join(' ').trim();
+      if (!text) {
+        const h = await call('/api/admin/overview');
+        say(h.announce ? '📣 “' + h.announce.text + '”' : 'no announcement up');
+        return;
+      }
+      if (text.toLowerCase() === 'off') { await call('/api/admin/announce', { method:'POST', body:{ text:'' } }); ok('announcement taken down'); return; }
+      await call('/api/admin/announce', { method:'POST', body:{ text, tone:'info' } });
+      ok('📣 announcement is live');
+    }},
+
+    maint: { usage:'maint on [message] | maint off', about:'close / reopen the arcade', owner:true, async run(a) {
+      const w = (a[0] || '').toLowerCase();
+      if (w === 'off') { await call('/api/admin/maintenance', { method:'POST', body:{ on:false } }); ok('arcade reopened'); return; }
+      if (w !== 'on') { bad('maint on [message]  or  maint off'); return; }
+      const text = a.slice(1).join(' ');
+      askConfirm('Close the arcade to everyone but you?', async () => {
+        await call('/api/admin/maintenance', { method:'POST', body:{ on:true, text } });
+        ok('🛠 arcade closed');
+      });
+    }},
+
+    log: { usage:'log', about:'recent owner actions', owner:true, async run() {
+      const rows = (await call('/api/admin/log')).log || [];
+      if (!rows.length) { say('nothing logged yet'); return; }
+      head('// LOG');
+      rows.slice(0, 25).forEach(r => say('  ' + pad(ago(r.at), 10) + pad(r.action, 16) + (r.target || '') + (r.detail ? '  ' + r.detail : '')));
+    }},
+
     reports: { usage:'reports', about:'open player reports', owner:true, async run() {
       const list = (await call('/api/admin/reports')).reports || [];
       if (!list.length) { ok('no reports — quiet arcade'); return; }
@@ -729,6 +768,21 @@
     await run('confirm');
     const g3 = seen.find(s => s.path === '/api/admin/gift');
     t('and then goes to everyone', g3 && g3.body.sub === '*' && g3.body.tokens === 100);
+
+    // ── owner broadcast commands ──
+    seen.length = 0;
+    await run('msg dave@x.com "good game"');
+    t('msg sends a note-only gift', seen.some(s => s.path === '/api/admin/gift' && s.body.sub === 's1' && s.body.note === 'good game' && !s.body.tokens));
+    await run('announce Double tokens today');
+    t('announce posts the text', seen.some(s => s.path === '/api/admin/announce' && s.body.text === 'Double tokens today'));
+    await run('announce off');
+    t('announce off clears it', seen.some(s => s.path === '/api/admin/announce' && s.body.text === ''));
+    await run('maint on back soon');
+    t('maint on asks first', !seen.some(s => s.path === '/api/admin/maintenance'));
+    await run('confirm');
+    t('then closes with the message', seen.some(s => s.path === '/api/admin/maintenance' && s.body.on === true && s.body.text === 'back soon'));
+    await run('maint off');
+    t('maint off reopens', seen.some(s => s.path === '/api/admin/maintenance' && s.body.on === false));
 
     // ── reset ──
     if (typeof resetEconomy === 'function') {

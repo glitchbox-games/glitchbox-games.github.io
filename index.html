@@ -335,7 +335,20 @@ body::before {
 .ban-screen .auth-card { border-color:rgba(255,0,80,0.45); }
 .ban-title { font-family:'Press Start 2P',monospace; font-size:15px; color:#ff0050; margin:6px 0 16px;
   text-shadow:0 0 14px rgba(255,0,80,0.6); }
-.ban-reason { font-size:14px; color:var(--text); margin:0 0 18px; line-height:1.5; }
+.ban-reason { font-size:14px; color:var(--text); margin:0 0 18px; line-height:1.5; white-space:pre-line; }
+.maint-screen .auth-card { border-color:rgba(255,200,0,0.45); }
+.maint-screen .ban-title { color:#ffc800; text-shadow:0 0 14px rgba(255,200,0,0.5); }
+/* Owner announcement, across the top of the hub. */
+.announce { display:flex; align-items:center; gap:12px; padding:10px 18px; font-weight:700; letter-spacing:.3px;
+  border-bottom:1px solid rgba(0,245,255,0.3); background:linear-gradient(90deg,rgba(0,245,255,0.14),rgba(0,245,255,0.04)); color:var(--text); }
+.announce.warn { border-color:rgba(255,200,0,0.4); background:linear-gradient(90deg,rgba(255,200,0,0.18),rgba(255,200,0,0.04)); }
+.announce.party { border-color:rgba(255,0,128,0.4); background:linear-gradient(90deg,rgba(255,0,128,0.2),rgba(0,245,255,0.12)); }
+.announce.maint { border-color:rgba(255,200,0,0.5); background:rgba(255,200,0,0.12); color:#ffc800; }
+.announce.hidden { display:none; }
+.announce .an-icon { font-size:18px; }
+.announce .an-text { flex:1; min-width:0; }
+.announce .an-x { background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:2px 6px; }
+.announce .an-x:hover { color:var(--text); }
 .ban-btn { display:block; width:100%; margin-top:10px; padding:11px; cursor:pointer; font:inherit; font-weight:700;
   letter-spacing:1px; text-transform:uppercase; background:transparent; color:var(--cyan); border:1px solid rgba(0,245,255,0.35); }
 .ban-btn:hover { background:rgba(0,245,255,0.08); }
@@ -664,12 +677,21 @@ body.sb-pinned { padding-left:var(--rail-open); }
     <div class="auth-note">🔒 We only read your name, email &amp; profile photo — verified by Google.</div>
   </div>
 </div>
+<div class="ban-screen maint-screen" id="maint-screen">
+  <div class="auth-card">
+    <div class="auth-logo-icon" style="border-color:#ffc800">🛠</div>
+    <div class="ban-title">MAINTENANCE</div>
+    <div class="ban-reason" id="maint-text"></div>
+    <div class="auth-desc">GLITCHBOX is closed for a bit while the owner works on it. This page opens by itself when it's back.</div>
+    <button class="ban-btn" onclick="openAuth('login')">Owner? Sign in</button>
+  </div>
+</div>
 <div class="ban-screen" id="ban-screen">
   <div class="auth-card">
     <div class="auth-logo-icon" style="border-color:#ff0050">⛔</div>
     <div class="ban-title">BANNED</div>
     <div class="ban-reason" id="ban-reason"></div>
-    <div class="auth-desc">This account can't use GLITCHBOX any more.</div>
+    <div class="auth-desc" id="ban-desc">This account can't use GLITCHBOX any more.</div>
     <button class="ban-btn" onclick="checkBan()">Check again</button>
     <button class="ban-btn" onclick="openAuth('login')">Use a different Google account</button>
   </div>
@@ -816,6 +838,10 @@ body.sb-pinned { padding-left:var(--rail-open); }
 <div class="token-toasts" id="token-toasts"></div>
 <div class="invite-toasts" id="invite-toasts"></div>
 <div class="main">
+  <div class="announce hidden" id="owner-maint"><span class="an-icon">🛠</span>
+    <span class="an-text">Maintenance mode is ON — everyone else sees a closed sign. Turn it off in the Owner Console → Arcade.</span></div>
+  <div class="announce hidden" id="announce"><span class="an-icon" id="an-icon">📣</span>
+    <span class="an-text" id="an-text"></span><button class="an-x" onclick="dismissAnnounce()" title="Hide">✕</button></div>
   <div class="topbar">
     <div class="search-wrap">
       <span class="search-icon">⌕</span>
@@ -990,6 +1016,20 @@ function tokenToast(amt,why,spend){
     setTimeout(()=>t.remove(),420); }, 4200);
 }
 
+// A message from the owner: same toast shelf, no coin, and it stays long enough to read.
+function ownerMessage(text){
+  const wrap=document.getElementById('token-toasts'); if(!wrap) return;
+  const t=document.createElement('div');
+  t.className='token-toast';
+  t.innerHTML='<div class="tt-amt">📨 MESSAGE</div><div class="tt-why">From the owner: '+esc(text)+'</div>';
+  t.style.cursor='pointer'; t.title='Click to dismiss';
+  const bye=()=>{ t.style.transition='opacity .4s,transform .4s'; t.style.opacity='0'; t.style.transform='translateX(18px)';
+    setTimeout(()=>t.remove(),420); };
+  t.onclick=bye;
+  wrap.appendChild(t);
+  setTimeout(bye, 12000);
+}
+
 // ── earning ──
 function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function dayKeyOffset(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -1141,6 +1181,7 @@ function applyGifts(list){
     done.push(g.id);
     const why = g.note ? 'From the owner — '+g.note : 'Gift from the owner';
     const n = g.tokens|0;
+    if(!n && !(g.games||[]).length && !(g.icons||[]).length){ if(g.note) ownerMessage(g.note); return; }
     if(n>0) grant(n, why);
     else if(n<0){ setTokens(tokens()+n); tokenToast(String(n), why, true); }
     const games=(g.games||[]).filter(f=>GAMES.some(x=>x.file===f) && !isOwned(f));
@@ -1447,16 +1488,60 @@ function handleCredential(response){
 // sign-in or /api/me from a non-banned account clears it.
 const BAN_KEY = 'glitchbox.banned';
 function banReason(e){ const m = /^banned:([\s\S]*)$/.exec((e && e.message) || ''); return m ? m[1] : null; }
-function showBan(reason){
-  try { localStorage.setItem(BAN_KEY, reason || ''); localStorage.removeItem('glitchbox_session'); } catch(e){}
-  document.getElementById('ban-reason').textContent = reason ? 'Reason: “' + reason + '”' : 'No reason was given.';
+// `raw` is everything after "banned:" — "<until>:<reason>", until empty when permanent.
+// (Older servers sent just "<reason>".)
+function showBan(raw){
+  raw = String(raw == null ? '' : raw);
+  const m = /^(\d*):([\s\S]*)$/.exec(raw);
+  const until = m && m[1] ? +m[1] : 0, reason = m ? m[2] : raw;
+  if(until && until <= Date.now()){ clearBan(); return; }   // a timed ban that has run out
+  try { localStorage.setItem(BAN_KEY, raw); localStorage.removeItem('glitchbox_session'); } catch(e){}
+  document.getElementById('ban-reason').textContent =
+    (reason ? 'Reason: “' + reason + '”' : 'No reason was given.') +
+    (until ? '\nBanned until ' + new Date(until).toLocaleString([], { dateStyle:'medium', timeStyle:'short' }) + '.' : '');
   document.getElementById('ban-screen').classList.add('show');
+  document.getElementById('ban-desc').textContent = until
+    ? 'This account can come back when the ban runs out — sign in again then.'
+    : 'This account can\'t use GLITCHBOX any more.';
   closeAuth();
 }
 function clearBan(){
   try { localStorage.removeItem(BAN_KEY); } catch(e){}
   document.getElementById('ban-screen').classList.remove('show');
 }
+// ── arcade-wide switches ── announcement banner + maintenance mode. They come from
+// the public /api/health (so guests get them) and ride along on /api/me.
+let arcadeAnnounce = null, arcadeMaint = null;
+const ANNOUNCE_SEEN = 'glitchbox.announceSeen';
+function applyArcade(announce, maint){
+  arcadeAnnounce = announce || null; arcadeMaint = maint || null;
+  const bar = document.getElementById('announce');
+  let seen = ''; try { seen = localStorage.getItem(ANNOUNCE_SEEN) || ''; } catch(e){}
+  const a = arcadeAnnounce;
+  if(a && String(a.id) !== seen){
+    document.getElementById('an-text').textContent = a.text;
+    document.getElementById('an-icon').textContent = a.tone === 'warn' ? '⚠️' : a.tone === 'party' ? '🎉' : '📣';
+    bar.className = 'announce ' + (a.tone || 'info');
+  } else bar.className = 'announce hidden';
+  const owner = !!(lastState && lastState.isOwner);
+  document.getElementById('maint-screen').classList.toggle('show', !!arcadeMaint && !owner);
+  document.getElementById('owner-maint').classList.toggle('hidden', !(arcadeMaint && owner));
+  if(arcadeMaint) document.getElementById('maint-text').textContent = arcadeMaint.text || '';
+}
+function dismissAnnounce(){
+  if(arcadeAnnounce) try { localStorage.setItem(ANNOUNCE_SEEN, String(arcadeAnnounce.id)); } catch(e){}
+  applyArcade(arcadeAnnounce, arcadeMaint);
+}
+async function pollArcade(){
+  if(!BACKEND_READY) return;
+  try {
+    const r = await fetch(API_BASE + '/api/health');
+    const h = await r.json();
+    // applyArcade reads lastState.isOwner, so the owner never gets the closed sign.
+    if(h && h.ok) applyArcade(h.announce, h.maintenance);
+  } catch(e){}
+}
+
 // An unban only shows once Google vouches for the account again.
 function checkBan(){ openAuth('login'); if(window.google && google.accounts && google.accounts.id) google.accounts.id.prompt(); }
 
@@ -1491,6 +1576,7 @@ async function refreshState(){
   try {
     lastState = await api('/api/me');
     clearBan();
+    applyArcade(lastState.announce, lastState.maintenance);
     applyGifts(lastState.gifts);
     // The server is the source of truth for your icon, so a pick made on your phone
     // shows up here too.
@@ -1986,6 +2072,7 @@ function initGoogleAuth(){
   document.body.classList.remove('locked');
   document.getElementById('auth-overlay').classList.add('hidden');
   try { const b = localStorage.getItem(BAN_KEY); if(b !== null) showBan(b); } catch(e){}
+  pollArcade(); setInterval(() => { if(!document.hidden) pollArcade(); }, 30000);
 
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem('glitchbox_user')||'null'); } catch(e){}

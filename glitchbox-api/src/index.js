@@ -122,6 +122,13 @@ export class Hub extends DurableObject {
       try { this.sql.exec("ALTER TABLE users ADD COLUMN ban_reason TEXT"); } catch (e) { /* already there */ }
       // Google tells us whether it vouches for the address; the owner pin insists on it.
       try { this.sql.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER"); } catch (e) { /* already there */ }
+      // Timed bans lift themselves; `playing` is what game page the player last pinged from.
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN ban_until INTEGER"); } catch (e) { /* already there */ }
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN playing TEXT"); } catch (e) { /* already there */ }
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN playing_at INTEGER"); } catch (e) { /* already there */ }
+      // Every owner action, newest first in the console's Log tab.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS admin_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER, action TEXT, target TEXT, detail TEXT)`);
       this.sql.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_code ON users(code)");
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
@@ -159,16 +166,43 @@ export class Hub extends DurableObject {
     if (!data.exp || data.exp < Date.now()) throw new HttpError(401, "session expired");
     // One check here covers every authenticated endpoint: a banned account can hold a
     // valid session token and still do nothing with it.
-    const u = this.userOf(data.sub);
-    if (u && u.banned) throw new HttpError(403, "banned:" + (u.ban_reason || ""));
+    const ban = this.activeBan(this.userOf(data.sub));
+    if (ban) throw new HttpError(403, ban);
     return data.sub;
   }
 
   userOf(sub) {
     return this.sql.exec(
-      "SELECT sub, email, name, picture, code, created, banned, ban_reason, email_verified FROM users WHERE sub = ?",
+      "SELECT sub, email, name, picture, code, created, banned, ban_reason, ban_until, email_verified FROM users WHERE sub = ?",
       sub).toArray()[0] || null;
   }
+
+  // The 403 message for a banned user, or null. Format "banned:<until>:<reason>",
+  // where <until> is empty for a permanent ban. An expired timed ban is lifted here.
+  activeBan(u) {
+    if (!u || !u.banned) return null;
+    if (u.ban_until && u.ban_until <= Date.now()) {
+      this.sql.exec("UPDATE users SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE sub = ?", u.sub);
+      return null;
+    }
+    return "banned:" + (u.ban_until || "") + ":" + (u.ban_reason || "");
+  }
+
+  log(action, targetSub, detail) {
+    const u = targetSub && targetSub !== "*" ? this.userOf(targetSub) : null;
+    const target = targetSub === "*" ? "everyone" : u ? u.name + " <" + u.email + ">" : (targetSub || "");
+    this.sql.exec("INSERT INTO admin_log (at, action, target, detail) VALUES (?, ?, ?, ?)",
+      Date.now(), action, target, String(detail || "").slice(0, 300));
+    this.sql.exec("DELETE FROM admin_log WHERE id <= (SELECT MAX(id) FROM admin_log) - 500");
+  }
+
+  // Arcade-wide switches, kept in `meta` as JSON. Both are public (see health()).
+  metaJson(k) { try { return JSON.parse(this.metaGet(k) || "null"); } catch { return null; } }
+  announcement() {
+    const a = this.metaJson("announce");
+    return a && a.text && (!a.until || a.until > Date.now()) ? a : null;
+  }
+  maintenance() { const m = this.metaJson("maintenance"); return m && m.on ? m : null; }
 
   // ── owner / admin ──
   // The owner is one account, recorded once in `meta` and never inferred from the
@@ -196,7 +230,10 @@ export class Hub extends DurableObject {
   // client via /api/me — having it here is what makes "did OWNER_EMAIL actually
   // reach the Durable Object?" answerable without an owner session, which is the
   // one question a locked-out owner cannot otherwise ask.
-  health() { return { ok: true, service: "glitchbox-api", ownerPinned: !!ownerPin(this.env) }; }
+  health() {
+    return { ok: true, service: "glitchbox-api", ownerPinned: !!ownerPin(this.env),
+             announce: this.announcement(), maintenance: this.maintenance() };
+  }
 
   // Diagnostic companion to isOwnerSub: same two conditions, reported separately.
   ownerCheck(sub) {
@@ -299,7 +336,8 @@ export class Hub extends DurableObject {
     const now = Date.now();
     const existing = this.userOf(info.sub);
     // Signing in again must not hand a banned account a fresh session.
-    if (existing && existing.banned) throw new HttpError(403, "banned:" + (existing.ban_reason || ""));
+    const ban = this.activeBan(existing);
+    if (ban) throw new HttpError(403, ban);
     // A chosen arcade icon outranks the Google photo — otherwise every sign-in would
     // quietly reset the player's avatar back to their Google account picture.
     const picture = isIcon(existing && existing.picture) ? existing.picture : (info.picture || "");
@@ -329,7 +367,7 @@ export class Hub extends DurableObject {
   async state(token) {
     const me = await this.verifySession(token);
     const now = Date.now();
-    this.sql.exec("UPDATE users SET last_seen = ? WHERE sub = ?", now, me);
+    this.sql.exec("UPDATE users SET last_seen = ?, playing = '', playing_at = ? WHERE sub = ?", now, now, me);
     if (!this.userOf(me).code) this.ensureCode(me);
     // Sweep stale invites so nobody is offered a room that has long since emptied.
     this.sql.exec("DELETE FROM invites WHERE created < ?", now - INVITE_TTL);
@@ -358,6 +396,7 @@ export class Hub extends DurableObject {
       "SELECT id, tokens, games, icons, note, created FROM gifts WHERE sub = ? ORDER BY id", me).toArray()
       .map(g => ({ ...g, games: JSON.parse(g.games || "[]"), icons: JSON.parse(g.icons || "[]") }));
     return { profile, friends, incoming, outgoing, blocked, invitesIn, invitesOut, gifts,
+             announce: this.announcement(), maintenance: this.maintenance(),
              // `ownerPinned` lets the console explain *why* a non-owner can't claim.
              // The address itself is never sent — knowing it isn't the client's business.
              isOwner: this.isOwnerSub(me), ownerPinned: !!ownerPin(this.env),
@@ -369,10 +408,16 @@ export class Hub extends DurableObject {
 
   // Cheap "am I still allowed in?" for game pages, which don't poll /api/me. A banned
   // session fails inside verifySession with 403 "banned:<reason>".
-  async ping(token) {
+  // Works signed out too, so a guest's game page still learns about maintenance.
+  async ping(token, game) {
+    const out = { ok: true, maintenance: this.maintenance(), announce: this.announcement() };
+    if (!token) return out;
     const me = await this.verifySession(token);
-    this.sql.exec("UPDATE users SET last_seen = ? WHERE sub = ?", Date.now(), me);
-    return { ok: true };
+    const g = /^[a-z0-9-]{1,60}\.html$/i.test(String(game || "")) ? String(game) : "";
+    const now = Date.now();
+    this.sql.exec("UPDATE users SET last_seen = ?, playing = ?, playing_at = ? WHERE sub = ?", now, g, now, me);
+    out.isOwner = this.isOwnerSub(me);
+    return out;
   }
 
   // The hub banked these gifts; drop them so no other device banks them again.
@@ -419,6 +464,13 @@ export class Hub extends DurableObject {
         "SELECT game, COUNT(*) AS players FROM saves GROUP BY game ORDER BY players DESC LIMIT 10").toArray(),
       recent: this.sql.exec(
         "SELECT sub, name, created FROM users ORDER BY created DESC LIMIT 8").toArray(),
+      // Who is on right now, and where: '' = the hub, else the game file they pinged from.
+      live: this.sql.exec(
+        `SELECT sub, name, picture, last_seen, CASE WHEN playing_at > ? THEN playing ELSE '' END AS playing
+         FROM users WHERE last_seen > ? ORDER BY last_seen DESC LIMIT 50`,
+        now - ONLINE_WINDOW, now - ONLINE_WINDOW).toArray(),
+      announce: this.announcement(),
+      maintenance: this.maintenance(),
     };
   }
 
@@ -430,7 +482,8 @@ export class Hub extends DurableObject {
       owner: this.ownerSub(),
       players: this.sql.exec(
         `SELECT u.sub, u.name, u.email, u.picture, u.code, u.created, u.last_seen,
-                u.banned, u.ban_reason,
+                u.banned, u.ban_reason, u.ban_until,
+                CASE WHEN u.playing_at > ? THEN u.playing ELSE NULL END AS playing,
                 (SELECT COUNT(*) FROM friends f WHERE f.a = u.sub)      AS friends,
                 (SELECT COUNT(*) FROM saves s   WHERE s.sub = u.sub)    AS saves,
                 (SELECT COUNT(*) FROM reports r WHERE r.reported = u.sub) AS reports,
@@ -438,7 +491,7 @@ export class Hub extends DurableObject {
          FROM users u
          WHERE ? = '%%' OR LOWER(u.name) LIKE ? OR LOWER(u.email) LIKE ? OR LOWER(u.code) LIKE ?
          ORDER BY u.last_seen DESC LIMIT ?`,
-        term, term, term, term, lim).toArray(),
+        Date.now() - ONLINE_WINDOW, term, term, term, term, lim).toArray(),
     };
   }
 
@@ -456,12 +509,15 @@ export class Hub extends DurableObject {
     };
   }
 
-  async adminBan(token, sub, banned, reason) {
+  async adminBan(token, sub, banned, reason, hours) {
     const me = await this.requireOwner(token);
     if (!sub || sub === me) throw new HttpError(400, "you can't ban yourself");
     if (!this.userOf(sub)) throw new HttpError(404, "no such player");
-    this.sql.exec("UPDATE users SET banned = ?, ban_reason = ? WHERE sub = ?",
-      banned ? 1 : null, banned ? String(reason || "").slice(0, 200) : null, sub);
+    const h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    const why = banned ? String(reason || "").slice(0, 200) : null;
+    this.sql.exec("UPDATE users SET banned = ?, ban_reason = ?, ban_until = ? WHERE sub = ?",
+      banned ? 1 : null, why, banned && h ? Date.now() + h * 3600000 : null, sub);
+    this.log(banned ? "ban" : "unban", sub, banned ? (h ? "for " + h + "h" : "permanent") + (why ? " — " + why : "") : "");
     // A ban should also stop anything already in flight.
     if (banned) {
       this.sql.exec("DELETE FROM invites WHERE from_sub = ? OR to_sub = ?", sub, sub);
@@ -474,6 +530,7 @@ export class Hub extends DurableObject {
     const me = await this.requireOwner(token);
     if (!sub || sub === me) throw new HttpError(400, "you can't delete yourself");
     if (!this.userOf(sub)) throw new HttpError(404, "no such player");
+    this.log("delete", sub, "");
     for (const q of [
       "DELETE FROM friends WHERE a = ? OR b = ?",
       "DELETE FROM requests WHERE from_sub = ? OR to_sub = ?",
@@ -496,20 +553,51 @@ export class Hub extends DurableObject {
     if (Math.abs(n) > 1000000) throw new HttpError(400, "keep it under a million tokens");
     const ids = (v, re) => [...new Set((Array.isArray(v) ? v : []).map(String).filter(x => re.test(x)))].slice(0, 200);
     const g = ids(games, /^[a-z0-9-]{1,60}\.html$/i), ic = ids(icons, /^[a-z0-9-]{1,24}$/);
-    if (!n && !g.length && !ic.length) throw new HttpError(400, "that gift is empty");
+    const msg = String(note || "").trim().slice(0, 120);
+    // A note on its own is a message from the owner.
+    if (!n && !g.length && !ic.length && !msg) throw new HttpError(400, "that gift is empty");
     let targets;
     if (sub === "*") targets = this.sql.exec("SELECT sub FROM users WHERE banned IS NULL OR banned = 0").toArray().map(r => r.sub);
     else if (sub && this.userOf(sub)) targets = [sub];
     else throw new HttpError(404, "no such player");
-    const now = Date.now(), gj = JSON.stringify(g), ij = JSON.stringify(ic), msg = String(note || "").slice(0, 120);
+    const now = Date.now(), gj = JSON.stringify(g), ij = JSON.stringify(ic);
     for (const t of targets)
       this.sql.exec("INSERT INTO gifts (sub, tokens, games, icons, note, created) VALUES (?, ?, ?, ?, ?, ?)",
         t, n, gj, ij, msg, now);
+    const what = [n ? n + " tokens" : "", g.length ? g.length + " games" : "", ic.length ? ic.length + " icons" : ""].filter(Boolean);
+    this.log(what.length ? "gift" : "message", sub, (what.join(", ") + (msg ? ' "' + msg + '"' : "")).trim());
     return { ok: true, players: targets.length };
+  }
+
+  // Banner across the top of every hub. Empty text takes it down.
+  async adminAnnounce(token, text, hours, tone) {
+    await this.requireOwner(token);
+    const t = String(text || "").trim().slice(0, 240);
+    const h = Math.max(0, Math.min(24 * 30, Number(hours) || 0));
+    const a = t ? { id: Date.now(), text: t, tone: ["info", "warn", "party"].includes(tone) ? tone : "info",
+                    until: h ? Date.now() + h * 3600000 : 0 } : null;
+    this.metaSet("announce", JSON.stringify(a));
+    this.log(t ? "announce" : "announce-off", "", t ? t + (h ? " (" + h + "h)" : "") : "");
+    return { ok: true, announce: a };
+  }
+
+  // Closes the arcade to everyone but the owner (hub overlay; game pages bounce).
+  async adminMaintenance(token, on, text) {
+    await this.requireOwner(token);
+    const m = on ? { on: true, text: String(text || "").trim().slice(0, 240), since: Date.now() } : null;
+    this.metaSet("maintenance", JSON.stringify(m));
+    this.log(on ? "maintenance-on" : "maintenance-off", "", m ? m.text : "");
+    return { ok: true, maintenance: m };
+  }
+
+  async adminLog(token) {
+    await this.requireOwner(token);
+    return { log: this.sql.exec("SELECT id, at, action, target, detail FROM admin_log ORDER BY id DESC LIMIT 200").toArray() };
   }
 
   async adminDismissReport(token, id) {
     await this.requireOwner(token);
+    this.log("dismiss-report", "", "#" + (Number(id) || 0));
     this.sql.exec("DELETE FROM reports WHERE id = ?", Number(id) || 0);
     return { ok: true };
   }
@@ -760,7 +848,7 @@ export default {
         return json(await stub.login(body.idToken), 200, origin);
       }
       if (path === "/api/me") return json(await stub.state(auth), 200, origin);
-      if (path === "/api/ping") return json(await stub.ping(auth), 200, origin);
+      if (path === "/api/ping") return json(await stub.ping(auth, url.searchParams.get("game")), 200, origin);
 
       // Game saves — the cloud half of glitchbox-save.js.
       if (path === "/api/load") {
@@ -775,12 +863,15 @@ export default {
           url.searchParams.get("limit")), 200, origin);
       }
       if (path === "/api/admin/reports") return json(await stub.adminReports(auth), 200, origin);
+      if (path === "/api/admin/log") return json(await stub.adminLog(auth), 200, origin);
 
       if (request.method === "POST") {
         const body = await request.json().catch(() => ({}));
         if (path === "/api/avatar")   return json(await stub.setAvatar(auth, body.picture), 200, origin);
         if (path === "/api/admin/claim")  return json(await stub.adminClaim(auth, body.code), 200, origin);
-        if (path === "/api/admin/ban")    return json(await stub.adminBan(auth, body.sub, body.banned, body.reason), 200, origin);
+        if (path === "/api/admin/ban")    return json(await stub.adminBan(auth, body.sub, body.banned, body.reason, body.hours), 200, origin);
+        if (path === "/api/admin/announce")    return json(await stub.adminAnnounce(auth, body.text, body.hours, body.tone), 200, origin);
+        if (path === "/api/admin/maintenance") return json(await stub.adminMaintenance(auth, body.on, body.text), 200, origin);
         if (path === "/api/admin/delete") return json(await stub.adminDeletePlayer(auth, body.sub), 200, origin);
         if (path === "/api/admin/gift")   return json(await stub.adminGift(auth, body.sub, body.tokens, body.games, body.icons, body.note), 200, origin);
         if (path === "/api/gifts/claim")  return json(await stub.claimGifts(auth, body.ids), 200, origin);
