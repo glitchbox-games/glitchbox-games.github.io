@@ -292,7 +292,7 @@ function seed(s){ R.seedState = (s>>>0) || 1; }
 
 function newPlayer(seat, name, opts){
   return { seat, name:name || ('Rider '+(seat+1)), ci:seat % COLORS.length,
-    bot: !!(opts && opts.bot), local: !!(opts && opts.local), keys: (opts && opts.keys) || null,
+    bot: !!(opts && opts.bot), local: !!(opts && opts.local), keys: (opts && opts.keys != null) ? opts.keys : null,   // 0 is the arrow keys, not "none"
     cid: (opts && opts.cid) || '', seen: 0,
     x:0, y:0, dir:0, want:null, alive:true, ghostT:0, boostT:0,
     score:0, trail:[], deadAt:0, cause:'' };
@@ -680,10 +680,14 @@ document.addEventListener('keydown', e => {
   const id = keyId(e);
   let used = false;
   if(MODE === 'local'){
-    for(const p of R.players){
-      if(!p.local || !p.keys) continue;
-      const d = dirFromMap(KEYMAPS[p.keys], id);
-      if(d >= 0){ steer(p, d); used = true; }
+    const humans = R.players.filter(p => p.local && p.keys != null);
+    for(const p of humans){
+      // A lone rider (solo, or a party of one) steers with arrows or WASD, like online.
+      const maps = humans.length === 1 ? [KEYMAPS[p.keys], KEYMAPS[p.keys === 1 ? 0 : 1]] : [KEYMAPS[p.keys]];
+      for(const m of maps){
+        const d = dirFromMap(m, id);
+        if(d >= 0){ steer(p, d); used = true; break; }
+      }
     }
   } else {
     const p = me();
@@ -1387,6 +1391,24 @@ function runSmoke(){
   ok('bots can never overfill the grid', botCount === MAX_PLAYERS - 4);
   seatsOn = [true,false,false,false]; botCount = 0; bumpBots(3);
   ok('a solo human can fill the rest with bots', botCount === 3);
+
+  // ── real key presses reach the right rider ──
+  const press = key => document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles:true }));
+  const phase0 = R.phase;
+  MODE = 'local'; R.phase = 'play';
+  R.players = [ newPlayer(0, 'You', { local:true, keys:0 }), newPlayer(1, 'Bot 1', { bot:true }) ];
+  R.players[0].dir = 0; R.players[0].want = null;
+  ok('solo keeps the arrow keys (keys 0 is not "no keys")', R.players[0].keys === 0);
+  press('ArrowUp');
+  ok('an arrow key steers the solo rider', R.players[0].want === 3);
+  R.players[0].want = null; press('s');
+  ok('a lone rider can steer with WASD too', R.players[0].want === 1);
+  R.players = [ newPlayer(0, 'Rider 1', { local:true, keys:0 }), newPlayer(1, 'Rider 2', { local:true, keys:1 }) ];
+  R.players.forEach(p => { p.dir = 0; p.want = null; });
+  press('ArrowDown'); press('w');
+  ok('in a party, arrows steer rider one only', R.players[0].want === 1);
+  ok('and WASD steers rider two only', R.players[1].want === 3);
+  R.phase = phase0;
 
   // ── the wire ──
   ok('room codes are four legible characters', /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{4}$/.test(code4()));
