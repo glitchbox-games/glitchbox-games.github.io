@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Scrawl',             file:'scrawl.html',                 emoji:'🖍️',color:['#0a0614','#1c1030'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One player draws, everyone races to guess the word — 2 to 8 players'},
   {name:'Gridlock',           file:'gridlock.html',               emoji:'\u26a1',color:['#04060e','#0a1a34'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Three to eight light cycles, one grid, nobody stops'},
   {name:'Patch Notes',        file:'patch-notes.html',            emoji:'🩹',color:['#07090c','#121922'],category:'strategy',   tags:['new','hot']},
   {name:'Seven Liars',         file:'seven-liars.html',            emoji:'🕶️',color:['#06080b','#101a24'],category:'puzzle',     tags:['new','hot']},
@@ -52,6 +53,39 @@ const _SC=(c)=>{for(let y=0;y<200;y+=4){c.fillStyle='rgba(0,0,0,0.1)';c.fillRect
 
 // ── THUMBNAIL DRAW FUNCTIONS ──
 const DRAW={
+
+'scrawl':(c)=>{
+  _GV(c,0,0,320,200,'#0a0614','#140c26','#1c1030');
+  // the sketch board, slightly tilted like a page on a desk
+  c.save();c.translate(112,104);c.rotate(-0.05);
+  c.fillStyle='rgba(0,0,0,0.35)';c.fillRect(-86,-66,180,136);
+  c.fillStyle='#fdfdfd';c.fillRect(-92,-72,180,136);
+  c.lineCap='round';c.lineJoin='round';
+  // a wobbly crayon house with a sun
+  c.strokeStyle='#222';c.lineWidth=4;c.beginPath();
+  c.moveTo(-52,40);c.lineTo(-50,-4);c.lineTo(24,-2);c.lineTo(22,41);c.closePath();c.stroke();
+  c.fillStyle='#ffd400';c.beginPath();c.moveTo(-60,-2);c.lineTo(-14,-42);c.lineTo(32,-1);c.closePath();c.fill();
+  c.strokeStyle='#ff2d55';c.stroke();
+  c.fillStyle='#2979ff';c.fillRect(-18,14,16,27);
+  c.strokeStyle='#ff8a00';c.lineWidth=3;c.beginPath();c.arc(58,-40,12,0,Math.PI*2);c.stroke();
+  for(let i=0;i<8;i++){const a=i*Math.PI/4;c.beginPath();c.moveTo(58+Math.cos(a)*17,-40+Math.sin(a)*17);c.lineTo(58+Math.cos(a)*23,-40+Math.sin(a)*23);c.stroke();}
+  c.restore();
+  // the word, still hidden
+  c.fillStyle='#ffe600';c.font='bold 13px monospace';c.fillText('_ _ _ _ _',74,26);
+  // guesses flying in
+  const bub=(x,y,w,t,col)=>{c.fillStyle='rgba(8,12,28,0.92)';c.fillRect(x,y,w,20);c.fillStyle=col;c.fillRect(x,y,3,20);
+    c.fillStyle='#dfe7ff';c.font='bold 11px sans-serif';c.fillText(t,x+8,y+14);};
+  bub(214,58,96,'boat?','#00f5ff');
+  bub(222,88,88,'castle','#b300ff');
+  bub(206,118,104,'is close!','#ffe600');
+  c.fillStyle='rgba(0,255,136,0.95)';c.fillRect(210,150,100,20);
+  c.fillStyle='#02150b';c.font='bold 11px sans-serif';c.fillText('Mo got it!',218,164);
+  // the crayon
+  c.save();c.translate(200,176);c.rotate(-0.7);
+  c.fillStyle='#ff0080';c.fillRect(0,-5,46,10);c.fillStyle='#ffd6e8';c.beginPath();c.moveTo(0,-5);c.lineTo(-12,0);c.lineTo(0,5);c.fill();
+  c.restore();
+  _SC(c);
+},
 
 'gridlock':(c)=>{
   _GV(c,0,0,320,200,'#04060e','#060c18','#0a1a34');

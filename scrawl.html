@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>SCRAWL — Draw It, Guess It</title>
+<script src="glitchbox-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --cyan:#00f5ff; --pink:#ff0080; --yellow:#ffe600; --green:#00ff88; --red:#ff3355;
+         --bg:#05060f; --bg2:#0a0e1d; --panel:#0b1022; --line:rgba(0,245,255,.16); --muted:#6a76a0; --text:#dfe7ff; }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; background:var(--bg); color:var(--text);
+    font-family:'Rajdhani',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  body{ background:radial-gradient(ellipse at 20% 0%,rgba(255,0,128,.10),transparent 55%),
+                   radial-gradient(ellipse at 90% 100%,rgba(0,245,255,.08),transparent 55%),var(--bg); overflow:hidden; }
+  .hidden{ display:none !important; }
+  button{ font:inherit; cursor:pointer; }
+  input,textarea,select{ font:inherit; }
+  .px{ font-family:'Press Start 2P',monospace; }
+
+  /* ── shared bits ── */
+  .btn{ display:block; width:100%; padding:12px 14px; margin-top:10px; border:1px solid rgba(0,245,255,.3);
+    background:rgba(0,245,255,.06); color:var(--text); font-weight:700; font-size:15px; letter-spacing:1px;
+    text-transform:uppercase; clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%); }
+  .btn:hover{ background:rgba(0,245,255,.14); }
+  .btn.pri{ background:var(--cyan); color:#021014; border-color:var(--cyan); }
+  .btn.pri:hover{ box-shadow:0 0 18px rgba(0,245,255,.5); }
+  .btn.pink{ border-color:rgba(255,0,128,.45); background:rgba(255,0,128,.08); }
+  .btn:disabled{ opacity:.4; cursor:default; }
+  .in{ width:100%; padding:11px 12px; background:#060a17; border:1px solid var(--line); color:var(--text);
+    font-size:15px; font-weight:600; outline:none; }
+  .in:focus{ border-color:var(--cyan); }
+  .lbl{ display:block; font-size:12px; font-weight:700; letter-spacing:1.5px; color:var(--muted);
+    text-transform:uppercase; margin:14px 0 6px; }
+  .note{ font-size:13px; color:var(--muted); line-height:1.5; margin-top:10px; }
+  .err{ color:var(--red); }
+
+  /* ── menu screens ── */
+  .screen{ position:fixed; inset:0; overflow-y:auto; display:flex; align-items:flex-start; justify-content:center; padding:28px 16px; z-index:10; }
+  .card{ width:100%; max-width:440px; margin:auto; background:rgba(9,13,28,.94); border:1px solid rgba(0,245,255,.18);
+    padding:26px 24px; box-shadow:0 0 50px rgba(0,245,255,.08),0 0 90px rgba(255,0,128,.06);
+    clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px)); }
+  .card.wide{ max-width:900px; }
+  h1{ font-family:'Press Start 2P',monospace; font-size:30px; text-align:center; letter-spacing:2px; line-height:1.3;
+    background:linear-gradient(90deg,var(--yellow),var(--pink),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tag{ text-align:center; color:var(--muted); font-weight:700; letter-spacing:2px; font-size:13px; margin:8px 0 18px; text-transform:uppercase; }
+  h2{ font-family:'Press Start 2P',monospace; font-size:14px; color:var(--pink); letter-spacing:1px; margin-bottom:14px; }
+  .avpick{ display:flex; align-items:center; justify-content:center; gap:12px; margin:6px 0 4px; }
+  .avpick .arrow{ width:34px; height:34px; border:1px solid var(--line); background:transparent; color:var(--cyan); font-size:16px; }
+  .avpick .arrow:hover{ background:rgba(0,245,255,.1); }
+  .row{ display:flex; gap:8px; }
+  .row > *{ flex:1; }
+  .howto li{ margin:0 0 8px 18px; line-height:1.5; font-size:15px; }
+
+  /* ── lobby ── */
+  .lobby-grid{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  .code-big{ font-family:'Press Start 2P',monospace; font-size:28px; color:var(--yellow); letter-spacing:6px; text-align:center;
+    padding:14px; border:1px dashed rgba(255,230,0,.35); margin-bottom:6px; user-select:all; }
+  .lrow{ display:flex; align-items:center; gap:10px; padding:7px 9px; background:rgba(255,255,255,.03); border-left:3px solid var(--cyan); margin-bottom:6px; }
+  .lrow .nm{ flex:1; font-weight:700; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .badge{ font-size:11px; font-weight:700; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
+  .kick{ border:1px solid rgba(255,51,85,.4); background:transparent; color:var(--red); font-size:11px; padding:3px 8px; font-weight:700; }
+  .set{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .set label{ font-weight:700; font-size:14px; }
+  .set select{ background:#060a17; color:var(--text); border:1px solid var(--line); padding:6px 8px; font-weight:700; }
+  .set select:disabled{ opacity:.6; }
+  textarea.in{ min-height:70px; resize:vertical; font-size:14px; }
+  .wi-row{ display:flex; align-items:center; gap:8px; padding:5px 0; }
+  .wi-dot{ width:8px; height:8px; border-radius:50%; background:#333a55; }
+  .wi-dot.on{ background:var(--green); box-shadow:0 0 6px var(--green); }
+  .wi-name{ flex:1; font-weight:600; }
+  .wi-btn{ border:1px solid var(--line); background:transparent; color:var(--cyan); padding:3px 10px; font-weight:700; font-size:12px; }
+  #lobby-chat-slot{ margin-top:14px; }
+  #lobby-chat-slot #chat{ height:220px; }
+
+  /* ── game ── */
+  #app{ position:fixed; inset:0; display:flex; flex-direction:column; }
+  #top{ display:flex; align-items:center; gap:14px; padding:8px 16px 8px 58px; border-bottom:1px solid var(--line);
+    background:rgba(6,9,20,.9); min-height:58px; }
+  #top .logo{ font-family:'Press Start 2P',monospace; font-size:13px; color:var(--yellow); }
+  #roundlbl{ font-weight:700; letter-spacing:1px; color:var(--muted); font-size:14px; white-space:nowrap; }
+  #clock{ position:relative; width:44px; height:44px; flex-shrink:0; }
+  #clock svg{ position:absolute; inset:0; }
+  #clock span{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Press Start 2P',monospace; font-size:11px; }
+  #clock.low span{ color:var(--red); }
+  #word{ flex:1; text-align:center; font-family:'Press Start 2P',monospace; font-size:clamp(13px,2.2vw,22px); letter-spacing:.35em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #word small{ font-family:'Rajdhani',sans-serif; font-size:13px; letter-spacing:1px; color:var(--muted); margin-left:6px; }
+  #word .hint{ display:block; font-family:'Rajdhani',sans-serif; font-size:11px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
+  #roomlbl{ font-size:12px; color:var(--muted); font-weight:700; letter-spacing:1px; white-space:nowrap; }
+  #main{ flex:1; min-height:0; display:grid; grid-template-columns:210px minmax(0,1fr) 280px; gap:12px; padding:12px; }
+  #players{ overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .pl{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--panel); border:1px solid rgba(255,255,255,.05); position:relative; }
+  .pl.guessed{ background:rgba(0,255,136,.12); border-color:rgba(0,255,136,.35); }
+  .pl.me .pn{ color:var(--cyan); }
+  .pl .rank{ font-family:'Press Start 2P',monospace; font-size:9px; color:var(--muted); width:22px; }
+  .pl .pinfo{ flex:1; min-width:0; }
+  .pl .pn{ font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pl .ps{ font-size:12px; color:var(--muted); font-weight:600; }
+  .pl .pen{ font-size:18px; }
+  .pl .gain{ position:absolute; right:6px; top:4px; font-weight:700; color:var(--green); font-size:13px; }
+  #stage{ display:flex; flex-direction:column; align-items:center; min-height:0; gap:8px; }
+  #board-wrap{ position:relative; width:100%; max-width:calc((100vh - 190px) * 4 / 3); aspect-ratio:4/3;
+    box-shadow:0 0 0 1px rgba(0,245,255,.25),0 0 30px rgba(0,245,255,.12); background:#fff; }
+  #board{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; background:#fff; }
+  #board.can{ cursor:crosshair; }
+  #overlay{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    background:rgba(5,6,15,.82); text-align:center; padding:20px; }
+  #overlay .big{ font-family:'Press Start 2P',monospace; font-size:clamp(14px,2.4vw,22px); color:var(--yellow); line-height:1.5; }
+  #overlay .sub{ font-size:17px; font-weight:600; }
+  .choices{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
+  .choice{ padding:12px 20px; font-size:18px; font-weight:700; letter-spacing:1px; border:1px solid var(--cyan); background:rgba(0,245,255,.1); color:var(--text); }
+  .choice:hover{ background:var(--cyan); color:#021014; }
+  .gains{ min-width:240px; max-width:360px; width:100%; }
+  .gains div{ display:flex; justify-content:space-between; font-size:16px; font-weight:700; padding:2px 0; }
+  .gains .z{ color:var(--muted); }
+  .gains .p{ color:var(--green); }
+  .podium{ display:flex; align-items:flex-end; gap:14px; margin:10px 0; }
+  .podium .col{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .podium .blk{ width:86px; display:flex; align-items:flex-start; justify-content:center; padding-top:8px;
+    font-family:'Press Start 2P',monospace; font-size:16px; color:#021014; }
+  .podium .nm{ font-weight:700; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #tools{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px; width:100%; }
+  #palette{ display:grid; grid-template-columns:repeat(12,22px); gap:3px; }
+  .sw{ width:22px; height:22px; border:1px solid rgba(255,255,255,.15); cursor:pointer; }
+  .sw.on{ outline:2px solid var(--yellow); outline-offset:1px; }
+  .tgrp{ display:flex; gap:4px; }
+  .tb{ width:40px; height:40px; border:1px solid var(--line); background:var(--panel); color:var(--text); font-size:18px;
+    display:flex; align-items:center; justify-content:center; }
+  .tb.on{ border-color:var(--yellow); box-shadow:0 0 10px rgba(255,230,0,.35); }
+  .tb:hover{ background:rgba(0,245,255,.1); }
+  .tb .dotz{ background:currentColor; border-radius:50%; }
+  #chat{ display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); min-height:0; height:100%; }
+  #log{ flex:1; overflow-y:auto; padding:8px; font-size:14px; line-height:1.35; min-height:0; }
+  #log div{ padding:3px 6px; word-wrap:break-word; }
+  #log div:nth-child(even){ background:rgba(255,255,255,.025); }
+  #log .k-ok{ color:var(--green); font-weight:700; }
+  #log .k-close{ color:var(--yellow); font-weight:700; }
+  #log .k-sys{ color:#7fa8ff; font-weight:600; }
+  #log .k-draw{ color:var(--cyan); font-weight:700; }
+  #log .k-bad{ color:var(--red); font-weight:600; }
+  #log .k-gc{ color:#8dffc6; }
+  #log b{ font-weight:700; }
+  #chatform{ border-top:1px solid var(--line); }
+  #msg{ width:100%; padding:11px 10px; background:#060a17; border:none; color:var(--text); font-size:15px; font-weight:600; outline:none; }
+  #msg:disabled{ opacity:.5; }
+  .toast{ position:fixed; left:50%; top:70px; transform:translateX(-50%); background:rgba(9,13,28,.96); border:1px solid var(--pink);
+    padding:10px 18px; font-weight:700; z-index:50; transition:opacity .3s; }
+
+  @media (max-width:900px){
+    body{ overflow:auto; }
+    #app{ position:static; min-height:100%; }
+    #main{ grid-template-columns:1fr; grid-template-rows:auto auto auto; }
+    #stage{ order:1; }
+    #players{ order:2; flex-direction:row; overflow-x:auto; }
+    .pl{ min-width:140px; }
+    #game-chat-slot{ order:3; }
+    #game-chat-slot #chat{ height:260px; }
+    #board-wrap{ max-width:100%; }
+    #top{ flex-wrap:wrap; padding-left:54px; }
+    #top .logo, #roomlbl{ display:none; }
+    .lobby-grid{ grid-template-columns:1fr; }
+    #palette{ grid-template-columns:repeat(12,20px); }
+    .sw{ width:20px; height:20px; }
+  }
+  #smokeout{ position:fixed; inset:0; z-index:999; background:#000; color:#0f0; font:12px/1.5 monospace; padding:12px; overflow:auto; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+
+<!-- ── HOME ── -->
+<div class="screen" id="screen-home">
+  <div class="card">
+    <h1>SCRAWL</h1>
+    <div class="tag">one draws · everyone guesses · 2-8 players</div>
+    <div class="avpick">
+      <button class="arrow" onclick="bumpAvatar(-1)" title="Previous look">◀</button>
+      <span id="av-preview"></span>
+      <button class="arrow" onclick="bumpAvatar(1)" title="Next look">▶</button>
+      <button class="arrow" onclick="randomAvatar()" title="Random">🎲</button>
+    </div>
+    <label class="lbl">Your name</label>
+    <input class="in" id="myname" maxlength="14" placeholder="Doodler" autocomplete="off"/>
+    <button class="btn pri" onclick="hostRoom()">Create a room</button>
+    <label class="lbl">Or join with a code</label>
+    <div class="row">
+      <input class="in" id="joincode" maxlength="4" placeholder="CODE" autocomplete="off" style="text-transform:uppercase;letter-spacing:4px"/>
+      <button class="btn" style="margin-top:0" onclick="joinRoom()">Join</button>
+    </div>
+    <div class="note" id="home-status"></div>
+    <button class="btn" onclick="startPractice()">Practice sketchpad</button>
+    <button class="btn pink" onclick="show('screen-howto')">How to play</button>
+  </div>
+</div>
+
+<!-- ── HOW TO ── -->
+<div class="screen hidden" id="screen-howto">
+  <div class="card">
+    <h2>HOW TO PLAY</h2>
+    <ul class="howto">
+      <li>Make a room and share the <b>4-letter code</b> (or invite friends from the lobby).</li>
+      <li>Each turn one player picks one of three words and <b>draws it</b>. No letters or numbers allowed!</li>
+      <li>Everyone else types guesses in the chat. The faster you guess, the more points you get.</li>
+      <li>Letters get revealed as hints while the clock runs down. Almost there? You'll see <b>"is close!"</b>.</li>
+      <li>Once you've guessed it, your messages only go to others who guessed it too — no spoilers.</li>
+      <li>The drawer scores for every player who gets it. Most points after the last round wins.</li>
+    </ul>
+    <button class="btn pri" onclick="show('screen-home')">Got it</button>
+  </div>
+</div>
+
+<!-- ── LOBBY ── -->
+<div class="screen hidden" id="screen-lobby">
+  <div class="card wide">
+    <div class="lobby-grid">
+      <div>
+        <h2>ROOM CODE</h2>
+        <div class="code-big" id="lobby-code">····</div>
+        <div class="row">
+          <button class="btn" style="margin-top:4px" onclick="copyInvite()" id="copy-btn">Copy invite link</button>
+        </div>
+        <label class="lbl" id="lobby-count">Players</label>
+        <div id="lobby-list"></div>
+        <div id="lobby-invite" class="hidden">
+          <label class="lbl">Invite a friend</label>
+          <div id="lobby-friends"></div>
+        </div>
+      </div>
+      <div>
+        <h2>SETTINGS</h2>
+        <div class="set"><label for="set-rounds">Rounds</label>
+          <select id="set-rounds"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>8</option></select></div>
+        <div class="set"><label for="set-time">Draw time</label>
+          <select id="set-time"><option value="40">40s</option><option value="60">60s</option><option value="80" selected>80s</option><option value="100">100s</option><option value="120">120s</option><option value="150">150s</option></select></div>
+        <div class="set"><label for="set-choices">Word choices</label>
+          <select id="set-choices"><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
+        <div class="set"><label for="set-hints">Letter hints</label>
+          <select id="set-hints"><option value="1" selected>On</option><option value="0">Off</option></select></div>
+        <label class="lbl" for="set-custom">Custom words (comma separated)</label>
+        <textarea class="in" id="set-custom" maxlength="4000" placeholder="pizza, teacher, the school bus, …"></textarea>
+        <div class="set" style="margin-top:8px"><label for="set-only">Use only custom words</label>
+          <select id="set-only"><option value="0" selected>No</option><option value="1">Yes (needs 10+)</option></select></div>
+        <button class="btn pri" id="lobby-start" onclick="hostStart()">Start</button>
+        <div class="note" id="lobby-wait">Waiting for the host to start…</div>
+        <div id="lobby-chat-slot"></div>
+      </div>
+    </div>
+    <button class="btn" onclick="leaveRoom()">Leave room</button>
+  </div>
+</div>
+
+<!-- ── GAME ── -->
+<div id="app" class="hidden">
+  <div id="top">
+    <span class="logo">SCRAWL</span>
+    <span id="roundlbl">Round 1 of 3</span>
+    <div id="clock"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="4"/>
+      <circle id="clock-arc" cx="22" cy="22" r="19" fill="none" stroke="#00f5ff" stroke-width="4" stroke-linecap="round"
+        stroke-dasharray="119.4" stroke-dashoffset="0" transform="rotate(-90 22 22)"/></svg><span id="clock-n">80</span></div>
+    <div id="word"></div>
+    <span id="roomlbl"></span>
+  </div>
+  <div id="main">
+    <div id="players"></div>
+    <div id="stage">
+      <div id="board-wrap">
+        <canvas id="board" width="800" height="600"></canvas>
+        <div id="overlay" class="hidden"></div>
+      </div>
+      <div id="tools" class="hidden">
+        <div id="palette"></div>
+        <div class="tgrp" id="sizes"></div>
+        <div class="tgrp">
+          <button class="tb on" id="tool-brush" title="Brush (B)" onclick="setTool('brush')">✏️</button>
+          <button class="tb" id="tool-fill" title="Fill (F)" onclick="setTool('fill')">🪣</button>
+          <button class="tb" id="tool-eraser" title="Eraser (E)" onclick="setTool('eraser')">🧽</button>
+        </div>
+        <div class="tgrp">
+          <button class="tb" title="Undo (Ctrl+Z)" onclick="drawUndo()">↶</button>
+          <button class="tb" title="Clear" onclick="drawClear()">🗑</button>
+        </div>
+      </div>
+    </div>
+    <div id="game-chat-slot" style="min-height:0">
+      <div id="chat">
+        <div id="log"></div>
+        <form id="chatform" autocomplete="off"><input id="msg" maxlength="100" placeholder="Type your guess here…"/></form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const SMOKE = location.hash.indexOf('smoke') !== -1;
+const DEBUG = location.hash.indexOf('debug') !== -1;
+const W = 800, H = 600;
+const MAX_PLAYERS = 8;
+const PICK_MS = 15000, REVEAL_MS = 6000, OVER_MS = 14000, HOST_TIMEOUT = 12000, GUEST_TIMEOUT = 10000;
+const now = () => Date.now();
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+// ══════════════ WORDS ══════════════
+// Everyday things a person can actually sketch in a minute or two.
+const WORDS = (
+ 'apple,banana,pizza,burger,hot dog,ice cream,cake,cookie,donut,sandwich,carrot,broccoli,cheese,egg,bread,popcorn,' +
+ 'watermelon,pineapple,cherry,grapes,lemon,strawberry,taco,sushi,pancake,spaghetti,coffee,milk,soup,cupcake,' +
+ 'cat,dog,fish,bird,horse,cow,pig,sheep,chicken,duck,rabbit,mouse,snake,frog,turtle,lion,tiger,elephant,giraffe,' +
+ 'monkey,zebra,bear,panda,koala,kangaroo,penguin,owl,shark,whale,dolphin,octopus,crab,snail,spider,bee,butterfly,' +
+ 'ant,ladybug,bat,camel,crocodile,dinosaur,unicorn,dragon,fox,wolf,deer,squirrel,hedgehog,flamingo,peacock,jellyfish,' +
+ 'house,castle,tent,igloo,bridge,tower,lighthouse,windmill,pyramid,church,school,hospital,skyscraper,barn,fence,' +
+ 'door,window,stairs,chimney,roof,garage,elevator,swimming pool,playground,volcano,island,mountain,river,waterfall,' +
+ 'beach,desert,forest,cave,rainbow,cloud,sun,moon,star,lightning,snowman,tornado,planet,comet,rocket,ufo,astronaut,' +
+ 'car,bus,train,airplane,helicopter,boat,ship,submarine,bicycle,motorcycle,skateboard,tractor,truck,ambulance,' +
+ 'fire truck,police car,taxi,scooter,hot air balloon,parachute,anchor,traffic light,road,map,compass,' +
+ 'chair,table,bed,sofa,lamp,clock,mirror,toilet,bathtub,shower,sink,fridge,oven,microwave,toaster,kettle,fork,' +
+ 'spoon,knife,plate,cup,bottle,basket,bucket,broom,candle,key,lock,box,bag,backpack,umbrella,glasses,hat,crown,' +
+ 'shoe,sock,shirt,dress,scarf,glove,belt,tie,ring,necklace,watch,wallet,phone,computer,keyboard,television,camera,' +
+ 'headphones,microphone,guitar,piano,drum,violin,trumpet,robot,battery,light bulb,magnet,scissors,pencil,pen,book,' +
+ 'paintbrush,ruler,calculator,envelope,newspaper,trophy,medal,gift,balloon,kite,ball,football,basketball,' +
+ 'tennis,baseball bat,soccer goal,dice,puzzle,teddy bear,doll,yo-yo,swing,slide,sandcastle,treasure chest,pirate,' +
+ 'ghost,witch,wizard,vampire,zombie,alien,knight,king,queen,princess,ninja,clown,chef,doctor,firefighter,' +
+ 'farmer,cowboy,mermaid,superhero,skeleton,angel,devil,baby,grandma,sword,shield,bow and arrow,cannon,' +
+ 'tree,flower,rose,sunflower,cactus,mushroom,leaf,palm tree,grass,seed,pumpkin,corn,acorn,' +
+ 'heart,eye,nose,ear,mouth,hand,foot,tooth,brain,bone,beard,mustache,smile,tear,sneeze,' +
+ 'fire,water,ice,snow,rain,wind,smoke,bubble,shadow,footprint,fireworks,' +
+ 'sleeping,running,swimming,dancing,jumping,fishing,cooking,painting,reading,singing,crying,laughing,' +
+ 'skiing,surfing,climbing,juggling,yawning,snoring,thinking,waving,flying,' +
+ 'birthday,wedding,christmas tree,halloween,graduation,vacation,camping,picnic,' +
+ 'spider web,bird nest,beehive,fish bowl,dog house,flag,globe,telescope,microscope,magnifying glass,hourglass,' +
+ 'tooth brush,hammer,saw,ladder,wheel,rope,chain,nail,screw,paint,toothpaste,soap,sponge,pillow,blanket'
+).split(',').map(s => s.trim()).filter(Boolean);
+
+// ══════════════ TEXT HELPERS ══════════════
+const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'')
+  .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+function editDistance(a, b){
+  const m = a.length, n = b.length;
+  if(!m) return n; if(!n) return m;
+  let prev = Array.from({length:n+1}, (_,i) => i), cur = new Array(n+1);
+  for(let i=1;i<=m;i++){
+    cur[0] = i;
+    for(let j=1;j<=n;j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1]?0:1));
+    [prev, cur] = [cur, prev];
+  }
+  return prev[n];
+}
+// "Close" = one slip for short words, two for long ones — never the exact word.
+function isClose(guess, word){
+  const g = norm(guess), w = norm(word);
+  if(!g || g === w || w.length < 4) return false;
+  return editDistance(g, w) <= (w.length >= 8 ? 2 : 1);
+}
+// '_' for every letter still hidden; spaces and punctuation always show.
+function maskOf(word, shown){
+  return word.split('').map((ch,i) => /[a-z0-9]/i.test(ch) ? (shown && shown.has(i) ? ch : '_') : ch).join('');
+}
+function letterIdx(word){ const out = []; word.split('').forEach((c,i) => { if(/[a-z0-9]/i.test(c)) out.push(i); }); return out; }
+function lengthsOf(word){ return word.split(/[\s]+/).map(w => w.replace(/[^a-z0-9]/gi,'').length).filter(Boolean).join(' '); }
+// How many letters are revealed by now: none in the first 30% of the turn,
+// then evenly through to 90%, never the whole word.
+function hintsDue(word, frac){
+  const L = letterIdx(word).length;
+  const max = Math.max(0, Math.min(L - 1, Math.floor(L * 0.45)));
+  if(!max || frac < 0.3) return 0;
+  return Math.min(max, Math.floor((frac - 0.3) / 0.6 * max) + 1);
+}
+// Points for a correct guess: faster is worth more; the first guesser gets a bonus.
+function guessPoints(leftFrac, first){ return Math.max(40, Math.round(60 + 340 * Math.max(0, Math.min(1, leftFrac)))) + (first ? 40 : 0); }
+// Light obfuscation so the word isn't sitting in plain text in every packet.
+const enc = s => btoa(unescape(encodeURIComponent(s))).split('').reverse().join('');
+const dec = s => { try { return decodeURIComponent(escape(atob(String(s).split('').reverse().join('')))); } catch(e){ return ''; } };
+function parseCustom(txt){
+  const seen = new Set(), out = [];
+  String(txt || '').split(/[,\n]/).forEach(w => {
+    const t = w.trim().replace(/\s+/g,' ').slice(0, 32);
+    if(t && /[a-z0-9]/i.test(t) && !seen.has(t.toLowerCase())){ seen.add(t.toLowerCase()); out.push(t); }
+  });
+  return out.slice(0, 400);
+}
+
+// ══════════════ AVATARS ══════════════
+// A round blob with a face: hue, eyes, mouth. Pure SVG, so it scales anywhere.
+const EYES = 5, MOUTHS = 5;
+function avatarSVG(av, size){
+  av = av || [200,0,0];
+  const [h, e, m] = av, s = size || 40;
+  const eye = [
+    '<circle cx="15" cy="17" r="3.2" fill="#111"/><circle cx="25" cy="17" r="3.2" fill="#111"/>',
+    '<circle cx="15" cy="17" r="4.5" fill="#fff"/><circle cx="25" cy="17" r="4.5" fill="#fff"/><circle cx="16" cy="18" r="2" fill="#111"/><circle cx="26" cy="18" r="2" fill="#111"/>',
+    '<path d="M11 17q4-4 8 0M21 17q4-4 8 0" stroke="#111" stroke-width="2.2" fill="none" stroke-linecap="round"/>',
+    '<rect x="9" y="14" width="22" height="6" rx="2" fill="#111"/><rect x="11" y="15" width="7" height="2" fill="#5ff"/>',
+    '<path d="M11 15l7 4M29 15l-7 4" stroke="#111" stroke-width="2.4" stroke-linecap="round"/><circle cx="15" cy="20" r="2" fill="#111"/><circle cx="25" cy="20" r="2" fill="#111"/>',
+  ][e % EYES];
+  const mouth = [
+    '<path d="M14 26q6 6 12 0" stroke="#111" stroke-width="2.2" fill="none" stroke-linecap="round"/>',
+    '<ellipse cx="20" cy="28" rx="4" ry="3.2" fill="#111"/>',
+    '<path d="M14 27h12" stroke="#111" stroke-width="2.2" stroke-linecap="round"/>',
+    '<path d="M13 25q7 9 14 0z" fill="#111"/><path d="M16 26q4 3 8 0" fill="#f55"/>',
+    '<path d="M14 28q3-3 6 0t6 0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>',
+  ][m % MOUTHS];
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 40 40" style="flex-shrink:0;display:block">' +
+    '<circle cx="20" cy="21" r="17" fill="hsl('+h+',85%,60%)" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>' +
+    '<ellipse cx="14" cy="11" rx="5" ry="3" fill="rgba(255,255,255,.35)"/>' + eye + mouth + '</svg>';
+}
+let myAv = [ (Math.random()*360)|0, (Math.random()*EYES)|0, (Math.random()*MOUTHS)|0 ];
+try { const a = JSON.parse(localStorage.getItem('scrawl.av') || 'null'); if(Array.isArray(a) && a.length === 3) myAv = a.map(n => n|0); } catch(e){}
+function paintAvatar(){
+  $('av-preview').innerHTML = avatarSVG(myAv, 64);
+  try { localStorage.setItem('scrawl.av', JSON.stringify(myAv)); } catch(e){}
+}
+function bumpAvatar(d){
+  // walk through faces, shifting the colour each time you wrap the eyes
+  const k = ((myAv[1] * MOUTHS + myAv[2]) + d + EYES * MOUTHS) % (EYES * MOUTHS);
+  myAv = [ (myAv[0] + (d > 0 ? 37 : 323)) % 360, Math.floor(k / MOUTHS), k % MOUTHS ];
+  paintAvatar();
+}
+function randomAvatar(){ myAv = [ (Math.random()*360)|0, (Math.random()*EYES)|0, (Math.random()*MOUTHS)|0 ]; paintAvatar(); }
+
+// ══════════════ SOUND ══════════════
+const Sound = (() => {
+  let ac = null;
+  const ctx = () => { if(!ac){ try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} } return ac; };
+  function beep(f, d, type, vol, delay){
+    const a = ctx(); if(!a || SMOKE) return;
+    const t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(vol || 0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+  }
+  return {
+    wake(){ const a = ctx(); if(a && a.state === 'suspended') a.resume(); },
+    correct(){ beep(660,.12,'triangle',.1); beep(990,.2,'triangle',.1,.1); },
+    other(){ beep(820,.1,'sine',.05); },
+    close(){ beep(440,.12,'square',.03); },
+    tick(){ beep(1200,.04,'square',.025); },
+    turn(){ beep(520,.1,'triangle',.07); beep(780,.14,'triangle',.07,.1); },
+    reveal(){ beep(392,.18,'sawtooth',.04); beep(330,.25,'sawtooth',.04,.16); },
+    win(){ [523,659,784,1046].forEach((f,i) => beep(f,.22,'triangle',.08,i*.12)); },
+    join(){ beep(700,.06,'sine',.05); },
+  };
+})();
+
+// ══════════════ CANVAS ══════════════
+// Every client replays the same ops on an 800×600 bitmap, so the pictures match
+// pixel for pixel. Ops:  ['s',colour,size,x,y] start a stroke · ['l',x,y] line on ·
+// ['f',colour,x,y] bucket fill · ['c'] clear · ['u'] undo the last stroke/fill/clear.
+const PALETTE = ['#ffffff','#c9ccd6','#7b8093','#3a3f52','#000000','#ff2d55','#9e0b2c','#ff8a00','#8f4a00','#ffe600',
+                 '#b39b00','#39ff14','#1f8a00','#00c28a','#00f5ff','#00709e','#2979ff','#1a2a8f','#b300ff','#5b0082',
+                 '#ff4fd8','#8d5524','#ffc6a5','#f2d7b0'];
+const SIZES = [4, 10, 20, 38];
+const WHITE = 0, MAX_OPS = 80000;
+const cv = $('board'), cx = cv.getContext('2d', { willReadFrequently:true });
+cv.width = W; cv.height = H;
+let ops = [], pen = null;
+function clearBoard(){ cx.fillStyle = '#fff'; cx.fillRect(0,0,W,H); }
+function hexRgb(h){ const n = parseInt(h.slice(1),16); return [n>>16 & 255, n>>8 & 255, n & 255]; }
+function applyOp(o){
+  switch(o[0]){
+    case 's': {
+      pen = { c:PALETTE[o[1]] || '#000', s:o[2], x:o[3], y:o[4] };
+      cx.fillStyle = pen.c; cx.beginPath(); cx.arc(pen.x, pen.y, pen.s/2, 0, Math.PI*2); cx.fill();
+      break;
+    }
+    case 'l': {
+      if(!pen) return;
+      cx.strokeStyle = pen.c; cx.lineWidth = pen.s; cx.lineCap = 'round'; cx.lineJoin = 'round';
+      cx.beginPath(); cx.moveTo(pen.x, pen.y); cx.lineTo(o[1], o[2]); cx.stroke();
+      pen.x = o[1]; pen.y = o[2];
+      break;
+    }
+    case 'f': pen = null; flood(o[2], o[3], hexRgb(PALETTE[o[1]] || '#000')); break;
+    case 'c': pen = null; clearBoard(); break;
+  }
+}
+function redraw(){ pen = null; clearBoard(); for(const o of ops) applyOp(o); pen = null; }
+// Undo drops everything back to the start of the last stroke / fill / clear.
+function undoLast(){
+  for(let i = ops.length - 1; i >= 0; i--){
+    if(ops[i][0] === 's' || ops[i][0] === 'f' || ops[i][0] === 'c'){ ops.length = i; redraw(); return true; }
+  }
+  return false;
+}
+function addOps(list){
+  for(const o of list){
+    if(!Array.isArray(o)) continue;
+    if(o[0] === 'u'){ undoLast(); continue; }
+    if(ops.length >= MAX_OPS) continue;
+    ops.push(o); applyOp(o);
+  }
+}
+function resetBoard(){ ops = []; pen = null; clearBoard(); }
+// Scanline fill with a little tolerance, so anti-aliased edges don't leave a halo.
+function flood(x, y, rgb){
+  x = x|0; y = y|0;
+  if(x < 0 || y < 0 || x >= W || y >= H) return;
+  const img = cx.getImageData(0,0,W,H), d = img.data;
+  const i0 = (y*W + x) * 4, tr = d[i0], tg = d[i0+1], tb = d[i0+2];
+  if(Math.abs(tr-rgb[0]) < 4 && Math.abs(tg-rgb[1]) < 4 && Math.abs(tb-rgb[2]) < 4) return;
+  const TOL = 60;
+  const seen = new Uint8Array(W*H);
+  const ok = p => { const k = p*4; return !seen[p] && Math.abs(d[k]-tr) <= TOL && Math.abs(d[k+1]-tg) <= TOL && Math.abs(d[k+2]-tb) <= TOL; };
+  const stack = [x, y];
+  while(stack.length){
+    const py = stack.pop(); let px = stack.pop();
+    let p = py*W + px;
+    while(px >= 0 && ok(p)){ px--; p--; }
+    px++; p++;
+    let up = false, down = false;
+    while(px < W && ok(p)){
+      seen[p] = 1; const k = p*4; d[k] = rgb[0]; d[k+1] = rgb[1]; d[k+2] = rgb[2]; d[k+3] = 255;
+      if(py > 0){ if(ok(p - W)){ if(!up){ stack.push(px, py-1); up = true; } } else up = false; }
+      if(py < H-1){ if(ok(p + W)){ if(!down){ stack.push(px, py+1); down = true; } } else down = false; }
+      px++; p++;
+    }
+  }
+  cx.putImageData(img, 0, 0);
+}
+clearBoard();
+
+// ── the drawer's input ──
+let tool = 'brush', colorIdx = 4, sizeIdx = 1, drawing = false, lastPt = null, outQ = [];
+function canDraw(){ return MODE === 'solo' || (G.phase === 'draw' && G.drawer === MY_CID); }
+function toBoard(e){
+  const r = cv.getBoundingClientRect();
+  return [ Math.round((e.clientX - r.left) / r.width * W), Math.round((e.clientY - r.top) / r.height * H) ];
+}
+function emit(list){
+  addOps(list);
+  if(MODE !== 'solo') for(const o of list) outQ.push(o);
+}
+cv.addEventListener('pointerdown', e => {
+  if(!canDraw()) return;
+  e.preventDefault(); Sound.wake();
+  const [x, y] = toBoard(e);
+  if(tool === 'fill'){ emit([['f', colorIdx, x, y]]); return; }
+  drawing = true; lastPt = [x, y];
+  try { cv.setPointerCapture(e.pointerId); } catch(err){}
+  emit([['s', tool === 'eraser' ? WHITE : colorIdx, SIZES[sizeIdx] * (tool === 'eraser' ? 1.6 : 1), x, y]]);
+});
+cv.addEventListener('pointermove', e => {
+  if(!drawing || !canDraw()) return;
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  const out = [];
+  for(const ev of (evs.length ? evs : [e])){
+    const [x, y] = toBoard(ev);
+    if(Math.abs(x - lastPt[0]) + Math.abs(y - lastPt[1]) < 2) continue;
+    out.push(['l', x, y]); lastPt = [x, y];
+  }
+  if(out.length) emit(out);
+});
+const stopDraw = () => { drawing = false; lastPt = null; };
+cv.addEventListener('pointerup', stopDraw);
+cv.addEventListener('pointercancel', stopDraw);
+cv.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse' && !(e.buttons & 1)) stopDraw(); });
+// Ship the queue in small batches — a stroke becomes a few packets a second.
+setInterval(() => {
+  if(!outQ.length) return;
+  const batch = outQ; outQ = [];
+  net.send({ t:'d', cid:MY_CID, ops:batch });
+}, 45);
+function drawUndo(){ if(canDraw()) emit([['u']]); }
+function drawClear(){ if(canDraw()) emit([['c']]); }
+function setTool(t){ tool = t; paintTools(); }
+function paintTools(){
+  ['brush','fill','eraser'].forEach(t => $('tool-'+t).classList.toggle('on', tool === t));
+  $('palette').querySelectorAll('.sw').forEach((s,i) => s.classList.toggle('on', i === colorIdx));
+  $('sizes').querySelectorAll('.tb').forEach((s,i) => s.classList.toggle('on', i === sizeIdx));
+}
+function buildTools(){
+  $('palette').innerHTML = PALETTE.map((c,i) => '<div class="sw" style="background:'+c+'" data-i="'+i+'" title="'+c+'"></div>').join('');
+  $('palette').onclick = e => { const s = e.target.closest('.sw'); if(!s) return; colorIdx = +s.dataset.i; if(tool === 'eraser') tool = 'brush'; paintTools(); };
+  $('sizes').innerHTML = SIZES.map((s,i) => { const d = Math.max(4, Math.min(26, s * .7));
+    return '<button class="tb" data-i="'+i+'" title="Size '+(i+1)+'"><span class="dotz" style="width:'+d+'px;height:'+d+'px"></span></button>'; }).join('');
+  $('sizes').onclick = e => { const b = e.target.closest('.tb'); if(!b) return; sizeIdx = +b.dataset.i; paintTools(); };
+  paintTools();
+}
+document.addEventListener('keydown', e => {
+  if(!canDraw() || e.target === $('msg') || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); drawUndo(); return; }
+  const k = e.key.toLowerCase();
+  if(k === 'b') setTool('brush'); else if(k === 'f') setTool('fill'); else if(k === 'e') setTool('eraser');
+  else if(k >= '1' && k <= '4'){ sizeIdx = +k - 1; paintTools(); }
+});
+
+// ══════════════ NET ══════════════
+const CODE_A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function code4(){ let s = ''; const r = new Uint8Array(4); crypto.getRandomValues(r); for(const b of r) s += CODE_A[b % CODE_A.length]; return s; }
+const MY_CID = (() => { let s = ''; const r = new Uint8Array(6); crypto.getRandomValues(r); for(const b of r) s += CODE_A[b % CODE_A.length]; return s; })();
+function wsURL(room, role){
+  const base = window.GLITCHBOX_WS && !/PLACEHOLDER/i.test(window.GLITCHBOX_WS)
+    ? window.GLITCHBOX_WS : (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws';
+  return base + '?room=' + encodeURIComponent(room) + '&role=' + role;
+}
+let MODE = 'off';   // off | host | guest | solo
+const net = {
+  ws:null, code:'', online:false,
+  connect(room, role, onOpen){
+    this.close(); this.code = room; this.online = true;
+    homeStatus('Connecting…');
+    let ws;
+    try { ws = new WebSocket(wsURL(room, role)); }
+    catch(e){ homeStatus('Couldn’t reach the game server.', true); this.online = false; return; }
+    this.ws = ws;
+    ws.onopen = () => onOpen && onOpen();
+    ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch(e){ return; } handleNet(m); };
+    ws.onerror = () => homeStatus('Couldn’t reach the game server. Check your connection.', true);
+    ws.onclose = () => { if(!this.online) return; this.online = false; dropToHome('Lost the connection to the game server.'); };
+  },
+  send(o){ if(this.online && this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); },
+  close(){ this.online = false; if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; } },
+};
+
+// ══════════════ SHARED STATE ══════════════
+// G is what everyone sees (the host broadcasts it). HS is the host's secrets.
+const G = { phase:'off', players:[], round:0, rounds:3, drawer:'', mask:'', lens:'', deadline:0, total:80, turn:0,
+            settings:{ rounds:3, time:80, choices:3, hints:1, custom:'', only:0 }, host:'' };
+const HS = { word:'', choices:[], order:[], turnStart:0, pickUntil:0, revealUntil:0, overUntil:0, shown:new Set(),
+             seen:{}, used:new Set(), firstDone:false, drawn:new Set() };
+let myWord = '', myChoices = [], lastHostMsg = 0, lastTurnSeen = -1;
+const P = cid => G.players.find(p => p.cid === cid);
+const meP = () => P(MY_CID);
+function myName(){ return (($('myname').value || '').trim().slice(0,14)) || 'Doodler'; }
+
+// ── host: the only simulation ──
+function packState(){
+  return { t:'st', ph:G.phase, pl:G.players.map(p => [p.cid, p.name, p.av, p.score, p.guessed ? 1 : 0, p.gain|0]),
+           r:G.round, dr:G.drawer, mk:G.mask, ln:G.lens, left:Math.max(0, G.deadline - now()), tot:G.total,
+           tn:G.turn, set:G.settings, h:G.host };
+}
+// Host output: goes out on the wire AND through the host's own client code, so
+// the host sees exactly what everyone else sees.
+function hostOut(o){ net.send(o); clientHandle(o); }
+function pushState(){ hostOut(packState()); }
+function sysChat(text, k, to){ hostOut({ t:'ch', k:k || 'sys', m:text, to:to || undefined }); }
+
+function hostAddPlayer(cid, name, av){
+  HS.seen[cid] = now();
+  const p = P(cid);
+  if(p){ p.name = String(name || p.name).slice(0,14); p.av = safeAv(av) || p.av; pushState(); return; }
+  if(G.players.length >= MAX_PLAYERS){ net.send({ t:'full', to:cid }); return; }
+  G.players.push({ cid, name:String(name || 'Doodler').slice(0,14), av:safeAv(av) || [200,0,0], score:0, guessed:false, gain:0 });
+  sysChat(String(name || 'Someone').slice(0,14) + ' joined the room.');
+  pushState();
+  // A mid-turn arrival needs the picture so far.
+  if(ops.length) net.send({ t:'sync', to:cid, ops:ops.slice() });
+}
+function safeAv(av){ return Array.isArray(av) && av.length === 3 ? av.map(n => Math.abs(n|0) % 360) : null; }
+function hostRemove(cid, why){
+  const p = P(cid);
+  if(!p || cid === MY_CID) return;
+  G.players = G.players.filter(x => x.cid !== cid);
+  HS.order = HS.order.filter(c => c !== cid);
+  delete HS.seen[cid];
+  sysChat(p.name + (why === 'kick' ? ' was kicked.' : ' left the room.'), 'bad');
+  if(G.phase !== 'lobby' && G.phase !== 'over' && G.players.length < 2){
+    sysChat('Not enough players — back to the lobby.', 'bad');
+    toLobby();
+    return;
+  }
+  if(cid === G.drawer && (G.phase === 'choose' || G.phase === 'draw')) endTurn('left');
+  else if(G.phase === 'draw' && allGuessed()) endTurn('all');
+  else pushState();
+}
+function hostSettings(s){
+  const n = (v, lo, hi, d) => { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); };
+  G.settings = { rounds:n(s.rounds,1,10,3), time:n(s.time,20,240,80), choices:n(s.choices,1,5,3), hints:s.hints ? 1 : 0,
+                 custom:String(s.custom || '').slice(0,4000), only:s.only ? 1 : 0 };
+  pushState();
+}
+function wordPool(){
+  const custom = parseCustom(G.settings.custom);
+  if(G.settings.only && custom.length >= 10) return custom;
+  return custom.length ? WORDS.concat(custom, custom) : WORDS;   // custom words come up more often
+}
+function pickChoices(n){
+  let pool = wordPool().filter(w => !HS.used.has(w.toLowerCase()));
+  if(pool.length < n){ HS.used.clear(); pool = wordPool().slice(); }
+  const out = [];
+  for(const w of shuffle(pool.slice())){ if(out.length >= n) break; if(!out.some(o => o.toLowerCase() === w.toLowerCase())) out.push(w); }
+  return out;
+}
+function hostStartGame(){
+  if(MODE !== 'host' || G.players.length < 2) return false;
+  G.players.forEach(p => { p.score = 0; p.guessed = false; p.gain = 0; });
+  G.round = 0; G.rounds = G.settings.rounds; HS.order = []; HS.used.clear();
+  sysChat('The game is starting!', 'draw');
+  nextTurn();
+  return true;
+}
+function nextTurn(){
+  // Find the next drawer who is still here; start a new round when the list runs out.
+  let drawer = null;
+  while(!drawer){
+    if(!HS.order.length){
+      G.round++;
+      if(G.round > G.rounds){ gameOver(); return; }
+      HS.order = G.players.map(p => p.cid);
+      sysChat('Round ' + G.round + ' of ' + G.rounds, 'draw');
+    }
+    const c = HS.order.shift();
+    if(P(c)) drawer = c;
+  }
+  G.turn++;
+  G.drawer = drawer; G.phase = 'choose'; G.mask = ''; G.lens = '';
+  G.players.forEach(p => { p.guessed = false; p.gain = 0; });
+  HS.word = ''; HS.shown = new Set(); HS.firstDone = false;
+  HS.choices = pickChoices(G.settings.choices);
+  HS.pickUntil = now() + PICK_MS;
+  G.deadline = HS.pickUntil; G.total = PICK_MS / 1000;
+  resetBoard();
+  pushState();
+  hostOut({ t:'c3', to:drawer, x:enc(JSON.stringify(HS.choices)) });
+}
+function hostPick(cid, i){
+  if(G.phase !== 'choose' || cid !== G.drawer) return;
+  const w = HS.choices[Math.max(0, Math.min(HS.choices.length - 1, i|0))];
+  if(!w) return;
+  HS.word = w; HS.used.add(w.toLowerCase());
+  G.phase = 'draw'; HS.turnStart = now();
+  G.total = G.settings.time; G.deadline = HS.turnStart + G.total * 1000;
+  G.mask = maskOf(w, HS.shown); G.lens = lengthsOf(w);
+  hostOut({ t:'wd', to:cid, x:enc(w) });
+  sysChat(P(cid).name + ' is drawing now!', 'draw');
+  pushState();
+}
+function allGuessed(){ const g = G.players.filter(p => p.cid !== G.drawer); return g.length > 0 && g.every(p => p.guessed); }
+function hostGuess(cid, text){
+  const p = P(cid);
+  text = String(text || '').replace(/\s+/g,' ').trim().slice(0,100);
+  if(!p || !text) return;
+  HS.seen[cid] = now();
+  if(G.phase === 'draw' && HS.word){
+    const hit = norm(text) === norm(HS.word);
+    if(cid === G.drawer || p.guessed){
+      // Already in the know: talk only to the others who are, and never spell it out.
+      if(norm(text).indexOf(norm(HS.word)) !== -1){ sysChat('Don’t give the word away!', 'bad', cid); return; }
+      hostOut({ t:'ch', k:'gc', n:p.name, c:cid, m:text });
+      return;
+    }
+    if(hit){
+      const leftFrac = (G.deadline - now()) / (G.total * 1000);
+      const pts = guessPoints(leftFrac, !HS.firstDone);
+      HS.firstDone = true;
+      p.guessed = true; p.gain = pts;
+      const d = P(G.drawer);
+      if(d) d.gain = (d.gain|0) + Math.round(pts * 0.3);
+      hostOut({ t:'wd', to:cid, x:enc(HS.word) });
+      hostOut({ t:'ch', k:'ok', m:p.name + ' guessed the word!', c:cid });
+      if(allGuessed()) endTurn('all'); else pushState();
+      return;
+    }
+    hostOut({ t:'ch', k:'msg', n:p.name, c:cid, m:text });
+    if(isClose(text, HS.word)) sysChat('“' + text + '” is close!', 'close', cid);
+    return;
+  }
+  hostOut({ t:'ch', k:'msg', n:p.name, c:cid, m:text });
+}
+function endTurn(why){
+  if(G.phase !== 'draw' && G.phase !== 'choose') return;
+  const word = HS.word;
+  G.players.forEach(p => { p.score += p.gain|0; });
+  G.phase = 'reveal'; HS.revealUntil = now() + REVEAL_MS;
+  G.deadline = HS.revealUntil; G.total = REVEAL_MS / 1000;
+  G.mask = word;
+  hostOut({ t:'rv', w:word, why, g:G.players.map(p => [p.cid, p.gain|0]) });
+  pushState();
+}
+function gameOver(){
+  G.phase = 'over'; G.drawer = ''; HS.overUntil = now() + OVER_MS; G.deadline = HS.overUntil; G.total = OVER_MS / 1000;
+  G.round = G.rounds;
+  pushState();
+}
+function toLobby(){
+  G.phase = 'lobby'; G.drawer = ''; G.mask = ''; G.round = 0; HS.word = '';
+  G.players.forEach(p => { p.guessed = false; p.gain = 0; });
+  resetBoard();
+  pushState();
+}
+function hostTick(){
+  if(MODE !== 'host') return;
+  const t = now();
+  if(G.phase === 'choose' && t >= HS.pickUntil) hostPick(G.drawer, (Math.random() * HS.choices.length) | 0);
+  else if(G.phase === 'draw'){
+    const frac = (t - HS.turnStart) / (G.total * 1000);
+    if(G.settings.hints){
+      const due = hintsDue(HS.word, frac);
+      if(HS.shown.size < due){
+        const hidden = letterIdx(HS.word).filter(i => !HS.shown.has(i));
+        while(HS.shown.size < due && hidden.length) HS.shown.add(hidden.splice((Math.random() * hidden.length) | 0, 1)[0]);
+        G.mask = maskOf(HS.word, HS.shown);
+        pushState();
+      }
+    }
+    if(t >= G.deadline) endTurn('time');
+  }
+  else if(G.phase === 'reveal' && t >= HS.revealUntil) nextTurn();
+  else if(G.phase === 'over' && t >= HS.overUntil) toLobby();
+  // Anyone silent for a while has gone.
+  for(const p of G.players.slice()) if(p.cid !== MY_CID && t - (HS.seen[p.cid] || 0) > GUEST_TIMEOUT) hostRemove(p.cid, 'gone');
+}
+setInterval(hostTick, 250);
+// Heartbeats: the host re-sends the state; guests say they're still here.
+setInterval(() => {
+  if(MODE === 'host' && G.phase !== 'off') pushState();
+  else if(MODE === 'guest' && G.phase !== 'off'){
+    net.send({ t:'hb', cid:MY_CID });
+    if(lastHostMsg && now() - lastHostMsg > HOST_TIMEOUT) dropToHome('The host left the room.');
+  }
+}, 2000);
+
+// ── what arrives from the relay ──
+function handleNet(m){
+  switch(m.t){
+    case 'created':
+      homeStatus('');
+      G.phase = 'lobby'; G.host = MY_CID; HS.seen = {};
+      G.players = [{ cid:MY_CID, name:myName(), av:myAv, score:0, guessed:false, gain:0 }];
+      pushState(); loadLobbyFriends();
+      return;
+    case 'joined':
+      homeStatus('Joined — waiting for the host…');
+      lastHostMsg = now();
+      net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv });
+      return;
+    case 'start':
+      if(MODE === 'guest') net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv });
+      return;
+    case 'error':
+      homeStatus(m.msg || 'That didn’t work.', true);
+      net.close(); MODE = 'off'; G.phase = 'off'; show('screen-home');
+      return;
+    case 'left': return;
+  }
+  if(MODE === 'host'){
+    if(m.t === 'hi') hostAddPlayer(m.cid, m.name, m.av);
+    else if(m.t === 'hb'){ if(P(m.cid)) HS.seen[m.cid] = now(); else net.send({ t:'who', to:m.cid }); }
+    else if(m.t === 'g') hostGuess(m.cid, m.m);
+    else if(m.t === 'pick') hostPick(m.cid, m.i);
+    else if(m.t === 'd'){ if(P(m.cid)) HS.seen[m.cid] = now(); clientHandle(m); }
+    return;
+  }
+  if(MODE === 'guest') clientHandle(m);
+}
+
+// ── every client (the host included) ──
+function clientHandle(m){
+  if(m.to && m.to !== MY_CID) return;
+  switch(m.t){
+    case 'st': {
+      lastHostMsg = now();
+      const wasPhase = G.phase;
+      G.phase = m.ph; G.round = m.r; G.drawer = m.dr; G.mask = m.mk || ''; G.lens = m.ln || '';
+      G.total = m.tot || 80; G.deadline = now() + (m.left || 0); G.host = m.h;
+      if(MODE === 'guest') G.settings = m.set || G.settings;
+      G.rounds = (m.set && m.set.rounds) || G.rounds;
+      G.players = m.pl.map(r => ({ cid:r[0], name:r[1], av:r[2], score:r[3], guessed:!!r[4], gain:r[5] }));
+      if(m.tn !== lastTurnSeen){
+        // New turn: fresh board, forget last turn's word.
+        if(lastTurnSeen !== -1 || m.ph === 'choose') { resetBoard(); }
+        lastTurnSeen = m.tn; myWord = ''; myChoices = [];
+        if(m.ph === 'choose'){ Sound.turn(); if(m.dr === MY_CID) toast('Your turn to draw!'); }
+      }
+      if(MODE === 'guest' && !meP() && G.phase !== 'off') net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv });
+      if(wasPhase !== G.phase && G.phase === 'over') Sound.win();
+      render();
+      return;
+    }
+    case 'c3': myChoices = JSON.parse(dec(m.x) || '[]'); render(); return;
+    case 'wd': myWord = dec(m.x); render(); return;
+    case 'ch': chatLine(m); return;
+    case 'rv': revealInfo = m; Sound.reveal(); render(); return;
+    case 'd': if(m.cid === G.drawer && m.cid !== MY_CID) addOps(m.ops || []); return;
+    case 'sync': resetBoard(); addOps(m.ops || []); return;
+    case 'who': net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv }); return;
+    case 'full': dropToHome('That room is full (8 players).'); return;
+    case 'kick': dropToHome('The host removed you from the room.'); return;
+  }
+}
+let revealInfo = null;
+
+// ══════════════ UI ══════════════
+function show(id){
+  ['screen-home','screen-howto','screen-lobby'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  $('app').classList.toggle('hidden', id !== 'app');
+}
+function homeStatus(t, bad){ const s = $('home-status'); s.textContent = t || ''; s.classList.toggle('err', !!bad); }
+let toastT = 0;
+function toast(t){
+  let el = document.querySelector('.toast');
+  if(!el){ el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); }
+  el.textContent = t; el.style.opacity = '1';
+  clearTimeout(toastT); toastT = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+}
+function placeChat(slot){ const c = $('chat'); if(c.parentNode !== $(slot)) $(slot).appendChild(c); }
+
+function render(){
+  if(MODE === 'solo') return;
+  if(G.phase === 'lobby'){ show('screen-lobby'); placeChat('lobby-chat-slot'); paintLobby(); return; }
+  if(G.phase === 'off') return;
+  show('app'); placeChat('game-chat-slot');
+  paintPlayers(); paintTop(); paintOverlay();
+  const drawing = canDraw();
+  $('tools').classList.toggle('hidden', !drawing);
+  cv.classList.toggle('can', drawing);
+  const m = meP();
+  const done = G.phase === 'draw' && m && (m.guessed || G.drawer === MY_CID);
+  $('msg').placeholder = G.drawer === MY_CID && G.phase === 'draw' ? 'Chat with players who guessed it…'
+    : done ? 'You got it! Chat with the others who did…' : 'Type your guess here…';
+}
+function paintLobby(){
+  $('lobby-code').textContent = net.code || '····';
+  const isHost = MODE === 'host';
+  $('lobby-count').textContent = 'Players · ' + G.players.length + ' / ' + MAX_PLAYERS;
+  $('lobby-list').innerHTML = G.players.map(p =>
+    '<div class="lrow" style="border-left-color:hsl('+p.av[0]+',85%,60%)">' + avatarSVG(p.av, 30) +
+    '<span class="nm">' + esc(p.name) + '</span>' +
+    '<span class="badge">' + (p.cid === G.host ? 'host' : '') + (p.cid === MY_CID ? (p.cid === G.host ? ' · you' : 'you') : '') + '</span>' +
+    (isHost && p.cid !== MY_CID ? '<button class="kick" data-kick="'+esc(p.cid)+'">Kick</button>' : '') + '</div>').join('');
+  const s = G.settings, sel = (id, v) => { const el = $(id); if(document.activeElement !== el) el.value = String(v); el.disabled = !isHost; };
+  sel('set-rounds', s.rounds); sel('set-time', s.time); sel('set-choices', s.choices); sel('set-hints', s.hints); sel('set-only', s.only);
+  const ta = $('set-custom'); if(document.activeElement !== ta) ta.value = s.custom || ''; ta.disabled = !isHost;
+  $('lobby-start').classList.toggle('hidden', !isHost);
+  $('lobby-start').disabled = G.players.length < 2;
+  $('lobby-start').textContent = G.players.length < 2 ? 'Need at least 2 players' : 'Start — ' + G.players.length + ' players';
+  $('lobby-wait').classList.toggle('hidden', isHost);
+}
+function paintPlayers(){
+  const ranked = G.players.slice().sort((a,b) => b.score - a.score);
+  const rank = cid => ranked.findIndex(p => p.cid === cid) + 1;
+  $('players').innerHTML = G.players.map(p =>
+    '<div class="pl' + (p.guessed ? ' guessed' : '') + (p.cid === MY_CID ? ' me' : '') + '">' +
+    '<span class="rank">#' + rank(p.cid) + '</span>' + avatarSVG(p.av, 34) +
+    '<div class="pinfo"><div class="pn">' + esc(p.name) + (p.cid === MY_CID ? ' (you)' : '') + '</div>' +
+    '<div class="ps">' + p.score + ' points</div></div>' +
+    (p.cid === G.drawer && (G.phase === 'draw' || G.phase === 'choose') ? '<span class="pen" title="drawing">✏️</span>' : '') +
+    (p.gain && G.phase === 'draw' && p.guessed ? '<span class="gain">+' + p.gain + '</span>' : '') + '</div>').join('');
+}
+function paintTop(){
+  $('roundlbl').textContent = G.phase === 'over' ? 'Game over' : 'Round ' + Math.max(1, G.round) + ' of ' + G.rounds;
+  $('roomlbl').textContent = net.code ? 'Room ' + net.code : '';
+  const w = $('word');
+  if(G.phase === 'draw'){
+    if(myWord) w.innerHTML = '<span class="hint">' + (G.drawer === MY_CID ? 'Draw this' : 'You got it') + '</span>' + esc(myWord.toUpperCase());
+    else w.innerHTML = '<span class="hint">Guess this</span>' + esc(G.mask.replace(/_/g,'_')) + '<small>' + esc(G.lens) + '</small>';
+  } else if(G.phase === 'choose') w.innerHTML = '<span class="hint">Waiting</span>' + (G.drawer === MY_CID ? 'PICK A WORD' : '…');
+  else if(G.phase === 'reveal') w.innerHTML = '<span class="hint">The word was</span>' + esc((revealInfo && revealInfo.w || G.mask).toUpperCase());
+  else w.innerHTML = '';
+  paintClock();
+}
+let lastTick = -1;
+function paintClock(){
+  const left = Math.max(0, Math.ceil((G.deadline - now()) / 1000));
+  $('clock-n').textContent = G.phase === 'lobby' || G.phase === 'off' ? '' : left;
+  const frac = Math.max(0, Math.min(1, (G.deadline - now()) / (G.total * 1000)));
+  $('clock-arc').setAttribute('stroke-dashoffset', String(119.4 * (1 - frac)));
+  $('clock-arc').setAttribute('stroke', G.phase === 'draw' && left <= 10 ? '#ff3355' : '#00f5ff');
+  $('clock').classList.toggle('low', G.phase === 'draw' && left <= 10);
+  if(G.phase === 'draw' && left <= 10 && left > 0 && left !== lastTick){ lastTick = left; Sound.tick(); }
+}
+setInterval(() => { if(G.phase !== 'off' && G.phase !== 'lobby' && MODE !== 'solo') paintClock(); }, 250);
+function paintOverlay(){
+  const o = $('overlay');
+  const drawer = P(G.drawer);
+  let h = '';
+  if(G.phase === 'choose'){
+    if(G.drawer === MY_CID){
+      h = '<div class="big">Choose a word</div><div class="choices">' +
+        (myChoices.length ? myChoices.map((w,i) => '<button class="choice" data-pick="'+i+'">' + esc(w) + '</button>').join('') : '<div class="sub">Dealing…</div>') +
+        '</div><div class="sub" style="color:var(--muted);font-size:14px">One is picked for you when the clock runs out.</div>';
+    } else h = (drawer ? avatarSVG(drawer.av, 70) : '') + '<div class="sub">' + esc(drawer ? drawer.name : 'Someone') + ' is choosing a word…</div>';
+  } else if(G.phase === 'reveal' && revealInfo){
+    const why = revealInfo.why === 'all' ? 'Everybody got it!' : revealInfo.why === 'left' ? 'The drawer left.' : 'Time’s up!';
+    const gains = (revealInfo.g || []).map(g => [P(g[0]), g[1]]).filter(g => g[0]).sort((a,b) => b[1] - a[1]);
+    h = '<div class="sub" style="color:var(--muted)">' + why + '</div><div class="big">The word was<br>' + esc(String(revealInfo.w || '').toUpperCase()) + '</div>' +
+      '<div class="gains">' + gains.map(g => '<div><span>' + esc(g[0].name) + '</span><span class="' + (g[1] ? 'p' : 'z') + '">' +
+        (g[1] ? '+' + g[1] : '0') + '</span></div>').join('') + '</div>';
+  } else if(G.phase === 'over'){
+    const r = G.players.slice().sort((a,b) => b.score - a.score);
+    const col = (p, place, hgt, c) => p ? '<div class="col">' + avatarSVG(p.av, place === 1 ? 64 : 48) + '<div class="nm">' + esc(p.name) + '</div>' +
+      '<div class="blk" style="height:'+hgt+'px;background:'+c+'">' + place + '</div><div style="font-weight:700">' + p.score + '</div></div>' : '';
+    h = '<div class="big">' + (r[0] ? esc(r[0].name) + ' wins!' : 'Game over') + '</div>' +
+      '<div class="podium">' + col(r[1], 2, 70, '#c9ccd6') + col(r[0], 1, 100, '#ffe600') + col(r[2], 3, 50, '#e08a4a') + '</div>' +
+      (r.length > 3 ? '<div class="gains">' + r.slice(3).map((p,i) => '<div><span>#' + (i+4) + ' ' + esc(p.name) + '</span><span>' + p.score + '</span></div>').join('') + '</div>' : '') +
+      '<div class="sub" style="color:var(--muted);font-size:14px">Back to the lobby in a moment…</div>';
+  }
+  o.innerHTML = h;
+  o.classList.toggle('hidden', !h);
+}
+$('overlay').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]');
+  if(!b || G.drawer !== MY_CID || G.phase !== 'choose') return;
+  Sound.wake();
+  const i = +b.dataset.pick;
+  if(MODE === 'host') hostPick(MY_CID, i); else net.send({ t:'pick', cid:MY_CID, i });
+  myChoices = [];
+  b.parentNode.innerHTML = '<div class="sub">Starting…</div>';
+});
+
+// ── chat ──
+function chatLine(m){
+  const k = m.k || 'msg';
+  if(k === 'gc'){
+    const me = meP();
+    if(!(me && me.guessed) && G.drawer !== MY_CID) return;     // spoilers stay with those who know
+  }
+  const log = $('log');
+  const d = document.createElement('div');
+  d.className = 'k-' + k;
+  if(k === 'msg' || k === 'gc') d.innerHTML = '<b>' + esc(m.n) + ':</b> ' + esc(m.m);
+  else d.textContent = m.m;
+  log.appendChild(d);
+  while(log.children.length > 200) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+  if(k === 'ok'){ if(m.c === MY_CID){ Sound.correct(); } else Sound.other(); }
+  else if(k === 'close') Sound.close();
+  else if(k === 'sys' && /joined/.test(m.m)) Sound.join();
+}
+$('chatform').addEventListener('submit', e => {
+  e.preventDefault();
+  Sound.wake();
+  const input = $('msg'), text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  if(MODE === 'solo'){ chatLine({ k:'msg', n:myName(), m:text }); return; }
+  if(MODE === 'host') hostGuess(MY_CID, text); else net.send({ t:'g', cid:MY_CID, m:text });
+});
+$('lobby-list').addEventListener('click', e => {
+  const b = e.target.closest('[data-kick]');
+  if(!b || MODE !== 'host') return;
+  net.send({ t:'kick', to:b.dataset.kick });
+  hostRemove(b.dataset.kick, 'kick');
+});
+['set-rounds','set-time','set-choices','set-hints','set-only','set-custom'].forEach(id => {
+  $(id).addEventListener('change', readSettings);
+  if(id === 'set-custom') $(id).addEventListener('input', () => { clearTimeout(readSettings.t); readSettings.t = setTimeout(readSettings, 500); });
+});
+function readSettings(){
+  if(MODE !== 'host') return;
+  hostSettings({ rounds:$('set-rounds').value, time:$('set-time').value, choices:$('set-choices').value,
+                 hints:$('set-hints').value === '1', custom:$('set-custom').value, only:$('set-only').value === '1' });
+}
+
+// ══════════════ FLOW ══════════════
+function rememberName(){ try { localStorage.setItem('scrawl.name', myName()); } catch(e){} }
+function hostRoom(){
+  Sound.wake(); rememberName();
+  MODE = 'host';
+  const room = code4();
+  net.connect(room, 'host', () => net.send({ t:'create', code:room, max:MAX_PLAYERS }));
+}
+function joinRoom(code){
+  Sound.wake();
+  const room = String(code || $('joincode').value || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+  if(room.length !== 4){ homeStatus('Room codes are four characters.', true); return; }
+  rememberName();
+  MODE = 'guest'; G.phase = 'off'; lastHostMsg = 0;
+  net.connect(room, 'guest', () => net.send({ t:'join', code:room }));
+}
+function hostStart(){
+  if(!hostStartGame()) toast('You need at least 2 players.');
+}
+function leaveRoom(){ dropToHome(''); }
+function dropToHome(msg){
+  net.close(); MODE = 'off'; G.phase = 'off'; G.players = []; myWord = ''; myChoices = []; lastHostMsg = 0; lastTurnSeen = -1;
+  resetBoard(); $('log').innerHTML = '';
+  $('tools').classList.add('hidden');
+  show('screen-home');
+  homeStatus(msg || '', !!msg);
+}
+function copyInvite(){
+  const url = location.origin + location.pathname + '#room=' + net.code;
+  const b = $('copy-btn');
+  (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
+    () => { b.textContent = 'Link copied!'; }, () => { b.textContent = url; });
+  setTimeout(() => { b.textContent = 'Copy invite link'; }, 2500);
+}
+// Practice: draw on your own, a word to aim at, no clock.
+function startPractice(){
+  MODE = 'solo'; G.phase = 'draw'; G.drawer = MY_CID;
+  G.players = [{ cid:MY_CID, name:myName(), av:myAv, score:0, guessed:false, gain:0 }];
+  resetBoard(); show('app'); placeChat('game-chat-slot');
+  $('log').innerHTML = '';
+  chatLine({ k:'sys', m:'Practice mode — draw the word up top. Type "new" for another word, or "exit" to leave.' });
+  practiceWord();
+  paintPlayers();
+  $('tools').classList.remove('hidden'); cv.classList.add('can');
+  $('roundlbl').textContent = 'Practice'; $('clock-n').textContent = '∞'; $('roomlbl').textContent = '';
+  $('msg').placeholder = 'Type "new" for another word…';
+  $('overlay').classList.add('hidden');
+}
+function practiceWord(){
+  myWord = WORDS[(Math.random() * WORDS.length) | 0];
+  $('word').innerHTML = '<span class="hint">Draw this</span>' + esc(myWord.toUpperCase());
+}
+$('chatform').addEventListener('submit', () => {
+  if(MODE !== 'solo') return;
+  const last = $('log').lastChild; const t = last ? last.textContent.toLowerCase() : '';
+  if(/: new$/.test(t)){ practiceWord(); resetBoard(); }
+  else if(/: exit$/.test(t)) dropToHome('');
+});
+
+// ── hub plumbing: friend invites from the lobby ──
+async function hubApi(path, body){
+  const base = window.GLITCHBOX_API;
+  if(!base || !window.GLITCHBOX_BACKEND_READY) throw new Error('no backend');
+  let tok = ''; try { tok = localStorage.getItem('glitchbox_session') || ''; } catch(e){}
+  if(!tok) throw new Error('signed out');
+  const res = await fetch(base + path, { method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + tok }, body: body ? JSON.stringify(body) : undefined });
+  if(!res.ok) throw new Error('http ' + res.status);
+  return res.json();
+}
+async function loadLobbyFriends(){
+  const wrap = $('lobby-invite'), box = $('lobby-friends');
+  let st;
+  try { st = await hubApi('/api/me'); } catch(e){ wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  if(!$('myname').value && st.profile && st.profile.name){ $('myname').value = st.profile.name.slice(0,14); }
+  const list = st.friends || [];
+  if(!list.length){ box.innerHTML = '<div class="note">No friends yet — add some from the GLITCHBOX menu.</div>'; return; }
+  box.innerHTML = list.map(f => '<div class="wi-row"><span class="wi-dot'+(f.online ? ' on' : '')+'"></span>' +
+    '<span class="wi-name">'+esc(f.name)+'</span><button class="wi-btn" data-sub="'+esc(f.sub)+'">Invite</button></div>').join('');
+  box.querySelectorAll('.wi-btn').forEach(b => b.onclick = async () => {
+    b.disabled = true; b.textContent = 'Sending…';
+    try { await hubApi('/api/invite', { sub:b.dataset.sub, game:'scrawl.html', room:net.code }); b.textContent = 'Invited'; }
+    catch(e){ b.textContent = 'Failed'; b.disabled = false; }
+  });
+}
+// Straight into a room from a hub invite or a shared link (#room=CODE[&host=1]).
+function autoRoom(){
+  const h = new URLSearchParams(location.hash.replace(/^#/,''));
+  const room = (h.get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
+  if(room.length !== 4) return false;
+  if(h.get('host') === '1'){
+    MODE = 'host'; rememberName();
+    net.connect(room, 'host', () => net.send({ t:'create', code:room, max:MAX_PLAYERS }));
+  } else joinRoom(room);
+  return true;
+}
+
+Object.assign(window, { hostRoom, joinRoom, hostStart, leaveRoom, show, bumpAvatar, randomAvatar, startPractice,
+                        copyInvite, setTool, drawUndo, drawClear });
+
+// ── boot ──
+try { $('myname').value = localStorage.getItem('scrawl.name') || ''; } catch(e){}
+if(!$('myname').value){
+  try { const u = JSON.parse(localStorage.getItem('glitchbox_user') || 'null'); if(u && u.name) $('myname').value = String(u.name).split(' ')[0].slice(0,14); } catch(e){}
+}
+$('joincode').addEventListener('keydown', e => { if(e.key === 'Enter') joinRoom(); });
+$('myname').addEventListener('keydown', e => { if(e.key === 'Enter') hostRoom(); });
+buildTools(); paintAvatar();
+if(DEBUG) window.__SC = { G, HS, net, get ops(){ return ops; }, hostStartGame, hostGuess, hostPick, MY_CID, get myWord(){ return myWord; }, emit, dropToHome };
+if(!SMOKE) autoRoom();
+
+// ══════════════ SELF-TESTS (#smoke) ══════════════
+// Real functions, real canvas, a fake wire. The host logic is driven exactly as
+// relay packets would drive it, and every packet it sends is captured.
+if(SMOKE) window.addEventListener('load', () => setTimeout(() => {
+  const out = []; let fails = 0;
+  const ok = (name, cond) => { out.push((cond ? 'ok   ' : 'FAIL ') + name); if(!cond) fails++; };
+
+  // ── words ──
+  ok('the word list is big', WORDS.length >= 300);
+  ok('no duplicate words', new Set(WORDS.map(w => w.toLowerCase())).size === WORDS.length);
+  ok('every word is plain letters/spaces/hyphens', WORDS.every(w => /^[a-z][a-z \-]*[a-z]$/.test(w)));
+  ok('normalise ignores case, spaces and punctuation', norm('  Ice-Cream!! ') === 'ice cream');
+  ok('isClose catches one typo', isClose('elefant', 'elephant') && isClose('bananna', 'banana'));
+  ok('isClose never fires on the word itself', !isClose('banana', 'banana'));
+  ok('isClose ignores far-off guesses', !isClose('car', 'banana') && !isClose('dog', 'cat'));
+  ok('mask hides letters, keeps spaces', maskOf('ice cream', new Set()) === '___ _____');
+  ok('mask shows revealed letters', maskOf('ice cream', new Set([0, 4])) === 'i__ c____');
+  ok('lengths read per word', lengthsOf('hot air balloon') === '3 3 7');
+  ok('no hints early in the turn', hintsDue('elephant', 0.2) === 0);
+  ok('hints grow but never give the word away', hintsDue('elephant', 0.99) >= 1 && hintsDue('elephant', 0.99) < 8);
+  ok('short words get no hints', hintsDue('ox', 0.99) === 0);
+  ok('faster guesses score more', guessPoints(0.9, false) > guessPoints(0.2, false));
+  ok('the first guesser gets a bonus', guessPoints(0.5, true) === guessPoints(0.5, false) + 40);
+  ok('the word survives obfuscation', dec(enc('hot air balloon')) === 'hot air balloon' && enc('cat') !== 'cat');
+  ok('custom words dedupe and trim', parseCustom(' Pizza , pizza,, school bus ,\n42 ').join('|') === 'Pizza|school bus|42');
+  ok('avatars render', /<svg/.test(avatarSVG([10,2,3], 30)));
+
+  // ── canvas ──
+  resetBoard();
+  addOps([['s',4,6,100,100],['l',300,100],['l',300,300],['l',100,300],['l',100,100]]);
+  const px = (x,y) => { const d = cx.getImageData(x,y,1,1).data; return [d[0],d[1],d[2]]; };
+  ok('a stroke lands on the board', px(200,100)[0] < 60);
+  addOps([['f',5,200,200]]);
+  ok('fill paints inside the shape', px(200,200).join() === hexRgb(PALETTE[5]).join());
+  ok('fill stays inside the lines', px(400,400).join() === '255,255,255');
+  addOps([['u']]);
+  ok('undo takes the fill back off', px(200,200).join() === '255,255,255' && px(200,100)[0] < 60);
+  addOps([['u']]);
+  ok('undo again removes the stroke', px(200,100).join() === '255,255,255' && ops.length === 0);
+  addOps([['s',9,20,50,50],['l',700,500],['c'],['s',14,10,400,300]]);
+  ok('clear wipes what came before it', px(200,180).join() === '255,255,255');
+  addOps([['u']]); addOps([['u']]);
+  ok('undoing the clear brings the drawing back', px(375,275)[0] > 200 && px(375,275)[2] < 60);
+  // determinism: replaying the same ops on a second canvas gives the same pixels
+  const snapA = cx.getImageData(0,0,W,H).data;
+  const saved = ops.slice(); resetBoard(); addOps(saved);
+  const snapB = cx.getImageData(0,0,W,H).data;
+  let same = snapA.length === snapB.length; for(let i=0;i<snapA.length && same;i+=97) same = snapA[i] === snapB[i];
+  ok('replaying the ops redraws the same picture', same);
+
+  // ── a whole game over a fake wire ──
+  const sent = [];
+  net.send = o => sent.push(JSON.parse(JSON.stringify(o)));
+  const log0 = () => $('log').children.length;
+  MODE = 'host'; net.code = 'TEST';
+  handleNet({ t:'created' });
+  ok('creating a room lands in the lobby', G.phase === 'lobby' && G.players.length === 1 && !$('screen-lobby').classList.contains('hidden'));
+  ok('start is refused alone', !hostStartGame() && G.phase === 'lobby');
+  handleNet({ t:'hi', cid:'BBBBBB', name:'Bob', av:[100,1,1] });
+  handleNet({ t:'hi', cid:'CCCCCC', name:'Cara', av:[300,2,2] });
+  handleNet({ t:'hi', cid:'BBBBBB', name:'Bob', av:[100,1,1] });
+  ok('guests join once each', G.players.length === 3);
+  hostSettings({ rounds:2, time:60, choices:3, hints:true, custom:'', only:false });
+  ok('settings stick', G.settings.rounds === 2 && G.settings.time === 60);
+  ok('a guest can’t start the game', (() => { MODE = 'guest'; const r = hostStartGame(); MODE = 'host'; return !r; })());
+  sent.length = 0;
+  ok('the host starts the game', hostStartGame() && G.phase === 'choose' && G.round === 1);
+  const firstDrawer = G.drawer;
+  const c3 = sent.find(s => s.t === 'c3');
+  ok('only the drawer is dealt the choices', c3 && c3.to === firstDrawer && JSON.parse(dec(c3.x)).length === 3);
+  ok('the choices never go out in the clear', !JSON.stringify(sent).includes(HS.choices[0] + '"'));
+  hostPick('CCCCCC' === firstDrawer ? 'BBBBBB' : 'CCCCCC', 0);
+  ok('a non-drawer can’t pick the word', G.phase === 'choose');
+  hostPick(firstDrawer, 1);
+  ok('the drawer picks and the turn starts', G.phase === 'draw' && HS.word === HS.choices[1]);
+  ok('everyone else sees a mask', /^[_ \-]+$/.test(G.mask) && G.mask.length === HS.word.length);
+  const word = HS.word;
+  const guessers = G.players.filter(p => p.cid !== firstDrawer);
+  sent.length = 0;
+  hostGuess(guessers[0].cid, 'definitely not it');
+  ok('a wrong guess is shown to everyone', sent.some(s => s.t === 'ch' && s.k === 'msg' && s.m === 'definitely not it' && !s.to));
+  // a close guess: flip one letter
+  const w2 = norm(word).replace(/[a-z](?=[^a-z]*$)/, ch => ch === 'z' ? 'y' : 'z');
+  sent.length = 0;
+  hostGuess(guessers[0].cid, w2);
+  if(norm(word).replace(/ /g,'').length >= 4)
+    ok('a near miss is told “close” privately', sent.some(s => s.k === 'close' && s.to === guessers[0].cid));
+  sent.length = 0;
+  hostGuess(guessers[0].cid, word.toUpperCase() + '!');
+  const p0 = P(guessers[0].cid);
+  ok('the right word (any case) is a correct guess', p0.guessed && p0.gain > 0);
+  ok('the correct guess is announced without the word', sent.some(s => s.t === 'ch' && s.k === 'ok' && s.m.indexOf(word) === -1));
+  ok('the word is never broadcast as plain chat', !sent.some(s => s.t === 'ch' && s.k !== 'gc' && String(s.m).toLowerCase().indexOf(word.toLowerCase()) !== -1));
+  ok('the guesser is sent the word', sent.some(s => s.t === 'wd' && s.to === guessers[0].cid && dec(s.x) === word));
+  sent.length = 0;
+  hostGuess(guessers[0].cid, 'haha easy');
+  ok('after guessing, chat goes to the guessed-only channel', sent.some(s => s.k === 'gc' && s.m === 'haha easy'));
+  sent.length = 0;
+  hostGuess(guessers[0].cid, 'it was ' + word);
+  ok('and spelling the word out is blocked', !sent.some(s => s.k === 'gc') && sent.some(s => s.k === 'bad' && s.to === guessers[0].cid));
+  ok('the drawer earns from each guess', P(firstDrawer).gain > 0);
+  // drawing ops from the drawer reach everyone; from anyone else they're ignored
+  const before = ops.length;
+  handleNet({ t:'d', cid:guessers[1].cid, ops:[['s',4,10,10,10]] });
+  ok('ops from a non-drawer are ignored', ops.length === before);
+  handleNet({ t:'d', cid:firstDrawer, ops:[['s',4,10,10,10],['l',50,50]] });
+  ok('ops from the drawer are drawn', ops.length === before + 2 || firstDrawer === MY_CID);
+  hostGuess(guessers[1].cid, word);
+  ok('when everyone has it the turn ends', G.phase === 'reveal');
+  const rv = sent.find(s => s.t === 'rv');
+  ok('the reveal carries the word and why', rv && rv.w === word && rv.why === 'all');
+  ok('scores are banked at the reveal', G.players.every(p => p.score === (p.gain|0)) && P(guessers[0].cid).score > 0);
+  ok('first guesser out-scores the second', P(guessers[0].cid).gain > P(guessers[1].cid).gain);
+  // run the rest of the game on the clock
+  let guard = 0;
+  const skip = () => { HS.pickUntil = HS.revealUntil = HS.overUntil = 0; G.deadline = 0; hostTick(); };
+  const drawers = [firstDrawer];
+  while(G.phase !== 'over' && guard++ < 40){
+    skip();
+    if(G.phase === 'choose' && drawers[drawers.length - 1] !== G.drawer) drawers.push(G.drawer);
+  }
+  ok('the game reaches the podium', G.phase === 'over');
+  ok('every player drew once per round', drawers.length === 3 * 2 && new Set(drawers).size === 3);
+  G.phase = 'lobby'; hostStartGame(); HS.pickUntil = 0; hostTick();
+  ok('the choose timer auto-picks a word', G.phase === 'draw' && !!HS.word);
+  // hints
+  G.phase = 'lobby'; hostStartGame(); hostPick(G.drawer, 0);
+  const L = letterIdx(HS.word).length;
+  HS.turnStart = now() - G.total * 1000 * 0.95; G.deadline = now() + 60000; hostTick();
+  ok('hints reveal letters late in the turn', HS.shown.size === hintsDue(HS.word, 0.95) && (L < 3 || G.mask.indexOf('_') !== -1));
+  // a guest dropping out
+  HS.seen['CCCCCC'] = now() - GUEST_TIMEOUT - 1; HS.seen['BBBBBB'] = now();
+  hostTick();
+  ok('a silent guest is dropped', !P('CCCCCC'));
+  HS.seen['BBBBBB'] = now() - GUEST_TIMEOUT - 1; hostTick();
+  ok('down to one player, back to the lobby', G.phase === 'lobby' && G.players.length === 1);
+
+  // ── the guest side ──
+  MODE = 'guest'; G.phase = 'off'; lastTurnSeen = -1; resetBoard(); $('log').innerHTML = '';
+  const st = { t:'st', ph:'draw', pl:[['HOSTXX','Hal',[1,1,1],10,0,0],[MY_CID,'Me',[2,2,2],0,0,0]], r:1, dr:'HOSTXX',
+               mk:'___', ln:'3', left:30000, tot:60, tn:5, set:{ rounds:3, time:60, choices:3, hints:1, custom:'', only:0 }, h:'HOSTXX' };
+  clientHandle(st);
+  ok('a guest renders the game from a state packet', G.phase === 'draw' && !$('app').classList.contains('hidden') && /Guess this/.test($('word').textContent));
+  ok('a guest who isn’t drawing gets no tools', $('tools').classList.contains('hidden') && !canDraw());
+  clientHandle({ t:'d', cid:'HOSTXX', ops:[['s',4,12,400,300]] });
+  ok('the drawer’s ops draw on the guest board', ops.length === 1);
+  clientHandle({ t:'ch', k:'close', m:'“cot” is close!', to:'SOMEONEELSE' });
+  ok('private messages for someone else stay hidden', $('log').children.length === 0);
+  clientHandle({ t:'ch', k:'gc', n:'Hal', m:'secret' });
+  ok('guessed-only chat is hidden before you guess', $('log').children.length === 0);
+  clientHandle({ t:'wd', to:MY_CID, x:enc('cat') });
+  clientHandle(Object.assign({}, st, { pl:[['HOSTXX','Hal',[1,1,1],10,0,0],[MY_CID,'Me',[2,2,2],0,1,300]] }));
+  clientHandle({ t:'ch', k:'gc', n:'Hal', m:'secret' });
+  ok('…and shown once you have', $('log').children.length === 1);
+  ok('the guest sees the word after guessing', /CAT/.test($('word').textContent));
+  clientHandle(Object.assign({}, st, { ph:'choose', tn:6, dr:MY_CID }));
+  ok('a new turn clears the board', ops.length === 0);
+  clientHandle({ t:'c3', to:MY_CID, x:enc(JSON.stringify(['kite','moon','owl'])) });
+  ok('the drawer sees their three words', $('overlay').querySelectorAll('[data-pick]').length === 3);
+  sent.length = 0;
+  $('overlay').querySelector('[data-pick]').click();
+  ok('picking sends the choice to the host', sent.some(s => s.t === 'pick' && s.i === 0));
+  clientHandle(Object.assign({}, st, { ph:'draw', tn:6, dr:MY_CID }));
+  ok('the drawer gets the tools', !$('tools').classList.contains('hidden') && canDraw());
+
+  const pre = document.createElement('pre');
+  pre.id = 'smokeout';
+  pre.textContent = out.join('\n') + '\n\nSMOKE ' + (fails ? 'FAIL' : 'PASS') + ' ' + (out.length - fails) + '/' + out.length;
+  document.body.appendChild(pre);
+  document.title = 'SMOKE ' + (fails ? 'FAIL' : 'PASS') + ' ' + (out.length - fails) + '/' + out.length;
+}, 300));
+})();
+</script>
+<script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
+</body>
+</html>
