@@ -48,6 +48,7 @@ const STYLE = 'Moody dark retro-arcade key art, glowing neon on near-black, subt
 // One line of scene direction per game — the part that makes each card its own.
 const SCENES = {
   'gridlock':            'Two neon light cycles racing head-to-head on an endless glowing grid, cyan and magenta light trails walling off the arena behind them',
+  'shape-conquest':      'A flat minimalist world map in muted pastel colours, a golden nation expanding across borders, armies drawn as simple glowing circles, squares, triangles and diamonds',
   'patch-notes':         'A glowing trading card being rewritten mid-air, green terminal glyph energy peeling off it and striking a second identical card, balance scales silhouette behind',
   'seven-liars':         'Seven noir suspect silhouettes in a dark manor hallway lit by one hanging bulb, one silhouette casting a blood-red shadow',
   'fatespine':           'A lone runner leaping across burning rooftop platforms while a translucent ghostly echo of themself runs the opposite way, rewinding clock spiral in the sky',

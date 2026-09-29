@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Shape Conquest',     file:'shape-conquest.html',         emoji:'🌍',color:['#0d1624','#152238'],category:'strategy',   tags:['new','hot'],blurb:'Pick any country, build an army of shapes, invade the world'},
   {name:'Scrawl',             file:'scrawl.html',                 emoji:'🖍️',color:['#0a0614','#1c1030'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One player draws, everyone races to guess the word — 2 to 8 players'},
   {name:'Gridlock',           file:'gridlock.html',               emoji:'\u26a1',color:['#04060e','#0a1a34'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Three to eight light cycles, one grid, nobody stops'},
   {name:'Patch Notes',        file:'patch-notes.html',            emoji:'🩹',color:['#07090c','#121922'],category:'strategy',   tags:['new','hot']},
@@ -53,6 +54,32 @@ const _SC=(c)=>{for(let y=0;y<200;y+=4){c.fillStyle='rgba(0,0,0,0.1)';c.fillRect
 
 // ── THUMBNAIL DRAW FUNCTIONS ──
 const DRAW={
+
+'shape-conquest':(c)=>{
+  _GV(c,0,0,320,200,'#0b1320','#0d1624','#111d30');
+  c.strokeStyle='rgba(120,150,200,.07)';c.lineWidth=1;
+  for(let x=0;x<320;x+=40){c.beginPath();c.moveTo(x,0);c.lineTo(x,200);c.stroke()}
+  for(let y=0;y<200;y+=40){c.beginPath();c.moveTo(0,y);c.lineTo(320,y);c.stroke()}
+  // three flat countries: yours (gold) pushing into two neighbours
+  const land=(pts,col)=>{c.fillStyle=col;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();
+    c.strokeStyle='#0b1220';c.lineWidth=2;c.stroke()};
+  land([[20,40],[120,28],[150,70],[140,150],[60,172],[14,120]],'#f0bf3a');
+  land([[120,28],[230,18],[250,90],[190,110],[150,70]],'#5a8fd6');
+  land([[150,70],[190,110],[250,90],[300,130],[270,188],[140,150]],'#57c08f');
+  const cap=(x,y,col)=>{_C(c,x,y,7,'#0b1220');_C(c,x,y,5,col);_C(c,x,y,2,'#0b1220')};
+  cap(80,100,'#f0bf3a');cap(195,60,'#5a8fd6');cap(225,140,'#57c08f');
+  // the shape army on the march
+  const sh=(t,x,y,col)=>{c.fillStyle=col;c.strokeStyle='#060a12';c.lineWidth=1.5;c.beginPath();
+    if(t===0)c.arc(x,y,5,0,6.283);else if(t===1)c.rect(x-5,y-5,10,10);
+    else if(t===2){c.moveTo(x,y-7);c.lineTo(x+6,y+5);c.lineTo(x-6,y+5);c.closePath()}
+    else{c.moveTo(x+8,y);c.lineTo(x,y+5);c.lineTo(x-6,y);c.lineTo(x,y-5);c.closePath()}c.fill();c.stroke()};
+  [[1,150,108],[1,164,120],[0,158,94],[0,172,104],[0,146,124],[2,128,112],[2,120,96],[3,184,70],[3,200,86]].forEach(([t,x,y])=>sh(t,x,y,'#fff3b0'));
+  [[0,212,128],[0,222,120],[1,236,132]].forEach(([t,x,y])=>sh(t,x,y,'#b9f0d4'));
+  c.strokeStyle='rgba(255,240,200,.8)';c.lineWidth=1;
+  c.beginPath();c.moveTo(172,104);c.lineTo(212,128);c.moveTo(128,112);c.lineTo(218,138);c.stroke();
+  c.fillStyle='rgba(255,170,80,.35)';c.beginPath();c.arc(222,138,10,0,6.283);c.fill();
+  c.fillStyle='#f0bf3a';c.font='bold 15px system-ui,sans-serif';c.fillText('SHAPE CONQUEST',12,24);
+},
 
 'scrawl':(c)=>{
   _GV(c,0,0,320,200,'#0a0614','#140c26','#1c1030');
