@@ -319,6 +319,9 @@ const frame = document.getElementById('game-frame');
 const stage = document.getElementById('stage');
 const veil  = document.getElementById('veil');
 const src   = game ? game.file + location.hash : 'about:blank';
+// ?v= makes every open fetch the newest build — otherwise browsers keep serving a
+// cached copy of the framed game and fresh updates don't show up on refresh.
+const fresh = () => game ? game.file + '?v=' + Date.now() + location.hash : 'about:blank';
 
 document.title = (game ? game.name : 'Play') + ' — GLITCHBOX';
 if(game){
@@ -331,7 +334,7 @@ if(game){
     '<span class="game-tag '+t+'">'+(t==='hot'?'▲ HOT':t==='new'?'★ NEW':t==='mp'?'⬡ MULTI':t)+'</span>').join(' ');
   document.getElementById('game-blurb').textContent = game.blurb || '';
   document.getElementById('raw-link').href = src;
-  frame.src = src;
+  frame.src = fresh();
 }
 
 // The quit buttons inside the games point at index.html. Inside a frame that would
@@ -353,7 +356,7 @@ document.getElementById('frame-box').addEventListener('click', () => { try{ fram
 
 function restart(){
   frame.src = 'about:blank';
-  setTimeout(() => { frame.src = src; veil.classList.remove('gone'); }, 30);
+  setTimeout(() => { frame.src = fresh(); veil.classList.remove('gone'); }, 30);
 }
 
 // ══════════════════ FULLSCREEN ══════════════════

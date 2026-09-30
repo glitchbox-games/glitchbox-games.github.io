@@ -897,7 +897,8 @@ function togglePlayMode(){ setPlayMode(playMode()==='full'?'framed':'full'); }
 // hash is optional and carries deep links (multiplayer rooms) through the wrapper
 function gameURL(file,hash){
   const h=hash||'';
-  return playMode()==='full' ? file+h : 'play.html?g='+encodeURIComponent(file)+h;
+  // ?v= so a fullscreen open always gets the newest build instead of a cached copy
+  return playMode()==='full' ? file+'?v='+Date.now()+h : 'play.html?g='+encodeURIComponent(file)+h;
 }
 // pull the game file back out of either link shape
 function fileFromHref(href){
