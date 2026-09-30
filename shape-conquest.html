@@ -52,6 +52,12 @@ button.on{background:#2d4270;border-color:#5b7fc4}
 
 #ctl{position:fixed;bottom:10px;right:10px;padding:6px;display:flex;gap:5px}
 #ctl button{padding:6px 9px;font-size:12px}
+#powers{position:fixed;bottom:62px;right:10px;padding:6px;display:flex;gap:5px}
+#powers button{padding:6px 9px;font-size:12px}
+#powers .c{color:#ffe08a;font-variant-numeric:tabular-nums}
+#powers button.aim{background:#6a1f1f;border-color:#ff5a5a}
+#peace.war{color:#ffc2c2;border-color:#ff5a5a55}
+body.aiming canvas{cursor:crosshair}
 #selinfo{position:fixed;bottom:112px;left:50%;transform:translateX(-50%);font-size:12px;padding:4px 10px;color:#cfe0ff}
 
 #tip{position:fixed;pointer-events:none;padding:6px 9px;font-size:12px;border-radius:8px;z-index:5;max-width:220px}
@@ -92,6 +98,9 @@ button.on{background:#2d4270;border-color:#5b7fc4}
   .ub .k{display:none}
   #build .where{display:none}
   #ctl{bottom:84px}
+  #powers{bottom:128px}
+  .ub{min-width:44px;padding:4px}
+  .ub>span:not(.c){font-size:10px}
 }
 #smokeout{position:fixed;inset:0;margin:0;padding:12px;background:#000d;color:#9f9;font:12px monospace;z-index:99;overflow:auto;white-space:pre-wrap}
 </style>
@@ -122,6 +131,10 @@ button.on{background:#2d4270;border-color:#5b7fc4}
   <button data-sp="2">2×</button>
   <button data-sp="4">4×</button>
 </div>
+<div id="powers" class="panel hidden">
+  <button id="bMis" title="Missile strike (M)">☢ Missile <span class="c" id="misC">200</span></button>
+  <button id="bFort" title="Fortify the selected country (G)">🛡 Fortify <span class="c" id="fortC">80</span></button>
+</div>
 
 <div id="tip" class="panel hidden"></div>
 
@@ -132,13 +145,15 @@ button.on{background:#2d4270;border-color:#5b7fc4}
     <div class="legend" id="legend"></div>
     <p style="font-size:13px">Every country starts free and every one of them wants more land. To take a country, smash its capital's
       defences, then park a ground unit on it.</p>
+    <p style="font-size:13px;color:#ffc2c2">⚠ The world fights back. Coalitions of neighbours launch invasion waves at you, every conquest
+      earns you grudges, and big empires breed rebels. Fortify your borders and keep missiles ready.</p>
     <div class="diff" id="diff">
-      <button data-d="0">Easy</button><button data-d="1" class="on">Normal</button><button data-d="2">Hard</button>
+      <button data-d="0">Easy</button><button data-d="1" class="on">Normal</button><button data-d="2">Hard</button><button data-d="3">Brutal</button>
     </div>
     <button class="go" id="bChoose">Choose your country →</button>
     <div class="keys">
       <kbd>Drag</kbd> select units · <kbd>Right-click</kbd> move / invade · <kbd>Wheel</kbd> zoom ·
-      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>4</kbd> build · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
+      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
     </div>
   </div>
 </div>
@@ -183,10 +198,22 @@ const UT={
   tank:{n:'Tank',     sh:1,cost:30,hp:120,dmg:10,rof:0.8, range:17,speed:16,size:3.8,desc:'Tough. Shreds infantry.'},
   art :{n:'Artillery',sh:2,cost:35,hp:26, dmg:16,rof:0.35,range:50,speed:8, size:4.4,splash:9,desc:'Long range. Cracks capitals.'},
   air :{n:'Fighter',  sh:3,cost:45,hp:45, dmg:7, rof:1.2, range:22,speed:45,size:4.4,air:1,desc:'Fast, flies over sea. Can\'t capture.'},
+  sam :{n:'Flak',     sh:4,cost:30,hp:50, dmg:8, rof:1.5, range:30,speed:10,size:3.6,desc:'Anti-air. Swats fighters out of the sky.'},
+  ship:{n:'Warship',  sh:5,cost:60,hp:170,dmg:14,rof:.5,  range:36,speed:22,size:4.8,splash:6,sea:1,nocap:1,desc:'Coastal only. Rules the sea, shells the shore.'},
 };
-const TYPES=['inf','tank','art','air'];
-const MOD={inf:{inf:1,tank:.5,art:1.3,air:.6},tank:{inf:1.3,tank:1,art:1.3,air:.25},art:{inf:1,tank:1,art:1,air:0},air:{inf:.9,tank:1.5,art:1.5,air:1}};
-const GMOD={inf:1,tank:1,art:1.7,air:.7};
+const TYPES=['inf','tank','art','air','sam','ship'];
+const MOD={
+  inf :{inf:1,  tank:.5, art:1.3,air:.6, sam:1.2,ship:.3},
+  tank:{inf:1.3,tank:1,  art:1.3,air:.25,sam:1.3,ship:.5},
+  art :{inf:1,  tank:1,  art:1,  air:0,  sam:1.2,ship:.8},
+  air :{inf:.9, tank:1.5,art:1.5,air:1,  sam:.5, ship:1.2},
+  sam :{inf:.35,tank:.2, art:.4, air:3,  sam:.3, ship:.2},
+  ship:{inf:1.2,tank:1,  art:1.3,air:.4, sam:1.2,ship:1}};
+const GMOD={inf:1,tank:1,art:1.7,air:.7,sam:.3,ship:1.3};
+const MIS={cost:200,cd:45,r:24,dmg:90};
+// per difficulty: ceasefire, AI income, AI army size, starting gold, wave gap, wave size, how much the AI hates you, AI launch threshold vs you
+const DIFF={peace:[120,60,40,25],ai:[.8,1.15,1.45,1.8],cap:[.9,1.1,1.3,1.5],gold:[150,110,90,70],
+  gap:[200,130,95,70],wave:[1,1.25,1.5,1.9],hate:[-30,0,20,40],launch:[1.2,1,.85,.7],unrest:[0,.1,.16,.22]};
 const CAPTURE_R=14, TOWER_R=26;
 let GAR0=30,GARV=18,AGG0=.1,AGGR=.35,LAUNCH=1.4; // pacing dials
 
@@ -198,6 +225,7 @@ let playerPeace=75, aiPeace=10, aiMult=1, winGoal=0;
 let sel=new Set(), selCountry=-1, hoverC=-1, pickC=-1;
 let stats={built:0,lost:0,kills:0,peak:1,taken:0};
 let nextUid=1, keepPlaying=false;
+let missiles=[], raids=[], waveAt=0, waveNo=0, misCd=0, aiming=false, rebelT=25;
 const cam={x:0,y:0,z:1};
 
 // ─── geometry helpers ───
@@ -238,7 +266,7 @@ function buildWorld(topo){
     const big=P2.reduce((a,b)=>b.area>a.area?b:a);
     const value=clamp(0.5+Math.sqrt(geo)/9,0.5,6); // true size, not the map's stretched polar size
     C.push({i:C.length,name:nm,polys:P2,big,path,area,bb:[bx0,by0,bx1,by1],cap:{x:0,y:0},value,
-      garMax:Math.round(GAR0+value*GARV),gar:0,owner:C.length,nb:new Set(),reach:[],tcd:rand(),lastHit:-99,threat:-99,flash:0});
+      garMax:Math.round(GAR0+value*GARV),gar:0,fort:0,coast:false,port:null,alertT:-99,owner:C.length,nb:new Set(),reach:[],tcd:rand(),lastHit:-99,threat:-99,flash:0});
   }
   // rasterise a country-id grid for land lookups
   GW=Math.ceil(W/CS);GH=Math.ceil(H/CS);grid=new Int16Array(GW*GH).fill(-1);
@@ -271,6 +299,12 @@ function buildWorld(topo){
     const r=gx+1<GW?grid[gx+1+gy*GW]:-1, d=gy+1<GH?grid[gx+(gy+1)*GW]:-1;
     if(r>=0&&r!==a){C[a].nb.add(r);C[r].nb.add(a)}
     if(d>=0&&d!==a){C[a].nb.add(d);C[d].nb.add(a)}
+    // coastline: remember the sea cell nearest the capital as the country's port
+    for(const [nx,ny] of [[gx+1,gy],[gx-1,gy],[gx,gy+1],[gx,gy-1]]){
+      if(nx<0||ny<0||nx>=GW||ny>=GH||grid[nx+ny*GW]>=0)continue;
+      const c=C[a],px=nx*CS+CS/2,py=ny*CS+CS/2,dd=(px-c.cap.x)**2+(py-c.cap.y)**2;
+      c.coast=true;if(!c.port||dd<c.port.d)c.port={x:px,y:py,d:dd};
+    }
   }
   // who each country can reasonably invade: land neighbours + anything a short sail away
   for(const c of C){
@@ -290,11 +324,18 @@ function makeFactions(){
     let h=(i*137.508)%360; if(h>35&&h<70)h+=45; // keep gold for the player
     const s=36+(i*7)%18, l=46+(i*11)%14;
     return{id:i,name:c.name,color:`hsl(${h|0},${s}%,${l}%)`,ucol:`hsl(${h|0},${s+18}%,${l+22}%)`,gold:40,income:c.value,
-      owned:[i],army:0,alive:true,player:false,aggr:AGG0+rand()*AGGR,think:1+rand()*3,target:-1,kills:0,peak:1};
+      owned:[i],army:0,alive:true,player:false,aggr:AGG0+rand()*AGGR,think:1+rand()*3,target:-1,kills:0,peak:1,grudge:0};
   });
-  for(const c of C){c.owner=c.i;c.gar=c.garMax}
+  for(const c of C){c.owner=c.i;c.fort=0;c.garMax=garFor(c);c.gar=c.garMax;c.alertT=-99;c.tcd=rand();c.threat=-99;c.lastHit=-99}
 }
-function armyCap(f){return f.player?Math.min(250,14+6*f.owned.length):Math.min(140,4+4*f.owned.length)}
+function armyCap(f){return f.player?Math.min(250,14+6*f.owned.length):Math.min(160,Math.round((4+4*f.owned.length)*DIFF.cap[diff]))}
+function garFor(c){return Math.round((GAR0+c.value*GARV)*(1+.6*c.fort))}
+function fortCost(c){return 80*(c.fort+1)}
+function fortify(fi,ci){
+  const f=F[fi],c=C[ci];if(ci<0||c.owner!==fi||c.fort>=3||f.gold<fortCost(c))return false;
+  f.gold-=fortCost(c);c.fort++;const old=c.garMax;c.garMax=garFor(c);c.gar+=c.garMax-old;
+  fx.push({k:3,x:c.cap.x,y:c.cap.y,life:.8,max:.8,col:'#fff'});return true;
+}
 function recalc(f){f.income=f.owned.reduce((s,i)=>s+C[i].value,0)}
 const war=(a,b)=>a!==b&&!(time<playerPeace&&(a===P||b===P));
 
@@ -318,7 +359,9 @@ function spawn(fi,t,x,y){
 function build(fi,t,ci){
   const f=F[fi],T=UT[t];
   if(!f.alive||ci<0||C[ci].owner!==fi||f.gold<T.cost||f.army>=armyCap(f))return null;
-  f.gold-=T.cost;const u=spawn(fi,t,C[ci].cap.x,C[ci].cap.y);
+  if(T.sea&&!C[ci].coast)return null;
+  f.gold-=T.cost;const at=T.sea?C[ci].port:C[ci].cap,u=spawn(fi,t,at.x,at.y);
+  if(T.sea){u.x=at.x;u.y=at.y}
   if(f.player)stats.built++;
   return u;
 }
@@ -368,7 +411,7 @@ function updateUnit(u,dt){
         const d=Math.hypot(c.cap.x-u.x,c.cap.y-u.y);
         if(c.gar>0&&d<=T.range){if(u.cd<=0){fireCap(u,c);u.cd=1/T.rof}}
         if(c.gar>0){if(d>T.range*.85){mx=o.x;my=o.y;stop=T.range*.8}}
-        else if(!T.air){mx=o.x;my=o.y;stop=2}
+        else if(!T.air&&!T.nocap){mx=o.x;my=o.y;stop=2}
       }
     }else{
       mx=o.x;my=o.y;
@@ -378,8 +421,12 @@ function updateUnit(u,dt){
   if(mx!==null){
     const dx=mx-u.x,dy=my-u.y,d=Math.hypot(dx,dy);
     if(d>stop&&d>.01){
-      let sp=T.speed;if(!T.air&&landAt(u.x,u.y)<0)sp*=.4;
-      const s=Math.min(d-stop*.5,sp*dt);u.x+=dx/d*s;u.y+=dy/d*s;
+      const wet=landAt(u.x,u.y)<0;
+      let sp=T.speed;if(T.sea){if(!wet)sp*=.3}else if(!T.air&&wet)sp*=.4;
+      const s=Math.min(d-stop*.5,sp*dt);let nx=u.x+dx/d*s,ny=u.y+dy/d*s;
+      if(T.sea&&wet&&landAt(nx,ny)>=0){ // warships hug the coast instead of driving inland
+        if(landAt(nx,u.y)<0)ny=u.y;else if(landAt(u.x,ny)<0)nx=u.x;else{nx=u.x;ny=u.y}}
+      u.x=nx;u.y=ny;
       if(!u.tgt)u.ang=Math.atan2(dy,dx);
     }
   }
@@ -397,14 +444,15 @@ function updateCountry(c,dt){
   c.tcd-=dt;
   if(c.tcd<=0){
     c.tcd=.8;
-    let best=null,bd=TOWER_R*TOWER_R,threat=false;
+    let best=null,bd=(TOWER_R+4*c.fort)**2,threat=-1;
     near(c.cap.x,c.cap.y,45,o=>{if(o.hp<=0||!war(c.owner,o.f))return;const d=(o.x-c.cap.x)**2+(o.y-c.cap.y)**2;
-      if(d<2025)threat=true;if(d<bd){bd=d;best=o}});
-    if(threat)c.threat=time;
-    if(best&&c.gar>0){hurt(best,4+c.value,c.owner);fx.push({k:0,x:c.cap.x,y:c.cap.y,x2:best.x,y2:best.y,life:.2,max:.2,col:'#fff',t:'tw'})}
+      if(d<2025)threat=o.f;if(d<bd){bd=d;best=o}});
+    if(threat>=0){c.threat=time;
+      if(c.owner===P&&time-c.alertT>15){c.alertT=time;addLog(`⚠ ${F[threat].name} is attacking ${c.name}!`,'bad')}}
+    if(best&&c.gar>0){hurt(best,(4+c.value)*(1+.5*c.fort),c.owner);fx.push({k:0,x:c.cap.x,y:c.cap.y,x2:best.x,y2:best.y,life:.2,max:.2,col:'#fff',t:'tw'})}
     if(c.gar<=0){ // defences down: whoever holds the square takes it
       const cnt={};let home=false;
-      near(c.cap.x,c.cap.y,18,o=>{if(o.hp<=0||UT[o.t].air)return;const d=(o.x-c.cap.x)**2+(o.y-c.cap.y)**2;
+      near(c.cap.x,c.cap.y,18,o=>{if(o.hp<=0||UT[o.t].air||UT[o.t].nocap)return;const d=(o.x-c.cap.x)**2+(o.y-c.cap.y)**2;
         if(o.f===c.owner){if(d<324)home=true}else if(d<CAPTURE_R*CAPTURE_R&&war(o.f,c.owner))cnt[o.f]=(cnt[o.f]||0)+1});
       if(!home){let bf=-1,bn=0;for(const k in cnt)if(cnt[k]>bn){bn=cnt[k];bf=+k}if(bf>=0)capture(c,bf)}
     }
@@ -413,7 +461,10 @@ function updateCountry(c,dt){
 }
 function capture(c,fi){
   const old=F[c.owner],nf=F[fi];
-  old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=fi;c.gar=c.garMax*.35;c.lastHit=time;
+  old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=fi;
+  c.fort=Math.max(0,c.fort-1);c.garMax=garFor(c);c.gar=c.garMax*.35;c.lastHit=time;
+  if(fi===P){ // the victim wants revenge and the neighbours get nervous
+    old.grudge+=80;for(const j of c.nb){const o=F[C[j].owner];if(!o.player)o.grudge+=25}}
   recalc(old);recalc(nf);nf.peak=Math.max(nf.peak,nf.owned.length);
   fx.push({k:3,x:c.cap.x,y:c.cap.y,life:1.2,max:1.2,col:nf.player?PCOL:nf.color});
   if(fi===P){stats.taken++;stats.peak=Math.max(stats.peak,nf.owned.length);addLog(`You conquered ${c.name}!`,'good');}
@@ -429,10 +480,11 @@ function capture(c,fi){
 }
 
 // ─── AI ───
-function pickType(f){
+function pickType(f,front){
   const r=rand();
-  if(f.owned.length<3)return r<.62?'inf':r<.88?'tank':'art';
-  return r<.4?'inf':r<.68?'tank':r<.86?'art':'air';
+  if(front>=0&&C[front].coast&&f.owned.length>=3&&rand()<.1)return 'ship';
+  if(f.owned.length<3)return r<.6?'inf':r<.86?'tank':r<.94?'art':'sam';
+  return r<.34?'inf':r<.6?'tank':r<.76?'art':r<.9?'air':'sam';
 }
 function aiThink(f){
   f.think=1.4+rand()*1.6;
@@ -442,8 +494,9 @@ function aiThink(f){
   if(tc){let bd=1e18;for(const i of f.owned){const d=(C[i].cap.x-tc.cap.x)**2+(C[i].cap.y-tc.cap.y)**2;if(d<bd){bd=d;front=i}}}
   else front=f.owned[(rand()*f.owned.length)|0];
   let guard=0;
-  while(f.army<armyCap(f)&&guard++<8){const t=pickType(f);if(f.gold<UT[t].cost)break;build(f.id,t,front)}
-  f.gold=Math.min(f.gold,700);
+  while(f.army<armyCap(f)&&guard++<8){const t=pickType(f,front);if(f.gold<UT[t].cost)break;build(f.id,t,front)}
+  if(diff>=2&&f.gold>260&&rand()<.2){const i=f.owned[(rand()*f.owned.length)|0];if(C[i].fort<2)fortify(f.id,i)}
+  f.gold=Math.min(f.gold,700);f.grudge*=.98;
   const mine=units.filter(u=>u.f===f.id&&u.hp>0);
   const idle=mine.filter(u=>!u.order);
   // defend any capital under attack
@@ -458,7 +511,8 @@ function aiThink(f){
   let power=0;for(const u of free)power+=UT[u.t].cost;
   let defense=c.gar*1.3;near(c.cap.x,c.cap.y,50,o=>{if(o.f===c.owner&&o.hp>0)defense+=UT[o.t].cost});
   const eager=f.aggr+Math.min(.4,f.owned.length*.04)+(f.gold>300?.2:0);
-  if(power>defense*LAUNCH+30&&rand()<eager){
+  const vsMe=c.owner===P?DIFF.launch[diff]:1;
+  if(power>defense*LAUNCH*vsMe+30&&rand()<eager){
     const keep=f.owned.length>1?Math.floor(free.length*.2):Math.floor(free.length*.3);
     free.sort((a,b)=>Math.hypot(a.x-c.cap.x,a.y-c.cap.y)-Math.hypot(b.x-c.cap.x,b.y-c.cap.y));
     const go=free.slice(0,free.length-keep);
@@ -471,9 +525,83 @@ function chooseTarget(f){
     if(t.owner===f.id||!war(f.id,t.owner))continue;
     let s=Math.hypot(t.cap.x-o.cap.x,t.cap.y-o.cap.y)+t.gar*1.5+rand()*60;
     if(!o.nb.has(j))s+=60; // sea crossings are a bigger ask
-    if(F[t.owner].owned.length>6)s+=50;
+    if(t.owner===P)s-=DIFF.hate[diff]+Math.min(60,Math.max(0,F[P].owned.length-3)*4)+f.grudge;
+    else if(F[t.owner].owned.length>6)s+=50;
     if(s<bs){bs=s;best=j}}}
   return best;
+}
+
+// ─── invasion waves: coalitions of nearby countries gang up on the player ───
+function nearestOwned(f,x,y){let bd=1e18,b=-1;for(const i of f.owned){const d=(C[i].cap.x-x)**2+(C[i].cap.y-y)**2;if(d<bd){bd=d;b=i}}return[b,Math.sqrt(bd)]}
+function launchWave(){
+  const me=F[P];waveAt=time+DIFF.gap[diff]*Math.max(.6,1-waveNo*.03)*(.85+rand()*.3);
+  if(!me.alive||!me.owned.length)return null;
+  const foes=F.filter(f=>f.alive&&!f.player&&f.owned.length);if(!foes.length)return null;
+  waveNo++;
+  // aim at the soft spot: close to enemies, weak defences, the homeland only once it's exposed
+  let tc=null,bs=1e18;
+  for(const i of me.owned){const c=C[i];let dm=1e18;for(const f of foes)dm=Math.min(dm,nearestOwned(f,c.cap.x,c.cap.y)[1]);
+    const sc=dm+c.gar*.5+(i===P?80:0)+rand()*60;if(sc<bs){bs=sc;tc=c}}
+  const n=Math.min(6,1+Math.ceil(waveNo/2)+(diff>=3?1:0));
+  const pack=foes.map(f=>[f,...nearestOwned(f,tc.cap.x,tc.cap.y)]).sort((a,b)=>a[2]-b[2]).slice(0,n);
+  const k=Math.min(14,Math.round((2+waveNo*1.3)*DIFF.wave[diff]));
+  for(const [f,fi] of pack){
+    const fc=C[fi],fresh=[];
+    for(let j=0;j<k;j++){const t=pickType(f,fi),sea=UT[t].sea&&fc.coast,at=sea?fc.port:fc.cap,u=spawn(f.id,t,at.x,at.y);if(sea){u.x=at.x;u.y=at.y}fresh.push(u)}
+    const go=fresh.concat(units.filter(u=>u.f===f.id&&!u.order&&rand()<.6&&!fresh.includes(u)));
+    go.forEach((u,j)=>{const a=j*2.4,r=Math.min(9,1.6*Math.sqrt(j));u.order={x:tc.cap.x+Math.cos(a)*r,y:tc.cap.y+Math.sin(a)*r,cap:tc.i}});
+    f.target=tc.i;f.grudge+=40;
+    raids.push({x:fc.cap.x,y:fc.cap.y,c:tc.i,life:20,max:20});
+  }
+  if(diff>=2&&waveNo>=2)launchMissile(pack[0][0].id,tc.cap.x+rand()*8-4,tc.cap.y+rand()*8-4);
+  const names=pack.map(p=>p[0].name);
+  addLog(`⚠ Invasion wave ${waveNo}! ${names.length>2?names.slice(0,-1).join(', ')+' and '+names.at(-1):names.join(' and ')} march on ${tc.name}`,'bad',8000);
+  return tc;
+}
+
+// ─── missiles ───
+function launchMissile(fi,x,y){
+  const f=F[fi];if(!f.owned.length)return null;
+  const src=C[nearestOwned(f,x,y)[0]],dist=Math.hypot(x-src.cap.x,y-src.cap.y);
+  const m={f:fi,x0:src.cap.x,y0:src.cap.y,x,y,t:0,dur:2+dist/500};missiles.push(m);
+  if(!f.player&&landAt(x,y)>=0&&C[landAt(x,y)].owner===P)addLog(`☢ Incoming missile from ${f.name}!`,'bad',3500);
+  return m;
+}
+function boom(m){
+  fx.push({k:4,x:m.x,y:m.y,life:1.1,max:1.1,r:MIS.r});
+  near(m.x,m.y,MIS.r,o=>{if(o.hp>0&&o.f!==m.f&&(o.x-m.x)**2+(o.y-m.y)**2<MIS.r*MIS.r)hurt(o,MIS.dmg*(UT[o.t].air?.5:1),m.f)});
+  for(const c of C)if(c.owner!==m.f&&(c.cap.x-m.x)**2+(c.cap.y-m.y)**2<MIS.r*MIS.r){c.gar=Math.max(0,c.gar-c.garMax*.6);c.lastHit=time;c.flash=.4}
+}
+function playerMissile(wx,wy){
+  const f=F[P];
+  if(time<playerPeace){addLog('No missiles during the ceasefire','bad',1800);return false}
+  if(misCd>0||f.gold<MIS.cost){addLog(misCd>0?`Missile reloading (${Math.ceil(misCd)}s)`:'Not enough gold for a missile','bad',1500);return false}
+  f.gold-=MIS.cost;misCd=MIS.cd;launchMissile(P,wx,wy);stats.missiles++;return true;
+}
+
+// ─── unrest: sprawling empires lose far-flung, unguarded provinces to rebels ───
+function unrest(){
+  for(const f of F){
+    if(!f.alive||f.owned.length<8)continue;
+    if(rand()>(f.player?DIFF.unrest[diff]:.05)*f.owned.length/10)continue;
+    const home=C[f.id].owner===f.id?C[f.id]:C[f.owned[0]];
+    let pick=null,bd=-1;
+    for(const i of f.owned){const c=C[i];if(c.i===f.id||c.i===P||time-c.lastHit<5)continue;
+      let guarded=false;near(c.cap.x,c.cap.y,35,o=>{if(o.f===f.id&&o.hp>0&&!UT[o.t].air)guarded=true});
+      const d=Math.hypot(c.cap.x-home.cap.x,c.cap.y-home.cap.y);if(!guarded&&d>bd){bd=d;pick=c}}
+    if(pick)revolt(pick);
+  }
+}
+function revolt(c){
+  const old=F[c.owner],nf=F[c.i];
+  old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=c.i;
+  if(!nf.alive){nf.alive=true;nf.gold=80;nf.target=-1;nf.think=1}
+  c.fort=0;c.garMax=garFor(c);c.gar=c.garMax*.7;c.lastHit=time;
+  recalc(old);recalc(nf);
+  for(let k=0;k<3+diff;k++)spawn(nf.id,k%3===2?'tank':'inf',c.cap.x,c.cap.y);
+  fx.push({k:3,x:c.cap.x,y:c.cap.y,life:1.2,max:1.2,col:nf.color});
+  if(old.player){nf.grudge+=150;addLog(`✊ Rebels seize ${c.name} — it breaks free of your empire!`,'bad',6000)}
+  else if(old.owned.length>=8)addLog(`✊ ${c.name} breaks away from ${old.name}`);
 }
 
 // ─── main sim step ───
@@ -485,6 +613,12 @@ function step(dt){
   for(const u of units)if(u.hp>0)updateUnit(u,dt);
   for(const c of C)updateCountry(c,dt);
   for(const f of F)if(f.alive&&!f.player){f.think-=dt;if(f.think<=0)aiThink(f)}
+  if(waveAt>0&&time>=waveAt&&time>=playerPeace)launchWave();
+  misCd=Math.max(0,misCd-dt);
+  for(const m of missiles){m.t+=dt;if(m.t>=m.dur){boom(m);m.done=1}}
+  if(missiles.length)missiles=missiles.filter(m=>!m.done);
+  for(const r of raids)r.life-=dt;if(raids.length)raids=raids.filter(r=>r.life>0);
+  rebelT-=dt;if(rebelT<=0){rebelT=25;if(time>playerPeace)unrest()}
   if(units.some(u=>u.hp<=0)){for(const u of units)if(u.hp<=0&&F[u.f].alive)F[u.f].army--;units=units.filter(u=>u.hp>0);for(const u of sel)if(u.hp<=0)sel.delete(u)}
   for(const e of fx)e.life-=dt;fx=fx.filter(e=>e.life>0);if(fx.length>900)fx.splice(0,fx.length-900);
   for(const m of markers)m.life-=dt;markers=markers.filter(m=>m.life>0);
@@ -516,6 +650,9 @@ function shapePath(c,sh,x,y,s,ang){
   if(sh===0)c.arc(x,y,s,0,6.283);
   else if(sh===1){c.save();c.translate(x,y);c.rotate(ang);c.rect(-s,-s,s*2,s*2);c.restore()}
   else if(sh===2){for(let k=0;k<3;k++){const a=ang+k*2.094;c[k?'lineTo':'moveTo'](x+Math.cos(a)*s*1.25,y+Math.sin(a)*s*1.25)}c.closePath()}
+  else if(sh===4){const w=s*.42;c.save();c.translate(x,y);c.moveTo(-w,-s);
+    for(const [px,py] of [[w,-s],[w,-w],[s,-w],[s,w],[w,w],[w,s],[-w,s],[-w,w],[-s,w],[-s,-w],[-w,-w]])c.lineTo(px,py);c.closePath();c.restore()}
+  else if(sh===5){for(let k=0;k<6;k++){const a=ang+k*1.0472;c[k?'lineTo':'moveTo'](x+Math.cos(a)*s*1.2,y+Math.sin(a)*s*1.2)}c.closePath()}
   else{const a=ang;c.moveTo(x+Math.cos(a)*s*1.5,y+Math.sin(a)*s*1.5);c.lineTo(x+Math.cos(a+1.57)*s*.8,y+Math.sin(a+1.57)*s*.8);
     c.lineTo(x-Math.cos(a)*s*.9,y-Math.sin(a)*s*.9);c.lineTo(x+Math.cos(a-1.57)*s*.8,y+Math.sin(a-1.57)*s*.8);c.closePath()}
 }
@@ -566,6 +703,10 @@ function render(){
     ctx.fillStyle=c.flash>0?'#fff':'#0b1220';ctx.beginPath();ctx.arc(sx,sy,cr+1.5,0,6.283);ctx.fill();
     ctx.fillStyle=picking?'#fff':fcol(c.owner);ctx.beginPath();ctx.arc(sx,sy,cr,0,6.283);ctx.fill();
     ctx.fillStyle='#0b1220';ctx.beginPath();ctx.arc(sx,sy,cr*.4,0,6.283);ctx.fill();
+    if(!picking&&c.fort){ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1;
+      for(let k=0;k<c.fort;k++){ctx.beginPath();ctx.arc(sx,sy,cr+3.5+k*2.2,0,6.283);ctx.stroke()}}
+    if(!picking&&c.owner===P&&time-c.threat<2){const a=.5+.5*Math.sin(performance.now()/120);
+      ctx.strokeStyle=`rgba(255,70,70,${.4+.5*a})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,cr+9+a*5,0,6.283);ctx.stroke()}
     if(!picking&&c.gar<c.garMax-.5){
       const w=Math.max(16,cr*5),f=c.gar/c.garMax;
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(sx-w/2,sy+cr+3,w,3);
@@ -575,6 +716,27 @@ function render(){
   // attack-order markers
   for(const m of markers){const [sx,sy]=w2s(m.x,m.y),a=m.life/m.max;
     ctx.strokeStyle=m.atk?`rgba(255,90,90,${a})`:`rgba(255,255,255,${a})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,6+(1-a)*10,0,6.283);ctx.stroke()}
+  // invasion arrows
+  for(const r of raids){const c=C[r.c],[x1,y1]=w2s(r.x,r.y),[x2,y2]=w2s(c.cap.x,c.cap.y),a=Math.min(1,r.life/4)*.8;
+    const L=Math.hypot(x2-x1,y2-y1);if(L<12)continue;const ux=(x2-x1)/L,uy=(y2-y1)/L;
+    ctx.strokeStyle=`rgba(255,80,80,${a})`;ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.lineDashOffset=-performance.now()/40;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-ux*12,y2-uy*12);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=`rgba(255,80,80,${a})`;ctx.beginPath();ctx.moveTo(x2-ux*4,y2-uy*4);
+    ctx.lineTo(x2-ux*16-uy*6,y2-uy*16+ux*6);ctx.lineTo(x2-ux*16+uy*6,y2-uy*16-ux*6);ctx.fill()}
+  // missiles: target reticle + arcing trail
+  for(const m of missiles){
+    const [tx,ty]=w2s(m.x,m.y),pulse=.5+.5*Math.sin(performance.now()/90),rr=MIS.r*cam.z;
+    ctx.strokeStyle=m.f===P?`rgba(255,210,90,${.5+.4*pulse})`:`rgba(255,60,60,${.5+.4*pulse})`;ctx.lineWidth=1.5;
+    ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(tx,ty,rr,0,6.283);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(tx-6,ty);ctx.lineTo(tx+6,ty);ctx.moveTo(tx,ty-6);ctx.lineTo(tx,ty+6);ctx.stroke();
+    const p=m.t/m.dur,D=Math.hypot(m.x-m.x0,m.y-m.y0),pt=q=>w2s(m.x0+(m.x-m.x0)*q,m.y0+(m.y-m.y0)*q-Math.sin(Math.PI*q)*D*.3);
+    ctx.strokeStyle='rgba(255,230,200,.55)';ctx.lineWidth=1.5;ctx.beginPath();
+    for(let q=Math.max(0,p-.35);q<=p;q+=.02){const [x,y]=pt(q);q<=Math.max(0,p-.35)?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke();
+    const [hx,hy]=pt(p);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(hx,hy,3,0,6.283);ctx.fill();
+    ctx.fillStyle='rgba(255,150,60,.6)';ctx.beginPath();ctx.arc(hx,hy,5.5,0,6.283);ctx.fill();
+  }
+  if(aiming){const [wx,wy]=s2w(mouse.x,mouse.y);const [tx,ty]=w2s(wx,wy);
+    ctx.strokeStyle='rgba(255,210,90,.9)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(tx,ty,MIS.r*cam.z,0,6.283);ctx.stroke()}
   // tracers
   for(const e of fx){
     const a=e.life/e.max;
@@ -584,6 +746,9 @@ function render(){
       ctx.lineWidth=e.t==='art'?2:1;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
     else if(e.k===1){const [x,y]=w2s(e.x,e.y);ctx.strokeStyle=`rgba(255,160,90,${a})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,3+(1-a)*9,0,6.283);ctx.stroke()}
     else if(e.k===2){const [x,y]=w2s(e.x,e.y);ctx.fillStyle=`rgba(255,170,80,${a*.35})`;ctx.beginPath();ctx.arc(x,y,e.r*cam.z*(1.2-a*.4),0,6.283);ctx.fill()}
+    else if(e.k===4){const [x,y]=w2s(e.x,e.y),R=e.r*cam.z,g=1-a;
+      ctx.fillStyle=`rgba(255,${160+g*60|0},80,${a*.55})`;ctx.beginPath();ctx.arc(x,y,R*(.4+g*.8),0,6.283);ctx.fill();
+      ctx.strokeStyle=`rgba(255,240,220,${a})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,R*(.3+g*1.1),0,6.283);ctx.stroke()}
     else if(e.k===3){const [x,y]=w2s(e.x,e.y);ctx.strokeStyle=e.col;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,6+(1-a)*40,0,6.283);ctx.stroke();ctx.globalAlpha=1}
   }
   // units (ground first, aircraft on top)
@@ -591,9 +756,9 @@ function render(){
     const T=UT[u.t];if(!!T.air!==!!pass)continue;
     const [sx,sy]=w2s(u.x,u.y);if(sx<-15||sx>VW+15||sy<-15||sy>VH+15)continue;
     const s=clamp(T.size*cam.z*.55,2.6,11);
-    if(!T.air&&landAt(u.x,u.y)<0){ctx.strokeStyle='rgba(160,210,255,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+3,0,6.283);ctx.stroke()}
+    if(!T.air&&!T.sea&&landAt(u.x,u.y)<0){ctx.strokeStyle='rgba(160,210,255,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+3,0,6.283);ctx.stroke()}
     if(T.air){ctx.fillStyle='rgba(0,0,0,.25)';shapePath(ctx,T.sh,sx+3,sy+4,s,u.ang);ctx.fill()}
-    shapePath(ctx,T.sh,sx,sy,s,T.sh===1?0:u.ang);
+    shapePath(ctx,T.sh,sx,sy,s,T.sh===1||T.sh===4?0:u.ang);
     ctx.fillStyle=F[u.f].player?PUNIT:F[u.f].ucol;ctx.fill();
     ctx.lineWidth=sel.has(u)?2.2:1.3;ctx.strokeStyle=sel.has(u)?'#fff':'#060a12';ctx.stroke();
     if(sel.has(u)){ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+4,0,6.283);ctx.stroke()}
@@ -607,7 +772,8 @@ function render(){
 
 // ─── HUD ───
 function svgShape(sh,col){
-  const s={0:'<circle cx="12" cy="12" r="8"/>',1:'<rect x="4.5" y="4.5" width="15" height="15"/>',2:'<polygon points="12,3 21,19 3,19"/>',3:'<polygon points="12,2 21,12 12,22 3,12"/>'}[sh];
+  const s={0:'<circle cx="12" cy="12" r="8"/>',1:'<rect x="4.5" y="4.5" width="15" height="15"/>',2:'<polygon points="12,3 21,19 3,19"/>',3:'<polygon points="12,2 21,12 12,22 3,12"/>',
+    4:'<polygon points="9,3 15,3 15,9 21,9 21,15 15,15 15,21 9,21 9,15 3,15 3,9 9,9"/>',5:'<polygon points="12,2.5 20.5,7.3 20.5,16.7 12,21.5 3.5,16.7 3.5,7.3"/>'}[sh];
   return `<svg viewBox="0 0 24 24"><g fill="${col}" stroke="#0b1220" stroke-width="1.5">${s}</g></svg>`;
 }
 const buildBtns={};
@@ -621,7 +787,22 @@ function playerBuild(t){
   if(state!=='play')return;
   if(selCountry<0||C[selCountry].owner!==P)selCountry=F[P].owned[0];
   const u=build(P,t,selCountry);
-  if(!u){const f=F[P];addLog(f.army>=armyCap(f)?'Army cap reached — conquer more land to grow it':`Not enough gold for ${UT[t].n}`,'bad',1500);}
+  if(!u){const f=F[P];addLog(f.army>=armyCap(f)?'Army cap reached — conquer more land to grow it':
+    UT[t].sea&&!C[selCountry].coast?`${C[selCountry].name} is landlocked — pick a coastal country to build warships`:`Not enough gold for ${UT[t].n}`,'bad',1800);}
+}
+function playerFortify(){
+  if(state!=='play')return;
+  if(selCountry<0||C[selCountry].owner!==P)selCountry=F[P].owned[0];
+  const c=C[selCountry];
+  if(c.fort>=3){addLog(`${c.name} is already fully fortified`,'',1500);return}
+  if(fortify(P,selCountry))addLog(`🛡 ${c.name} fortified to level ${c.fort}`,'good',2000);
+  else addLog(`Fortifying ${c.name} costs ${fortCost(c)} gold`,'bad',1500);
+}
+function toggleAim(on){
+  aiming=on===undefined?!aiming:on;
+  if(aiming&&state!=='play')aiming=false;
+  document.body.classList.toggle('aiming',aiming);$('bMis').classList.toggle('aim',aiming);
+  if(aiming)addLog('☢ Click where the missile should land (Esc / right-click cancels)','',2500);
 }
 let logEl=$('log');
 function addLog(txt,cls='',ms=4500){
@@ -639,11 +820,17 @@ function updateHUD(){
   $('hCountries').textContent=f.owned.length;$('hGoal').textContent=`/ ${winGoal} to win`;
   $('hArmy').textContent=f.army;$('hCap').textContent=`/ ${armyCap(f)}`;
   const pc=$('peace');
-  if(time<playerPeace){pc.classList.remove('hidden');pc.textContent=`🕊 Nobody can attack you (or you them) for ${fmtT(playerPeace-time)} — build up!`}
+  pc.classList.remove('hidden');
+  if(time<playerPeace){pc.classList.remove('war');pc.textContent=`🕊 Nobody can attack you (or you them) for ${fmtT(playerPeace-time)} — build up!`}
+  else if(waveAt>0){pc.classList.add('war');pc.textContent=`⚠ Invasion wave ${waveNo+1} in ${fmtT(waveAt-time)}`}
   else pc.classList.add('hidden');
   if(selCountry<0||C[selCountry].owner!==P)selCountry=f.owned[0]??-1;
   $('bWhere').textContent=selCountry>=0?C[selCountry].name:'—';
-  for(const t of TYPES)buildBtns[t].disabled=f.gold<UT[t].cost||f.army>=armyCap(f);
+  for(const t of TYPES)buildBtns[t].disabled=f.gold<UT[t].cost||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].coast);
+  const sc=selCountry>=0?C[selCountry]:null;
+  $('misC').textContent=misCd>0?`${Math.ceil(misCd)}s`:MIS.cost;
+  $('bMis').disabled=time<playerPeace||misCd>0||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
+  $('fortC').textContent=sc?(sc.fort>=3?'max':fortCost(sc)):'—';$('bFort').disabled=!sc||sc.fort>=3||f.gold<fortCost(sc);
   const top=F.filter(x=>x.alive).sort((a,b)=>b.owned.length-a.owned.length||b.income-a.income);
   let rows=top.slice(0,7);if(!rows.includes(f))rows[6]=f;
   $('boardRows').innerHTML=rows.map(x=>`<div class="row${x.player?' me':''}"><span class="d" style="background:${x.player?PCOL:x.color}"></span><span class="n">${top.indexOf(x)+1}. ${x.name}</span><b>${x.owned.length}</b></div>`).join('');
@@ -658,7 +845,7 @@ function showTip(sx,sy){
   const c=C[hoverC],o=F[c.owner];
   let h=`<b>${c.name}</b>`;
   if(state==='pick'||state==='menu')h+=`<span>Income +${c.value.toFixed(1)}/s · ${c.nb.size} land neighbours</span>`;
-  else h+=`<span>${o.player?'Yours':c.owner===c.i?'Independent':'Held by '+o.name}${c.owner===P?'':''} · defences ${Math.ceil(c.gar)}/${c.garMax} · +${c.value.toFixed(1)}/s</span>`;
+  else h+=`<span>${o.player?'Yours':c.owner===c.i?'Independent':'Held by '+o.name}${c.owner===P?'':''} · defences ${Math.ceil(c.gar)}/${c.garMax}${c.fort?` · 🛡${c.fort}`:''} · +${c.value.toFixed(1)}/s${c.coast?' · ⚓':''}</span>`;
   tip.innerHTML=h;tip.classList.remove('hidden');
   tip.style.left=Math.min(sx+14,VW-230)+'px';tip.style.top=Math.min(sy+14,VH-60)+'px';
 }
@@ -693,6 +880,7 @@ function clickAt(sx,sy,shift,touch){
   const [wx,wy]=s2w(sx,sy);
   if(state==='pick'){const ci=countryAt(wx,wy);if(ci>=0)choosePick(ci);return}
   if(state!=='play')return;
+  if(aiming){if(playerMissile(wx,wy))toggleAim(false);return}
   const u=unitAt(wx,wy,true);
   if(u){if(shift||touch){sel.has(u)?sel.delete(u):sel.add(u)}else{sel.clear();sel.add(u)}return}
   if(touch&&sel.size){command(wx,wy);return}
@@ -710,8 +898,9 @@ cv.addEventListener('pointerdown',e=>{
   cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const touch=e.pointerType==='touch';
   if(pts.size===2){const [p1,p2]=[...pts.values()];pinch={d:Math.hypot(p1.x-p2.x,p1.y-p2.y),z:cam.z};drag=null;return}
+  if(e.button===2&&aiming){toggleAim(false);return}
   if(e.button===2){if(state==='play'){const [wx,wy]=s2w(e.clientX,e.clientY);command(wx,wy)}return}
-  const pan=e.button===1||touch||state==='pick'||state==='menu';
+  const pan=e.button===1||(touch&&!aiming)||state==='pick'||state==='menu';
   drag={sx:e.clientX,sy:e.clientY,cx:e.clientX,cy:e.clientY,lx:e.clientX,ly:e.clientY,moved:false,box:!pan,pan,touch,shift:e.shiftKey};
 });
 cv.addEventListener('pointermove',e=>{
@@ -747,9 +936,11 @@ const keys=new Set();
 addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();keys.add(k);
   if(state!=='play')return;
-  if(k>='1'&&k<='4')playerBuild(TYPES[+k-1]);
+  if(k>='1'&&k<='6')playerBuild(TYPES[+k-1]);
   else if(k==='e')selectAll();
-  else if(k==='escape')sel.clear();
+  else if(k==='m')toggleAim();
+  else if(k==='g')playerFortify();
+  else if(k==='escape'){if(aiming)toggleAim(false);else sel.clear()}
   else if(k==='p')togglePause();
   else if(k==='f')focusHome();
   else if(k==='='||k==='+')zoomAt(VW/2,VH/2,1.25);
@@ -767,6 +958,7 @@ function selectAll(){sel.clear();for(const u of units)if(u.f===P)sel.add(u)}
 function togglePause(){paused=!paused;$('bPause').textContent=paused?'▶':'⏸';$('bPause').classList.toggle('on',paused)}
 function focusHome(){const f=F[P];const c=C[selCountry>=0&&C[selCountry].owner===P?selCountry:f.owned[0]];if(c)flyTo(c.cap.x,c.cap.y,Math.max(cam.z,3.2))}
 function flyTo(x,y,z){cam.z=z;clampCam();cam.x=x-VW/2/cam.z;cam.y=y-VH/2/cam.z;clampCam()}
+$('bMis').onclick=()=>toggleAim();$('bFort').onclick=playerFortify;
 $('bAll').onclick=selectAll;$('bNone').onclick=()=>sel.clear();$('bPause').onclick=togglePause;
 document.querySelectorAll('#ctl [data-sp]').forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;
   document.querySelectorAll('#ctl [data-sp]').forEach(x=>x.classList.toggle('on',x===b))});
@@ -775,7 +967,7 @@ document.querySelectorAll('#diff button').forEach(b=>b.onclick=()=>{diff=+b.data
 
 // ─── flow ───
 function show(id,on){$(id).classList.toggle('hidden',!on)}
-function toMenu(){state='menu';show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','peace','selinfo'].forEach(i=>show(i,0))}
+function toMenu(){state='menu';show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','powers','peace','selinfo'].forEach(i=>show(i,0));toggleAim(false)}
 $('bChoose').onclick=()=>{state='pick';pickC=-1;show('menu',0);show('pickhint',1);cam.z=fitZoom();clampCam()};
 function choosePick(ci){
   pickC=ci;const c=C[ci];
@@ -786,19 +978,21 @@ function choosePick(ci){
 }
 $('bLead').onclick=()=>{if(pickC>=0)startGame(pickC)};
 function resetWorld(){
-  units=[];fx=[];markers=[];sel.clear();time=0;checkT=0;nextUid=1;keepPlaying=false;
-  stats={built:0,lost:0,kills:0,peak:1,taken:0};
+  units=[];fx=[];markers=[];missiles=[];raids=[];sel.clear();time=0;checkT=0;nextUid=1;keepPlaying=false;
+  waveAt=0;waveNo=0;misCd=0;rebelT=25;aiming=false;document.body.classList.remove('aiming');
+  stats={built:0,lost:0,kills:0,peak:1,taken:0,missiles:0};
   makeFactions();
 }
 function startGame(ci){
   resetWorld();
-  P=ci;const me=F[P];me.player=true;me.gold=120;
-  playerPeace=[120,75,45][diff];aiMult=[.75,1,1.3][diff];winGoal=Math.ceil(C.length*.5);
+  P=ci;const me=F[P];me.player=true;me.gold=DIFF.gold[diff];
+  playerPeace=DIFF.peace[diff];aiMult=DIFF.ai[diff];winGoal=Math.ceil(C.length*.5);
+  waveAt=playerPeace+DIFF.gap[diff]*.8;aiPeace=10;
   for(const f of F){const c=C[f.owned[0]];
     if(f.player){for(let k=0;k<4;k++)spawn(f.id,'inf',c.cap.x,c.cap.y);spawn(f.id,'tank',c.cap.x,c.cap.y)}
     else{spawn(f.id,'inf',c.cap.x,c.cap.y);spawn(f.id,'inf',c.cap.x,c.cap.y)}}
   selCountry=ci;state='play';paused=false;
-  show('pickbar',0);show('pickhint',0);show('menu',0);show('end',0);['top','board','build','ctl'].forEach(i=>show(i,1));
+  show('pickbar',0);show('pickhint',0);show('menu',0);show('end',0);['top','board','build','ctl','powers'].forEach(i=>show(i,1));
   flyTo(C[ci].cap.x,C[ci].cap.y,clamp(220/Math.sqrt(C[ci].area+400),2.2,7));
   addLog(`You lead ${me.name}. Build an army — the ceasefire ends in ${fmtT(playerPeace)}.`,'good',7000);
   addLog('Drag to select · right-click an enemy country to invade it','',7000);
@@ -807,9 +1001,9 @@ function endGame(won){
   state='end';
   $('endTitle').innerHTML=won?'<span style="color:var(--me)">Victory</span>':'Defeat';
   $('endText').textContent=won?`${F[P].name} controls ${F[P].owned.length} countries. The world is yours.`:`${F[P].name} has been wiped off the map.`;
-  $('endStats').innerHTML=[['Time',fmtT(time)],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost]]
+  $('endStats').innerHTML=[['Time',fmtT(time)],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Invasion waves faced',waveNo],['Missiles fired',stats.missiles]]
     .map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
-  show('bKeep',won);show('end',1);
+  show('bKeep',won);show('end',1);toggleAim(false);
 }
 $('bAgain').onclick=()=>{toMenu();resetWorld()};
 $('bKeep').onclick=()=>{keepPlaying=true;state='play';show('end',0)};
@@ -840,6 +1034,7 @@ async function boot(){
 }
 
 // ─── #smoke self-tests ───
+const T_hp=t=>UT[t].hp;
 function runSmoke(){
   const out=[];let pass=0,fail=0;
   const ok=(c,m)=>{c?pass++:fail++;out.push((c?'PASS ':'FAIL ')+m)};
@@ -893,6 +1088,53 @@ function runSmoke(){
   // peace blocks attacks on the player
   resetWorld();P=fr;F[P].player=true;playerPeace=1e9;aiPeace=0;
   ok(!war(de,P)&&war(de,lu),'ceasefire protects the player only');
+  // flak vs fighters (towers silenced so only the units fight)
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;step(STEP);
+  const fk=spawn(P,'sam',1000,500),jt=spawn(de,'air',1012,500);fk.x=1000;fk.y=500;jt.x=1012;jt.y=500;jt.order={x:1012,y:500,cap:-1,move:true};
+  for(let i=0;i<150;i++)step(STEP);
+  ok(jt.hp<=0&&fk.hp>0,`flak shoots down a fighter (jet ${jt.hp|0}, flak ${fk.hp|0})`);
+  // warships
+  const ch=find('Switzerland');F[P].gold=1e4;
+  ok(ch>=0&&!C[ch].coast&&C[fr].coast,'Switzerland is landlocked, France has a coast');
+  C[ch].owner=P;ok(!build(P,'ship',ch),'no warships from a landlocked country');C[ch].owner=ch;
+  const sh=build(P,'ship',fr);ok(!!sh&&landAt(sh.x,sh.y)<0,'warship launches at sea');
+  sh.order={x:C[de].cap.x,y:C[de].cap.y,cap:-1,move:true};for(let i=0;i<60;i++)step(STEP);
+  ok(landAt(sh.x,sh.y)<0,'warship will not sail inland');
+  ok(C.filter(c=>c.coast).every(c=>c.port&&landAt(c.port.x,c.port.y)<0),'every coastal country has a sea port');
+  // missiles
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;step(STEP);
+  const vic=spawn(de,'tank',C[de].cap.x+3,C[de].cap.y),mine=spawn(P,'inf',C[de].cap.x-3,C[de].cap.y);vic.x=C[de].cap.x+3;mine.x=C[de].cap.x-3;
+  const gb=C[de].gar;F[P].gold=500;C[de].tcd=1e9; // silence the tower so only the blast can hurt
+  ok(playerMissile(C[de].cap.x,C[de].cap.y)&&F[P].gold===300&&misCd>0,'missile costs 200 and starts cooldown');
+  const again=playerMissile(C[de].cap.x,C[de].cap.y);ok(!again,`cannot fire again while reloading (cd ${misCd}, gold ${F[P].gold}, missiles ${missiles.length})`);
+  for(let i=0;i<30*6&&missiles.length;i++){vic.x=C[de].cap.x+3;vic.y=C[de].cap.y;vic.cd=mine.cd=9;step(STEP)}
+  ok(!missiles.length&&vic.hp<T_hp('tank')&&C[de].gar<gb*.5,`missile hits: tank ${vic.hp|0}hp, defences ${gb|0}→${C[de].gar|0}`);
+  ok(mine.hp===UT.inf.hp,`missile spares your own troops (${mine.hp})`);
+  // fortify
+  F[P].gold=1000;const g1=C[fr].garMax;ok(fortify(P,fr)&&C[fr].garMax>g1&&C[fr].fort===1&&F[P].gold===920,'fortify raises defences for 80 gold');
+  fortify(P,fr);fortify(P,fr);ok(C[fr].fort===3&&!fortify(P,fr),'fortify caps at level 3');
+  // invasion waves hit the player
+  resetWorld();seed=9;diff=2;startGame(fr);time=playerPeace;waveAt=time;
+  const tc=launchWave();
+  const inbound=units.filter(u=>u.f!==P&&u.order&&u.order.cap===(tc&&tc.i));
+  ok(tc&&tc.owner===P&&waveNo===1&&inbound.length>=6,`wave 1 sends ${inbound.length} units at ${tc&&tc.name}`);
+  ok(new Set(inbound.map(u=>u.f)).size>=2,'waves are coalitions of several countries');
+  ok(waveAt>time+30,'next wave is scheduled');
+  const w2=launchWave();ok(missiles.some(m=>m.f!==P),'hard AI fires a missile from wave 2');
+  // AI targets the player
+  resetWorld();seed=5;diff=3;startGame(fr);time=playerPeace+1;
+  const nbF=[...C[fr].nb].map(j=>F[j]);let calm=0,angry=0;
+  for(const f of nbF){f.grudge=0;if(C[chooseTarget(f)].owner===P)calm++;f.grudge=150;if(C[chooseTarget(f)].owner===P)angry++}
+  ok(angry>=nbF.length*.75&&angry>calm,`grudges turn neighbours on you (${calm}→${angry} of ${nbF.length})`);
+  // rebellion
+  resetWorld();seed=3;diff=1;startGame(fr);
+  const grab=C.filter(c=>c.i!==fr).sort((a,b)=>Math.hypot(a.cap.x-C[fr].cap.x,a.cap.y-C[fr].cap.y)-Math.hypot(b.cap.x-C[fr].cap.x,b.cap.y-C[fr].cap.y)).slice(0,10);
+  for(const c of grab)capture(c,P);for(const u of units)u.hp=0;step(STEP);
+  time=playerPeace+100;const before=F[P].owned.length;
+  for(let i=0;i<60&&F[P].owned.length===before;i++)unrest();
+  const freed=grab.find(c=>c.owner!==P);
+  ok(F[P].owned.length<before&&freed&&F[freed.i].alive&&F[freed.i].army>0,`rebels free ${freed&&freed.name} from your empire`);
+  ok(C[fr].owner===P,'your homeland never rebels');
   // full-world soak
   resetWorld();seed=77;diff=1;startGame(fr);
   const t0=performance.now();let bad=false;
@@ -906,13 +1148,14 @@ function runSmoke(){
   ok(F.every(f=>f.army===units.filter(u=>u.f===f.id).length),'army counters match units');
   ok(ms<60000,`soak ran in ${(ms/1000).toFixed(1)}s, ${units.length} units alive`);
   const topF=F.filter(f=>f.alive).sort((a,b)=>b.owned.length-a.owned.length).slice(0,5).map(f=>`${f.name}:${f.owned.length}`).join(' ');
-  out.push('top: '+topF+` · player ${F[P].owned.length} countries, ${F[P].army} units`);
+  out.push('top: '+topF+` · player ${F[P].owned.length} countries, ${F[P].army} units, ${waveNo} waves`);
+  ok(waveNo>=1,`invasion waves hit the idle player (${waveNo})`);
   document.title=`SMOKE ${fail?'FAIL':'PASS'} ${pass}/${pass+fail}`;
   const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=document.title+'\n'+out.join('\n');document.body.appendChild(pre);
 }
 
 boot();
-if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,get P(){return P}};
+if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,get P(){return P}};
 })();
 </script>
 <script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
