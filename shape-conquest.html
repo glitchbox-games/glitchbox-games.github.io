@@ -123,6 +123,11 @@ body.aiming canvas{cursor:crosshair}
   .ub{min-width:44px;padding:4px}
   .ub>span:not(.c){font-size:10px}
 }
+
+.lbl{font-size:11px;letter-spacing:.08em;color:var(--dim);font-weight:600;margin-top:12px}
+.doc{flex-wrap:wrap;margin:6px 0 4px}.doc button{flex:1 1 30%;padding:7px 4px;font-size:12px}
+.docd{font-size:12px;min-height:32px;color:#ffe3a3!important}
+.fog{display:flex;gap:8px;align-items:center;font-size:12px;color:#b8c3d6;margin:2px 0 14px;cursor:pointer}
 #smokeout{position:fixed;inset:0;margin:0;padding:12px;background:#000d;color:#9f9;font:12px monospace;z-index:99;overflow:auto;white-space:pre-wrap}
 </style>
 </head>
@@ -147,6 +152,7 @@ body.aiming canvas{cursor:crosshair}
 </div>
 <div id="ctl" class="panel hidden">
   <button id="bAll" title="Select whole army (E)">Select all</button>
+  <button id="bRet" title="Retreat selected units to the nearest home capital (H)">↩ Retreat</button>
   <button id="bNone" title="Deselect (Esc)">✕</button>
   <button id="bPause" title="Pause (P)">⏸</button>
   <button data-sp="1" class="on">1×</button>
@@ -156,6 +162,7 @@ body.aiming canvas{cursor:crosshair}
 <div id="powers" class="panel hidden">
   <button id="bMis" title="Missile strike (M)">☢ Missile <span class="c" id="misC">200</span></button>
   <button id="bTech" title="Research (R)">🔬 Research</button>
+  <button id="bMap" title="Strategic map: supply range and enemy strength (V)">🗺 Map</button>
 </div>
 <div id="techp" class="panel hidden"><h4>RESEARCH</h4><div id="techRows"></div></div>
 <div id="cpanel" class="panel hidden">
@@ -180,18 +187,26 @@ body.aiming canvas{cursor:crosshair}
     <div class="legend" id="legend"></div>
     <p style="font-size:13px">Every country starts free and every one of them wants more land. To take a country, smash its capital's
       defences, then park a ground unit on it.</p>
-    <p style="font-size:13px">🧠 <b>Strategy:</b> real powers (★) start big and rich. Tanks, fighters and warships burn ⛽ fuel — only
+    <p style="font-size:13px">⛔ <b>Supply:</b> troops more than a short march from your land are out of supply — they wither and fight
+      weaker, so push in fronts and use warships to carry supply overseas. Troops heal on home soil, defenders fight harder there,
+      and veterans (★ from kills) hit harder — <b>retreat (H)</b> a beaten army instead of throwing it away.</p>
+    <p style="font-size:13px">🧠 <b>Economy:</b> real powers (★) start big and rich. Tanks, fighters and warships burn ⛽ fuel — only
       oil countries supply it. Every unit costs upkeep, so balance army vs 🏭 factories and 🔬 research. Sign 🤝 pacts to
       guard a flank, or park an army on a small country and demand its surrender. Click any country for options.</p>
     <p style="font-size:13px;color:#ffc2c2">⚠ The world fights back. Coalitions of neighbours launch invasion waves at you, every conquest
       earns you grudges, and big empires breed rebels. Fortify your borders and keep missiles ready.</p>
-    <div class="diff" id="diff">
+    <div class="lbl">NATIONAL DOCTRINE</div>
+    <div class="diff doc" id="docs"></div>
+    <p class="docd" id="docDesc"></p>
+    <label class="fog"><input type="checkbox" id="fogChk" checked> 🌫 Fog of war — enemy troops stay hidden unless your land or units can see them</label>
+    <div class="lbl">DIFFICULTY</div>
+    <div class="diff" id="diff" style="margin-top:6px">
       <button data-d="0">Easy</button><button data-d="1" class="on">Normal</button><button data-d="2">Hard</button><button data-d="3">Brutal</button>
     </div>
     <button class="go" id="bChoose">Choose your country →</button>
     <div class="keys">
       <kbd>Drag</kbd> select units · <kbd>Right-click</kbd> move / invade · <kbd>Wheel</kbd> zoom ·
-      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>R</kbd> research · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
+      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>R</kbd> research · <kbd>H</kbd> retreat · <kbd>V</kbd> strategic map · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
     </div>
   </div>
 </div>
@@ -274,6 +289,17 @@ const MIS={cost:200,cd:45,r:24,dmg:90};
 // per difficulty: ceasefire, AI income, AI army size, starting gold, wave gap, wave size, how much the AI hates you, AI launch threshold vs you
 const DIFF={peace:[120,60,40,25],ai:[.8,1.15,1.45,1.8],cap:[.9,1.1,1.3,1.5],gold:[150,110,90,70],
   gap:[200,130,95,70],wave:[1,1.25,1.5,1.9],hate:[-30,0,20,40],launch:[1.2,1,.85,.7],unrest:[0,.1,.16,.22]};
+const DOC={
+  blitz:{n:'Blitzkrieg',i:'⚡',d:'Tanks and fighters move 25% faster and hit 15% harder. +3 fuel.'},
+  fort :{n:'Fortress',i:'🏰',d:'Capitals +30% defences, forts half price, troops +40% damage on home soil (instead of +20%).'},
+  econ :{n:'War Economy',i:'🏭',d:'+15% income. Factories and research cost 35% less.'},
+  mass :{n:'People\'s Army',i:'✊',d:'Infantry costs 7 and needs no upkeep. Army cap +25%. Half attrition out of supply.'},
+  navy :{n:'Sea Power',i:'⚓',d:'Warships 35% cheaper and carry supply twice as far. Land supply range +30%. +2 fuel.'},
+  none :{n:'None',i:'',d:''}};
+const DOCS=['blitz','fort','econ','mass','navy'];
+// supply: troops within SUP_R of their own land (or SHIP_SUP of their own warship) are supplied; others wither
+const SUP_R=45, SHIP_SUP=30, ATTR=.012, HEAL=.03, RANK=[0,40,120,260];
+const VIS={inf:30,tank:30,art:34,air:60,sam:34,ship:45}, CAP_VIS=45;
 const CAPTURE_R=14, TOWER_R=26;
 let GAR0=30,GARV=18,AGG0=.1,AGGR=.35,LAUNCH=1.4; // pacing dials
 
@@ -285,6 +311,8 @@ let playerPeace=75, aiPeace=10, aiMult=1, winGoal=0;
 let sel=new Set(), selCountry=-1, hoverC=-1, pickC=-1;
 let stats={built:0,lost:0,kills:0,peak:1,taken:0};
 let nextUid=1, keepPlaying=false;
+let pdoc='blitz', FOG=true, mapMode=false, aiDocs=true, visT=0;
+let supDist=null, supDirty=true, supCv=null, fogCv=null;
 let missiles=[], raids=[], waveAt=0, waveNo=0, misCd=0, aiming=false, rebelT=25;
 const cam={x:0,y:0,z:1};
 
@@ -386,26 +414,31 @@ function makeFactions(){
     const s=36+(i*7)%18, l=46+(i*11)%14;
     return{id:i,name:c.name,color:`hsl(${h|0},${s}%,${l}%)`,ucol:`hsl(${h|0},${s+18}%,${l+22}%)`,gold:START.gold[c.tier],income:c.value,
       owned:[i],army:0,mech:0,upk:0,broke:false,alive:true,player:false,aggr:AGG0+rand()*AGGR+c.tier*.08,think:1+rand()*3,target:-1,kills:0,peak:1,grudge:0,
-      pact:-1,tech:{arm:0,fp:0,log:0,ind:0}};
+      pact:-1,tech:{arm:0,fp:0,log:0,ind:0},doc:aiDocs&&(c.tier||rand()<.5)?DOCS[(rand()*DOCS.length)|0]:'none'};
   });
+  for(const f of F)recalc(f);
   for(const c of C){c.owner=c.i;c.fort=0;c.fac=0;c.garMax=garFor(c);c.gar=c.garMax;c.alertT=-99;c.tcd=rand();c.threat=-99;c.lastHit=-99}
 }
-function armyCap(f){return f.player?Math.min(250,Math.round(10+4*f.owned.length+3*f.income)):Math.min(160,Math.round((3+3*f.owned.length+2.5*f.income)*DIFF.cap[diff]))}
-function fuelCap(f){let o=0;for(const i of f.owned)o+=C[i].oil;return 3+4*o}
-function garFor(c){return Math.round((GAR0+c.value*GARV+c.tier*20)*(1+.6*c.fort))}
+function armyCap(f){const m=f.doc==='mass'?1.25:1;return f.player?Math.round(m*Math.min(250,10+4*f.owned.length+3*f.income)):Math.round(m*Math.min(160,(3+3*f.owned.length+2.5*f.income)*DIFF.cap[diff]))}
+function fuelCap(f){let o=0;for(const i of f.owned)o+=C[i].oil;return 3+4*o+(f.doc==='blitz'?3:f.doc==='navy'?2:0)}
+function garFor(c){return Math.round((GAR0+c.value*GARV+c.tier*20)*(1+.6*c.fort)*(F[c.owner]&&F[c.owner].doc==='fort'?1.3:1))}
+function costOf(fi,t){const d=F[fi].doc;return t==='inf'&&d==='mass'?7:t==='ship'&&d==='navy'?39:UT[t].cost}
+function upkOf(fi,t){return t==='inf'&&F[fi].doc==='mass'?0:UT[t].upk}
+function techCost(f,lv){return Math.round(TECHCOST[lv]*(f.doc==='econ'?.65:1))}
+const supR=fi=>SUP_R*(F[fi].doc==='navy'?1.3:1), shipSup=fi=>SHIP_SUP*(F[fi].doc==='navy'?2:1);
 function netIncome(f){return f.income*(f.player?1:aiMult)-f.upk*(1-.15*f.tech.log)}
-function facCost(c){return FACCOST[c.fac]}
+function facCost(c){return Math.round(FACCOST[c.fac]*(F[c.owner].doc==='econ'?.65:1))}
 function buildFactory(fi,ci){
   const f=F[fi],c=C[ci];if(ci<0||c.owner!==fi||c.fac>=3||f.gold<facCost(c))return false;
   f.gold-=facCost(c);c.fac++;recalc(f);fx.push({k:3,x:c.cap.x,y:c.cap.y,life:.8,max:.8,col:'#9fd8ff'});return true;
 }
 function research(fi,k){
-  const f=F[fi],lv=f.tech[k];if(lv>=3||f.gold<TECHCOST[lv])return false;
-  f.gold-=TECHCOST[lv];f.tech[k]++;if(k==='ind')recalc(f);
+  const f=F[fi],lv=f.tech[k];if(lv>=3||f.gold<techCost(f,lv))return false;
+  f.gold-=techCost(f,lv);f.tech[k]++;if(k==='ind')recalc(f);
   if(k==='arm')for(const u of units)if(u.f===fi){const m=UT[u.t].hp*(1+.15*f.tech.arm);u.hp*=m/u.mhp;u.mhp=m}
   return true;
 }
-function fortCost(c){return 80*(c.fort+1)}
+function fortCost(c){return Math.round(80*(c.fort+1)*(F[c.owner].doc==='fort'?.5:1))}
 function fortify(fi,ci){
   const f=F[fi],c=C[ci];if(ci<0||c.owner!==fi||c.fort>=3||f.gold<fortCost(c))return false;
   f.gold-=fortCost(c);c.fort++;const old=c.garMax;c.garMax=garFor(c);c.gar+=c.garMax-old;
@@ -446,12 +479,12 @@ function annexCheck(f){
 function annex(fi){
   const f=F[fi];if(!annexCheck(f)[0])return false;
   const me=F[P];me.gold-=annexCost(f);
-  for(const u of units)if(u.f===fi&&u.hp>0){unitGone(u);u.f=P;u.order=null;u.tgt=null;me.army++;me.upk+=UT[u.t].upk;if(UT[u.t].fuel)me.mech++}
+  for(const u of units)if(u.f===fi&&u.hp>0){unitGone(u);u.f=P;u.order=null;u.tgt=null;me.army++;me.upk+=upkOf(P,u.t);if(UT[u.t].fuel)me.mech++}
   for(const i of [...f.owned])capture(C[i],P);
   addLog(`🏳 ${f.name} surrendered and joined you — its army is now yours`,'good',5000);
   return true;
 }
-function recalc(f){f.income=f.owned.reduce((s,i)=>s+C[i].value*(1+.5*C[i].fac),0)*(1+.12*f.tech.ind)}
+function recalc(f){f.income=f.owned.reduce((s,i)=>s+C[i].value*(1+.5*C[i].fac),0)*(1+.12*f.tech.ind)*(f.doc==='econ'?1.15:1)}
 const war=(a,b)=>a!==b&&!((a===P||b===P)&&(time<playerPeace||F[a===P?b:a].pact>time));
 
 // ─── spatial hash ───
@@ -469,17 +502,18 @@ function near(x,y,r,fn){
 function spawn(fi,t,x,y){
   const a=rand()*6.283,r=2+rand()*6;
   const f=F[fi],T=UT[t],mhp=T.hp*(1+.15*f.tech.arm);
-  const u={id:nextUid++,f:fi,t,x:x+Math.cos(a)*r,y:y+Math.sin(a)*r,hp:mhp,mhp,cd:rand(),scan:rand()*.3,tgt:null,order:null,ang:rand()*6.28};
-  units.push(u);f.army++;f.upk+=T.upk;if(T.fuel)f.mech++;return u;
+  const u={id:nextUid++,f:fi,t,x:x+Math.cos(a)*r,y:y+Math.sin(a)*r,hp:mhp,mhp,cd:rand(),scan:rand()*.3,tgt:null,order:null,ang:rand()*6.28,
+    sup:true,home:true,xp:0,rank:0,lastFight:-99,vis:true};
+  units.push(u);f.army++;f.upk+=upkOf(fi,t);if(T.fuel)f.mech++;return u;
 }
-function unitGone(u){const f=F[u.f];if(!f.alive||u.gone)return;f.army--;f.upk-=UT[u.t].upk;if(UT[u.t].fuel)f.mech--}
+function unitGone(u){const f=F[u.f];if(!f.alive||u.gone)return;f.army--;f.upk-=upkOf(u.f,u.t);if(UT[u.t].fuel)f.mech--}
 function clearArmy(f){f.army=0;f.mech=0;f.upk=0}
 function build(fi,t,ci){
   const f=F[fi],T=UT[t];
-  if(!f.alive||ci<0||C[ci].owner!==fi||f.gold<T.cost||f.army>=armyCap(f))return null;
+  if(!f.alive||ci<0||C[ci].owner!==fi||f.gold<costOf(fi,t)||f.army>=armyCap(f))return null;
   if(T.sea&&!C[ci].coast)return null;
   if(T.fuel&&f.mech>=fuelCap(f))return null;
-  f.gold-=T.cost;const at=T.sea?C[ci].port:C[ci].cap,u=spawn(fi,t,at.x,at.y);
+  f.gold-=costOf(fi,t);const at=T.sea?C[ci].port:C[ci].cap,u=spawn(fi,t,at.x,at.y);
   if(T.sea){u.x=at.x;u.y=at.y}
   if(f.player)stats.built++;
   return u;
@@ -489,41 +523,91 @@ function findEnemy(u,r){
   near(u.x,u.y,r,o=>{if(o.hp<=0||!war(u.f,o.f)||mt[o.t]===0)return;const d=(o.x-u.x)**2+(o.y-u.y)**2;if(d<bd){bd=d;best=o}});
   return best;
 }
-function hurt(o,dmg,by){
-  if(o.hp<=0)return;o.hp-=dmg;
+function hurt(o,dmg,by,k){ // k: the unit that fired, which earns veterancy for the kill
+  if(o.hp<=0)return;o.hp-=dmg;if(by>=0)o.lastFight=time;
   if(o.hp<=0){
     fx.push({k:1,x:o.x,y:o.y,life:.5,max:.5,col:F[o.f].color});
     if(by===P)stats.kills++; if(o.f===P)stats.lost++;
     if(F[by])F[by].kills++;
+    if(k&&k.hp>0){k.xp+=UT[o.t].cost;let r=k.rank;while(r<3&&k.xp>=RANK[r+1])r++;
+      if(r>k.rank){k.rank=r;k.hp=Math.min(k.mhp,k.hp+k.mhp*.25);if(k.f===P)stats.vets=Math.max(stats.vets||0,r)}}
   }
+}
+// ─── supply ───
+function ownerAt(x,y){const i=landAt(x,y);return i<0?-1:C[i].owner}
+function inSupply(fi,x,y){ // on our land (or a pact partner's, for the player), a short march from it, or next to one of our warships
+  const o=ownerAt(x,y);
+  if(o===fi||(fi===P&&o>=0&&F[o].pact>time))return true;
+  const sr=shipSup(fi);let ship=false;
+  near(x,y,sr,q=>{if(!ship&&q.f===fi&&q.hp>0&&UT[q.t].sea&&(q.x-x)**2+(q.y-y)**2<sr*sr)ship=true});
+  if(ship)return true;
+  if(fi===P&&supDist){const gx=x/CS|0,gy=y/CS|0;if(x>=0&&gx<GW&&gy>=0&&gy<GH)return supDist[gx+gy*GW]*CS/3<=supR(P)}
+  const R=supR(fi);
+  for(const rr of [R*.35,R*.7,R])for(let k=0;k<10;k++){const a=k*.6283+rr*.02;if(ownerAt(x+Math.cos(a)*rr,y+Math.sin(a)*rr)===fi)return true}
+  return false;
+}
+function calcSupply(){ // the player's supply zone: chamfer distance from their land, painted into an overlay
+  supDirty=false;if(P<0||!grid)return;
+  if(!supDist)supDist=new Uint16Array(GW*GH);const d=supDist;
+  for(let i=0;i<d.length;i++){const g=grid[i];d[i]=g>=0&&C[g].owner===P?0:60000}
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const i=x+y*GW;let v=d[i];if(!v)continue;
+    if(x>0)v=Math.min(v,d[i-1]+3);if(y>0){v=Math.min(v,d[i-GW]+3);if(x>0)v=Math.min(v,d[i-GW-1]+4);if(x<GW-1)v=Math.min(v,d[i-GW+1]+4)}d[i]=v}
+  for(let y=GH-1;y>=0;y--)for(let x=GW-1;x>=0;x--){const i=x+y*GW;let v=d[i];if(!v)continue;
+    if(x<GW-1)v=Math.min(v,d[i+1]+3);if(y<GH-1){v=Math.min(v,d[i+GW]+3);if(x<GW-1)v=Math.min(v,d[i+GW+1]+4);if(x>0)v=Math.min(v,d[i+GW-1]+4)}d[i]=v}
+  if(SMOKE)return;
+  if(!supCv){supCv=document.createElement('canvas');supCv.width=GW;supCv.height=GH}
+  const g=supCv.getContext('2d'),img=g.createImageData(GW,GH),R=supR(P)*3/CS;
+  for(let i=0;i<d.length;i++)if(d[i]>0&&d[i]<=R){const e=d[i]>R-4;img.data[i*4]=110;img.data[i*4+1]=230;img.data[i*4+2]=150;img.data[i*4+3]=e?170:55}
+  g.putImageData(img,0,0);
+}
+// ─── fog of war: what the player can see ───
+function calcVis(){
+  for(const c of C){c.vis=!FOG||c.owner===P;c.seen=0}
+  for(const u of units)u.vis=!FOG||u.f===P||ownerAt(u.x,u.y)===P;
+  if(FOG&&P>=0){
+    const src=[];for(const u of units)if(u.f===P&&u.hp>0)src.push([u.x,u.y,VIS[u.t]]);
+    for(const i of F[P].owned)src.push([C[i].cap.x,C[i].cap.y,CAP_VIS]);
+    for(const [x,y,r] of src){near(x,y,r,o=>{if(!o.vis&&(o.x-x)**2+(o.y-y)**2<r*r)o.vis=true});
+      for(const c of C)if(!c.vis&&(c.cap.x-x)**2+(c.cap.y-y)**2<r*r)c.vis=true}
+  }
+  for(const c of C)if(c.owner!==P)near(c.cap.x,c.cap.y,50,o=>{if(o.f===c.owner&&o.vis&&o.hp>0&&(o.x-c.cap.x)**2+(o.y-c.cap.y)**2<2500)c.seen++});
 }
 function fire(u,o){
   const T=UT[u.t];u.ang=Math.atan2(o.y-u.y,o.x-u.x);
   fx.push({k:0,x:u.x,y:u.y,x2:o.x,y2:o.y,life:.18,max:.18,col:F[u.f].color,t:u.t});
-  const k=dmgMul(u.f);hurt(o,T.dmg*k*MOD[u.t][o.t],u.f);
+  const k=unitDmg(u);u.lastFight=time;hurt(o,T.dmg*k*MOD[u.t][o.t],u.f,u);
   if(T.splash){fx.push({k:2,x:o.x,y:o.y,life:.35,max:.35,r:T.splash});
-    near(o.x,o.y,T.splash,q=>{if(q!==o&&q.hp>0&&war(u.f,q.f)&&!UT[q.t].air&&(q.x-o.x)**2+(q.y-o.y)**2<T.splash*T.splash)hurt(q,T.dmg*k*.6*MOD[u.t][q.t],u.f)})}
+    near(o.x,o.y,T.splash,q=>{if(q!==o&&q.hp>0&&war(u.f,q.f)&&!UT[q.t].air&&(q.x-o.x)**2+(q.y-o.y)**2<T.splash*T.splash)hurt(q,T.dmg*k*.6*MOD[u.t][q.t],u.f,u)})}
 }
 function dmgMul(fi){const f=F[fi];return(1+.15*f.tech.fp)*(f.broke?.7:1)}
+function unitDmg(u){ // research × veterancy × doctrine × home soil × supply
+  const f=F[u.f];let k=dmgMul(u.f)*(1+.15*u.rank);
+  if(f.doc==='blitz'&&(u.t==='tank'||u.t==='air'))k*=1.15;
+  if(u.home)k*=f.doc==='fort'?1.4:1.2;
+  return u.sup?k:k*.75;
+}
 function fireCap(u,c){
   const T=UT[u.t];u.ang=Math.atan2(c.cap.y-u.y,c.cap.x-u.x);
   fx.push({k:0,x:u.x,y:u.y,x2:c.cap.x,y2:c.cap.y,life:.18,max:.18,col:F[u.f].color,t:u.t});
   if(T.splash)fx.push({k:2,x:c.cap.x,y:c.cap.y,life:.35,max:.35,r:T.splash});
-  c.gar=Math.max(0,c.gar-T.dmg*dmgMul(u.f)*GMOD[u.t]);c.lastHit=time;c.flash=.15;
+  u.lastFight=time;c.gar=Math.max(0,c.gar-T.dmg*unitDmg(u)*GMOD[u.t]);c.lastHit=time;c.flash=.15;
 }
 
 function updateUnit(u,dt){
   const T=UT[u.t];
   u.cd-=dt;u.scan-=dt;
   if(u.tgt&&(u.tgt.hp<=0||!war(u.f,u.tgt.f)))u.tgt=null;
-  if(u.scan<=0){u.scan=.25+rand()*.15;u.tgt=findEnemy(u,T.range+(u.order&&u.order.move?4:18))}
+  const ret=!!(u.order&&u.order.retreat);
+  if(u.scan<=0){u.scan=.25+rand()*.15;u.tgt=findEnemy(u,ret?T.range:T.range+(u.order&&u.order.move?4:18));
+    const own=ownerAt(u.x,u.y);u.home=own===u.f;u.sup=T.sea||u.home||inSupply(u.f,u.x,u.y)}
   let mx=null,my=null,stop=3;
-  if(u.tgt){
+  if(u.tgt&&!ret){
     const d=Math.hypot(u.tgt.x-u.x,u.tgt.y-u.y);
     if(d<=T.range){if(u.cd<=0){fire(u,u.tgt);u.cd=1/T.rof}}
     else{mx=u.tgt.x;my=u.tgt.y;stop=0}
   }else if(u.order){
     const o=u.order;
+    if(ret&&u.tgt&&u.cd<=0&&Math.hypot(u.tgt.x-u.x,u.tgt.y-u.y)<=T.range){fire(u,u.tgt);u.cd=1/T.rof} // shoot while falling back
     if(o.cap>=0){
       const c=C[o.cap];
       if(c.owner===u.f||!war(u.f,c.owner)){u.order=null}
@@ -542,7 +626,7 @@ function updateUnit(u,dt){
     const dx=mx-u.x,dy=my-u.y,d=Math.hypot(dx,dy);
     if(d>stop&&d>.01){
       const wet=landAt(u.x,u.y)<0;
-      let sp=T.speed*(1+.15*F[u.f].tech.log);if(T.sea){if(!wet)sp*=.3}else if(!T.air&&wet)sp*=.4;
+      let sp=T.speed*(1+.15*F[u.f].tech.log)*(F[u.f].doc==='blitz'&&(u.t==='tank'||u.t==='air')?1.25:1);if(T.sea){if(!wet)sp*=.3}else if(!T.air&&wet)sp*=.4;
       const s=Math.min(d-stop*.5,sp*dt);let nx=u.x+dx/d*s,ny=u.y+dy/d*s;
       if(T.sea&&wet&&landAt(nx,ny)>=0){ // warships hug the coast instead of driving inland
         if(landAt(nx,u.y)<0)ny=u.y;else if(landAt(u.x,ny)<0)nx=u.x;else{nx=u.x;ny=u.y}}
@@ -556,6 +640,9 @@ function updateUnit(u,dt){
     const dx=u.x-o.x,dy=u.y-o.y,d=Math.hypot(dx,dy);
     if(d<rr){if(d<.01){u.x+=rand()-.5;u.y+=rand()-.5;return}const p=(rr-d)/d*.25;u.x+=dx*p;u.y+=dy*p}});
   u.x=clamp(u.x,-90,W+190);u.y=clamp(u.y,2,H-2);
+  // out of supply: wither; at home and out of the fight: recover
+  if(!u.sup)hurt(u,u.mhp*ATTR*(F[u.f].doc==='mass'?.5:1)*dt,-1);
+  else if(u.home&&u.hp<u.mhp&&time-u.lastFight>5)u.hp=Math.min(u.mhp,u.hp+u.mhp*HEAL*dt);
 }
 
 // ─── countries: towers + capture ───
@@ -581,7 +668,7 @@ function updateCountry(c,dt){
 }
 function capture(c,fi){
   const old=F[c.owner],nf=F[fi];
-  old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=fi;
+  old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=fi;if(fi===P||old.id===P)supDirty=true;
   c.fort=Math.max(0,c.fort-1);c.fac=Math.max(0,c.fac-1);c.garMax=garFor(c);c.gar=c.garMax*.35;c.lastHit=time;
   if(fi===P){ // the victim wants revenge and the neighbours get nervous
     old.grudge+=80;for(const j of c.nb){const o=F[C[j].owner];if(!o.player)o.grudge+=25}}
@@ -603,6 +690,8 @@ function capture(c,fi){
 function pickType(f,front){
   const r=rand();
   if(f.mech>=fuelCap(f))return r<.55?'inf':r<.8?'art':'sam'; // no fuel: foot soldiers and guns only
+  if(f.doc==='mass'&&r<.35)return 'inf';
+  if(f.doc==='navy'&&front>=0&&C[front].coast&&f.owned.length>=2&&rand()<.2)return 'ship';
   if(front>=0&&C[front].coast&&f.owned.length>=3&&rand()<.1)return 'ship';
   if(f.owned.length<3)return r<.6?'inf':r<.86?'tank':r<.94?'art':'sam';
   return r<.34?'inf':r<.6?'tank':r<.76?'art':r<.9?'air':'sam';
@@ -615,7 +704,7 @@ function aiThink(f){
   if(tc){let bd=1e18;for(const i of f.owned){const d=(C[i].cap.x-tc.cap.x)**2+(C[i].cap.y-tc.cap.y)**2;if(d<bd){bd=d;front=i}}}
   else front=f.owned[(rand()*f.owned.length)|0];
   let guard=0;
-  while(f.army<armyCap(f)&&guard++<8){const t=pickType(f,front);if(f.gold<UT[t].cost)break;build(f.id,t,front)}
+  while(f.army<armyCap(f)&&guard++<8){const t=pickType(f,front);if(f.gold<costOf(f.id,t))break;build(f.id,t,front)}
   if(diff>=2&&f.gold>260&&rand()<.2){const i=f.owned[(rand()*f.owned.length)|0];if(C[i].fort<2)fortify(f.id,i)}
   // grow the economy when safe: factories in the richest province, then research
   if(f.army>=armyCap(f)*.6&&rand()<.3){let bi=-1,bv=0;for(const i of f.owned){const c=C[i];if(c.fac<3&&time-c.threat>10&&c.value>bv){bv=c.value;bi=i}}
@@ -623,6 +712,9 @@ function aiThink(f){
   if(f.gold>400&&rand()<.15){const k=TECHS[(rand()*4)|0];research(f.id,k)}
   f.gold=Math.min(f.gold,700);f.grudge*=.98;
   const mine=units.filter(u=>u.f===f.id&&u.hp>0);
+  // pull badly hurt troops back home to heal instead of losing them
+  for(const u of mine)if(u.hp<u.mhp*.3&&!u.home&&!UT[u.t].sea&&!(u.order&&u.order.retreat)){
+    const [hi]=nearestOwned(f,u.x,u.y);if(hi>=0)u.order={x:C[hi].cap.x+rand()*8-4,y:C[hi].cap.y+rand()*8-4,cap:-1,move:true,retreat:true}}
   const idle=mine.filter(u=>!u.order);
   // defend any capital under attack
   for(const i of f.owned){const c=C[i];if(time-c.threat<2){
@@ -651,6 +743,7 @@ function chooseTarget(f){
     let s=Math.hypot(t.cap.x-o.cap.x,t.cap.y-o.cap.y)+t.gar*1.5+rand()*60-t.value*10-t.fac*15;
     if(t.oil&&f.mech>=fuelCap(f)-1)s-=50*t.oil; // short on fuel: go get some
     if(!o.nb.has(j))s+=60; // sea crossings are a bigger ask
+    if(!inSupply(f.id,t.cap.x,t.cap.y))s+=70; // and so is a siege beyond our supply lines
     if(t.owner===P)s-=DIFF.hate[diff]+Math.min(60,Math.max(0,F[P].owned.length-3)*4)+f.grudge;
     else if(F[t.owner].owned.length>6)s+=50;
     if(s<bs){bs=s;best=j}}}
@@ -722,7 +815,7 @@ function unrest(){
 }
 function revolt(c){
   const old=F[c.owner],nf=F[c.i];
-  old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=c.i;
+  old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=c.i;if(old.id===P)supDirty=true;
   if(!nf.alive){nf.alive=true;nf.gold=80;nf.target=-1;nf.think=1;clearArmy(nf)}
   c.fort=0;c.garMax=garFor(c);c.gar=c.garMax*.7;c.lastHit=time;
   recalc(old);recalc(nf);
@@ -745,6 +838,8 @@ function step(dt){
   misCd=Math.max(0,misCd-dt);
   for(const m of missiles){m.t+=dt;if(m.t>=m.dur){boom(m);m.done=1}}
   if(missiles.length)missiles=missiles.filter(m=>!m.done);
+  if(supDirty)calcSupply();
+  visT-=dt;if(visT<=0){visT=.2;calcVis()}
   for(const r of raids)r.life-=dt;if(raids.length)raids=raids.filter(r=>r.life>0);
   for(const f of F)if(f.pact>0&&f.pact<=time){f.pact=-1;if(f.alive&&state==='play')addLog(`🤝 Your pact with ${f.name} has expired`,'',4000)}
   rebelT-=dt;if(rebelT<=0){rebelT=25;if(time>playerPeace)unrest()}
@@ -805,6 +900,10 @@ function render(){
     ctx.fillStyle=col;ctx.fill(c.path,'evenodd');
     if(c.i===hoverC||(picking&&c.i===pickC)){ctx.fillStyle='rgba(255,255,255,.22)';ctx.fill(c.path,'evenodd')}
   }
+  // supply zone (strategic map, or while you have troops selected)
+  if(!picking&&supCv&&(mapMode||sel.size)){ctx.globalAlpha=mapMode?1:.55;ctx.imageSmoothingEnabled=true;ctx.drawImage(supCv,0,0,GW*CS,GH*CS);ctx.globalAlpha=1;
+    if(mapMode){ctx.strokeStyle='rgba(110,230,150,.7)';ctx.lineWidth=1/cam.z;ctx.setLineDash([3/cam.z,3/cam.z]);
+      for(const u of units)if(u.f===P&&UT[u.t].sea){ctx.beginPath();ctx.arc(u.x,u.y,shipSup(P),0,6.283);ctx.stroke()}ctx.setLineDash([])}}
   ctx.lineJoin='round';
   ctx.strokeStyle='rgba(8,13,22,.85)';ctx.lineWidth=.9/cam.z;
   for(const c of C){if(c.bb[2]<vx0||c.bb[0]>vx1||c.bb[3]<vy0||c.bb[1]>vy1)continue;ctx.stroke(c.path)}
@@ -840,12 +939,16 @@ function render(){
       for(let k=0;k<c.fort;k++){ctx.beginPath();ctx.arc(sx,sy,cr+3.5+k*2.2,0,6.283);ctx.stroke()}}
     if(!picking&&c.owner===P&&time-c.threat<2){const a=.5+.5*Math.sin(performance.now()/120);
       ctx.strokeStyle=`rgba(255,70,70,${.4+.5*a})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,cr+9+a*5,0,6.283);ctx.stroke()}
+    if(!picking&&mapMode&&c.owner!==P){ctx.font='700 11px system-ui,sans-serif';
+      const t=c.vis?`⚔${c.seen}`:'?';ctx.fillStyle='rgba(6,10,18,.75)';ctx.fillRect(sx-14,sy+cr+7,28,14);
+      ctx.fillStyle=!c.vis?'#8a96ab':c.seen>=8?'#ff7a7a':c.seen>=3?'#ffcf5a':'#b9f5cc';ctx.fillText(t,sx,sy+cr+14.5);ctx.font='600 11px system-ui,sans-serif'}
     if(!picking&&c.gar<c.garMax-.5){
       const w=Math.max(16,cr*5),f=c.gar/c.garMax;
       ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(sx-w/2,sy+cr+3,w,3);
       ctx.fillStyle=f>.5?'#8fe3a0':f>.2?'#ffcf5a':'#ff6b6b';ctx.fillRect(sx-w/2,sy+cr+3,w*f,3);
     }
   }
+  if(!picking&&FOG&&P>=0&&state!=='menu')drawFog();
   // attack-order markers
   for(const m of markers){const [sx,sy]=w2s(m.x,m.y),a=m.life/m.max;
     ctx.strokeStyle=m.atk?`rgba(255,90,90,${a})`:`rgba(255,255,255,${a})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,6+(1-a)*10,0,6.283);ctx.stroke()}
@@ -886,7 +989,7 @@ function render(){
   }
   // units (ground first, aircraft on top)
   for(let pass=0;pass<2;pass++)for(const u of units){
-    const T=UT[u.t];if(!!T.air!==!!pass)continue;
+    const T=UT[u.t];if(!!T.air!==!!pass||u.vis===false)continue;
     const [sx,sy]=w2s(u.x,u.y);if(sx<-15||sx>VW+15||sy<-15||sy>VH+15)continue;
     const s=clamp(T.size*cam.z*.55,2.6,11);
     if(!T.air&&!T.sea&&landAt(u.x,u.y)<0){ctx.strokeStyle='rgba(160,210,255,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+3,0,6.283);ctx.stroke()}
@@ -895,6 +998,8 @@ function render(){
     ctx.fillStyle=F[u.f].player?PUNIT:F[u.f].ucol;ctx.fill();
     ctx.lineWidth=sel.has(u)?2.2:1.3;ctx.strokeStyle=sel.has(u)?'#fff':'#060a12';ctx.stroke();
     if(sel.has(u)){ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+4,0,6.283);ctx.stroke()}
+    if(u.f===P&&!u.sup){ctx.strokeStyle='rgba(255,150,60,.9)';ctx.lineWidth=1.2;ctx.setLineDash([2,2]);ctx.beginPath();ctx.arc(sx,sy,s+2.5,0,6.283);ctx.stroke();ctx.setLineDash([])}
+    if(u.rank&&s>=3.5){ctx.fillStyle='#ffd24a';for(let k=0;k<u.rank;k++){ctx.beginPath();ctx.arc(sx-(u.rank-1)*2.2+k*4.4,sy+s+3.5,1.5,0,6.283);ctx.fill()}}
     if(u.hp<u.mhp&&s>=4){const w=s*2.2;ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(sx-w/2,sy-s-5,w,2);ctx.fillStyle='#8fe3a0';ctx.fillRect(sx-w/2,sy-s-5,w*u.hp/u.mhp,2)}
   }
   // drag box
@@ -903,18 +1008,38 @@ function render(){
     ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(Math.min(drag.sx,drag.cx),Math.min(drag.sy,drag.cy),Math.abs(drag.cx-drag.sx),Math.abs(drag.cy-drag.sy))}
 }
 
+function drawFog(){ // darken everything the player can't see: their land, and circles around their capitals and troops
+  if(!fogCv)fogCv=document.createElement('canvas');
+  if(fogCv.width!==cv.width||fogCv.height!==cv.height){fogCv.width=cv.width;fogCv.height=cv.height}
+  const g=fogCv.getContext('2d');
+  g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.clearRect(0,0,fogCv.width,fogCv.height);
+  g.fillStyle='rgba(3,6,12,.5)';g.fillRect(0,0,fogCv.width,fogCv.height);
+  g.globalCompositeOperation='destination-out';g.fillStyle='#000';
+  g.setTransform(DPR*cam.z,0,0,DPR*cam.z,-cam.x*cam.z*DPR,-cam.y*cam.z*DPR);
+  for(const i of F[P].owned)g.fill(C[i].path,'evenodd');
+  g.beginPath();
+  for(const u of units)if(u.f===P){const r=VIS[u.t];g.moveTo(u.x+r,u.y);g.arc(u.x,u.y,r,0,6.283)}
+  for(const i of F[P].owned){const c=C[i];g.moveTo(c.cap.x+CAP_VIS,c.cap.y);g.arc(c.cap.x,c.cap.y,CAP_VIS,0,6.283)}
+  g.fill();
+  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(fogCv,0,0);ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+
 // ─── HUD ───
 function svgShape(sh,col){
   const s={0:'<circle cx="12" cy="12" r="8"/>',1:'<rect x="4.5" y="4.5" width="15" height="15"/>',2:'<polygon points="12,3 21,19 3,19"/>',3:'<polygon points="12,2 21,12 12,22 3,12"/>',
     4:'<polygon points="9,3 15,3 15,9 21,9 21,15 15,15 15,21 9,21 9,15 3,15 3,9 9,9"/>',5:'<polygon points="12,2.5 20.5,7.3 20.5,16.7 12,21.5 3.5,16.7 3.5,7.3"/>'}[sh];
   return `<svg viewBox="0 0 24 24"><g fill="${col}" stroke="#0b1220" stroke-width="1.5">${s}</g></svg>`;
 }
-const buildBtns={};
+const buildBtns={},buildCost={};
 function initHUD(){
   $('legend').innerHTML=TYPES.map(t=>`<div>${svgShape(UT[t].sh,PCOL)}<span><b>${UT[t].n} · ${UT[t].cost}💰</b>${UT[t].desc}</span></div>`).join('');
   TYPES.forEach((t,k)=>{const b=document.createElement('button');b.className='ub';
     b.innerHTML=`${svgShape(UT[t].sh,PCOL)}<span>${UT[t].n}</span><span class="c">${UT[t].cost}</span><span class="k">key ${k+1}</span>`;
-    b.onclick=()=>playerBuild(t);$('build').appendChild(b);buildBtns[t]=b});
+    b.onclick=()=>playerBuild(t);$('build').appendChild(b);buildBtns[t]=b;buildCost[t]=b.querySelector('.c')});
+  $('docs').innerHTML=DOCS.map(d=>`<button data-doc="${d}" title="${DOC[d].d}">${DOC[d].i} ${DOC[d].n}</button>`).join('');
+  const pickDoc=d=>{pdoc=d;document.querySelectorAll('#docs button').forEach(x=>x.classList.toggle('on',x.dataset.doc===d));$('docDesc').textContent=`${DOC[d].i} ${DOC[d].n}: ${DOC[d].d}`};
+  document.querySelectorAll('#docs button').forEach(b=>b.onclick=()=>pickDoc(b.dataset.doc));pickDoc(pdoc);
+  $('fogChk').onchange=e=>{FOG=e.target.checked};
   $('techRows').innerHTML=TECHS.map(k=>`<div class="tr"><span>${TECH[k].i}</span><span class="nm">${TECH[k].n} <span class="pips" id="tp_${k}"></span><small>${TECH[k].d} per level</small></span><button id="tb_${k}"></button></div>`).join('');
   for(const k of TECHS)$('tb_'+k).onclick=()=>{if(research(P,k))addLog(`🔬 ${TECH[k].n} level ${F[P].tech[k]} researched`,'good',2000);updatePanels()};
 }
@@ -952,7 +1077,9 @@ function updatePanels(){
     const st=[['Income',`+${(c.value*(1+.5*c.fac)).toFixed(1)}/s`],['Defences',`${Math.ceil(c.gar)}/${c.garMax}`],
       ['Oil',c.oil?'🛢'.repeat(c.oil)+` +${4*c.oil}⛽`:'none'],['Factories',c.fac?'🏭'.repeat(c.fac):'none'],
       ['Fort',c.fort?'🛡'.repeat(c.fort):'none'],['Coast',c.coast?'⚓ yes':'landlocked']];
-    if(!mine)st.push(['Owner army',o.army],['Opinion',opinion(o)[0]]);
+    if(!mine){const sup=inSupply(P,c.cap.x,c.cap.y);
+      st.push(['Owner army',c.vis||o.pact>time?o.army:'? scout it'],['Opinion',opinion(o)[0]],
+        ['Doctrine',o.doc!=='none'?DOC[o.doc].i+' '+DOC[o.doc].n:'none'],['Your supply',sup?'<span style="color:#9ff0b8">in range</span>':'<span style="color:#ffb35a">out of range</span>'])}
     $('cpStats').innerHTML=st.map(([a,b])=>`<div><span>${a}</span> <b>${b}</b></div>`).join('');
     for(const id of ['cpFac','cpFort'])show(id,mine);for(const id of ['cpPact','cpAnnex'])show(id,!mine);
     let note='',cls='';
@@ -970,7 +1097,7 @@ function updatePanels(){
   }
   if(!$('techp').classList.contains('hidden')){const f=F[P];
     for(const k of TECHS){const lv=f.tech[k],b=$('tb_'+k);$('tp_'+k).textContent='●'.repeat(lv)+'○'.repeat(3-lv);
-      b.textContent=lv>=3?'max':TECHCOST[lv];b.disabled=lv>=3||f.gold<TECHCOST[lv]}}
+      b.textContent=lv>=3?'max':techCost(f,lv);b.disabled=lv>=3||f.gold<techCost(f,lv)}}
 }
 function toggleTech(on){const el=$('techp'),v=on===undefined?el.classList.contains('hidden'):on;show('techp',v&&state==='play');if(v)show('cpanel',0),infoC=-1;updatePanels()}
 let logEl=$('log');
@@ -984,7 +1111,7 @@ function fmtT(s){s=Math.max(0,Math.ceil(s));return`${s/60|0}:${String(s%60).padS
 function updateHUD(){
   if(state!=='play'&&state!=='end')return;
   const f=F[P];
-  $('hName').textContent=f.name;
+  $('hName').textContent=f.name+(f.doc!=='none'?' '+DOC[f.doc].i:'');$('hName').title=f.doc!=='none'?`${DOC[f.doc].n}: ${DOC[f.doc].d}`:'';
   $('hGold').textContent=Math.floor(f.gold);const net=netIncome(f);
   $('hInc').textContent=`${net>=0?'+':''}${net.toFixed(1)}/s`;$('hInc').style.color=net<0?'#ff8a8a':'';
   $('hInc').title=`income +${f.income.toFixed(1)} − upkeep ${(f.upk*(1-.15*f.tech.log)).toFixed(1)}${f.broke?' · BROKE: unpaid troops fight at 70%':''}`;
@@ -998,7 +1125,8 @@ function updateHUD(){
   else pc.classList.add('hidden');
   if(selCountry<0||C[selCountry].owner!==P)selCountry=f.owned[0]??-1;
   $('bWhere').textContent=selCountry>=0?C[selCountry].name:'—';
-  for(const t of TYPES)buildBtns[t].disabled=f.gold<UT[t].cost||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].coast)||(UT[t].fuel&&f.mech>=fuelCap(f));
+  for(const t of TYPES)buildCost[t].textContent=costOf(P,t);
+  for(const t of TYPES)buildBtns[t].disabled=f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].coast)||(UT[t].fuel&&f.mech>=fuelCap(f));
   const sc=selCountry>=0?C[selCountry]:null;
   $('misC').textContent=misCd>0?`${Math.ceil(misCd)}s`:MIS.cost;
   $('bMis').disabled=time<playerPeace||misCd>0||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
@@ -1008,7 +1136,9 @@ function updateHUD(){
   $('boardRows').innerHTML=rows.map(x=>`<div class="row${x.player?' me':''}"><span class="d" style="background:${x.player?PCOL:x.color}"></span><span class="n">${top.indexOf(x)+1}. ${x.name}${x.pact>time?' 🤝':''}</span><b>${x.owned.length}</b></div>`).join('');
   const si=$('selinfo');
   if(sel.size){const n={};for(const u of sel)n[u.t]=(n[u.t]||0)+1;
-    si.textContent=`${sel.size} selected · `+TYPES.filter(t=>n[t]).map(t=>`${n[t]} ${UT[t].n.toLowerCase()}`).join(', ')+' — right-click enemy land to invade';
+    let cut=0,vet=0;for(const u of sel){if(!u.sup)cut++;if(u.rank)vet++}
+    si.textContent=`${sel.size} selected · `+TYPES.filter(t=>n[t]).map(t=>`${n[t]} ${UT[t].n.toLowerCase()}`).join(', ')+(vet?` · ★${vet} veteran`:'')+
+      (cut?` · ⛔ ${cut} out of supply — H to retreat`:' — right-click enemy land to invade');si.style.color=cut?'#ffc28a':'';
     si.classList.remove('hidden')}else si.classList.add('hidden');
 }
 function showTip(sx,sy){
@@ -1113,6 +1243,8 @@ addEventListener('keydown',e=>{
   if(state!=='play')return;
   if(k>='1'&&k<='6')playerBuild(TYPES[+k-1]);
   else if(k==='e')selectAll();
+  else if(k==='h')retreat();
+  else if(k==='v')toggleMap();
   else if(k==='m')toggleAim();
   else if(k==='g')playerFortify();
   else if(k==='r')toggleTech();
@@ -1130,6 +1262,15 @@ function panKeys(dt){
   if(keys.has('w')||keys.has('arrowup'))dy--;if(keys.has('s')||keys.has('arrowdown'))dy++;
   if(dx||dy){cam.x+=dx*600*dt/cam.z;cam.y+=dy*600*dt/cam.z;clampCam()}
 }
+function retreat(){
+  if(state!=='play'||!sel.size)return;const f=F[P];
+  for(const u of sel){const [hi]=nearestOwned(f,u.x,u.y);if(hi<0)continue;const c=C[hi];
+    u.order={x:c.cap.x+rand()*12-6,y:c.cap.y+rand()*12-6,cap:-1,move:true,retreat:true};u.tgt=null}
+  markers.push({x:sel.values().next().value.x,y:sel.values().next().value.y,life:.6,max:.6});
+  addLog(`↩ ${sel.size} units falling back to heal on home soil`,'',1800);
+}
+function toggleMap(on){mapMode=on===undefined?!mapMode:on;$('bMap').classList.toggle('on',mapMode);
+  if(mapMode)addLog('🗺 Strategic map: green = your supply range · ⚔ = enemy troops you can see at each capital','',3500)}
 function selectAll(){sel.clear();for(const u of units)if(u.f===P)sel.add(u)}
 function togglePause(){paused=!paused;$('bPause').textContent=paused?'▶':'⏸';$('bPause').classList.toggle('on',paused)}
 function focusHome(){const f=F[P];const c=C[selCountry>=0&&C[selCountry].owner===P?selCountry:f.owned[0]];if(c)flyTo(c.cap.x,c.cap.y,Math.max(cam.z,3.2))}
@@ -1139,7 +1280,7 @@ $('cpFac').onclick=()=>{if(buildFactory(P,infoC))addLog(`🏭 Factory built in $
 $('cpFort').onclick=()=>{playerFortify(infoC);updatePanels()};
 $('cpPact').onclick=()=>{const f=F[C[infoC].owner];if(signPact(f.id))addLog(`🤝 Non-aggression pact with ${f.name} for ${fmtT(PACT_T)}`,'good',4000);updatePanels()};
 $('cpAnnex').onclick=()=>{annex(C[infoC].owner);updatePanels()};
-$('bAll').onclick=selectAll;$('bNone').onclick=()=>sel.clear();$('bPause').onclick=togglePause;
+$('bAll').onclick=selectAll;$('bRet').onclick=retreat;$('bMap').onclick=()=>toggleMap();$('bNone').onclick=()=>sel.clear();$('bPause').onclick=togglePause;
 document.querySelectorAll('#ctl [data-sp]').forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;
   document.querySelectorAll('#ctl [data-sp]').forEach(x=>x.classList.toggle('on',x===b))});
 document.querySelectorAll('#diff button').forEach(b=>b.onclick=()=>{diff=+b.dataset.d;
@@ -1147,7 +1288,7 @@ document.querySelectorAll('#diff button').forEach(b=>b.onclick=()=>{diff=+b.data
 
 // ─── flow ───
 function show(id,on){$(id).classList.toggle('hidden',!on)}
-function toMenu(){state='menu';show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','powers','peace','selinfo','cpanel','techp'].forEach(i=>show(i,0));infoC=-1;toggleAim(false)}
+function toMenu(){state='menu';toggleMap(false);show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','powers','peace','selinfo','cpanel','techp'].forEach(i=>show(i,0));infoC=-1;toggleAim(false)}
 $('bChoose').onclick=()=>{state='pick';pickC=-1;show('menu',0);show('pickhint',1);cam.z=fitZoom();clampCam()};
 function choosePick(ci){
   pickC=ci;const c=C[ci];
@@ -1159,13 +1300,14 @@ function choosePick(ci){
 $('bLead').onclick=()=>{if(pickC>=0)startGame(pickC)};
 function resetWorld(){
   units=[];fx=[];markers=[];missiles=[];raids=[];sel.clear();time=0;checkT=0;nextUid=1;keepPlaying=false;
-  waveAt=0;waveNo=0;misCd=0;rebelT=25;aiming=false;document.body.classList.remove('aiming');
-  stats={built:0,lost:0,kills:0,peak:1,taken:0,missiles:0};
+  waveAt=0;waveNo=0;misCd=0;rebelT=25;aiming=false;document.body.classList.remove('aiming');supDirty=true;visT=0;
+  stats={built:0,lost:0,kills:0,peak:1,taken:0,missiles:0,vets:0};
   makeFactions();
 }
 function startGame(ci){
   resetWorld();
   P=ci;const me=F[P];me.player=true;me.gold=DIFF.gold[diff];
+  me.doc=pdoc;recalc(me);C[ci].garMax=garFor(C[ci]);C[ci].gar=C[ci].garMax;
   playerPeace=DIFF.peace[diff];aiMult=DIFF.ai[diff];winGoal=Math.ceil(C.length*.5);
   waveAt=playerPeace+DIFF.gap[diff]*.8;aiPeace=10;
   for(const f of F){const c=C[f.owned[0]];
@@ -1176,13 +1318,13 @@ function startGame(ci){
   show('pickbar',0);show('pickhint',0);show('menu',0);show('end',0);['top','board','build','ctl','powers'].forEach(i=>show(i,1));
   flyTo(C[ci].cap.x,C[ci].cap.y,clamp(220/Math.sqrt(C[ci].area+400),2.2,7));
   addLog(`You lead ${me.name}. Build an army — the ceasefire ends in ${fmtT(playerPeace)}.`,'good',7000);
-  addLog('Drag to select · right-click an enemy country to invade it','',7000);
+  addLog('Drag to select · right-click an enemy country to invade it · V shows your supply range','',7000);
 }
 function endGame(won){
   state='end';
   $('endTitle').innerHTML=won?'<span style="color:var(--me)">Victory</span>':'Defeat';
   $('endText').textContent=won?`${F[P].name} controls ${F[P].owned.length} countries. The world is yours.`:`${F[P].name} has been wiped off the map.`;
-  $('endStats').innerHTML=[['Time',fmtT(time)],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Invasion waves faced',waveNo],['Missiles fired',stats.missiles]]
+  $('endStats').innerHTML=[['Time',fmtT(time)],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Invasion waves faced',waveNo],['Missiles fired',stats.missiles],['Best veteran',stats.vets?'★'.repeat(stats.vets):'—']]
     .map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
   show('bKeep',won);show('end',1);toggleAim(false);
 }
@@ -1217,7 +1359,7 @@ async function boot(){
 // ─── #smoke self-tests ───
 const T_hp=t=>UT[t].hp;
 function runSmoke(){
-  const out=[];let pass=0,fail=0;
+  const out=[];let pass=0,fail=0;aiDocs=false;pdoc='none';
   const ok=(c,m)=>{c?pass++:fail++;out.push((c?'PASS ':'FAIL ')+m)};
   const find=n=>C.findIndex(c=>c.name===n);let it;
   ok(C.length>150,`world has ${C.length} countries`);
@@ -1270,7 +1412,7 @@ function runSmoke(){
   resetWorld();P=fr;F[P].player=true;playerPeace=1e9;aiPeace=0;
   ok(!war(de,P)&&war(de,lu),'ceasefire protects the player only');
   // flak vs fighters (towers silenced so only the units fight)
-  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;step(STEP);
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;for(const f of F)f.think=1e9;step(STEP);
   const fk=spawn(P,'sam',1000,500),jt=spawn(de,'air',1012,500);fk.x=1000;fk.y=500;jt.x=1012;jt.y=500;jt.order={x:1012,y:500,cap:-1,move:true};
   for(let i=0;i<150;i++)step(STEP);
   ok(jt.hp<=0&&fk.hp>0,`flak shoots down a fighter (jet ${jt.hp|0}, flak ${fk.hp|0})`);
@@ -1350,8 +1492,47 @@ function runSmoke(){
   const luArmy=F[lu].army;ok(annexCheck(F[lu])[0]&&annex(lu)&&C[lu].owner===P&&!F[lu].alive,'a big army at their door makes Luxembourg surrender');
   ok(F[P].army===units.filter(u=>u.f===P).length&&units.filter(u=>u.f===P).length>=14+luArmy,'their army joins yours');
   ok(!annexCheck(F[us])[0],'superpowers can\'t be bullied into surrender');
-  // full-world soak
-  resetWorld();seed=77;diff=1;startGame(fr);
+  // ── supply, attrition, healing ──
+  resetWorld();seed=21;diff=1;startGame(fr);time=playerPeace+1;for(const u of units)u.hp=0;step(STEP);for(const c of C)c.tcd=1e9;for(const f of F)f.think=1e9;
+  calcSupply();const cfr=C[fr],cru=C[ru];
+  ok(inSupply(P,cfr.cap.x,cfr.cap.y)&&inSupply(P,C[de].cap.x,C[de].cap.y)&&!inSupply(P,cru.cap.x,cru.cap.y),'supply: home and next door yes, deep in Russia no');
+  const deep=spawn(P,'tank',cru.cap.x,cru.cap.y),homeU=spawn(P,'tank',cfr.cap.x,cfr.cap.y);deep.x=cru.cap.x;deep.y=cru.cap.y;homeU.x=cfr.cap.x;homeU.y=cfr.cap.y;
+  homeU.hp=60;C[ru].owner=ru;
+  for(let i=0;i<30*10;i++){deep.x=cru.cap.x;deep.y=cru.cap.y;step(STEP)}
+  ok(!deep.sup&&deep.hp<deep.mhp*.95&&deep.hp>0,`out of supply troops wither (${deep.hp|0}/${deep.mhp})`);
+  ok(homeU.sup&&homeU.home&&homeU.hp>60,`troops heal on home soil (${homeU.hp|0}/${homeU.mhp})`);
+  ok(Math.abs(unitDmg(deep)/unitDmg(homeU)-.75/1.2)<1e-9,'home soil +20% damage, out of supply −25%');
+  // sampled supply (AI) agrees with the player's field on a few points
+  const pts2=[[cfr.cap.x,cfr.cap.y],[C[de].cap.x,C[de].cap.y],[cru.cap.x,cru.cap.y],[C[find('Brazil')].cap.x,C[find('Brazil')].cap.y]];
+  const field=pts2.map(([x,y])=>inSupply(P,x,y));const sv=supDist;supDist=null;const samp=pts2.map(([x,y])=>inSupply(P,x,y));supDist=sv;
+  ok(field.join()===samp.join(),`AI supply sampling matches the player's supply map (${field.join()})`);
+  // warships carry supply
+  const sea=C[fr].port,sx2=sea.x-40,sy2=sea.y;let wet=landAt(sx2,sy2)<0;
+  const ship=spawn(P,'ship',sx2,sy2);ship.x=sx2;ship.y=sy2;rehash();
+  ok(wet&&inSupply(P,sx2+10,sy2)&&!inSupply(P,sx2+10+80,sy2+200)||!wet,'warships keep nearby troops supplied');
+  // veterancy
+  const vet=spawn(P,'tank',cfr.cap.x,cfr.cap.y);const d1=unitDmg(vet);
+  for(let k=0;k<2;k++){const v=spawn(de,'tank',0,0);hurt(v,1e4,P,vet)}
+  ok(vet.rank===1&&Math.abs(unitDmg(vet)/d1-1.15)<1e-9,`kills make veterans (xp ${vet.xp}, rank ${vet.rank}, +15% dmg)`);
+  // player retreat
+  sel=new Set([deep]);retreat();ok(deep.order&&deep.order.retreat&&C[landAt(deep.order.x,deep.order.y)].owner===P,'retreat sends troops home');
+  // AI pulls hurt troops back
+  const hurtAI=spawn(de,'inf',cfr.cap.x,cfr.cap.y);hurtAI.x=cfr.cap.x;hurtAI.y=cfr.cap.y;hurtAI.hp=5;hurtAI.home=false;F[de].think=0;
+  aiThink(F[de]);ok(hurtAI.order&&hurtAI.order.retreat,'AI retreats badly hurt troops');
+  // fog of war
+  FOG=true;for(const u of units)if(u.f===P)u.hp=0;step(STEP);const spy=spawn(ru,'inf',cru.cap.x,cru.cap.y),nearby=spawn(de,'inf',cfr.cap.x+5,cfr.cap.y);spy.x=cru.cap.x;spy.y=cru.cap.y;nearby.x=cfr.cap.x+5;nearby.y=cfr.cap.y;
+  rehash();calcVis();ok(!spy.vis&&nearby.vis&&!C[ru].vis&&C[fr].vis,'fog: you see enemies near your land, not deep in Russia');
+  const scout=spawn(P,'air',cru.cap.x+10,cru.cap.y);scout.x=cru.cap.x+10;scout.y=cru.cap.y;rehash();calcVis();
+  ok(spy.vis&&C[ru].vis,'a fighter scouts enemy territory');
+  // doctrines
+  const docT=(d,fn)=>{resetWorld();seed=31;pdoc=d;startGame(fr);const r=fn();pdoc='none';return r};
+  ok(docT('mass',()=>costOf(P,'inf')===7&&upkOf(P,'inf')===0&&armyCap(F[P])>Math.round(armyCap(F[P])/1.25)),"People's Army: cheap infantry, no upkeep, bigger cap");
+  ok(docT('fort',()=>{const g=C[fr].garMax;F[P].doc='none';const g0=garFor(C[fr]);F[P].doc='fort';return g>g0*1.25&&fortCost(C[fr])===40}),'Fortress: +30% capital defences, half-price forts');
+  ok(docT('econ',()=>facCost(C[fr])===39&&techCost(F[P],0)===98&&Math.abs(F[P].income-C[fr].value*1.15)<1e-9),'War Economy: +15% income, cheaper factories and research');
+  ok(docT('blitz',()=>fuelCap(F[P])===6),'Blitzkrieg: +3 fuel');
+  ok(docT('navy',()=>costOf(P,'ship')===39&&shipSup(P)===60),'Sea Power: cheap warships with long supply');
+  // full-world soak (AI nations get doctrines here)
+  aiDocs=true;resetWorld();seed=77;diff=1;startGame(fr);
   const t0=performance.now();let bad=false;
   const snap=()=>{const al=F.filter(f=>f.alive).sort((a,b)=>b.owned.length-a.owned.length);
     out.push(`  t=${time|0}s alive=${al.length} units=${units.length} top: ${al.slice(0,5).map(f=>f.name+':'+f.owned.length).join(' ')}`)};
@@ -1362,18 +1543,19 @@ function runSmoke(){
   ok(owned===C.length,'every country has exactly one owner');
   ok(F.every(f=>f.army===units.filter(u=>u.f===f.id).length),'army counters match units');
   ok(F.every(f=>f.mech===units.filter(u=>u.f===f.id&&UT[u.t].fuel).length),'fuel counters match units');
-  ok(F.every(f=>Math.abs(f.upk-units.filter(u=>u.f===f.id).reduce((s,u)=>s+UT[u.t].upk,0))<1e-6),'upkeep totals match units');
+  ok(F.every(f=>Math.abs(f.upk-units.filter(u=>u.f===f.id).reduce((s,u)=>s+upkOf(f.id,u.t),0))<1e-6),'upkeep totals match units');
   ok(C.some(c=>c.fac>0)&&F.some(f=>TECHS.some(k=>f.tech[k]>0)),`AIs invest: ${C.filter(c=>c.fac>0).length} factories, ${F.filter(f=>TECHS.some(k=>f.tech[k])).length} nations researching`);
   ok(ms<60000,`soak ran in ${(ms/1000).toFixed(1)}s, ${units.length} units alive`);
   const topF=F.filter(f=>f.alive).sort((a,b)=>b.owned.length-a.owned.length).slice(0,5).map(f=>`${f.name}:${f.owned.length}`).join(' ');
   out.push('top: '+topF+` · player ${F[P].owned.length} countries, ${F[P].army} units, ${waveNo} waves`);
   ok(waveNo>=1,`invasion waves hit the idle player (${waveNo})`);
+  ok(F.some(f=>f.doc!=='none')&&units.some(u=>u.rank>0),`AI doctrines in play, ${units.filter(u=>u.rank>0).length} veterans on the map`);
   document.title=`SMOKE ${fail?'FAIL':'PASS'} ${pass}/${pass+fail}`;
   const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=document.title+'\n'+out.join('\n');document.body.appendChild(pre);
 }
 
 boot();
-if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P}};
+if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P},toggleMap,calcVis,retreat,inSupply};
 })();
 </script>
 <script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
