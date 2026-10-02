@@ -111,6 +111,9 @@ body.aiming canvas{cursor:crosshair}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0}
 .stats div{background:#ffffff08;border-radius:8px;padding:8px 10px;font-size:12px;color:var(--dim)}
 .stats b{display:block;font-size:18px;color:var(--ink)}
+.go small{display:block;font-size:12px;font-weight:600;opacity:.75;margin-top:2px}
+#bCont{margin:6px 0 4px;background:#7fe0a0;color:#06210f}
+.quit{display:block;text-align:center;margin-top:10px;color:var(--dim);font-size:13px;text-decoration:none}.quit:hover{color:var(--ink)}
 .row2{display:flex;gap:8px}.row2 button{flex:1}
 
 @media (max-width:1320px){#top{gap:11px;padding:7px 12px;left:270px;transform:none;max-width:calc(100vw - 480px)} #top small{display:none} #peace{left:270px;transform:none}}
@@ -165,6 +168,7 @@ body.aiming canvas{cursor:crosshair}
   <button id="bRet" title="Retreat selected units to the nearest home capital (H)">↩ Retreat</button>
   <button id="bNone" title="Deselect (Esc)">✕</button>
   <button id="bPause" title="Pause (P)">⏸</button>
+  <button id="bSave" title="Save the war and go back to the menu — Continue picks it up again (autosaves every 20s)">💾 Save &amp; exit</button>
   <button data-sp="1" class="on">1×</button>
   <button data-sp="2">2×</button>
   <button data-sp="4">4×</button>
@@ -198,6 +202,7 @@ body.aiming canvas{cursor:crosshair}
   <div class="card panel">
     <h1>Shape <span>Conquest</span></h1>
     <p>Pick any country on Earth. Build an army of shapes. Take over the world one capital at a time.</p>
+    <button class="go hidden" id="bCont"></button>
     <div class="legend" id="legend"></div>
     <p style="font-size:13px">Every country starts free and every one of them wants more land. To take a country, smash its capital's
       defences, then park a ground unit on it.</p>
@@ -226,6 +231,7 @@ body.aiming canvas{cursor:crosshair}
       <button data-d="0">Easy</button><button data-d="1" class="on">Normal</button><button data-d="2">Hard</button><button data-d="3">Brutal</button>
     </div>
     <button class="go" id="bChoose">Choose your country →</button>
+    <a class="quit" href="index.html" target="_top">⏏ Back to the arcade</a>
     <div class="keys">
       <kbd>Drag</kbd> select units · <kbd>Right-click</kbd> move / invade · <kbd>Wheel</kbd> zoom ·
       <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>R</kbd> research · <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> save army group · <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd> recall · <kbd>H</kbd> retreat · <kbd>V</kbd> strategic map · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
@@ -1535,7 +1541,7 @@ document.querySelectorAll('#diff button').forEach(b=>b.onclick=()=>{diff=+b.data
 
 // ─── flow ───
 function show(id,on){$(id).classList.toggle('hidden',!on)}
-function toMenu(){state='menu';toggleMap(false);show('groups',0);show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','powers','peace','selinfo','cpanel','techp'].forEach(i=>show(i,0));infoC=-1;toggleAim(false)}
+function toMenu(){state='menu';updateContinue();toggleMap(false);show('groups',0);show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','powers','peace','selinfo','cpanel','techp'].forEach(i=>show(i,0));infoC=-1;toggleAim(false)}
 $('bChoose').onclick=()=>{state='pick';pickC=-1;show('menu',0);show('pickhint',1);cam.z=fitZoom();clampCam()};
 function choosePick(ci){
   pickC=ci;const c=C[ci];
@@ -1569,15 +1575,64 @@ function startGame(ci){
   addLog('The map is life size now — scroll out to see the world · drag to select · right-click enemy land to invade · V shows your supply range','',8000);
 }
 function endGame(won,how){
-  state='end';
+  state='end';dropSave(); // "Keep playing" saves again
   $('endTitle').innerHTML=won?'<span style="color:var(--me)">Victory</span>':'Defeat';
   $('endText').textContent=won?(how==='econ'?`Economic victory — ${F[P].name} earns ${Math.round(worldShare()*100)}% of the world's income. The world works for you now.`:`${F[P].name} controls ${F[P].owned.length} countries. The world is yours.`):`${F[P].name} has been wiped off the map.`;
   $('endStats').innerHTML=[['War lasted',`${Math.floor(time)} days`],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Invasion waves faced',waveNo],['Missiles fired',stats.missiles],['Best veteran',stats.vets?'★'.repeat(stats.vets):'—'],['Share of world income',Math.round(worldShare()*100)+'%'],['Peak infamy',Math.round(stats.infPeak||0)]]
     .map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
   show('bKeep',won);show('end',1);toggleAim(false);
 }
-$('bAgain').onclick=()=>{toMenu();resetWorld()};
-$('bKeep').onclick=()=>{keepPlaying=true;state='play';show('end',0)};
+$('bAgain').onclick=()=>{dropSave();toMenu();resetWorld()};
+$('bKeep').onclick=()=>{keepPlaying=true;state='play';show('end',0);saveGame(true)};
+
+// ─── save / continue: the whole war goes into localStorage, autosaved every 20s ───
+const SAVE_KEY='sq_save_v1',CKEYS=['owner','fort','fac','integ','dock','garMax','gar','alertT','tcd','threat','lastHit','capBy','capProg'];
+const UKEYS=['id','f','t','x','y','hp','mhp','cd','ang','xp','rank','lastFight','train','trainMax','order'];
+let saveT=20;
+function occRLE(){const out=[];let v=occ[0],n=0;for(let i=0;i<occ.length;i++){if(occ[i]===v)n++;else{out.push(v,n);v=occ[i];n=1}}out.push(v,n);return out}
+function snapshot(){
+  return{v:1,date:Date.now(),name:F[P].name,day:Math.floor(time),owned:F[P].owned.length,
+    g:{P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,waveAt,waveNo,misCd,rebelT,integT,seed,selCountry,
+      cam:{...cam},groups:Object.fromEntries(Object.entries(groups).map(([k,g])=>[k,g.filter(u=>u.hp>0).map(u=>u.id)]))},
+    C:C.map(c=>CKEYS.map(k=>c[k])),
+    F:F.map(f=>{const o={...f};delete o.rgb;return o}),
+    U:units.filter(u=>u.hp>0).map(u=>UKEYS.map(k=>u[k])),
+    occ:occRLE(),missiles,raids};
+}
+function saveGame(quiet){
+  if(state!=='play'&&state!=='end'||P<0||!F[P].alive)return false;
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));if(!quiet)addLog(`💾 Saved — ${gameDate()}`,'good',1800);return true}
+  catch(e){if(!quiet)addLog('💾 Couldn’t save (browser storage is full or blocked)','bad',3000);return false}
+}
+function readSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');return s&&s.v===1&&s.C&&s.C.length===C.length?s:null}catch(e){return null}}
+function dropSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
+function loadGame(s){
+  s=s||readSave();if(!s)return false;
+  const g=s.g;resetWorld();
+  ({P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,waveAt,waveNo,misCd,rebelT,integT,seed,selCountry}=g);
+  s.C.forEach((a,i)=>CKEYS.forEach((k,j)=>{C[i][k]=a[j]}));
+  F=s.F;
+  units=s.U.map(a=>{const u={tgt:null,scan:rand()*.3,sup:true,home:true,vis:true,blocked:0};UKEYS.forEach((k,j)=>{u[k]=a[j]});return u});
+  const byId=new Map(units.map(u=>[u.id,u]));
+  groups={};for(const [k,ids] of Object.entries(g.groups||{})){const a=ids.map(i=>byId.get(i)).filter(Boolean);if(a.length)groups[k]=a}
+  for(let i=0,p=0;i<s.occ.length;i+=2){const v=s.occ[i],n=s.occ[i+1];if(v>=0)for(let k=p;k<p+n;k++)if(grid[k]>=0)setOcc(k,v);p+=n}
+  for(const c of C)c.occChanged=false;
+  missiles=s.missiles||[];raids=s.raids||[];
+  for(const f of F)recalc(f);
+  supDirty=true;visT=0;checkT=1;saveT=20;infoC=-1;paused=false;state='play';
+  $('fogChk').checked=FOG;
+  show('pickbar',0);show('pickhint',0);show('menu',0);show('end',0);['top','board','build','ctl','powers'].forEach(i=>show(i,1));
+  Object.assign(cam,g.cam);clampCam();
+  addLog(`💾 Welcome back. ${F[P].name}, ${gameDate()} — the war goes on.`,'good',5000);
+  return true;
+}
+function saveExit(){saveGame(true);toMenu();resetWorld();cam.z=fitZoom();clampCam()}
+function updateContinue(){const s=readSave();show('bCont',!!s);
+  if(s)$('bCont').innerHTML=`▶ Continue <small>${s.name} · day ${s.day} · ${s.owned} ${s.owned===1?'country':'countries'}</small>`}
+$('bCont').onclick=()=>loadGame();
+$('bSave').onclick=()=>saveExit();
+addEventListener('pagehide',()=>{if(state==='play')saveGame(true)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')saveGame(true)});
 
 // ─── loop ───
 const STEP=1/30;let last=performance.now(),acc=0,hudT=0;
@@ -1586,6 +1641,7 @@ function frame(now){
   if(state==='play'&&!paused){acc+=dt*speed;let n=0;while(acc>=STEP&&n<16){step(STEP);acc-=STEP;n++}if(n>=16)acc=0}
   panKeys(dt);render();
   hudT-=dt;if(hudT<=0){hudT=.2;updateHUD()}
+  if(state==='play'&&!paused&&!SMOKE){saveT-=dt;if(saveT<=0){saveT=20;saveGame(true)}}
   requestAnimationFrame(frame);
 }
 
@@ -1896,6 +1952,20 @@ function runSmoke(){
   out.push('top: '+topF+` · player ${F[P].owned.length} countries, ${F[P].army} units, ${waveNo} waves`);
   ok(waveNo>=1,`invasion waves hit the idle player (${waveNo})`);
   ok(F.some(f=>f.doc!=='none')&&units.some(u=>u.rank>0),`AI doctrines in play, ${units.filter(u=>u.rank>0).length} veterans on the map`);
+  {// save → load round trip on the soaked world
+  sel.clear();units.filter(u=>u.f===P).slice(0,3).forEach(u=>sel.add(u));setGroup('2');sel.clear();
+  const sv0=JSON.parse(JSON.stringify(snapshot())),sig=()=>JSON.stringify([time|0,F.map(f=>[f.owned.length,f.army,Math.round(f.gold)]),C.map(c=>[c.owner,c.occN,Math.round(c.gar)]),units.length,waveNo,Math.round(infamy)]);
+  const before=sig(),occBefore=C.reduce((n,c)=>n+c.occN,0);
+  ok(JSON.stringify(sv0).length<4e6,`save fits in browser storage (${JSON.stringify(sv0).length/1024|0} KB)`);
+  aiDocs=false;resetWorld();seed=5;startGame(lu); // trash the world first
+  ok(loadGame(sv0)&&state==='play'&&P===fr,'loading a save resumes the war as the same country');
+  ok(sig()===before&&C.reduce((n,c)=>n+c.occN,0)===occBefore,'countries, armies, gold and front lines all come back');
+  ok(F.every(f=>f.army===units.filter(u=>u.f===f.id).length&&f.mech===units.filter(u=>u.f===f.id&&UT[u.t].fuel).length),'unit counters still match after loading');
+  ok((groups['2']||[]).length===3&&groups['2'].every(u=>units.includes(u)),'army groups survive a save');
+  let fine=true;for(let i=0;i<30*20;i++){step(STEP);if(units.some(u=>!isFinite(u.x)))fine=false}
+  ok(fine&&F[P].alive!==undefined,'a loaded war keeps running');
+  ok(saveGame(true)&&readSave()&&readSave().name===F[P].name,'saves to localStorage and reads back');dropSave();
+  }
   document.title=`SMOKE ${fail?'FAIL':'PASS'} ${pass}/${pass+fail}`;
   const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=document.title+'\n'+out.join('\n');document.body.appendChild(pre);
 }
