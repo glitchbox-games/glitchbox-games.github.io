@@ -171,7 +171,10 @@ body.aiming canvas{cursor:crosshair}
   <div class="cst" id="cpStats"></div>
   <div class="acts">
     <button id="cpFac" title="+50% income from this country per level">🏭 Factory <span class="c" id="cpFacC"></span></button>
+    <button id="cpDock" title="Warships can only be built in a country with a dock">⚓ Dock <span class="c" id="cpDockC"></span></button>
     <button id="cpFort" title="Stronger capital defences (G)">🛡 Fortify <span class="c" id="cpFortC"></span></button>
+    <button id="cpWar" title="You must be at war with a country before your troops can cross its border or attack it">⚔ Declare war</button>
+    <button id="cpPeace" title="End the war. If you're losing they'll want gold">🕊 Make peace <span class="c" id="cpPeaceC"></span></button>
     <button id="cpPact" title="Non-aggression pact: neither side can attack for 3 minutes">🤝 Pact <span class="c" id="cpPactC"></span></button>
  <button id="cpAlly" title="Pay your pact partners to attack this country now">📣 Call allies <span class="c" id="cpAllyC"></span></button>
     <button id="cpAnnex" title="Park a big army at their capital and they may give up without a fight">🏳 Demand surrender <span class="c" id="cpAnnexC"></span></button>
@@ -192,6 +195,9 @@ body.aiming canvas{cursor:crosshair}
       weaker, so push in fronts and use warships to carry supply overseas. Troops heal on home soil, defenders fight harder there,
       railways move troops 60% faster across your own land, new conquests take 90s to integrate before they
       pay in full or raise troops, and veterans (★ from kills) hit harder — <b>retreat (H)</b> a beaten army instead of throwing it away.</p>
+    <p style="font-size:13px">🕊 <b>Diplomacy:</b> you start at peace with everyone. Your troops only move when you order them, and
+      they can't cross a border or attack until you <b>declare war</b> — an unprovoked war turns the victim's neighbours against
+      you. Make peace when you're winning (or pay for it when you're not). Warships need a ⚓ <b>dock</b>.</p>
     <p style="font-size:13px">🧠 <b>Economy:</b> real powers (★) start big and rich. Tanks, fighters and warships burn ⛽ fuel — only
       oil countries supply it. Every unit costs upkeep, so balance army vs 🏭 factories and 🔬 research. Sign 🤝 pacts to
       guard a flank, then 📣 call those allies into your wars, or park an army on a small country and demand its surrender. Click any country for options.</p>
@@ -219,6 +225,13 @@ body.aiming canvas{cursor:crosshair}
   <button class="go" id="bLead" style="width:auto;padding:10px 18px">Lead it</button>
 </div>
 
+<div id="warbox" class="overlay hidden">
+  <div class="card panel" style="width:min(420px,100%)">
+    <h1 style="font-size:22px">⚔ Declare war on <span id="wbName" style="color:#ff8a8a"></span>?</h1>
+    <p id="wbText"></p>
+    <div class="row2"><button id="wbNo">Stay at peace</button><button class="go" id="wbYes" style="background:#ff6b6b;color:#1a0505">Declare war</button></div>
+  </div>
+</div>
 <div id="end" class="overlay hidden">
   <div class="card panel">
     <h1 id="endTitle">—</h1>
@@ -421,10 +434,10 @@ function makeFactions(){
     const s=36+(i*7)%18, l=46+(i*11)%14;
     return{id:i,name:c.name,color:`hsl(${h|0},${s}%,${l}%)`,ucol:`hsl(${h|0},${s+18}%,${l+22}%)`,gold:START.gold[c.tier],income:c.value,
       owned:[i],army:0,mech:0,upk:0,broke:false,alive:true,player:false,aggr:AGG0+rand()*AGGR+c.tier*.08,think:1+rand()*3,target:-1,kills:0,peak:1,grudge:0,
-      pact:-1,tech:{arm:0,fp:0,log:0,ind:0},doc:aiDocs&&(c.tier||rand()<.5)?DOCS[(rand()*DOCS.length)|0]:'none'};
+      pact:-1,atWar:false,warT:-99,truce:-1,casus:-1e9,lostTo:0,tech:{arm:0,fp:0,log:0,ind:0},doc:aiDocs&&(c.tier||rand()<.5)?DOCS[(rand()*DOCS.length)|0]:'none'};
   });
   for(const f of F)recalc(f);
-  for(const c of C){c.owner=c.i;c.fort=0;c.fac=0;c.integ=1;c.garMax=garFor(c);c.gar=c.garMax;c.alertT=-99;c.tcd=rand();c.threat=-99;c.lastHit=-99}
+  for(const c of C){c.owner=c.i;c.fort=0;c.fac=0;c.integ=1;c.dock=c.coast&&(c.tier>=2||F[c.i].doc==='navy');c.garMax=garFor(c);c.gar=c.garMax;c.alertT=-99;c.tcd=rand();c.threat=-99;c.lastHit=-99}
 }
 function armyCap(f){const m=f.doc==='mass'?1.25:1;return f.player?Math.round(m*Math.min(250,10+4*f.owned.length+3*f.income)):Math.round(m*Math.min(160,(3+3*f.owned.length+2.5*f.income)*DIFF.cap[diff]*.75))}
 function fuelCap(f){let o=0;for(const i of f.owned)o+=C[i].oil;return 3+4*o+(f.doc==='blitz'?3:f.doc==='navy'?2:0)}
@@ -446,6 +459,11 @@ function research(fi,k){
   if(k==='arm')for(const u of units)if(u.f===fi){const m=UT[u.t].hp*(1+.15*f.tech.arm);u.hp*=m/u.mhp;u.mhp=m}
   return true;
 }
+function dockCost(c){return Math.round(100*(F[c.owner].doc==='navy'?.5:1))}
+function buildDock(fi,ci){
+  const f=F[fi],c=C[ci];if(ci<0||c.owner!==fi||!c.coast||c.dock||f.gold<dockCost(c))return false;
+  f.gold-=dockCost(c);c.dock=true;fx.push({k:3,x:c.port.x,y:c.port.y,life:.8,max:.8,col:'#9fd8ff'});return true;
+}
 function fortCost(c){return Math.round(80*(c.fort+1)*(F[c.owner].doc==='fort'?.5:1))}
 function fortify(fi,ci){
   const f=F[fi],c=C[ci];if(ci<0||c.owner!==fi||c.fort>=3||f.gold<fortCost(c))return false;
@@ -456,6 +474,7 @@ function fortify(fi,ci){
 function pactCost(f){return Math.round(40+f.income*12)}
 function pactCheck(f){ // → [canSign, reason]
   if(!f.alive||f.player)return[false,''];
+  if(f.atWar)return[false,'You are at war — make peace first'];
   if(f.pact>time)return[false,`Pact holds for ${fmtT(f.pact-time)}`];
   if(time<playerPeace)return[false,'Nobody needs a pact during the ceasefire'];
   if(f.grudge>60)return[false,`${f.name} wants revenge and refuses to talk`];
@@ -470,7 +489,7 @@ function signPact(fi){
   return true;
 }
 function allyHelp(ci){ // pact partners near ci who could be paid to attack it → [allies, cost]
-  const c=C[ci],o=c.owner;if(o===P)return[[],0];
+  const c=C[ci],o=c.owner;if(o===P||!F[o].atWar)return[[],0];
   const al=F.filter(f=>f.alive&&!f.player&&f.pact>time&&f.id!==o&&war(f.id,o)&&nearestOwned(f,c.cap.x,c.cap.y)[1]<260*WS);
   return[al,Math.round(60+40*al.length)];
 }
@@ -508,7 +527,37 @@ function annex(fi){
 const INTEG_T=90; // seconds for a conquest to integrate: it pays 30%→100% and can only raise troops from 50%
 function provIncome(c){return c.value*(1+.5*c.fac)*(.3+.7*c.integ)}
 function recalc(f){f.income=f.owned.reduce((s,i)=>s+provIncome(C[i]),0)*(1+.12*f.tech.ind)*(f.doc==='econ'?1.15:1)}
-const war=(a,b)=>a!==b&&!((a===P||b===P)&&(time<playerPeace||F[a===P?b:a].pact>time));
+// The AIs brawl freely among themselves, but nobody fights the player without a declared war
+// (and nobody can declare one during the opening ceasefire, a pact or a truce).
+const war=(a,b)=>{if(a===b)return false;if(a!==P&&b!==P)return true;const o=F[a===P?b:a];return o.atWar&&time>=playerPeace&&!(o.pact>time)};
+function canDeclare(f){return f.alive&&!f.player&&!f.atWar&&time>=playerPeace&&!(f.pact>time)&&!(f.truce>time)}
+function justified(f){return f.grudge>60||time-f.casus<300} // they hate you, or attacked you recently
+function warNeighbours(f){const s=new Set();for(const i of f.owned)for(const j of C[i].nb){const o=F[C[j].owner];if(!o.player&&o!==f&&o.alive)s.add(o)}return[...s]}
+function declareWar(fi,byPlayer,quiet){
+  const f=F[fi];if(!canDeclare(f))return false;
+  f.atWar=true;f.warT=time;f.lostTo=0;
+  if(byPlayer){const just=justified(f);f.grudge+=40;
+    if(!just){const nb=warNeighbours(f);for(const o of nb)o.grudge+=25;
+      if(!quiet)addLog(`⚔ You declared war on ${f.name}. Unprovoked — ${nb.length} of its neighbours turn hostile`,'bad',5000)}
+    else if(!quiet)addLog(`⚔ You declared war on ${f.name}`,'',3500)}
+  else{f.casus=time;if(!quiet)addLog(`⚔ ${f.name} declared war on you!`,'bad',5000)}
+  return true;
+}
+function armyValue(fi){let v=0;for(const u of units)if(u.f===fi&&u.hp>0)v+=UT[u.t].cost;return v}
+function peaceTerms(f){ // → [ok, gold, reason]
+  if(!f.atWar)return[false,0,''];
+  if(time-f.warT<45)return[false,0,`${f.name} won't talk yet — the war is only ${fmtT(time-f.warT)} old`];
+  if(f.lostTo>0||armyValue(P)>=armyValue(f.id)*1.2)return[true,0,`${f.name} is losing and will accept peace`];
+  if(f.grudge>120)return[false,0,`${f.name} wants to finish you off`];
+  const g=Math.round(80+defenceOf(f)*.15);
+  return[F[P].gold>=g,g,`${f.name} wants ${g} gold in reparations`];
+}
+function makePeace(fi){
+  const f=F[fi],[ok,g]=peaceTerms(f);if(!ok)return false;
+  F[P].gold-=g;f.atWar=false;f.truce=time+120;f.grudge=Math.max(0,f.grudge-40);f.target=-1;
+  for(const u of units)if(u.order&&u.order.cap>=0&&((u.f===fi&&C[u.order.cap].owner===P)||(u.f===P&&C[u.order.cap].owner===fi)))u.order=null;
+  return true;
+}
 
 // ─── spatial hash ───
 const HC=40,HOX=100*WS,HW=Math.ceil((W+300*WS)/HC)+1,HH=Math.ceil(H/HC)+1;
@@ -534,7 +583,7 @@ function clearArmy(f){f.army=0;f.mech=0;f.upk=0}
 function build(fi,t,ci){
   const f=F[fi],T=UT[t];
   if(!f.alive||ci<0||C[ci].owner!==fi||f.gold<costOf(fi,t)||f.army>=armyCap(f))return null;
-  if(T.sea&&!C[ci].coast)return null;
+  if(T.sea&&!C[ci].dock)return null;
   if(C[ci].integ<.5)return null;
   if(T.fuel&&f.mech>=fuelCap(f))return null;
   f.gold-=costOf(fi,t);const at=T.sea?C[ci].port:C[ci].cap,u=spawn(fi,t,at.x,at.y);
@@ -625,16 +674,18 @@ function updateUnit(u,dt){
   u.cd-=dt;u.scan-=dt;
   if(u.tgt&&(u.tgt.hp<=0||!war(u.f,u.tgt.f)))u.tgt=null;
   const ret=!!(u.order&&u.order.retreat);
-  if(u.scan<=0){u.scan=.25+rand()*.15;u.tgt=findEnemy(u,ret?T.range:T.range+(u.order&&u.order.move?4:18));
+  // the player's troops never wander off on their own: idle or on a move order they only shoot what's in range
+  const pmove=u.f===P&&!!(u.order&&u.order.move),pidle=u.f===P&&!u.order;
+  if(u.scan<=0){u.scan=.25+rand()*.15;u.tgt=findEnemy(u,ret||pmove||pidle?T.range:T.range+(u.order&&u.order.move?4:18));
     const own=ownerAt(u.x,u.y);u.home=own===u.f;u.sup=T.sea||u.home||inSupply(u.f,u.x,u.y)}
   let mx=null,my=null,stop=3;
-  if(u.tgt&&!ret){
+  if(u.tgt&&!ret&&!pmove){
     const d=Math.hypot(u.tgt.x-u.x,u.tgt.y-u.y);
     if(d<=T.range){if(u.cd<=0){fire(u,u.tgt);u.cd=1/T.rof}}
-    else{mx=u.tgt.x;my=u.tgt.y;stop=0}
+    else if(!pidle){mx=u.tgt.x;my=u.tgt.y;stop=0}
   }else if(u.order){
     const o=u.order;
-    if(ret&&u.tgt&&u.cd<=0&&Math.hypot(u.tgt.x-u.x,u.tgt.y-u.y)<=T.range){fire(u,u.tgt);u.cd=1/T.rof} // shoot while falling back
+    if((ret||pmove)&&u.tgt&&u.cd<=0&&Math.hypot(u.tgt.x-u.x,u.tgt.y-u.y)<=T.range){fire(u,u.tgt);u.cd=1/T.rof} // shoot while falling back
     if(o.cap>=0){
       const c=C[o.cap];
       if(c.owner===u.f||!war(u.f,c.owner)){u.order=null}
@@ -700,6 +751,7 @@ function capture(c,fi){
   const old=F[c.owner],nf=F[fi];
   old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=fi;if(fi===P||old.id===P)supDirty=true;
   c.integ=fi===c.i?1:0;c.fort=Math.max(0,c.fort-1);c.fac=Math.max(0,c.fac-1);c.garMax=garFor(c);c.gar=c.garMax*.35;c.lastHit=time;
+  if(fi===P)old.lostTo++;
   if(fi===P){ // the victim wants revenge and the neighbours get nervous
     old.grudge+=80;for(const j of c.nb){const o=F[C[j].owner];if(!o.player)o.grudge+=25}}
   recalc(old);recalc(nf);nf.peak=Math.max(nf.peak,nf.owned.length);
@@ -721,8 +773,8 @@ function pickType(f,front){
   const r=rand();
   if(f.mech>=fuelCap(f))return r<.55?'inf':r<.8?'art':'sam'; // no fuel: foot soldiers and guns only
   if(f.doc==='mass'&&r<.35)return 'inf';
-  if(f.doc==='navy'&&front>=0&&C[front].coast&&f.owned.length>=2&&rand()<.2)return 'ship';
-  if(front>=0&&C[front].coast&&f.owned.length>=3&&rand()<.1)return 'ship';
+  if(f.doc==='navy'&&front>=0&&C[front].dock&&f.owned.length>=2&&rand()<.2)return 'ship';
+  if(front>=0&&C[front].dock&&f.owned.length>=3&&rand()<.1)return 'ship';
   if(f.owned.length<3)return r<.6?'inf':r<.86?'tank':r<.94?'art':'sam';
   return r<.34?'inf':r<.6?'tank':r<.76?'art':r<.9?'air':'sam';
 }
@@ -740,6 +792,7 @@ function aiThink(f){
   // grow the economy when safe: factories in the richest province, then research
   if(f.army>=armyCap(f)*.6&&rand()<.3){let bi=-1,bv=0;for(const i of f.owned){const c=C[i];if(c.fac<3&&time-c.threat>10&&c.value>bv){bv=c.value;bi=i}}
     if(bi>=0&&f.gold>facCost(C[bi])+60)buildFactory(f.id,bi)}
+  if(f.gold>220&&f.owned.length>=2&&rand()<(f.doc==='navy'?.15:.04)){const i=f.owned.find(i=>C[i].coast&&!C[i].dock&&C[i].integ>=.5);if(i!==undefined)buildDock(f.id,i)}
   if(f.gold>400&&rand()<.15){const k=TECHS[(rand()*4)|0];research(f.id,k)}
   f.gold=Math.min(f.gold,700);f.grudge*=.98;
   const mine=units.filter(u=>u.f===f.id&&u.hp>0);
@@ -751,7 +804,8 @@ function aiThink(f){
   for(const i of f.owned){const c=C[i];if(time-c.threat<2){
     for(const u of idle)if(!u.order&&Math.hypot(u.x-c.cap.x,u.y-c.cap.y)<140*WS)u.order={x:c.cap.x+rand()*10-5,y:c.cap.y+rand()*10-5,cap:-1,move:false}}}
   if(time<aiPeace)return;
-  if(f.target>=0&&(C[f.target].owner===f.id||!war(f.id,C[f.target].owner)))f.target=-1;
+  const reachable=ci=>{const o=C[ci].owner;return o!==f.id&&(war(f.id,o)||(o===P&&canDeclare(f)))};
+  if(f.target>=0&&!reachable(f.target))f.target=-1;
   if(f.target<0||(rand()<.06&&!(f.allyT>time)))f.target=chooseTarget(f);
   if(f.target<0)return;
   const c=C[f.target];
@@ -761,6 +815,7 @@ function aiThink(f){
   const eager=f.aggr+Math.min(.4,f.owned.length*.04)+(f.gold>300?.2:0);
   const vsMe=c.owner===P?DIFF.launch[diff]:1;
   if(power>defense*LAUNCH*vsMe+30&&rand()<eager){
+    if(c.owner===P&&!war(f.id,P)&&!declareWar(f.id,false))return;
     const keep=f.owned.length>1?Math.floor(free.length*.2):Math.floor(free.length*.3);
     free.sort((a,b)=>Math.hypot(a.x-c.cap.x,a.y-c.cap.y)-Math.hypot(b.x-c.cap.x,b.y-c.cap.y));
     const go=free.slice(0,free.length-keep);
@@ -775,11 +830,12 @@ function routeOpen(fi,a,b){ // no closed borders on the straight march from a to
 function chooseTarget(f){
   let best=-1,bs=1e18;
   for(const i of f.owned){const o=C[i];for(const j of o.reach){const t=C[j];
-    if(t.owner===f.id||!war(f.id,t.owner)||!routeOpen(f.id,o.cap,t.cap))continue;
+    if(t.owner===f.id||!(war(f.id,t.owner)||(t.owner===P&&canDeclare(f)))||!routeOpen(f.id,o.cap,t.cap))continue;
     let s=Math.hypot(t.cap.x-o.cap.x,t.cap.y-o.cap.y)/WS+t.gar*1.5+rand()*60-t.value*10-t.fac*15;
     if(t.oil&&f.mech>=fuelCap(f)-1)s-=50*t.oil; // short on fuel: go get some
     if(!o.nb.has(j))s+=60; // sea crossings are a bigger ask
     if(!inSupply(f.id,t.cap.x,t.cap.y))s+=70; // and so is a siege beyond our supply lines
+    if(t.owner===P&&!war(f.id,P)&&f.grudge<60)s+=60; // starting a war needs a reason
     if(t.owner===P)s-=DIFF.hate[diff]+Math.min(60,Math.max(0,F[P].owned.length-3)*4)+f.grudge;
     else if(F[t.owner].owned.length>6)s+=50;
     if(s<bs){bs=s;best=j}}}
@@ -791,7 +847,7 @@ function nearestOwned(f,x,y){let bd=1e18,b=-1;for(const i of f.owned){const d=(C
 function launchWave(){
   const me=F[P];waveAt=time+DIFF.gap[diff]*Math.max(.6,1-waveNo*.03)*(.85+rand()*.3);
   if(!me.alive||!me.owned.length)return null;
-  const foes=F.filter(f=>f.alive&&!f.player&&f.owned.length&&f.pact<=time);if(!foes.length)return null;
+  const foes=F.filter(f=>f.alive&&!f.player&&f.owned.length&&f.pact<=time&&!(f.truce>time));if(!foes.length)return null;
   waveNo++;
   // aim at the soft spot: close to enemies, weak defences, the homeland only once it's exposed
   let tc=null,bs=1e18;
@@ -800,9 +856,10 @@ function launchWave(){
   const n=Math.min(6,1+Math.ceil(waveNo/2)+(diff>=3?1:0));
   const pack=foes.map(f=>[f,...nearestOwned(f,tc.cap.x,tc.cap.y)]).sort((a,b)=>a[2]-b[2]).slice(0,n);
   const k=Math.min(14,Math.round((2+waveNo*1.3)*DIFF.wave[diff]));
+  const decl=pack.filter(([f])=>!f.atWar&&declareWar(f.id,false,true)).map(([f])=>f.name);
   for(const [f,fi] of pack){
     const fc=C[fi],fresh=[];
-    for(let j=0;j<k;j++){const t=pickType(f,fi),sea=UT[t].sea&&fc.coast,at=sea?fc.port:fc.cap,u=spawn(f.id,t,at.x,at.y);if(sea){u.x=at.x;u.y=at.y}fresh.push(u)}
+    for(let j=0;j<k;j++){const t=pickType(f,fi),sea=UT[t].sea&&fc.dock,at=sea?fc.port:fc.cap,u=spawn(f.id,t,at.x,at.y);if(sea){u.x=at.x;u.y=at.y}fresh.push(u)}
     const go=fresh.concat(units.filter(u=>u.f===f.id&&!u.order&&rand()<.6&&!fresh.includes(u)));
     go.forEach((u,j)=>{const a=j*2.4,r=Math.min(9,1.6*Math.sqrt(j));u.order={x:tc.cap.x+Math.cos(a)*r,y:tc.cap.y+Math.sin(a)*r,cap:tc.i}});
     f.target=tc.i;f.grudge+=40;
@@ -810,6 +867,7 @@ function launchWave(){
   }
   if(diff>=2&&waveNo>=2)launchMissile(pack[0][0].id,tc.cap.x+rand()*8-4,tc.cap.y+rand()*8-4);
   const names=pack.map(p=>p[0].name);
+  if(decl.length)addLog(`⚔ ${decl.join(', ')} declared war on you!`,'bad',8000);
   addLog(`⚠ Invasion wave ${waveNo}! ${names.length>2?names.slice(0,-1).join(', ')+' and '+names.at(-1):names.join(' and ')} march on ${tc.name}`,'bad',8000);
   return tc;
 }
@@ -824,14 +882,16 @@ function launchMissile(fi,x,y){
 }
 function boom(m){
   fx.push({k:4,x:m.x,y:m.y,life:1.1,max:1.1,r:MIS.r});
-  near(m.x,m.y,MIS.r,o=>{if(o.hp>0&&o.f!==m.f&&(o.x-m.x)**2+(o.y-m.y)**2<MIS.r*MIS.r)hurt(o,MIS.dmg*(UT[o.t].air?.5:1),m.f)});
-  for(const c of C)if(c.owner!==m.f&&(c.cap.x-m.x)**2+(c.cap.y-m.y)**2<MIS.r*MIS.r){
+  near(m.x,m.y,MIS.r,o=>{if(o.hp>0&&war(m.f,o.f)&&(o.x-m.x)**2+(o.y-m.y)**2<MIS.r*MIS.r)hurt(o,MIS.dmg*(UT[o.t].air?.5:1),m.f)});
+  for(const c of C)if(war(m.f,c.owner)&&(c.cap.x-m.x)**2+(c.cap.y-m.y)**2<MIS.r*MIS.r){
     c.gar=Math.max(0,c.gar-c.garMax*.6);c.lastHit=time;c.flash=.4;
     if(c.fac){c.fac--;recalc(F[c.owner]);if(c.owner===P)addLog(`🏭 A missile wrecked a factory in ${c.name}`,'bad')}}
 }
 function playerMissile(wx,wy){
   const f=F[P];
   if(time<playerPeace){addLog('No missiles during the ceasefire','bad',1800);return false}
+  const tgt=ownerAt(wx,wy);
+  if(tgt>=0&&tgt!==P&&!war(P,tgt)){addLog(`You're at peace with ${F[tgt].name} — declare war before firing on them`,'bad',2200);return false}
   if(misCd>0||f.gold<MIS.cost){addLog(misCd>0?`Missile reloading (${Math.ceil(misCd)}s)`:'Not enough gold for a missile','bad',1500);return false}
   f.gold-=MIS.cost;misCd=MIS.cd;launchMissile(P,wx,wy);stats.missiles++;return true;
 }
@@ -853,6 +913,7 @@ function revolt(c){
   const old=F[c.owner],nf=F[c.i];
   old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=c.i;if(old.id===P)supDirty=true;
   if(!nf.alive){nf.alive=true;nf.gold=80;nf.target=-1;nf.think=1;clearArmy(nf)}
+  if(old.player){nf.atWar=true;nf.warT=time;nf.casus=time;nf.pact=-1} // rebels are at war with you from day one
   c.integ=1;c.fort=0;c.garMax=garFor(c);c.gar=c.garMax*.7;c.lastHit=time;
   recalc(old);recalc(nf);
   for(let k=0;k<3+diff;k++)spawn(nf.id,k%3===2?'tank':'inf',c.cap.x,c.cap.y);
@@ -950,6 +1011,9 @@ function render(){
   if(!picking&&P>=0){
     ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1.6/cam.z;
     if(selCountry>=0&&C[selCountry].owner===P)ctx.stroke(C[selCountry].path);
+    ctx.strokeStyle='rgba(255,90,90,.75)';ctx.lineWidth=1.3/cam.z;ctx.setLineDash([4/cam.z,3/cam.z]);
+    for(const c of C)if(c.owner!==P&&F[c.owner].atWar&&!(c.bb[2]<vx0||c.bb[0]>vx1||c.bb[3]<vy0||c.bb[1]>vy1))ctx.stroke(c.path);
+    ctx.setLineDash([]);
   }
   if(picking&&pickC>=0){ctx.strokeStyle='#fff';ctx.lineWidth=2/cam.z;ctx.stroke(C[pickC].path)}
 
@@ -974,6 +1038,7 @@ function render(){
     if(!picking&&F[c.owner].pact>time){ctx.strokeStyle='rgba(120,220,255,.85)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(sx,sy,cr+4,0,6.283);ctx.stroke();ctx.setLineDash([])}
     if(c.oil&&cam.z>1.4){ctx.fillStyle='#0b1220';ctx.beginPath();ctx.arc(sx+cr+5,sy-cr-2,3.6,0,6.283);ctx.fill();
       ctx.fillStyle='#e8c34a';ctx.beginPath();ctx.moveTo(sx+cr+5,sy-cr-6);ctx.quadraticCurveTo(sx+cr+8,sy-cr-1,sx+cr+5,sy-cr);ctx.quadraticCurveTo(sx+cr+2,sy-cr-1,sx+cr+5,sy-cr-6);ctx.fill()}
+    if(!picking&&c.dock&&c.port&&cam.z>.9){const [px,py]=w2s(c.port.x,c.port.y);ctx.font='11px system-ui,sans-serif';ctx.fillText('⚓',px,py);ctx.font='600 11px system-ui,sans-serif'}
     if(!picking&&c.fort){ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1;
       for(let k=0;k<c.fort;k++){ctx.beginPath();ctx.arc(sx,sy,cr+3.5+k*2.2,0,6.283);ctx.stroke()}}
     if(!picking&&c.owner===P&&time-c.threat<2){const a=.5+.5*Math.sin(performance.now()/120);
@@ -1090,7 +1155,7 @@ function playerBuild(t){
   if(!u){const f=F[P];addLog(f.army>=armyCap(f)?'Army cap reached — conquer more land to grow it':
     UT[t].fuel&&f.mech>=fuelCap(f)?`Out of fuel ⛽ ${f.mech}/${fuelCap(f)} — conquer oil countries 🛢 to field more tanks, fighters and warships`:
     C[selCountry].integ<.5?`${C[selCountry].name} is still integrating (${Math.round(C[selCountry].integ*100)}%) — build in a settled province`:
-    UT[t].sea&&!C[selCountry].coast?`${C[selCountry].name} is landlocked — pick a coastal country to build warships`:`Not enough gold for ${UT[t].n}`,'bad',1800);}
+    UT[t].sea&&!C[selCountry].dock?(C[selCountry].coast?`${C[selCountry].name} has no dock — click it and build one ⚓ to launch warships`:`${C[selCountry].name} is landlocked — warships need a coastal country with a dock`):`Not enough gold for ${UT[t].n}`,'bad',1800);}
 }
 function playerFortify(ci){
   if(state!=='play')return;
@@ -1117,26 +1182,33 @@ function updatePanels(){
     $('cpSub').innerHTML=`<span class="t">${'★'.repeat(c.tier)}</span> ${TIERN[c.tier]} · ${mine?'<b style="color:var(--me)">yours</b>':c.owner===c.i?'independent':'held by '+o.name}`;
     const st=[['Income',`+${provIncome(c).toFixed(1)}/s`],['Defences',`${Math.ceil(c.gar)}/${c.garMax}`],
       ['Oil',c.oil?'🛢'.repeat(c.oil)+` +${4*c.oil}⛽`:'none'],['Factories',c.fac?'🏭'.repeat(c.fac):'none'],
-      ['Fort',c.fort?'🛡'.repeat(c.fort):'none'],['Coast',c.coast?'⚓ yes':'landlocked']];
+      ['Fort',c.fort?'🛡'.repeat(c.fort):'none'],['Dock',c.dock?'⚓ yes':c.coast?'none (coastal)':'landlocked']];
     if(c.integ<1)st.push(['Integrated',`<span style="color:#ffcf5a">${Math.round(c.integ*100)}%</span>`]);
     if(!mine){const sup=inSupply(P,c.cap.x,c.cap.y);
-      st.push(['Owner army',c.vis||o.pact>time?o.army:'? scout it'],['Opinion',opinion(o)[0]],
+      st.push(['Relation',o.atWar?'<span style="color:#ff8a8a">⚔ at war</span>':o.pact>time?'🤝 pact':o.truce>time?`🕊 truce ${fmtT(o.truce-time)}`:'peace'],
+        ['Owner army',c.vis||o.pact>time?o.army:'? scout it'],['Opinion',opinion(o)[0]],
         ['Doctrine',o.doc!=='none'?DOC[o.doc].i+' '+DOC[o.doc].n:'none'],['Your supply',sup?'<span style="color:#9ff0b8">in range</span>':'<span style="color:#ffb35a">out of range</span>'])}
     $('cpStats').innerHTML=st.map(([a,b])=>`<div><span>${a}</span> <b>${b}</b></div>`).join('');
-    for(const id of ['cpFac','cpFort'])show(id,mine);for(const id of ['cpPact','cpAnnex','cpAlly'])show(id,!mine);
+    for(const id of ['cpFac','cpFort'])show(id,mine);show('cpDock',mine&&c.coast&&!c.dock);
+    for(const id of ['cpAnnex','cpAlly'])show(id,!mine);show('cpWar',!mine&&!o.atWar);show('cpPeace',!mine&&o.atWar);show('cpPact',!mine&&!o.atWar);
     let note='',cls='';
     if(mine){
       $('cpFacC').textContent=c.fac>=3?'max':facCost(c);$('cpFac').disabled=c.fac>=3||me.gold<facCost(c);
+      if(c.coast&&!c.dock){$('cpDockC').textContent=dockCost(c);$('cpDock').disabled=me.gold<dockCost(c)}
       $('cpFortC').textContent=c.fort>=3?'max':fortCost(c);$('cpFort').disabled=c.fort>=3||me.gold<fortCost(c);
       note=(c.integ<.5?`🏛 Still integrating — troops can be raised here at 50% (${fmtT((.5-c.integ)*INTEG_T)}). `:'')+`Units you build appear here. A factory adds +${(c.value*.5).toFixed(1)}/s. Upkeep: −${(me.upk*(1-.15*me.tech.log)).toFixed(1)}/s for your army.`;
     }else{
       const [pk,pw]=pactCheck(o),[ak,aw]=annexCheck(o);
       $('cpPactC').textContent=o.pact>time?fmtT(o.pact-time):pactCost(o);$('cpPact').disabled=!pk;
       $('cpAnnexC').textContent=annexCost(o);$('cpAnnex').disabled=!ak;
+      const [pk2,pg,pw2]=peaceTerms(o);$('cpPeaceC').textContent=pg?pg:'';$('cpPeace').disabled=!pk2;
+      $('cpWar').disabled=!canDeclare(o);
+      const ww=o.atWar?`🕊 ${pw2}`:canDeclare(o)?(justified(o)?`⚔ You have a reason to fight ${o.name}`:`⚔ An unprovoked war angers its ${warNeighbours(o).length} neighbours`):
+        `⚔ ${time<playerPeace?'No wars during the ceasefire':o.pact>time?'You have a pact':o.truce>time?`Truce for ${fmtT(o.truce-time)}`:''}`;
       const [al,acost]=allyHelp(infoC),alOk=al.length&&me.gold>=acost&&time>=playerPeace;
       $('cpAllyC').textContent=al.length?acost:'';$('cpAlly').disabled=!alOk;
-      const aw2=al.length?`${al.map(f=>f.name).slice(0,3).join(', ')}${al.length>3?` +${al.length-3}`:''} will join an attack`:'No pact partner close enough to help — sign pacts with its neighbours';
-      note=`🤝 ${pw}<br>📣 ${aw2}<br>🏳 ${aw}`;cls=ak||pk||alOk?'good':'';
+      const aw2=!o.atWar?'Declare war first, then call your allies in':al.length?`${al.map(f=>f.name).slice(0,3).join(', ')}${al.length>3?` +${al.length-3}`:''} will join an attack`:'No pact partner close enough to help — sign pacts with its neighbours';
+      note=`${ww}<br>${o.atWar?'':`🤝 ${pw}<br>`}📣 ${aw2}<br>🏳 ${aw}`;cls=ak||pk||alOk?'good':'';
     }
     $('cpNote').innerHTML=note;$('cpNote').className='note '+cls;
   }
@@ -1171,14 +1243,14 @@ function updateHUD(){
   if(selCountry<0||C[selCountry].owner!==P)selCountry=f.owned[0]??-1;
   $('bWhere').textContent=selCountry>=0?C[selCountry].name:'—';
   for(const t of TYPES)buildCost[t].textContent=costOf(P,t);
-  for(const t of TYPES)buildBtns[t].disabled=(selCountry>=0&&C[selCountry].integ<.5)||f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].coast)||(UT[t].fuel&&f.mech>=fuelCap(f));
+  for(const t of TYPES)buildBtns[t].disabled=(selCountry>=0&&C[selCountry].integ<.5)||f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].dock)||(UT[t].fuel&&f.mech>=fuelCap(f));
   const sc=selCountry>=0?C[selCountry]:null;
   $('misC').textContent=misCd>0?`${Math.ceil(misCd)}s`:MIS.cost;
   $('bMis').disabled=time<playerPeace||misCd>0||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
   updatePanels();
   const top=F.filter(x=>x.alive).sort((a,b)=>b.owned.length-a.owned.length||b.income-a.income);
   let rows=top.slice(0,7);if(!rows.includes(f))rows[6]=f;
-  $('boardRows').innerHTML=rows.map(x=>`<div class="row${x.player?' me':''}"><span class="d" style="background:${x.player?PCOL:x.color}"></span><span class="n">${top.indexOf(x)+1}. ${x.name}${x.pact>time?' 🤝':''}</span><b>${x.owned.length}</b></div>`).join('');
+  $('boardRows').innerHTML=rows.map(x=>`<div class="row${x.player?' me':''}"><span class="d" style="background:${x.player?PCOL:x.color}"></span><span class="n">${top.indexOf(x)+1}. ${x.name}${x.pact>time?' 🤝':x.atWar&&!x.player?' ⚔':''}</span><b>${x.owned.length}</b></div>`).join('');
   const si=$('selinfo');
   if(sel.size){const n={};for(const u of sel)n[u.t]=(n[u.t]||0)+1;
     let cut=0,vet=0;for(const u of sel){if(!u.sup)cut++;if(u.rank)vet++}
@@ -1193,7 +1265,7 @@ function showTip(sx,sy){
   let h=`<b>${c.name}</b>`;
 const tags=`${c.tier?' · '+'★'.repeat(c.tier):''}${c.oil?' · '+'🛢'.repeat(c.oil):''}${c.coast?' · ⚓':''}`;
   if(state==='pick'||state==='menu')h+=`<span>${TIERN[c.tier]} · income +${c.value.toFixed(1)}/s${tags}</span>`;
-  else h+=`<span>${o.player?'Yours':c.owner===c.i?'Independent':'Held by '+o.name}${o.pact>time?' 🤝':''} · defences ${Math.ceil(c.gar)}/${c.garMax}${c.fort?` · 🛡${c.fort}`:''}${c.fac?` · 🏭${c.fac}`:''}${c.integ<1?` · 🏛${Math.round(c.integ*100)}%`:''} · +${provIncome(c).toFixed(1)}/s${tags}</span>`;
+  else h+=`<span>${o.player?'Yours':c.owner===c.i?'Independent':'Held by '+o.name}${o.player?'':o.atWar?' · <b style="display:inline;color:#ff8a8a">⚔ at war</b>':o.pact>time?' 🤝':' · at peace'}${c.dock?' · ⚓dock':''} · defences ${Math.ceil(c.gar)}/${c.garMax}${c.fort?` · 🛡${c.fort}`:''}${c.fac?` · 🏭${c.fac}`:''}${c.integ<1?` · 🏛${Math.round(c.integ*100)}%`:''} · +${provIncome(c).toFixed(1)}/s${tags}</span>`;
   tip.innerHTML=h;tip.classList.remove('hidden');
   tip.style.left=Math.min(sx+14,VW-230)+'px';tip.style.top=Math.min(sy+14,VH-60)+'px';
 }
@@ -1214,13 +1286,15 @@ function command(wx,wy){
   if(!sel.size)return;
   const list=[...sel];
   const ci=landAt(wx,wy);
-  if(ci>=0&&C[ci].owner!==P){
+  if(ci>=0&&C[ci].owner!==P&&!war(P,C[ci].owner)&&canDeclare(F[C[ci].owner])){askWar(C[ci].owner,()=>command(wx,wy));return}
+  if(ci>=0&&C[ci].owner!==P&&war(P,C[ci].owner)){
     const c=C[ci];
     list.forEach((u,k)=>{const a=k*2.4,r=Math.min(9,1.6*Math.sqrt(k));u.order={x:c.cap.x+Math.cos(a)*r,y:c.cap.y+Math.sin(a)*r,cap:ci};u.tgt=null;u.scan=0});
     markers.push({x:c.cap.x,y:c.cap.y,life:.8,max:.8,atk:true});
-    if(time<playerPeace)addLog(`Ceasefire: your troops will wait at ${c.name}'s border until it ends`,'',2500);
-    else if(F[c.owner].pact>time)addLog(`You have a pact with ${F[c.owner].name} for ${fmtT(F[c.owner].pact-time)} — your troops won't attack`,'bad',3000);
   }else{
+    if(ci>=0&&C[ci].owner!==P&&(time<playerPeace||F[C[ci].owner].pact>time||F[C[ci].owner].truce>time)){const o=F[C[ci].owner];
+      addLog(time<playerPeace?`Ceasefire: no wars for ${fmtT(playerPeace-time)} — your troops will stop at ${o.name}'s border`:
+        o.pact>time?`Pact with ${o.name} — your troops may pass through but not attack`:o.truce>time?`Truce with ${o.name} for ${fmtT(o.truce-time)} — your troops stop at its border`:'','',2600)}
     list.forEach((u,k)=>{const a=k*2.4,r=2.6*Math.sqrt(k);u.order={x:wx+Math.cos(a)*r,y:wy+Math.sin(a)*r,cap:-1,move:true};u.tgt=null});
     markers.push({x:wx,y:wy,life:.6,max:.6});
   }
@@ -1325,6 +1399,22 @@ $('cpFac').onclick=()=>{if(buildFactory(P,infoC))addLog(`🏭 Factory built in $
 $('cpFort').onclick=()=>{playerFortify(infoC);updatePanels()};
 $('cpPact').onclick=()=>{const f=F[C[infoC].owner];if(signPact(f.id))addLog(`🤝 Non-aggression pact with ${f.name} for ${fmtT(PACT_T)}`,'good',4000);updatePanels()};
 $('cpAlly').onclick=()=>{const n=callAllies(infoC);if(n)addLog(`📣 ${n} ${n>1?'allies march':'ally marches'} on ${C[infoC].name}`,'good',3500);updatePanels()};
+$('cpDock').onclick=()=>{if(buildDock(P,infoC))addLog(`⚓ Dock built in ${C[infoC].name} — warships can launch here`,'good',2500);updatePanels()};
+$('cpWar').onclick=()=>askWar(C[infoC].owner);
+$('cpPeace').onclick=()=>{const f=F[C[infoC].owner],[,g]=peaceTerms(f);if(makePeace(f.id))addLog(`🕊 Peace with ${f.name}${g?` for ${g} gold`:''} — truce for ${fmtT(120)}`,'good',4000);updatePanels()};
+let pendingWar=null,wasPaused=false;
+function askWar(fi,then){
+  const f=F[fi];if(!canDeclare(f))return;pendingWar={fi,then};
+  $('wbName').textContent=f.name;
+  const nb=warNeighbours(f);
+  $('wbText').innerHTML=justified(f)?`${f.name} ${time-f.casus<300?'attacked you recently':'is openly hostile'} — the world will see this as justified.`:
+    `This is an <b>unprovoked</b> war. ${nb.length?`${nb.slice(0,4).map(o=>o.name).join(', ')}${nb.length>4?` and ${nb.length-4} more`:''} will turn hostile and may join against you.`:''}`;
+  $('wbText').innerHTML+=` Your troops will be free to cross its border and attack. Peace can be negotiated after 45s.`;
+  wasPaused=paused;paused=true;show('warbox',1);
+}
+$('wbNo').onclick=()=>{pendingWar=null;paused=wasPaused;show('warbox',0)};
+$('wbYes').onclick=()=>{const pw=pendingWar;pendingWar=null;paused=wasPaused;show('warbox',0);
+  if(pw&&declareWar(pw.fi,true)&&pw.then)pw.then();updatePanels()};
 $('cpAnnex').onclick=()=>{annex(C[infoC].owner);updatePanels()};
 $('bAll').onclick=selectAll;$('bRet').onclick=retreat;$('bMap').onclick=()=>toggleMap();$('bNone').onclick=()=>sel.clear();$('bPause').onclick=togglePause;
 document.querySelectorAll('#ctl [data-sp]').forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;
@@ -1353,7 +1443,7 @@ function resetWorld(){
 function startGame(ci){
   resetWorld();
   P=ci;const me=F[P];me.player=true;me.gold=DIFF.gold[diff];
-  me.doc=pdoc;recalc(me);C[ci].garMax=garFor(C[ci]);C[ci].gar=C[ci].garMax;
+  me.doc=pdoc;recalc(me);if(pdoc==='navy'&&C[ci].coast)C[ci].dock=true;C[ci].garMax=garFor(C[ci]);C[ci].gar=C[ci].garMax;
   playerPeace=DIFF.peace[diff];aiMult=DIFF.ai[diff];winGoal=Math.ceil(C.length*.5);
   waveAt=playerPeace+DIFF.gap[diff]*.8;aiPeace=10;
   for(const f of F){const c=C[f.owned[0]];
@@ -1408,6 +1498,7 @@ function runSmoke(){
   const out=[];let pass=0,fail=0;aiDocs=false;pdoc='none';
   const ok=(c,m)=>{c?pass++:fail++;out.push((c?'PASS ':'FAIL ')+m)};
   const find=n=>C.findIndex(c=>c.name===n);let it;
+  const warAll=()=>{for(const f of F)if(!f.player){f.atWar=true;f.warT=time}};
   ok(C.length>150,`world has ${C.length} countries`);
   ok(find('Antarctica')<0,'Antarctica removed');
   const onSoil=C.filter(c=>landAt(c.cap.x,c.cap.y)===c.i).length;
@@ -1426,7 +1517,7 @@ function runSmoke(){
   ok(F[P].army===armyCap(F[P]),`army cap enforced (${F[P].army}/${armyCap(F[P])})`);
   ok(!build(P,'inf',de),'cannot build in a country you do not own');
   // combat
-  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();
   const a=spawn(P,'tank',1000,500),b=spawn(de,'inf',1008,500);a.x=1000;a.y=500;b.x=1008;b.y=500;
   for(let i=0;i<120;i++)step(STEP);
   ok(b.hp<=0&&a.hp>0,'tank beats infantry');
@@ -1434,7 +1525,7 @@ function runSmoke(){
   const s1=spawn(P,'art',1000,520),s2=spawn(de,'air',1010,520);s1.x=1000;s1.y=520;s2.x=1010;s2.y=520;
   rehash();ok(findEnemy(s1,60)!==s2,'artillery cannot target aircraft');
   // capture
-  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();
   for(const u of units)u.hp=0;step(STEP);
   const cde=C[de];cde.gar=0;cde.lastHit=time;
   const inv=spawn(P,'inf',cde.cap.x,cde.cap.y);inv.x=cde.cap.x+1;inv.y=cde.cap.y;
@@ -1447,7 +1538,7 @@ function runSmoke(){
   for(let i=0;i<30;i++){lu2.lastHit=time;step(STEP)}
   ok(lu2.owner!==P,'aircraft cannot capture');
   // siege: units ordered at a capital wear down its defences
-  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();
   for(const u of units)if(u.f!==P)u.hp=0;
   const tgtC=C[find('Belgium')];
   for(let k=0;k<14;k++){const u=spawn(P,k<8?'tank':'art',C[fr].cap.x,C[fr].cap.y)}
@@ -1458,7 +1549,7 @@ function runSmoke(){
   resetWorld();P=fr;F[P].player=true;playerPeace=1e9;aiPeace=0;
   ok(!war(de,P)&&war(de,lu),'ceasefire protects the player only');
   // flak vs fighters (towers silenced so only the units fight)
-  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;for(const f of F)f.think=1e9;step(STEP);
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;for(const f of F)f.think=1e9;step(STEP);
   const fk=spawn(P,'sam',1000,500),jt=spawn(de,'air',1012,500);fk.x=1000;fk.y=500;jt.x=1012;jt.y=500;jt.order={x:1012,y:500,cap:-1,move:true};
   for(let i=0;i<150;i++)step(STEP);
   ok(jt.hp<=0&&fk.hp>0,`flak shoots down a fighter (jet ${jt.hp|0}, flak ${fk.hp|0})`);
@@ -1471,7 +1562,7 @@ function runSmoke(){
   ok(landAt(sh.x,sh.y)<0,'warship will not sail inland');
   ok(C.filter(c=>c.coast).every(c=>c.port&&landAt(c.port.x,c.port.y)<0),'every coastal country has a sea port');
   // missiles
-  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;for(const f of F)f.think=1e9;step(STEP);
+  resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;for(const f of F)f.think=1e9;step(STEP);
   const vic=spawn(de,'tank',C[de].cap.x+3,C[de].cap.y),mine=spawn(P,'inf',C[de].cap.x-3,C[de].cap.y);vic.x=C[de].cap.x+3;mine.x=C[de].cap.x-3;
   const gb=C[de].gar;F[P].gold=500;C[de].tcd=1e9; // silence the tower so only the blast can hurt
   ok(playerMissile(C[de].cap.x,C[de].cap.y)&&F[P].gold===300&&misCd>0,'missile costs 200 and starts cooldown');
@@ -1492,7 +1583,7 @@ function runSmoke(){
   const w2=launchWave();ok(missiles.some(m=>m.f!==P),'hard AI fires a missile from wave 2');
   // AI targets the player
   resetWorld();seed=5;diff=3;startGame(fr);time=playerPeace+1;
-  const nbF=[...C[fr].nb].map(j=>F[j]);let calm=0,angry=0;
+  const nbF=[...C[fr].nb].filter(j=>Math.hypot(C[j].cap.x-C[fr].cap.x,C[j].cap.y-C[fr].cap.y)<150*WS).map(j=>F[j]); let calm=0,angry=0; // (not Brazil via French Guiana)
   for(const f of nbF){f.grudge=0;if(C[chooseTarget(f)].owner===P)calm++;f.grudge=150;if(C[chooseTarget(f)].owner===P)angry++}
   ok(angry>=nbF.length*.75&&angry>calm,`grudges turn neighbours on you (${calm}→${angry} of ${nbF.length})`);
   // rebellion
@@ -1529,7 +1620,7 @@ function runSmoke(){
   resetWorld();seed=12;diff=1;startGame(fr);time=playerPeace+1;F[P].gold=1000;F[de].grudge=0;
   ok(signPact(de)&&!war(de,P)&&!war(P,de)&&war(de,lu),'pact: neither side can attack');
   F[it=find('Italy')].grudge=100;ok(!pactCheck(F[it])[0],'a country with a grudge refuses a pact');
-  time+=PACT_T+1;ok(war(de,P),'pacts expire');
+  time+=PACT_T+1;ok(!war(de,P)&&canDeclare(F[de]),'pacts expire back into peace');
   // surrender
   resetWorld();seed=13;diff=1;startGame(fr);time=playerPeace+1;F[P].gold=2000;
   for(const u of units)if(u.f===P){u.x=C[fr].cap.x-60;u.y=C[fr].cap.y+40}rehash();
@@ -1594,6 +1685,7 @@ function runSmoke(){
   // allies
   resetWorld();seed=43;diff=1;startGame(fr);time=playerPeace+1;F[P].gold=5000;for(const f of F)f.grudge=0;
   const sp=find('Spain'),it2=find('Italy');ok(signPact(sp),'pact with Spain');
+  ok(allyHelp(it2)[0].length===0,'allies only join a war you have declared');declareWar(it2,true);
   const [al]=allyHelp(it2);ok(al.some(f=>f.id===sp),'Spain can be called against Italy');
   const g2=F[P].gold;ok(callAllies(it2)>0&&F[P].gold<g2&&F[sp].target===it2&&units.some(u=>u.f===sp&&u.order&&u.order.cap===it2),'called allies march on the target');
   ok(allyHelp(sp)[0].length===0||!allyHelp(sp)[0].some(f=>f.id===sp),'an ally is never called against itself');
@@ -1603,6 +1695,32 @@ function runSmoke(){
   for(let i=0;i<30*30;i++)step(STEP);
   ok(ownerAt(inv2.x,inv2.y)!==P,'nobody marches into your land during the ceasefire');
   ok(!routeOpen(de,C[de].cap,C[find('Spain')].cap)&&routeOpen(de,C[de].cap,C[find('Poland')].cap),'AI routes avoid closed borders');
+  // ── permission: orders, war declarations, peace, docks ──
+  resetWorld();seed=51;diff=1;startGame(fr);time=playerPeace+1;for(const u of units)u.hp=0;step(STEP);for(const f of F)f.think=1e9;for(const c of C)c.tcd=1e9;
+  ok(!war(P,de)&&!war(de,P)&&war(de,lu),'you start at peace with everyone; the AIs still fight each other');
+  const gd0=spawn(P,'inf',C[fr].cap.x,C[fr].cap.y),e0=spawn(de,'inf',C[fr].cap.x+UT.inf.range+8,C[fr].cap.y);
+  gd0.x=C[fr].cap.x;gd0.y=C[fr].cap.y;e0.x=C[fr].cap.x+UT.inf.range+8;e0.y=C[fr].cap.y;e0.order={x:e0.x,y:e0.y,cap:-1,move:true};
+  ok(declareWar(de,true)&&war(P,de)&&F[de].grudge>=40,'declaring war lets you fight');
+  for(let i=0;i<30*3;i++){e0.x=C[fr].cap.x+UT.inf.range+8;e0.y=C[fr].cap.y;step(STEP)}
+  ok(Math.hypot(gd0.x-C[fr].cap.x,gd0.y-C[fr].cap.y)<2&&e0.hp===e0.mhp,`idle troops hold position instead of chasing (moved ${Math.hypot(gd0.x-C[fr].cap.x,gd0.y-C[fr].cap.y).toFixed(1)})`);
+  const it3=find('Italy'),nbIt=warNeighbours(F[it3]),gb0=nbIt.map(o=>o.grudge),itJ=justified(F[it3]),itD=declareWar(it3,true);
+  ok(nbIt.length>0&&nbIt.every((o,k)=>o.grudge>gb0[k]),`an unprovoked war angers ${nbIt.length} neighbours (${nbIt.map((o,k)=>o.name+':'+gb0[k]+'→'+o.grudge)} just=${itJ} decl=${itD} g=${F[it3].grudge})`);
+  F[lu].grudge=100;const nbLu=warNeighbours(F[lu]).filter(o=>!o.atWar),gl0=nbLu.map(o=>o.grudge);declareWar(lu,true);
+  ok(nbLu.every((o,k)=>o.grudge===gl0[k]),'a justified war does not');
+  ok(!peaceTerms(F[de])[0],'no peace talks in the first 45s');time+=50;
+  for(let k=0;k<20;k++)spawn(P,'tank',C[fr].cap.x,C[fr].cap.y);
+  ok(peaceTerms(F[de])[0]&&peaceTerms(F[de])[1]===0&&makePeace(de)&&!war(P,de)&&!canDeclare(F[de]),'a winning side gets free peace, then a truce');
+  F[P].gold=10;ok(!playerMissile(C[de].cap.x,C[de].cap.y),'no missiles on a country at peace');
+  // AI must declare war before it attacks you
+  for(const u of units)if(u.f===P)u.hp=0;step(STEP);
+  const sw=find('Switzerland');F[sw].grudge=300;F[sw].think=0;for(let k=0;k<12;k++)spawn(sw,'tank',C[sw].cap.x,C[sw].cap.y);rehash();
+  let decl=false;for(let k=0;k<40&&!decl;k++){aiThink(F[sw]);decl=F[sw].atWar}
+  ok(decl&&F[sw].casus===time&&units.some(u=>u.f===sw&&u.order&&u.order.cap>=0&&C[u.order.cap].owner===P),'an angry AI declares war, then marches');
+  ok(justified(F[sw]),'being attacked gives you a just cause');
+  // docks
+  const es=find('Spain');C[es].dock=false;C[es].owner=P;F[P].owned.push(es);F[P].gold=1000;
+  ok(!build(P,'ship',es)&&buildDock(P,es)&&!!build(P,'ship',es),'warships need a dock');
+  ok(C[fr].dock&&!C[find('Belgium')].dock,'major coastal powers start with a dock, minor ones don\'t');
   // full-world soak (AI nations get doctrines here)
   aiDocs=true;resetWorld();seed=77;diff=1;startGame(fr);
   F[P].gold=3000;for(let k=0;k<3;k++)fortify(P,fr);for(let k=0;k<12;k++)build(P,k%3?'inf':'sam',fr); // a turtle, so the waves have someone to hit
@@ -1628,7 +1746,7 @@ function runSmoke(){
 }
 
 boot();
-if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P},toggleMap,calcVis,retreat,inSupply};
+if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P},toggleMap,calcVis,retreat,inSupply,askWar};
 })();
 </script>
 <script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
