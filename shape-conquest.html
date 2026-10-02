@@ -201,6 +201,8 @@ body.aiming canvas{cursor:crosshair}
     <div class="legend" id="legend"></div>
     <p style="font-size:13px">Every country starts free and every one of them wants more land. To take a country, smash its capital's
       defences, then park a ground unit on it.</p>
+    <p style="font-size:13px">📅 <b>Real-war pace:</b> one second is one day. Armies march slowly, new recruits ⏳ train for days before
+      they can move, battles take time, and a capital only falls once your troops hold it for a few days. Use 2×/4× to speed up.</p>
     <p style="font-size:13px">⛔ <b>Supply:</b> troops more than a short march from your land are out of supply — they wither and fight
       weaker, so push in fronts and use warships to carry supply overseas. Troops heal on home soil, defenders fight harder there,
       railways move troops 60% faster across your own land, new conquests take 90s to integrate before they
@@ -283,7 +285,9 @@ const UT={
   ship:{n:'Warship',  sh:5,fuel:1,cost:60,hp:170,dmg:14,rof:.5,  range:36,speed:22,size:4.8,splash:6,sea:1,nocap:1,desc:'Coastal only. Rules the sea, shells the shore.'},
 };
 const TYPES=['inf','tank','art','air','sam','ship'];
-for(const t of TYPES)UT[t].speed*=1.3; // the bigger world needs quicker marches
+// real-war pacing: armies crawl across the map, fights take a while, and new units train before they can move
+for(const t of TYPES){UT[t].speed*=t==='art'?.5:.6;UT[t].hp*=2}
+const TRAIN={inf:5,tank:10,art:9,air:12,sam:7,ship:16}, CAPTURE_HOLD=4;
 for(const t of TYPES)UT[t].upk=UT[t].cost*.003; // gold per second to keep a unit in the field
 
 // ─── real-world weight: who's a power, who has oil ───
@@ -314,10 +318,10 @@ const MOD={
   sam :{inf:.35,tank:.2, art:.4, air:3,  sam:.3, ship:.2},
   ship:{inf:1.2,tank:1,  art:1.3,air:.4, sam:1.2,ship:1}};
 const GMOD={inf:1,tank:1,art:1.7,air:.7,sam:.3,ship:1.3};
-const MIS={cost:200,cd:45,r:24,dmg:90};
+const MIS={cost:200,cd:45,r:24,dmg:180};
 // per difficulty: ceasefire, AI income, AI army size, starting gold, wave gap, wave size, how much the AI hates you, AI launch threshold vs you
 const DIFF={peace:[120,60,40,25],ai:[.8,1.15,1.45,1.8],cap:[.75,1,1.3,1.5],gold:[150,110,90,70],
-  gap:[200,130,95,70],wave:[1,1.25,1.5,1.9],hate:[-60,-15,20,40],launch:[1.5,1.15,.9,.7],unrest:[0,.1,.16,.22]};
+  gap:[250,165,120,90],wave:[1,1.25,1.5,1.9],hate:[-60,-15,20,40],launch:[1.5,1.15,.9,.7],unrest:[0,.1,.16,.22]};
 const DOC={
   blitz:{n:'Blitzkrieg',i:'⚡',d:'Tanks and fighters move 25% faster and hit 15% harder. +3 fuel.'},
   fort :{n:'Fortress',i:'🏰',d:'Capitals +30% defences, forts half price, troops +40% damage on home soil (instead of +20%).'},
@@ -327,7 +331,7 @@ const DOC={
   none :{n:'None',i:'',d:''}};
 const DOCS=['blitz','fort','econ','mass','navy'];
 // supply: troops within SUP_R of their own land (or SHIP_SUP of their own warship) are supplied; others wither
-const SUP_R=45*WS, SHIP_SUP=45, ATTR=.012, HEAL=.03, RANK=[0,40,120,260];
+const SUP_R=45*WS, SHIP_SUP=45, ATTR=.007, HEAL=.03, RANK=[0,40,120,260];
 const VIS={inf:38,tank:38,art:42,air:80,sam:42,ship:56}, CAP_VIS=75;
 const CAPTURE_R=14, TOWER_R=26;
 let GAR0=30,GARV=18,AGG0=.1,AGGR=.35,LAUNCH=1.4; // pacing dials
@@ -443,7 +447,7 @@ function buildWorld(topo,keep){ // keep: the country names to play with (the 50m
 }
 // ─── occupation: attacking troops paint enemy land in their colour; the front creeps as they advance ───
 let occ=null, occImg=null, occCv=null, occDirty=false, occT=0, supOccT=0;
-const OCC_R=9, OCC_SPREAD=18;
+const OCC_R=7, OCC_SPREAD=16;
 function hsl2rgb(str){const m=/hsl\((\d+),(\d+)%,(\d+)%\)/.exec(str);if(!m)return[240,191,58];const h=+m[1]/360,s2=+m[2]/100,l=+m[3]/100;
   const q=l<.5?l*(1+s2):l+s2-l*s2,p=2*l-q,f=t=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3),f(h),f(h-1/3)].map(v=>Math.round(v*255))}
 function occCol(fi){const f=F[fi];return f.player?[240,191,58]:(f.rgb||(f.rgb=hsl2rgb(f.color)))}
@@ -468,7 +472,7 @@ function paintOcc(u){ // ground troops claim the land around them; defenders tak
     if(cur===u.f||!war(u.f,own)||(cur>=0&&!war(u.f,cur)&&cur!==u.f&&d2>R1*R1))continue;
     if(d2<=R1*R1){setOcc(i,u.f);continue}
     // beyond arm's reach the colour only creeps from land we already hold
-    if(rand()<.3&&((x>0&&effOwner(i-1)===u.f)||(x<GW-1&&effOwner(i+1)===u.f)||(y>0&&effOwner(i-GW)===u.f)||(y<GH-1&&effOwner(i+GW)===u.f)))setOcc(i,u.f);
+    if(rand()<.12&&((x>0&&effOwner(i-1)===u.f)||(x<GW-1&&effOwner(i+1)===u.f)||(y>0&&effOwner(i-GW)===u.f)||(y<GH-1&&effOwner(i+GW)===u.f)))setOcc(i,u.f);
   }
 }
 function updateOcc(){
@@ -643,6 +647,7 @@ function build(fi,t,ci){
   if(C[ci].integ<.5)return null;
   if(T.fuel&&f.mech>=fuelCap(f))return null;
   f.gold-=costOf(fi,t);const at=T.sea?C[ci].port:C[ci].cap,u=spawn(fi,t,at.x,at.y);
+  u.train=u.trainMax=TRAIN[t]*(1-.15*C[ci].fac); // recruits drill at the capital before they can move or fight
   if(T.sea){u.x=at.x;u.y=at.y}
   if(f.player){stats.built++;u.order=guardOrder(ci,(rand()*12)|0,at.x,at.y)}
   return u;
@@ -729,6 +734,7 @@ function guardOK(o,t){return landAt(t.x,t.y)===o.guard||Math.hypot(t.x-o.x,t.y-o
 function guardOrder(ci,k,x,y){const c=C[ci],a=k*2.4,r=Math.min(14,2.2*Math.sqrt(k));x=x??c.cap.x;y=y??c.cap.y;return{x:x+Math.cos(a)*r,y:y+Math.sin(a)*r,cap:-1,guard:ci}}
 function updateUnit(u,dt){
   const T=UT[u.t];
+  if(u.train>0){u.train-=dt;u.scan=0;return}
   u.cd-=dt;u.scan-=dt;
   if(u.tgt&&(u.tgt.hp<=0||!war(u.f,u.tgt.f)))u.tgt=null;
   const ret=!!(u.order&&u.order.retreat);
@@ -798,13 +804,16 @@ function updateCountry(c,dt){
       if(d<2025)threat=o.f;if(d<bd){bd=d;best=o}});
     if(threat>=0){c.threat=time;
       if(c.owner===P&&time-c.alertT>15){c.alertT=time;addLog(`⚠ ${F[threat].name} is attacking ${c.name}!`,'bad')}}
-    if(best&&c.gar>0){hurt(best,(4+c.value)*(1+.5*c.fort),c.owner);fx.push({k:0,x:c.cap.x,y:c.cap.y,x2:best.x,y2:best.y,life:.2,max:.2,col:'#fff',t:'tw'})}
+    if(best&&c.gar>0){hurt(best,(4+c.value)*2*(1+.5*c.fort),c.owner);fx.push({k:0,x:c.cap.x,y:c.cap.y,x2:best.x,y2:best.y,life:.2,max:.2,col:'#fff',t:'tw'})}
     if(c.gar<=0){ // defences down: whoever holds the square takes it
       const cnt={};let home=false;
       near(c.cap.x,c.cap.y,18,o=>{if(o.hp<=0||UT[o.t].air||UT[o.t].nocap)return;const d=(o.x-c.cap.x)**2+(o.y-c.cap.y)**2;
         if(o.f===c.owner){if(d<324)home=true}else if(d<CAPTURE_R*CAPTURE_R&&war(o.f,c.owner))cnt[o.f]=(cnt[o.f]||0)+1});
-      if(!home){let bf=-1,bn=0;for(const k in cnt)if(cnt[k]>bn){bn=cnt[k];bf=+k}if(bf>=0)capture(c,bf)}
-    }
+      let bf=-1,bn=0;for(const k in cnt)if(cnt[k]>bn){bn=cnt[k];bf=+k}
+      // a capital falls only after it's held, uncontested, for a few days
+      if(!home&&bf>=0){if(c.capBy!==bf){c.capBy=bf;c.capProg=0}c.capProg+=.8;if(c.capProg>=CAPTURE_HOLD){c.capBy=-1;c.capProg=0;capture(c,bf)}}
+      else{c.capBy=-1;c.capProg=0}
+    }else if(c.capProg){c.capBy=-1;c.capProg=0}
   }
   if(time-c.lastHit>4&&c.gar<c.garMax)c.gar=Math.min(c.garMax,c.gar+(1.5+c.value*.6)*(1-occFrac(c))*dt); // a surrounded capital can't resupply
 }
@@ -1177,8 +1186,9 @@ function render(){
     const s=clamp(T.size*cam.z*.55,2.6,11);
     if(!T.air&&!T.sea&&landAt(u.x,u.y)<0){ctx.strokeStyle='rgba(160,210,255,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+3,0,6.283);ctx.stroke()}
     if(T.air){ctx.fillStyle='rgba(0,0,0,.25)';shapePath(ctx,T.sh,sx+3,sy+4,s,u.ang);ctx.fill()}
+    if(u.train>0){ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,s+3,-1.571,-1.571+6.283*(1-u.train/u.trainMax));ctx.stroke();ctx.globalAlpha=.45}
     shapePath(ctx,T.sh,sx,sy,s,T.sh===1||T.sh===4?0:u.ang);
-    ctx.fillStyle=F[u.f].player?PUNIT:F[u.f].ucol;ctx.fill();
+    ctx.fillStyle=F[u.f].player?PUNIT:F[u.f].ucol;ctx.fill();ctx.globalAlpha=1;
     ctx.lineWidth=sel.has(u)?2.2:1.3;ctx.strokeStyle=sel.has(u)?'#fff':'#060a12';ctx.stroke();
     if(sel.has(u)){ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+4,0,6.283);ctx.stroke()}
     if(u.f===P&&!u.sup){ctx.strokeStyle='rgba(255,150,60,.9)';ctx.lineWidth=1.2;ctx.setLineDash([2,2]);ctx.beginPath();ctx.arc(sx,sy,s+2.5,0,6.283);ctx.stroke();ctx.setLineDash([])}
@@ -1302,6 +1312,8 @@ function addLog(txt,cls='',ms=4500){
   while(logEl.children.length>6)logEl.removeChild(logEl.firstChild);
   setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),700)},ms);
 }
+const DATE0=new Date(2026,9,1);
+function gameDate(){const d=new Date(DATE0.getTime()+Math.floor(time)*864e5);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})} // one second = one day
 function fmtT(s){s=Math.max(0,Math.ceil(s));return`${s/60|0}:${String(s%60).padStart(2,'0')}`}
 function updateHUD(){
   if(state!=='play'&&state!=='end')return;
@@ -1319,8 +1331,9 @@ function updateHUD(){
   $('hArmy').textContent=f.army;$('hCap').textContent=`/ ${armyCap(f)}`;
   const pc=$('peace');
   pc.classList.remove('hidden');
-  if(time<playerPeace){pc.classList.remove('war');pc.textContent=`🕊 Nobody can attack you (or you them) for ${fmtT(playerPeace-time)} — build up!`}
-  else if(waveAt>0){pc.classList.add('war');pc.textContent=`⚠ Invasion wave ${waveNo+1} in ${fmtT(waveAt-time)}`}
+  const day=`📅 ${gameDate()} · `;
+  if(time<playerPeace){pc.classList.remove('war');pc.textContent=day+`🕊 Nobody can attack you (or you them) for ${Math.ceil(playerPeace-time)} days — build up!`}
+  else if(waveAt>0){pc.classList.add('war');pc.textContent=day+`⚠ Invasion wave ${waveNo+1} in ${Math.ceil(waveAt-time)} days`}
   else pc.classList.add('hidden');
   if(selCountry<0||C[selCountry].owner!==P)selCountry=f.owned[0]??-1;
   $('bWhere').textContent=selCountry>=0?C[selCountry].name:'—';
@@ -1335,8 +1348,8 @@ function updateHUD(){
   $('boardRows').innerHTML=rows.map(x=>`<div class="row${x.player?' me':''}"><span class="d" style="background:${x.player?PCOL:x.color}"></span><span class="n">${top.indexOf(x)+1}. ${x.name}${x.pact>time?' 🤝':x.atWar&&!x.player?' ⚔':''}</span><b>${x.owned.length}</b></div>`).join('');
   const si=$('selinfo');
   if(sel.size){const n={};for(const u of sel)n[u.t]=(n[u.t]||0)+1;
-    let cut=0,vet=0;for(const u of sel){if(!u.sup)cut++;if(u.rank)vet++}
-    si.textContent=`${sel.size} selected · `+TYPES.filter(t=>n[t]).map(t=>`${n[t]} ${UT[t].n.toLowerCase()}`).join(', ')+(vet?` · ★${vet} veteran`:'')+
+    let cut=0,vet=0,tr=0;for(const u of sel){if(!u.sup)cut++;if(u.rank)vet++;if(u.train>0)tr++}
+    si.textContent=`${sel.size} selected · `+TYPES.filter(t=>n[t]).map(t=>`${n[t]} ${UT[t].n.toLowerCase()}`).join(', ')+(vet?` · ★${vet} veteran`:'')+(tr?` · ⏳ ${tr} still training`:'')+
       (cut?` · ⛔ ${cut} out of supply — H to retreat`:' — right-click enemy land to invade, your land to guard it');si.style.color=cut?'#ffc28a':'';
     si.classList.remove('hidden')}else si.classList.add('hidden');
 }
@@ -1559,7 +1572,7 @@ function endGame(won,how){
   state='end';
   $('endTitle').innerHTML=won?'<span style="color:var(--me)">Victory</span>':'Defeat';
   $('endText').textContent=won?(how==='econ'?`Economic victory — ${F[P].name} earns ${Math.round(worldShare()*100)}% of the world's income. The world works for you now.`:`${F[P].name} controls ${F[P].owned.length} countries. The world is yours.`):`${F[P].name} has been wiped off the map.`;
-  $('endStats').innerHTML=[['Time',fmtT(time)],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Invasion waves faced',waveNo],['Missiles fired',stats.missiles],['Best veteran',stats.vets?'★'.repeat(stats.vets):'—'],['Share of world income',Math.round(worldShare()*100)+'%'],['Peak infamy',Math.round(stats.infPeak||0)]]
+  $('endStats').innerHTML=[['War lasted',`${Math.floor(time)} days`],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Invasion waves faced',waveNo],['Missiles fired',stats.missiles],['Best veteran',stats.vets?'★'.repeat(stats.vets):'—'],['Share of world income',Math.round(worldShare()*100)+'%'],['Peak infamy',Math.round(stats.infPeak||0)]]
     .map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
   show('bKeep',won);show('end',1);toggleAim(false);
 }
@@ -1619,7 +1632,7 @@ function runSmoke(){
   resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();
   for(const f of F)f.think=1e9; // a straight duel: nobody retreats
   const a=spawn(P,'tank',1000,500),b=spawn(de,'inf',1008,500);a.x=1000;a.y=500;b.x=1008;b.y=500;
-  for(let i=0;i<180;i++)step(STEP);
+  for(let i=0;i<30*14;i++)step(STEP);
   ok(b.hp<=0&&a.hp>0,'tank beats infantry');
   ok(!units.includes(b)&&F[de].army===units.filter(u=>u.f===de).length,'dead units removed and army count updated');
   const s1=spawn(P,'art',1000,520),s2=spawn(de,'air',1010,520);s1.x=1000;s1.y=520;s2.x=1010;s2.y=520;
@@ -1627,10 +1640,13 @@ function runSmoke(){
   // capture
   resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();
   for(const u of units)u.hp=0;step(STEP);
+  for(const f of F)f.think=1e9; // nobody raises defenders mid-test
   const cde=C[de];cde.gar=0;cde.lastHit=time;
   const inv=spawn(P,'inf',cde.cap.x,cde.cap.y);inv.x=cde.cap.x+1;inv.y=cde.cap.y;
-  for(let i=0;i<40;i++){cde.lastHit=time;step(STEP)}
-  ok(cde.owner===P,'ground unit on a broken capital captures it');
+  for(let i=0;i<30*2;i++){cde.lastHit=time;step(STEP)}
+  ok(cde.owner!==P&&cde.capBy===P,'a broken capital must be held for a few days…');
+  for(let i=0;i<30*4;i++){cde.lastHit=time;step(STEP)}
+  ok(cde.owner===P,'…then the ground unit on it captures it');
   ok(!F[de].alive,'Germany eliminated when it loses its only country');
   ok(F[P].owned.length===2&&Math.abs(F[P].income-(provIncome(C[fr])+provIncome(cde)))<1e-6&&provIncome(cde)<cde.value*.35,'a fresh conquest pays ~30% of its income');
   // air cannot capture
@@ -1823,13 +1839,15 @@ function runSmoke(){
   ok(C[fr].dock&&!C[find('Belgium')].dock,'major coastal powers start with a dock, minor ones don\'t');
   // ── guards, weariness, infamy, economic victory, army groups ──
   resetWorld();seed=61;diff=1;startGame(fr);time=playerPeace+1;for(const u of units)u.hp=0;step(STEP);for(const f of F)f.think=1e9;for(const c of C)c.tcd=1e9;
-  ok(build(P,'inf',fr).order.guard===fr,'new troops guard the province that raised them');
+  const rec=build(P,'inf',fr);ok(rec.order.guard===fr&&rec.train>0,'new troops guard the province that raised them, after training');
+  const rx=rec.x,ry=rec.y;rec.order={x:rx+30,y:ry,cap:-1,move:true};for(let i=0;i<30*2;i++)step(STEP);
+  ok(rec.x===rx&&rec.y===ry,'recruits stay put while training');for(let i=0;i<30*4;i++)step(STEP);ok(rec.x>rx+3,'…then march');
   declareWar(de,true);
   const cf=C[fr],gu=spawn(P,'tank',cf.cap.x,cf.cap.y);gu.x=cf.cap.x;gu.y=cf.cap.y;gu.order=guardOrder(fr,0);
   let intr=null;for(let r=30;r<60&&!intr;r+=3)for(let a=0;a<6.28&&!intr;a+=.3){const x=cf.cap.x+Math.cos(a)*r,y=cf.cap.y+Math.sin(a)*r;if(landAt(x,y)===fr){intr=spawn(de,'inf',x,y);intr.x=x;intr.y=y}}
-  for(let i=0;i<30*12&&intr.hp>0;i++){intr.order={x:intr.x,y:intr.y,cap:-1,move:true};intr.cd=9;step(STEP)}
+  for(let i=0;i<30*25&&intr.hp>0;i++){intr.order={x:intr.x,y:intr.y,cap:-1,move:true};intr.cd=9;step(STEP)}
   ok(intr.hp<=0,'guards hunt down intruders on their soil');
-  for(let i=0;i<30*12;i++)step(STEP);
+  for(let i=0;i<30*25;i++)step(STEP);
   ok(Math.hypot(gu.x-gu.order.x,gu.y-gu.order.y)<6,'…then return to their post');
   const far=spawn(de,'inf',C[de].cap.x,C[de].cap.y);far.x=C[de].cap.x;far.y=C[de].cap.y;far.order={x:far.x,y:far.y,cap:-1,move:true};
   for(let i=0;i<30*4;i++)step(STEP);ok(Math.hypot(gu.x-gu.order.x,gu.y-gu.order.y)<6,'guards do not wander abroad');
