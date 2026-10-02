@@ -414,6 +414,11 @@ function buildWorld(topo,keep){ // keep: the country names to play with (the 50m
   const specks=C.filter(c=>!placeCap(c));
   for(const c of specks)grid[clamp(c.cap.x/CS|0,0,GW-1)+clamp(c.cap.y/CS|0,0,GH-1)*GW]=c.i;
   for(const c of C)if(landAt(c.cap.x,c.cap.y)!==c.i)placeCap(c);
+  // each country's grid cells, for occupation
+  const cnt=new Int32Array(C.length);for(let i=0;i<grid.length;i++)if(grid[i]>=0)cnt[grid[i]]++;
+  for(const c of C){c.cells=new Int32Array(cnt[c.i]);c.ncell=cnt[c.i];c.occN=0}
+  const fill=new Int32Array(C.length);for(let i=0;i<grid.length;i++)if(grid[i]>=0)C[grid[i]].cells[fill[grid[i]]++]=i;
+  occ=new Int16Array(GW*GH).fill(-1);
   // land neighbours
   for(let gy=0;gy<GH;gy++)for(let gx=0;gx<GW;gx++){
     const a=grid[gx+gy*GW];if(a<0)continue;
@@ -435,6 +440,42 @@ function buildWorld(topo,keep){ // keep: the country names to play with (the 50m
     for(let k=0;k<3;k++)set.add(byDist[k][0]);
     c.reach=[...set];
   }
+}
+// ─── occupation: attacking troops paint enemy land in their colour; the front creeps as they advance ───
+let occ=null, occImg=null, occCv=null, occDirty=false, occT=0, supOccT=0;
+const OCC_R=9, OCC_SPREAD=18;
+function hsl2rgb(str){const m=/hsl\((\d+),(\d+)%,(\d+)%\)/.exec(str);if(!m)return[240,191,58];const h=+m[1]/360,s2=+m[2]/100,l=+m[3]/100;
+  const q=l<.5?l*(1+s2):l+s2-l*s2,p=2*l-q,f=t=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3),f(h),f(h-1/3)].map(v=>Math.round(v*255))}
+function occCol(fi){const f=F[fi];return f.player?[240,191,58]:(f.rgb||(f.rgb=hsl2rgb(f.color)))}
+function effOwner(i){const g=grid[i];if(g<0)return -1;const o=occ[i];return o>=0?o:C[g].owner}
+function effAt(x,y){const gx=x/CS|0,gy=y/CS|0;if(x<0||gx>=GW||gy<0||gy>=GH)return -1;const i=gx+gy*GW;return grid[i]<0?-1:effOwner(i)}
+function setOcc(i,v){
+  const old=occ[i];if(old===v)return;const c=C[grid[i]];
+  if(old<0)c.occN++;else if(v<0)c.occN--;
+  occ[i]=v;c.occChanged=true;occDirty=true;if(old===P||v===P||c.owner===P)supOccT=supOccT||1;
+  if(occImg){const k=i*4,d=occImg.data;if(v<0)d[k+3]=0;else{const [r,g,b]=occCol(v);d[k]=r;d[k+1]=g;d[k+2]=b;d[k+3]=255}}
+}
+function clearOcc(c){if(!c.occN)return;for(const i of c.cells)if(occ[i]>=0)setOcc(i,-1)}
+function clearOccBy(fi,inOwner){for(const c of C)if(c.occN&&(inOwner===undefined||c.owner===inOwner))for(const i of c.cells)if(occ[i]===fi)setOcc(i,-1)}
+const occFrac=c=>c.ncell?c.occN/c.ncell:0;
+function paintOcc(u){ // ground troops claim the land around them; defenders take it back
+  const R2=OCC_SPREAD/CS,R1=OCC_R/CS,gx=u.x/CS,gy=u.y/CS;
+  const x0=Math.max(0,Math.floor(gx-R2)),x1=Math.min(GW-1,Math.ceil(gx+R2)),y0=Math.max(0,Math.floor(gy-R2)),y1=Math.min(GH-1,Math.ceil(gy+R2));
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+    const i=x+y*GW,g=grid[i];if(g<0)continue;const d2=(x+.5-gx)**2+(y+.5-gy)**2;if(d2>R2*R2)continue;
+    const own=C[g].owner,cur=occ[i];
+    if(own===u.f){if(cur>=0&&d2<=R1*R1)setOcc(i,-1);continue} // liberate our own soil
+    if(cur===u.f||!war(u.f,own)||(cur>=0&&!war(u.f,cur)&&cur!==u.f&&d2>R1*R1))continue;
+    if(d2<=R1*R1){setOcc(i,u.f);continue}
+    // beyond arm's reach the colour only creeps from land we already hold
+    if(rand()<.3&&((x>0&&effOwner(i-1)===u.f)||(x<GW-1&&effOwner(i+1)===u.f)||(y>0&&effOwner(i-GW)===u.f)||(y<GH-1&&effOwner(i+GW)===u.f)))setOcc(i,u.f);
+  }
+}
+function updateOcc(){
+  for(const u of units){if(u.hp<=0||UT[u.t].air||UT[u.t].sea)continue;
+    const i=landAt(u.x,u.y);if(i<0)continue;const own=C[i].owner;
+    if((own!==u.f&&war(u.f,own))||(own===u.f&&C[i].occN))paintOcc(u)}
+  for(const c of C)if(c.occChanged){c.occChanged=false;recalc(F[c.owner])}
 }
 function landAt(x,y){const gx=x/CS|0,gy=y/CS|0;if(x<0||gx>=GW||gy<0||gy>=GH)return -1;return grid[gx+gy*GW]}
 
@@ -540,7 +581,7 @@ function annex(fi){
   return true;
 }
 const INTEG_T=90; // seconds for a conquest to integrate: it pays 30%→100% and can only raise troops from 50%
-function provIncome(c){return c.value*(1+.5*c.fac)*(.3+.7*c.integ)}
+function provIncome(c){return c.value*(1+.5*c.fac)*(.3+.7*c.integ)*(1-.7*occFrac(c))} // occupied land barely pays
 function recalc(f){f.income=f.owned.reduce((s,i)=>s+provIncome(C[i]),0)*(1+.12*f.tech.ind)*(f.doc==='econ'?1.15:1)}
 // The AIs brawl freely among themselves, but nobody fights the player without a declared war
 // (and nobody can declare one during the opening ceasefire, a pact or a truce).
@@ -569,7 +610,7 @@ function peaceTerms(f){ // → [ok, gold, reason]
 }
 function makePeace(fi){
   const f=F[fi],[ok,g]=peaceTerms(f);if(!ok)return false;
-  F[P].gold-=g;f.atWar=false;f.truce=time+120;f.grudge=Math.max(0,f.grudge-40);f.target=-1;
+  F[P].gold-=g;clearOccBy(fi,P);clearOccBy(P,fi);for(const c of C)if(c.occChanged){c.occChanged=false;recalc(F[c.owner])}f.atWar=false;f.truce=time+120;f.grudge=Math.max(0,f.grudge-40);f.target=-1;
   for(const u of units)if(u.order&&u.order.cap>=0&&((u.f===fi&&C[u.order.cap].owner===P)||(u.f===P&&C[u.order.cap].owner===fi)))u.order=null;
   return true;
 }
@@ -624,20 +665,20 @@ function hurt(o,dmg,by,k){ // k: the unit that fired, which earns veterancy for 
 // ─── supply ───
 function ownerAt(x,y){const i=landAt(x,y);return i<0?-1:C[i].owner}
 function inSupply(fi,x,y){ // on our land (or a pact partner's, for the player), a short march from it, or next to one of our warships
-  const o=ownerAt(x,y);
+  const o=effAt(x,y); // occupied ground supplies the occupier: supply follows the front
   if(o===fi||(fi===P&&o>=0&&F[o].pact>time))return true;
   const sr=shipSup(fi);let ship=false;
   near(x,y,sr,q=>{if(!ship&&q.f===fi&&q.hp>0&&UT[q.t].sea&&(q.x-x)**2+(q.y-y)**2<sr*sr)ship=true});
   if(ship)return true;
   if(fi===P&&supDist){const gx=x/CS|0,gy=y/CS|0;if(x>=0&&gx<GW&&gy>=0&&gy<GH)return supDist[gx+gy*GW]*CS/3<=supR(P)}
   const R=supR(fi);
-  for(const rr of [R*.35,R*.7,R])for(let k=0;k<10;k++){const a=k*.6283+rr*.02;if(ownerAt(x+Math.cos(a)*rr,y+Math.sin(a)*rr)===fi)return true}
+  for(const rr of [R*.35,R*.7,R])for(let k=0;k<10;k++){const a=k*.6283+rr*.02;if(effAt(x+Math.cos(a)*rr,y+Math.sin(a)*rr)===fi)return true}
   return false;
 }
 function calcSupply(){ // the player's supply zone: chamfer distance from their land, painted into an overlay
   supDirty=false;if(P<0||!grid)return;
   if(!supDist)supDist=new Uint16Array(GW*GH);const d=supDist;
-  for(let i=0;i<d.length;i++){const g=grid[i];d[i]=g>=0&&C[g].owner===P?0:60000}
+  for(let i=0;i<d.length;i++){const g=grid[i];d[i]=g>=0&&effOwner(i)===P?0:60000}
   for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const i=x+y*GW;let v=d[i];if(!v)continue;
     if(x>0)v=Math.min(v,d[i-1]+3);if(y>0){v=Math.min(v,d[i-GW]+3);if(x>0)v=Math.min(v,d[i-GW-1]+4);if(x<GW-1)v=Math.min(v,d[i-GW+1]+4)}d[i]=v}
   for(let y=GH-1;y>=0;y--)for(let x=GW-1;x>=0;x--){const i=x+y*GW;let v=d[i];if(!v)continue;
@@ -765,12 +806,12 @@ function updateCountry(c,dt){
       if(!home){let bf=-1,bn=0;for(const k in cnt)if(cnt[k]>bn){bn=cnt[k];bf=+k}if(bf>=0)capture(c,bf)}
     }
   }
-  if(time-c.lastHit>4&&c.gar<c.garMax)c.gar=Math.min(c.garMax,c.gar+(1.5+c.value*.6)*dt);
+  if(time-c.lastHit>4&&c.gar<c.garMax)c.gar=Math.min(c.garMax,c.gar+(1.5+c.value*.6)*(1-occFrac(c))*dt); // a surrounded capital can't resupply
 }
 function capture(c,fi){
   const old=F[c.owner],nf=F[fi];
   old.owned=old.owned.filter(i=>i!==c.i);nf.owned.push(c.i);c.owner=fi;if(fi===P||old.id===P)supDirty=true;
-  c.integ=fi===c.i?1:0;c.fort=Math.max(0,c.fort-1);c.fac=Math.max(0,c.fac-1);c.garMax=garFor(c);c.gar=c.garMax*.35;c.lastHit=time;
+  clearOcc(c);c.integ=fi===c.i?1:0;c.fort=Math.max(0,c.fort-1);c.fac=Math.max(0,c.fac-1);c.garMax=garFor(c);c.gar=c.garMax*.35;c.lastHit=time;
   if(fi===P){old.lostTo++;infamy+=6+2*c.tier}
   if(fi===P){ // the victim wants revenge and the neighbours get nervous
     old.grudge+=80;for(const j of c.nb){const o=F[C[j].owner];if(!o.player)o.grudge+=25}}
@@ -782,7 +823,7 @@ function capture(c,fi){
   if(!old.owned.length){
     old.alive=false;
     for(const u of units)if(u.f===old.id&&u.hp>0){u.hp=0;u.gone=1;fx.push({k:1,x:u.x,y:u.y,life:.5,max:.5,col:old.color})}
-    clearArmy(old);old.pact=-1;
+    clearArmy(old);old.pact=-1;clearOccBy(old.id);
     if(old.id!==P&&(old.peak>=4||nf.player))addLog(`${old.name} has fallen`,nf.player?'good':'');
   }
   if(!SMOKE)for(const u of units)if(u.f!==fi&&u.order&&u.order.cap===c.i&&!war(u.f,fi))u.order=null;
@@ -951,6 +992,8 @@ function step(dt){
   for(const f of F)if(f.alive){f.gold+=netIncome(f)*dt;f.broke=f.gold<=0&&netIncome(f)<0;if(f.gold<0)f.gold=0}
   rehash();
   for(const u of units)if(u.hp>0)updateUnit(u,dt);
+  occT-=dt;if(occT<=0){occT=.25;updateOcc()}
+  if(supOccT>0){supOccT-=dt;if(supOccT<=0){supOccT=0;supDirty=true}}
   for(const c of C)updateCountry(c,dt);
   for(const f of F)if(f.alive&&!f.player){f.think-=dt;if(f.think<=0)aiThink(f)}
   if(waveAt>0&&time>=waveAt&&time>=playerPeace)launchWave();
@@ -1025,6 +1068,15 @@ function render(){
     let col=picking?F[c.i].color:fcol(c.owner);
     ctx.fillStyle=col;ctx.fill(c.path,'evenodd');
     if(c.i===hoverC||(picking&&c.i===pickC)){ctx.fillStyle='rgba(255,255,255,.22)';ctx.fill(c.path,'evenodd')}
+  }
+  if(!picking&&occ){
+    if(!occCv){occCv=document.createElement('canvas');occCv.width=GW;occCv.height=GH;occImg=occCv.getContext('2d').createImageData(GW,GH);
+      for(let i=0;i<occ.length;i++)if(occ[i]>=0){const [r,g,b]=occCol(occ[i]),k=i*4;occImg.data[k]=r;occImg.data[k+1]=g;occImg.data[k+2]=b;occImg.data[k+3]=255}occDirty=true}
+    if(occDirty){occCv.getContext('2d').putImageData(occImg,0,0);occDirty=false}
+    ctx.imageSmoothingEnabled=true;
+    for(const c of C){if(!c.occN||c.bb[2]<vx0||c.bb[0]>vx1||c.bb[3]<vy0||c.bb[1]>vy1)continue;
+      const gx0=Math.max(0,Math.floor(c.bb[0]/CS)-1),gy0=Math.max(0,Math.floor(c.bb[1]/CS)-1),gx1=Math.min(GW,Math.ceil(c.bb[2]/CS)+1),gy1=Math.min(GH,Math.ceil(c.bb[3]/CS)+1);
+      ctx.save();ctx.clip(c.path,'evenodd');ctx.drawImage(occCv,gx0,gy0,gx1-gx0,gy1-gy0,gx0*CS,gy0*CS,(gx1-gx0)*CS,(gy1-gy0)*CS);ctx.restore()}
   }
   // supply zone (strategic map, or while you have troops selected)
   if(!picking&&supCv&&(mapMode||sel.size)){ctx.globalAlpha=mapMode?1:.55;ctx.imageSmoothingEnabled=true;ctx.drawImage(supCv,0,0,GW*CS,GH*CS);ctx.globalAlpha=1;
@@ -1483,6 +1535,7 @@ $('bLead').onclick=()=>{if(pickC>=0)startGame(pickC)};
 function resetWorld(){
   units=[];fx=[];markers=[];missiles=[];raids=[];sel.clear();time=0;checkT=0;nextUid=1;keepPlaying=false;
   waveAt=0;waveNo=0;misCd=0;rebelT=25;aiming=false;document.body.classList.remove('aiming');supDirty=true;visT=0;
+  if(occ){occ.fill(-1);for(const c of C){c.occN=0;c.occChanged=false}if(occImg)occImg.data.fill(0);occDirty=true}supOccT=0;
   stats={built:0,lost:0,kills:0,peak:1,taken:0,missiles:0,vets:0};weary=0;infamy=0;econHold=0;groups={};
   makeFactions();
 }
@@ -1564,8 +1617,9 @@ function runSmoke(){
   ok(!build(P,'inf',de),'cannot build in a country you do not own');
   // combat
   resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();
+  for(const f of F)f.think=1e9; // a straight duel: nobody retreats
   const a=spawn(P,'tank',1000,500),b=spawn(de,'inf',1008,500);a.x=1000;a.y=500;b.x=1008;b.y=500;
-  for(let i=0;i<120;i++)step(STEP);
+  for(let i=0;i<180;i++)step(STEP);
   ok(b.hp<=0&&a.hp>0,'tank beats infantry');
   ok(!units.includes(b)&&F[de].army===units.filter(u=>u.f===de).length,'dead units removed and army count updated');
   const s1=spawn(P,'art',1000,520),s2=spawn(de,'air',1010,520);s1.x=1000;s1.y=520;s2.x=1010;s2.y=520;
@@ -1578,7 +1632,7 @@ function runSmoke(){
   for(let i=0;i<40;i++){cde.lastHit=time;step(STEP)}
   ok(cde.owner===P,'ground unit on a broken capital captures it');
   ok(!F[de].alive,'Germany eliminated when it loses its only country');
-  ok(F[P].owned.length===2&&Math.abs(F[P].income-(C[fr].value+provIncome(cde)))<1e-6&&provIncome(cde)<cde.value*.35,'a fresh conquest pays ~30% of its income');
+  ok(F[P].owned.length===2&&Math.abs(F[P].income-(provIncome(C[fr])+provIncome(cde)))<1e-6&&provIncome(cde)<cde.value*.35,'a fresh conquest pays ~30% of its income');
   // air cannot capture
   const lu2=C[lu];lu2.gar=0;const jet=spawn(P,'air',lu2.cap.x,lu2.cap.y);jet.x=lu2.cap.x;jet.y=lu2.cap.y;inv.hp=0;
   for(let i=0;i<30;i++){lu2.lastHit=time;step(STEP)}
@@ -1787,6 +1841,22 @@ function runSmoke(){
   const s0=(infamy=0,waveSize());infamy=90;ok(waveSize()>s0,`infamy swells invasion waves (${s0}→${waveSize()})`);
   ok(worldShare()>0&&worldShare()<ECON_WIN,`economic share ${(worldShare()*100).toFixed(1)}%`);
   sel=new Set(units.filter(u=>u.f===P).slice(0,3));setGroup('2');sel.clear();recallGroup('2');ok(sel.size===3,'army groups save and recall a selection');
+  // ── occupation: the front line creeps into enemy land ──
+  resetWorld();seed=71;diff=1;startGame(fr);time=playerPeace+1;for(const u of units)u.hp=0;step(STEP);for(const f of F)f.think=1e9;for(const c of C)c.tcd=1e9;
+  declareWar(de,true);const cd=C[de],incO=provIncome(cd);
+  ok(cd.ncell>50&&cd.cells.length===cd.ncell&&[...cd.cells].every(i=>grid[i]===de),`Germany has ${cd.ncell} land cells`);
+  const occu=[];for(let k=0;k<6;k++){const u=spawn(P,'inf',cd.cap.x,cd.cap.y);u.x=cd.cap.x+k*3;u.y=cd.cap.y;u.order={x:u.x,y:u.y,cap:-1,move:true};occu.push(u)}
+  for(let i=0;i<30*3;i++){for(const u of occu)u.order={x:u.x,y:u.y,cap:-1,move:true};step(STEP)}
+  const n1=cd.occN;ok(n1>10&&effAt(cd.cap.x,cd.cap.y)===P,`troops paint enemy land (${n1} cells)`);
+  for(const u of occu)u.x+=25;
+  for(let i=0;i<30*6;i++){for(const u of occu)u.order={x:u.x,y:u.y,cap:-1,move:true};step(STEP)}
+  ok(cd.occN>n1,`the occupied area creeps outward (${n1}→${cd.occN})`);
+  ok(provIncome(cd)<incO&&inSupply(P,cd.cap.x,cd.cap.y),'occupied land cuts its owner\'s income and supplies the occupier');
+  for(const u of occu)u.hp=0;step(STEP);
+  const lib=spawn(de,'tank',cd.cap.x,cd.cap.y);lib.x=cd.cap.x;lib.y=cd.cap.y;lib.order={x:lib.x,y:lib.y,cap:-1,move:true};const n2=cd.occN;
+  for(let i=0;i<30*2;i++){lib.order={x:lib.x,y:lib.y,cap:-1,move:true};step(STEP)}
+  ok(cd.occN<n2&&effAt(cd.cap.x,cd.cap.y)===de,`defenders take their land back (${n2}→${cd.occN})`);
+  capture(cd,P);ok(cd.occN===0&&[...cd.cells].every(i=>occ[i]<0),'capturing the capital takes the whole country');
   // full-world soak (AI nations get doctrines here)
   aiDocs=true;resetWorld();seed=77;diff=1;startGame(fr);
   F[P].gold=3000;for(let k=0;k<3;k++)fortify(P,fr);for(let k=0;k<12;k++)build(P,k%3?'inf':'sam',fr); // a turtle, so the waves have someone to hit
@@ -1799,6 +1869,7 @@ function runSmoke(){
   ok(alive<C.length*.9,`the world fights: ${C.length-alive} nations fell in 400s (${alive} left)`);
   ok(owned===C.length,'every country has exactly one owner');
   ok(F.every(f=>f.army===units.filter(u=>u.f===f.id).length),'army counters match units');
+  ok(C.some(c=>c.occN>0)&&C.every(c=>c.occN===[...c.cells].filter(i=>occ[i]>=0).length),`fronts on the map: ${C.filter(c=>c.occN).length} countries partly occupied, counters match`);
   ok(F.every(f=>f.mech===units.filter(u=>u.f===f.id&&UT[u.t].fuel).length),'fuel counters match units');
   ok(F.every(f=>Math.abs(f.upk-units.filter(u=>u.f===f.id).reduce((s,u)=>s+upkOf(f.id,u.t),0))<1e-6),'upkeep totals match units');
   ok(C.some(c=>c.fac>0)&&F.some(f=>TECHS.some(k=>f.tech[k]>0)),`AIs invest: ${C.filter(c=>c.fac>0).length} factories, ${F.filter(f=>TECHS.some(k=>f.tech[k])).length} nations researching`);
@@ -1812,7 +1883,7 @@ function runSmoke(){
 }
 
 boot();
-if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P},toggleMap,calcVis,retreat,inSupply,askWar};
+if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P},toggleMap,calcVis,retreat,inSupply,askWar,declareWar};
 })();
 </script>
 <script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
