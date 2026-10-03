@@ -324,7 +324,7 @@ const MOD={
   sam :{inf:.35,tank:.2, art:.4, air:3,  sam:.3, ship:.2},
   ship:{inf:1.2,tank:1,  art:1.3,air:.4, sam:1.2,ship:1}};
 const GMOD={inf:1,tank:1,art:1.7,air:.7,sam:.3,ship:1.3};
-const MIS={cost:200,cd:45,r:24,dmg:180};
+const MIS={cost:200,r:24,dmg:180}; // no reload: fire as many as you can pay for
 // per difficulty: ceasefire, AI income, AI army size, starting gold, how much the AI hates you, AI launch threshold vs you
 const DIFF={peace:[120,60,40,25],ai:[.8,1.15,1.45,1.8],cap:[.75,1,1.3,1.5],gold:[150,110,90,70],
   hate:[-60,-15,20,40],launch:[1.5,1.15,.9,.7],unrest:[0,.1,.16,.22]};
@@ -352,7 +352,7 @@ let stats={built:0,lost:0,kills:0,peak:1,taken:0};
 let nextUid=1, keepPlaying=false;
 let weary=0, infamy=0, econHold=0, groups={}, integT=0, pdoc='blitz', FOG=true, mapMode=false, aiDocs=true, visT=0;
 let supDist=null, supDirty=true, supCv=null, fogCv=null;
-let missiles=[], raids=[], misCd=0, aiming=false, rebelT=25;
+let missiles=[], raids=[], aiming=false, rebelT=25;
 const cam={x:0,y:0,z:1};
 
 // ─── geometry helpers ───
@@ -984,8 +984,8 @@ function playerMissile(wx,wy){
   if(time<playerPeace){addLog('No missiles during the ceasefire','bad',1800);return false}
   const tgt=ownerAt(wx,wy);
   if(tgt>=0&&tgt!==P&&!war(P,tgt)){addLog(`You're at peace with ${F[tgt].name} — declare war before firing on them`,'bad',2200);return false}
-  if(misCd>0||f.gold<MIS.cost){addLog(misCd>0?`Missile reloading (${Math.ceil(misCd)}s)`:'Not enough gold for a missile','bad',1500);return false}
-  f.gold-=MIS.cost;misCd=MIS.cd;launchMissile(P,wx,wy);stats.missiles++;return true;
+  if(f.gold<MIS.cost){addLog('Not enough gold for a missile','bad',1500);return false}
+  f.gold-=MIS.cost;launchMissile(P,wx,wy);stats.missiles++;return true;
 }
 
 // ─── unrest: sprawling empires lose far-flung, unguarded provinces to rebels ───
@@ -1025,7 +1025,6 @@ function step(dt){
   if(supOccT>0){supOccT-=dt;if(supOccT<=0){supOccT=0;supDirty=true}}
   for(const c of C)updateCountry(c,dt);
   for(const f of F)if(f.alive&&!f.player){f.think-=dt;if(f.think<=0)aiThink(f)}
-  misCd=Math.max(0,misCd-dt);
   for(const m of missiles){m.t+=dt;if(m.t>=m.dur){boom(m);m.done=1}}
   if(missiles.length)missiles=missiles.filter(m=>!m.done);
   if(supDirty)calcSupply();
@@ -1276,7 +1275,7 @@ function toggleAim(on){
   aiming=on===undefined?!aiming:on;
   if(aiming&&state!=='play')aiming=false;
   document.body.classList.toggle('aiming',aiming);$('bMis').classList.toggle('aim',aiming);
-  if(aiming)addLog('☢ Click where the missile should land (Esc / right-click cancels)','',2500);
+  if(aiming)addLog(`☢ Click where missiles should land — ${MIS.cost} gold each, fire as many as you can afford (Esc / right-click stops)`,'',3000);
 }
 let infoC=-1;
 function openInfo(ci){infoC=ci;show('cpanel',ci>=0);if(ci>=0)show('techp',0);updatePanels()}
@@ -1360,8 +1359,8 @@ function updateHUD(){
   for(const t of TYPES)buildCost[t].textContent=costOf(P,t);
   for(const t of TYPES)buildBtns[t].disabled=(selCountry>=0&&C[selCountry].integ<.5)||f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].dock)||(UT[t].fuel&&f.mech>=fuelCap(f));
   const sc=selCountry>=0?C[selCountry]:null;
-  $('misC').textContent=misCd>0?`${Math.ceil(misCd)}s`:MIS.cost;
-  $('bMis').disabled=time<playerPeace||misCd>0||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
+  $('misC').textContent=MIS.cost;
+  $('bMis').disabled=time<playerPeace||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
   updatePanels();
   const top=F.filter(x=>x.alive).sort((a,b)=>b.owned.length-a.owned.length||b.income-a.income);
   let rows=top.slice(0,7);if(!rows.includes(f))rows[6]=f;
@@ -1421,7 +1420,7 @@ function clickAt(sx,sy,shift,touch){
   const [wx,wy]=s2w(sx,sy);
   if(state==='pick'){const ci=countryAt(wx,wy);if(ci>=0)choosePick(ci);return}
   if(state!=='play')return;
-  if(aiming){if(playerMissile(wx,wy))toggleAim(false);return}
+  if(aiming){if(playerMissile(wx,wy)&&F[P].gold<MIS.cost)toggleAim(false);return} // keep aiming while you can afford another
   const u=unitAt(wx,wy,true);
   if(u){if(shift||touch){sel.has(u)?sel.delete(u):sel.add(u)}else{sel.clear();sel.add(u)}return}
   if(touch&&sel.size){command(wx,wy);return}
@@ -1567,7 +1566,7 @@ function choosePick(ci){
 $('bLead').onclick=()=>{if(pickC>=0)startGame(pickC)};
 function resetWorld(){
   units=[];fx=[];markers=[];missiles=[];raids=[];sel.clear();time=0;checkT=0;nextUid=1;keepPlaying=false;
-  misCd=0;rebelT=25;aiming=false;document.body.classList.remove('aiming');supDirty=true;visT=0;
+  rebelT=25;aiming=false;document.body.classList.remove('aiming');supDirty=true;visT=0;
   if(occ){occ.fill(-1);for(const c of C){c.occN=0;c.occChanged=false}if(occImg)occImg.data.fill(0);occDirty=true}supOccT=0;
   stats={built:0,lost:0,kills:0,peak:1,taken:0,missiles:0,vets:0};weary=0;infamy=0;econHold=0;groups={};
   makeFactions();
@@ -1606,7 +1605,7 @@ let saveT=20;
 function occRLE(){const out=[];let v=occ[0],n=0;for(let i=0;i<occ.length;i++){if(occ[i]===v)n++;else{out.push(v,n);v=occ[i];n=1}}out.push(v,n);return out}
 function snapshot(){
   return{v:1,date:Date.now(),name:F[P].name,day:Math.floor(time),owned:F[P].owned.length,
-    g:{P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,misCd,rebelT,integT,seed,selCountry,
+    g:{P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,rebelT,integT,seed,selCountry,
       cam:{...cam},groups:Object.fromEntries(Object.entries(groups).map(([k,g])=>[k,g.filter(u=>u.hp>0).map(u=>u.id)]))},
     C:C.map(c=>CKEYS.map(k=>c[k])),
     F:F.map(f=>{const o={...f};delete o.rgb;return o}),
@@ -1623,7 +1622,7 @@ function dropSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
 function loadGame(s){
   s=s||readSave();if(!s)return false;
   const g=s.g;resetWorld();
-  ({P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,misCd,rebelT,integT,seed,selCountry}=g);
+  ({P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,rebelT,integT,seed,selCountry}=g);
   s.C.forEach((a,i)=>CKEYS.forEach((k,j)=>{C[i][k]=a[j]}));
   F=s.F;
   units=s.U.map(a=>{const u={tgt:null,scan:rand()*.3,sup:true,home:true,vis:true,blocked:0};UKEYS.forEach((k,j)=>{u[k]=a[j]});return u});
@@ -1751,8 +1750,9 @@ function runSmoke(){
   resetWorld();P=fr;F[P].player=true;playerPeace=0;aiPeace=1e9;warAll();for(const u of units)u.hp=0;for(const c of C)c.tcd=1e9;for(const f of F)f.think=1e9;step(STEP);
   const vic=spawn(de,'tank',C[de].cap.x+3,C[de].cap.y),mine=spawn(P,'inf',C[de].cap.x-3,C[de].cap.y);vic.x=C[de].cap.x+3;mine.x=C[de].cap.x-3;
   const gb=C[de].gar;F[P].gold=500;C[de].tcd=1e9; // silence the tower so only the blast can hurt
-  ok(playerMissile(C[de].cap.x,C[de].cap.y)&&F[P].gold===300&&misCd>0,'missile costs 200 and starts cooldown');
-  const again=playerMissile(C[de].cap.x,C[de].cap.y);ok(!again,`cannot fire again while reloading (cd ${misCd}, gold ${F[P].gold}, missiles ${missiles.length})`);
+  ok(playerMissile(C[de].cap.x,C[de].cap.y)&&F[P].gold===300,'missile costs 200');
+  ok(playerMissile(C[de].cap.x,C[de].cap.y)&&F[P].gold===100&&missiles.filter(m=>m.f===P).length===2,'no reload: fire again right away while you have gold');
+  ok(!playerMissile(C[de].cap.x,C[de].cap.y)&&F[P].gold===100,'no gold, no missile');
   for(let i=0;i<30*6&&missiles.length;i++){vic.x=C[de].cap.x+3;vic.y=C[de].cap.y;vic.cd=mine.cd=9;step(STEP)}
   ok(!missiles.length&&vic.hp<T_hp('tank')&&C[de].gar<gb*.5,`missile hits: tank ${vic.hp|0}hp, defences ${gb|0}→${C[de].gar|0}`);
   ok(mine.hp===UT.inf.hp,`missile spares your own troops (${mine.hp})`);
