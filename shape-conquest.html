@@ -43,13 +43,22 @@ button.on{background:#2d4270;border-color:#5b7fc4}
 #log .bad{border-color:#ff5a5a66;color:#ffc9c9}
 #log .good{border-color:#5ee08a66;color:#cfffe0}
 
-#build{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);padding:8px 10px;display:flex;gap:8px;align-items:center}
+#build{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);padding:8px 10px;display:flex;gap:8px;align-items:center;max-width:calc(100vw - 20px)}
+#build .bcol{display:flex;flex-direction:column;gap:6px;min-width:0}
+#build .brow{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+#build .brow.sq:empty{display:none}
+.sqb{display:flex;align-items:center;gap:6px;padding:4px 9px;font-size:12px;white-space:nowrap}
+.sqb .c{color:#ffe08a;font-variant-numeric:tabular-nums}.sqb .k{font-size:10px;color:var(--dim)}
+.sqb svg{width:14px;height:14px;margin-right:-4px}
+body.hasSq #selinfo{bottom:146px} body.hasSq #groups{bottom:180px}
 #build .where{font-size:12px;color:var(--dim);max-width:130px;line-height:1.2;margin-right:2px}
 #build .where b{color:var(--ink);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ub{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:74px;padding:6px 8px}
 .ub svg{width:22px;height:22px}
 .ub .c{font-size:12px;color:#ffe08a;font-variant-numeric:tabular-nums}
 .ub .k{font-size:10px;color:var(--dim)}
+.ub.mine{border-color:#f0bf3a55}
+#build.many .ub{min-width:60px;padding:5px 6px;font-size:12px}
 
 #ctl{position:fixed;bottom:10px;right:10px;padding:6px;display:flex;gap:5px}
 #ctl button{padding:6px 9px;font-size:12px}
@@ -137,6 +146,46 @@ body.aiming canvas{cursor:crosshair}
 .doc{flex-wrap:wrap;margin:6px 0 4px}.doc button{flex:1 1 30%;padding:7px 4px;font-size:12px}
 .docd{font-size:12px;min-height:32px;color:#ffe3a3!important}
 .fog{display:flex;gap:8px;align-items:center;font-size:12px;color:#b8c3d6;margin:2px 0 14px;cursor:pointer}
+#designer{z-index:11}
+.dz{width:min(860px,100%);padding:18px 20px}
+.dzh{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.dzh h1{font-size:24px!important;flex:none}
+.tabs{display:flex;gap:4px;flex:1}
+.slots{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.slot{display:flex;align-items:center;gap:7px;padding:6px 10px;font-size:13px}
+.slot svg{width:20px;height:20px}.slot small{color:var(--dim);font-size:11px}
+.slot.new{border-style:dashed;color:var(--dim)}
+.dgrid{display:grid;grid-template-columns:250px 1fr;gap:18px}
+.dgrid canvas{position:static;width:250px;height:250px;background:#0a1220;border:1px solid var(--line);border-radius:10px;touch-action:none;cursor:crosshair}
+#qCv{height:210px}
+.hint{font-size:11px;color:var(--dim);margin:5px 0 8px;line-height:1.3}
+.presets,.chas,.forms,.pal{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.presets button{padding:4px 8px;font-size:15px;line-height:1}
+.chas button,.pal button{display:flex;align-items:center;gap:5px;padding:5px 8px;font-size:12px}
+.chas svg,.pal svg{width:16px;height:16px}
+.forms button{padding:5px 9px;font-size:12px}
+.dz input[type=text]{width:100%;font:600 17px system-ui,sans-serif;color:var(--ink);background:#0a1220;border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.srow{display:grid;grid-template-columns:78px 1fr 112px;align-items:center;gap:8px;font-size:12px;padding:2px 0}
+.srow span{color:var(--dim)}.srow b{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.srow b small{color:var(--dim);font-weight:400}.srow b .up{color:#9ff0b8}.srow b .dn{color:#ffb4b4}
+.srow input{width:100%;accent-color:#f0bf3a}
+.srow.sh{grid-template-columns:60px 1fr 38px}
+.dsum{margin:10px 0 2px;padding:8px 10px;background:#ffffff08;border-radius:8px;font-size:12px;color:#b8c3d6;line-height:1.5}
+.dsum b{color:#ffe08a;font-size:15px}
+.mu{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}
+.mu div{display:flex;align-items:center;gap:6px;background:#ffffff08;border-radius:7px;padding:5px 7px;font-size:11px;color:var(--dim)}
+.mu svg{width:15px;height:15px;flex:none}.mu b{display:block;font-size:12px}
+.mu .w b{color:#9ff0b8}.mu .l b{color:#ffb4b4}.mu .e b{color:#e8edf5}
+.bar{flex:1;height:6px;background:#ffffff12;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:#f0bf3a}
+.roles div{grid-column:span 3}
+.qlist{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0;min-height:34px}
+.qi{display:flex;align-items:center;gap:3px;background:#ffffff0c;border:1px solid var(--line);border-radius:7px;padding:3px 4px 3px 6px;font-size:11px}
+.qi svg{width:15px;height:15px}.qi em{font-style:normal;color:var(--dim);margin-right:2px}
+.qi button{padding:1px 5px;font-size:10px;border-radius:5px}
+.dnote{font-size:12px;color:#ffcf8a;min-height:16px;margin-top:6px}
+.dempty{padding:30px 10px;text-align:center;color:var(--dim)}
+@media (max-width:700px){.dgrid{grid-template-columns:1fr}.dgrid canvas{width:100%;height:auto;aspect-ratio:1}#qCv{aspect-ratio:1.2}.mu{grid-template-columns:repeat(2,1fr)}
+  body.hasSq #ctl{bottom:118px} body.hasSq #powers{bottom:162px}}
 #smokeout{position:fixed;inset:0;margin:0;padding:12px;background:#000d;color:#9f9;font:12px monospace;z-index:99;overflow:auto;white-space:pre-wrap}
 </style>
 </head>
@@ -162,6 +211,7 @@ body.aiming canvas{cursor:crosshair}
 
 <div id="build" class="panel hidden">
   <div class="where">Build at<b id="bWhere">—</b></div>
+  <div class="bcol"><div class="brow" id="bUnits"></div><div class="brow sq" id="bSquads"></div></div>
 </div>
 <div id="ctl" class="panel hidden">
   <button id="bAll" title="Select whole army (E)">Select all</button>
@@ -176,6 +226,7 @@ body.aiming canvas{cursor:crosshair}
 <div id="powers" class="panel hidden">
   <button id="bMis" title="Missile strike (M)">☢ Missile <span class="c" id="misC">200</span></button>
   <button id="bTech" title="Research (R)">🔬 Research</button>
+  <button id="bDz" title="Workshop: design your own units — stats and shape — and squads (U)">🛠 Workshop</button>
   <button id="bMap" title="Strategic map: supply range and enemy strength (V)">🗺 Map</button>
 </div>
 <div id="techp" class="panel hidden"><h4>RESEARCH</h4><div id="techRows"></div></div>
@@ -225,6 +276,7 @@ body.aiming canvas{cursor:crosshair}
     <div class="lbl">NATIONAL DOCTRINE</div>
     <div class="diff doc" id="docs"></div>
     <p class="docd" id="docDesc"></p>
+    <button id="bDzM" style="width:100%;margin:2px 0 10px">🛠 Workshop — design your own units (stats + shape) and squads</button>
     <label class="fog"><input type="checkbox" id="fogChk" checked> 🌫 Fog of war — enemy troops stay hidden unless your land or units can see them</label>
     <div class="lbl">DIFFICULTY</div>
     <div class="diff" id="diff" style="margin-top:6px">
@@ -234,7 +286,66 @@ body.aiming canvas{cursor:crosshair}
     <a class="quit" href="index.html" target="_top">⏏ Back to the arcade</a>
     <div class="keys">
       <kbd>Drag</kbd> select units · <kbd>Right-click</kbd> move / invade · <kbd>Wheel</kbd> zoom ·
-      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>R</kbd> research · <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> save army group · <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd> recall · <kbd>H</kbd> retreat · <kbd>V</kbd> strategic map · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
+      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>7</kbd>–<kbd>0</kbd> your designs · <kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd> squads · <kbd>U</kbd> workshop · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>R</kbd> research · <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> save army group · <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd> recall · <kbd>H</kbd> retreat · <kbd>V</kbd> strategic map · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
+    </div>
+  </div>
+</div>
+
+<div id="designer" class="overlay hidden">
+  <div class="card panel dz">
+    <div class="dzh"><h1>🛠 <span>Workshop</span></h1>
+      <div class="tabs"><button data-tab="unit">Unit designer</button><button data-tab="squad">Squad designer</button></div>
+      <button class="go" id="dzX" style="width:auto;padding:8px 16px;font-size:14px">✓ Done</button></div>
+    <div id="tabUnit">
+      <div class="slots" id="dSlots"></div>
+      <div class="dempty hidden" id="dEmpty">Design up to four unit types of your own. Pick a chassis, push the stats where you want them — the price follows —
+        and draw its shape. They show up in your build bar on keys <b>7</b>–<b>0</b>.</div>
+      <div class="dgrid" id="dGrid">
+        <div>
+          <canvas id="dCv" width="500" height="500"></canvas>
+          <div class="hint">Drag the yellow corners to reshape it. Double-click an edge to add a corner, double-click a corner to remove it. Points right = its front.</div>
+          <div class="presets" id="dPresets"></div>
+          <div id="dShape"></div>
+          <label class="fog" style="margin:6px 0 0"><input type="checkbox" id="dSpin"> Turns to face where it's going</label>
+        </div>
+        <div>
+          <input type="text" id="dName" maxlength="14" placeholder="Name your unit" spellcheck="false">
+          <div class="lbl">CHASSIS — what it is and what it's strong against</div>
+          <div class="chas" id="dBase"></div>
+          <div class="lbl">STATS — every boost raises the price</div>
+          <div id="dStats"></div>
+          <div class="dsum" id="dSum"></div>
+          <div class="lbl">MATCH-UPS — the same gold spent on each, head to head</div>
+          <div class="mu" id="dMU"></div>
+          <div class="dnote" id="dNote"></div>
+          <div class="row2" style="margin-top:8px"><button id="dDel">🗑 Delete design</button></div>
+        </div>
+      </div>
+    </div>
+    <div id="tabSquad" class="hidden">
+      <div class="slots" id="qSlots"></div>
+      <div class="dempty hidden" id="qEmpty">A squad is a set of units built together with one click. They march in formation and wait
+        for each other, so the tanks don't leave the infantry behind. Make up to three; build them with <b>Z</b>, <b>X</b> and <b>C</b>.</div>
+      <div class="dgrid" id="qGrid">
+        <div>
+          <canvas id="qCv" width="500" height="420"></canvas>
+          <div class="hint">Formation preview, front pointing right. The numbers are each unit's place in the formation.</div>
+          <div class="lbl">FORMATION</div>
+          <div class="forms" id="qForms"></div>
+        </div>
+        <div>
+          <input type="text" id="qName" maxlength="14" placeholder="Name your squad" spellcheck="false">
+          <div class="lbl">ADD UNITS — click to add</div>
+          <div class="pal" id="qPal"></div>
+          <div class="lbl">SQUAD · <span id="qN">0</span>/12 — ◀ ▶ moves a unit's place</div>
+          <div class="qlist" id="qList"></div>
+          <div class="dsum" id="qSum"></div>
+          <div class="lbl">FIREPOWER AGAINST</div>
+          <div class="mu roles" id="qRoles"></div>
+          <div class="dnote" id="qNote"></div>
+          <div class="row2" style="margin-top:8px"><button id="qDel">🗑 Delete squad</button></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -340,6 +451,100 @@ const DOCS=['blitz','fort','econ','mass','navy'];
 const SUP_R=45*WS, SHIP_SUP=45, ATTR=.007, HEAL=.03, RANK=[0,40,120,260];
 const VIS={inf:38,tank:38,art:42,air:80,sam:42,ship:56}, CAP_VIS=75;
 const CAPTURE_R=14, TOWER_R=26;
+
+// ─── workshop: the player's own unit designs (types c0–c3) and squad templates ───
+// a design = a chassis (one of the six base units: its role, match-ups and traits) + five stat levels + a drawn shape.
+// Price follows the Lanchester square law: doubling health×damage should cost √2 more, so no level setting is free.
+const LV={hp:[.6,.8,1,1.25,1.55],dmg:[.6,.8,1,1.25,1.55],rof:[.6,.8,1,1.25,1.55],range:[.75,.88,1,1.15,1.3],speed:[.7,.85,1,1.2,1.45]};
+const STATS=Object.keys(LV), STATN={hp:'Armor',dmg:'Firepower',rof:'Fire rate',range:'Range',speed:'Speed'};
+const DSLOTS=['c0','c1','c2','c3'], DKEYS=['7','8','9','0'], SQKEYS=['z','x','c'], SQMAX=12;
+const FORMS={wedge:'▲ Wedge',line:'┃ Line',column:'━ Column',box:'■ Box',ring:'◯ Ring'};
+const DESIGN_KEY='sq_designs_v1';
+let designs=[], squads=[], PTYPES=TYPES.slice(), nextSq=1;
+const bt=t=>UT[t]&&UT[t].base||t; // the base unit a type is built on
+function normPoly(p){let m=0;for(const [x,y] of p)m=Math.max(m,Math.hypot(x,y));const k=1.25/(m||1);return p.map(([x,y])=>[+(x*k).toFixed(3),+(y*k).toFixed(3)])}
+function makePoly(sh){ // corners, spikes (every other corner pulled in), length, taper (narrow nose), twist
+  const n=sh.pts,m=sh.spike>0?2*n:n,out=[],tw=sh.twist*Math.PI/n;
+  for(let k=0;k<m;k++){const a=k/m*6.283+tw,r=sh.spike>0&&k%2?1-sh.spike:1;let x=Math.cos(a)*r,y=Math.sin(a)*r;y*=1-sh.taper*x;x*=sh.len;out.push([x,y])}
+  return normPoly(out);
+}
+function designStats(d){
+  const B=UT[d.base],m={};for(const k of STATS)m[k]=LV[k][d.lv[k]-1];
+  const cost=Math.max(5,Math.round(B.cost*Math.sqrt(m.hp*m.dmg*m.rof)*(1+.6*(m.range-1))*(1+.4*(m.speed-1))));
+  return{n:d.n||'Unit',base:d.base,sh:{poly:d.poly,spin:d.spin},cost,upk:cost*.003,hp:B.hp*m.hp,dmg:B.dmg*m.dmg,rof:B.rof*m.rof,
+    range:B.range*m.range,speed:B.speed*m.speed,size:B.size*d.size,fuel:B.fuel,air:B.air,sea:B.sea,nocap:B.nocap,splash:B.splash,
+    desc:`Your design on the ${B.n.toLowerCase()} chassis.`};
+}
+function validDesign(d){return d&&DSLOTS.includes(d.id)&&TYPES.includes(d.base)&&d.lv&&STATS.every(k=>d.lv[k]>=1&&d.lv[k]<=5)&&Array.isArray(d.poly)&&d.poly.length>=3}
+function applyDesigns(list){ // registers the designs as real unit types; units already in the field are refitted
+  designs=(list||[]).filter(validDesign).filter((d,i,a)=>a.findIndex(o=>o.id===d.id)===i).sort((a,b)=>a.id<b.id?-1:1);
+  for(const d of designs){UT[d.id]=designStats(d);GMOD[d.id]=GMOD[d.base];VIS[d.id]=VIS[d.base];
+    TRAIN[d.id]=+(TRAIN[d.base]*Math.sqrt(UT[d.id].cost/UT[d.base].cost)).toFixed(1)}
+  PTYPES=TYPES.concat(designs.map(d=>d.id));
+  for(const a of PTYPES)for(const b of PTYPES)(MOD[a]=MOD[a]||{})[b]=MOD[bt(a)][bt(b)];
+  for(const q of squads)q.slots=q.slots.filter(t=>PTYPES.includes(t));
+  if(units.length){
+    for(const u of units)if(UT[u.t]&&UT[u.t].base){const m=UT[u.t].hp*(1+.15*F[u.f].tech.arm);if(Math.abs(m-u.mhp)>1e-9){u.hp*=m/u.mhp;u.mhp=m}}
+    recount();
+  }
+}
+function recount(){ // army / fuel / upkeep counters straight from the units on the map
+  for(const f of F)if(f.alive)clearArmy(f);
+  for(const u of units)if(u.hp>0&&!u.gone&&F[u.f].alive){const f=F[u.f];f.army++;f.upk+=upkOf(u.f,u.t);if(UT[u.t].fuel)f.mech++}
+}
+function validSquad(q){return q&&typeof q.n==='string'&&Array.isArray(q.slots)&&FORMS[q.form]}
+function loadDesignStore(){if(SMOKE)return;try{const o=JSON.parse(localStorage.getItem(DESIGN_KEY)||'null');if(!o)return;
+  squads=(o.squads||[]).filter(validSquad).slice(0,SQKEYS.length);applyDesigns(o.designs)}catch(e){}}
+function storeDesigns(){if(SMOKE)return;try{localStorage.setItem(DESIGN_KEY,JSON.stringify({designs,squads}))}catch(e){}}
+// formations: slot i of n, facing angle ang; S = spacing between units
+function formOff(form,i,n,ang){
+  const S=7;let x=0,y=0;
+  if(form==='line')y=(i-(n-1)/2)*S;
+  else if(form==='column')x=((n-1)/2-i)*S;
+  else if(form==='wedge'){const r=Math.ceil(i/2),R=Math.ceil((n-1)/2);x=(R/2-r)*S*.9;y=i?(i%2?-1:1)*r*S*.85:0}
+  else if(form==='box'){const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),r=i/cols|0,c=i%cols;x=((rows-1)/2-r)*S;y=(c-(cols-1)/2)*S}
+  else if(n>1){const R=Math.max(S,n*S/6.283),a=i/n*6.283;x=Math.cos(a)*R;y=Math.sin(a)*R}
+  const co=Math.cos(ang),si=Math.sin(ang);return[x*co-y*si,x*si+y*co];
+}
+function duel(a,b){ // equal gold, head to head (Lanchester square law, with a nudge for range): >1 means a wins
+  const A=UT[a],B=UT[b],sp=T=>T.splash?1.3:1;
+  const sa=A.hp*A.dmg*A.rof*sp(A)*MOD[a][b]/(A.cost*A.cost)*Math.pow(A.range/B.range,.3);
+  const sb=B.hp*B.dmg*B.rof*sp(B)*MOD[b][a]/(B.cost*B.cost)*Math.pow(B.range/A.range,.3);
+  return sa<=0&&sb<=0?1:sb<=0?99:sa/sb;
+}
+function squadCost(fi,q){return q.slots.reduce((s,t)=>s+(fi>=0?costOf(fi,t):UT[t].cost),0)}
+function squadWhyNot(fi,q,ci){
+  const f=F[fi],c=C[ci];
+  if(!q.slots.length)return `${q.n} is empty — add units in the workshop (U)`;
+  if(ci<0||c.owner!==fi)return 'Pick one of your countries to build in';
+  if(c.integ<.5)return `${c.name} is still integrating — build in a settled province`;
+  const n=q.slots.length,fu=q.slots.filter(t=>UT[t].fuel).length;
+  if(f.army+n>armyCap(f))return `Army cap — ${q.n} needs ${n} free places (${armyCap(f)-f.army} left)`;
+  if(fu&&f.mech+fu>fuelCap(f))return `Not enough fuel ⛽ — ${q.n} needs ${fu}, you have ${Math.max(0,fuelCap(f)-f.mech)} spare`;
+  if(q.slots.some(t=>UT[t].sea)&&!c.dock)return `${q.n} has warships — ${c.name} needs a dock ⚓`;
+  if(f.gold<squadCost(fi,q))return `Not enough gold for ${q.n} (${squadCost(fi,q)})`;
+  return '';
+}
+function buildSquad(fi,q,ci){ // all or nothing: the whole squad trains together and forms up at the capital
+  if(squadWhyNot(fi,q,ci))return null;
+  const id=nextSq++,us=[],c=C[ci];
+  q.slots.forEach((t,i)=>{const u=build(fi,t,ci);if(u){u.sq=id;u.sqi=i;u.sqf=q.form;u.sqn=q.n;us.push(u)}});
+  us.forEach((u,j)=>{if(UT[u.t].sea)return;const [ox,oy]=formOff(q.form,j,us.length,0);u.order={x:c.cap.x+ox,y:c.cap.y+oy,cap:-1,guard:ci}});
+  return us;
+}
+// squad members take their formation place around the target, facing the way the squad is heading,
+// and ground troops slow to the pace of the squad's slowest member so nobody runs ahead
+function squadPlaces(list,wx,wy){
+  const out=new Map(),by=new Map();
+  for(const u of list)if(u.sq){if(!by.has(u.sq))by.set(u.sq,[]);by.get(u.sq).push(u)}
+  let k=0;
+  for(const g of by.values()){if(g.length<2)continue;
+    g.sort((a,b)=>a.sqi-b.sqi);let cx=0,cy=0;for(const u of g){cx+=u.x;cy+=u.y}cx/=g.length;cy/=g.length;
+    const a0=k*2.4,r0=k?16*Math.sqrt(k):0,ax=wx+Math.cos(a0)*r0,ay=wy+Math.sin(a0)*r0;k++;
+    const ang=Math.atan2(ay-cy,ax-cx),gr=g.filter(u=>!UT[u.t].air&&!UT[u.t].sea),sv=gr.length?Math.min(...gr.map(u=>UT[u.t].speed)):0;
+    g.forEach((u,j)=>{const [ox,oy]=formOff(u.sqf,j,g.length,ang);out.set(u,{x:ax+ox,y:ay+oy,sv:!UT[u.t].air&&!UT[u.t].sea?sv:0})})}
+  return out;
+}
 let GAR0=30,GARV=18,AGG0=.1,AGGR=.35,LAUNCH=1.4; // pacing dials
 
 // ─── state ───
@@ -714,7 +919,7 @@ function calcVis(){
 }
 function fire(u,o){
   const T=UT[u.t];u.ang=Math.atan2(o.y-u.y,o.x-u.x);
-  fx.push({k:0,x:u.x,y:u.y,x2:o.x,y2:o.y,life:.18,max:.18,col:F[u.f].color,t:u.t});
+  fx.push({k:0,x:u.x,y:u.y,x2:o.x,y2:o.y,life:.18,max:.18,col:F[u.f].color,t:bt(u.t)});
   const k=unitDmg(u);u.lastFight=time;hurt(o,T.dmg*k*MOD[u.t][o.t],u.f,u);
   if(T.splash){fx.push({k:2,x:o.x,y:o.y,life:.35,max:.35,r:T.splash});
     near(o.x,o.y,T.splash,q=>{if(q!==o&&q.hp>0&&war(u.f,q.f)&&!UT[q.t].air&&(q.x-o.x)**2+(q.y-o.y)**2<T.splash*T.splash)hurt(q,T.dmg*k*.6*MOD[u.t][q.t],u.f,u)})}
@@ -725,13 +930,13 @@ function dmgMul(fi){const f=F[fi];return(1+.15*f.tech.fp)*(f.broke?.7:1)}
 function closed(fi,to,from){return to>=0&&to!==fi&&to!==from&&!war(fi,to)&&!(fi===P&&F[to].pact>time)}
 function unitDmg(u){ // research × veterancy × doctrine × home soil × supply
   const f=F[u.f];let k=dmgMul(u.f)*(1+.15*u.rank);
-  if(f.doc==='blitz'&&(u.t==='tank'||u.t==='air'))k*=1.15;
+  if(f.doc==='blitz'&&(bt(u.t)==='tank'||bt(u.t)==='air'))k*=1.15;
   if(u.home)k*=f.doc==='fort'?1.4:1.2;
   return u.sup?k:k*.75;
 }
 function fireCap(u,c){
   const T=UT[u.t];u.ang=Math.atan2(c.cap.y-u.y,c.cap.x-u.x);
-  fx.push({k:0,x:u.x,y:u.y,x2:c.cap.x,y2:c.cap.y,life:.18,max:.18,col:F[u.f].color,t:u.t});
+  fx.push({k:0,x:u.x,y:u.y,x2:c.cap.x,y2:c.cap.y,life:.18,max:.18,col:F[u.f].color,t:bt(u.t)});
   if(T.splash)fx.push({k:2,x:c.cap.x,y:c.cap.y,life:.35,max:.35,r:T.splash});
   u.lastFight=time;c.gar=Math.max(0,c.gar-T.dmg*unitDmg(u)*GMOD[u.t]);c.lastHit=time;c.flash=.15;
 }
@@ -777,7 +982,7 @@ function updateUnit(u,dt){
     const dx=mx-u.x,dy=my-u.y,d=Math.hypot(dx,dy);
     if(d>stop&&d>.01){
       const wet=landAt(u.x,u.y)<0;
-      let sp=T.speed*(1+.15*F[u.f].tech.log)*(!T.air&&!T.sea&&u.home&&!u.tgt?1.6:1) /* rail on home soil */*(F[u.f].doc==='blitz'&&(u.t==='tank'||u.t==='air')?1.25:1);if(T.sea){if(!wet)sp*=.3}else if(!T.air&&wet)sp*=.4;
+      let sp=(u.order&&u.order.sv?Math.min(T.speed,u.order.sv):T.speed)*(1+.15*F[u.f].tech.log)*(!T.air&&!T.sea&&u.home&&!u.tgt?1.6:1) /* rail on home soil */*(F[u.f].doc==='blitz'&&(bt(u.t)==='tank'||bt(u.t)==='air')?1.25:1);if(T.sea){if(!wet)sp*=.3}else if(!T.air&&wet)sp*=.4;
       const s=Math.min(d-stop*.5,sp*dt);let nx=u.x+dx/d*s,ny=u.y+dy/d*s;
       if(T.sea&&wet&&landAt(nx,ny)>=0){ // warships hug the coast instead of driving inland
         if(landAt(nx,u.y)<0)ny=u.y;else if(landAt(u.x,ny)<0)nx=u.x;else{nx=u.x;ny=u.y}}
@@ -1067,6 +1272,7 @@ function fcol(fi){return F[fi].player?PCOL:F[fi].color}
 
 function shapePath(c,sh,x,y,s,ang){
   c.beginPath();
+  if(typeof sh==='object'){const co=Math.cos(ang),si=Math.sin(ang);sh.poly.forEach(([px,py],k)=>c[k?'lineTo':'moveTo'](x+(px*co-py*si)*s,y+(px*si+py*co)*s));c.closePath();return}
   if(sh===0)c.arc(x,y,s,0,6.283);
   else if(sh===1){c.save();c.translate(x,y);c.rotate(ang);c.rect(-s,-s,s*2,s*2);c.restore()}
   else if(sh===2){for(let k=0;k<3;k++){const a=ang+k*2.094;c[k?'lineTo':'moveTo'](x+Math.cos(a)*s*1.25,y+Math.sin(a)*s*1.25)}c.closePath()}
@@ -1205,7 +1411,7 @@ function render(){
     if(!T.air&&!T.sea&&landAt(u.x,u.y)<0){ctx.strokeStyle='rgba(160,210,255,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+3,0,6.283);ctx.stroke()}
     if(T.air){ctx.fillStyle='rgba(0,0,0,.25)';shapePath(ctx,T.sh,sx+3,sy+4,s,u.ang);ctx.fill()}
     if(u.train>0){ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,s+3,-1.571,-1.571+6.283*(1-u.train/u.trainMax));ctx.stroke();ctx.globalAlpha=.45}
-    shapePath(ctx,T.sh,sx,sy,s,T.sh===1||T.sh===4?0:u.ang);
+    shapePath(ctx,T.sh,sx,sy,s,typeof T.sh==='object'?(T.sh.spin?u.ang:0):T.sh===1||T.sh===4?0:u.ang);
     ctx.fillStyle=F[u.f].player?PUNIT:F[u.f].ucol;ctx.fill();ctx.globalAlpha=1;
     ctx.lineWidth=sel.has(u)?2.2:1.3;ctx.strokeStyle=sel.has(u)?'#fff':'#060a12';ctx.stroke();
     if(sel.has(u)){ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+4,0,6.283);ctx.stroke()}
@@ -1237,6 +1443,7 @@ function drawFog(){ // darken everything the player can't see: their land, and c
 
 // ─── HUD ───
 function svgShape(sh,col){
+  if(typeof sh==='object')return `<svg viewBox="0 0 24 24"><polygon points="${sh.poly.map(([x,y])=>`${(12+x*8.4).toFixed(1)},${(12+y*8.4).toFixed(1)}`).join(' ')}" fill="${col}" stroke="#0b1220" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
   const s={0:'<circle cx="12" cy="12" r="8"/>',1:'<rect x="4.5" y="4.5" width="15" height="15"/>',2:'<polygon points="12,3 21,19 3,19"/>',3:'<polygon points="12,2 21,12 12,22 3,12"/>',
     4:'<polygon points="9,3 15,3 15,9 21,9 21,15 15,15 15,21 9,21 9,15 3,15 3,9 9,9"/>',5:'<polygon points="12,2.5 20.5,7.3 20.5,16.7 12,21.5 3.5,16.7 3.5,7.3"/>'}[sh];
   return `<svg viewBox="0 0 24 24"><g fill="${col}" stroke="#0b1220" stroke-width="1.5">${s}</g></svg>`;
@@ -1244,15 +1451,35 @@ function svgShape(sh,col){
 const buildBtns={},buildCost={};
 function initHUD(){
   $('legend').innerHTML=TYPES.map(t=>`<div>${svgShape(UT[t].sh,PCOL)}<span><b>${UT[t].n} · ${UT[t].cost}💰</b>${UT[t].desc}</span></div>`).join('');
-  TYPES.forEach((t,k)=>{const b=document.createElement('button');b.className='ub';
-    b.innerHTML=`${svgShape(UT[t].sh,PCOL)}<span>${UT[t].n}</span><span class="c">${UT[t].cost}</span><span class="k">key ${k+1}</span>`;
-    b.onclick=()=>playerBuild(t);$('build').appendChild(b);buildBtns[t]=b;buildCost[t]=b.querySelector('.c')});
+  rebuildBuildBar();initDesigner();
   $('docs').innerHTML=DOCS.map(d=>`<button data-doc="${d}" title="${DOC[d].d}">${DOC[d].i} ${DOC[d].n}</button>`).join('');
   const pickDoc=d=>{pdoc=d;document.querySelectorAll('#docs button').forEach(x=>x.classList.toggle('on',x.dataset.doc===d));$('docDesc').textContent=`${DOC[d].i} ${DOC[d].n}: ${DOC[d].d}`};
   document.querySelectorAll('#docs button').forEach(b=>b.onclick=()=>pickDoc(b.dataset.doc));pickDoc(pdoc);
   $('fogChk').onchange=e=>{FOG=e.target.checked};
   $('techRows').innerHTML=TECHS.map(k=>`<div class="tr"><span>${TECH[k].i}</span><span class="nm">${TECH[k].n} <span class="pips" id="tp_${k}"></span><small>${TECH[k].d} per level</small></span><button id="tb_${k}"></button></div>`).join('');
   for(const k of TECHS)$('tb_'+k).onclick=()=>{if(research(P,k))addLog(`🔬 ${TECH[k].n} level ${F[P].tech[k]} researched`,'good',2000);updatePanels()};
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const sqBtns=[];
+function rebuildBuildBar(){ // base units, then the player's designs (keys 7–0), then a row of squads (Z X C)
+  const bu=$('bUnits');bu.innerHTML='';for(const k in buildBtns){delete buildBtns[k];delete buildCost[k]}
+  PTYPES.forEach((t,k)=>{const b=document.createElement('button');b.className='ub'+(UT[t].base?' mine':'');
+    b.title=UT[t].base?`${UT[t].n}: your design (${UT[UT[t].base].n} chassis)`:UT[t].desc;
+    b.innerHTML=`${svgShape(UT[t].sh,PCOL)}<span>${esc(UT[t].n)}</span><span class="c">${UT[t].cost}</span><span class="k">key ${(k+1)%10}</span>`;
+    b.onclick=()=>playerBuild(t);bu.appendChild(b);buildBtns[t]=b;buildCost[t]=b.querySelector('.c')});
+  $('build').classList.toggle('many',PTYPES.length>6);
+  const sb=$('bSquads');sb.innerHTML='';sqBtns.length=0;
+  squads.forEach((q,i)=>{const b=document.createElement('button');b.className='sqb';
+    b.innerHTML=`🎖 <b>${esc(q.n)}</b> ${[...new Set(q.slots)].slice(0,5).map(t=>svgShape(UT[t].sh,PCOL)).join('')} ×${q.slots.length} <span class="c"></span><span class="k">${SQKEYS[i].toUpperCase()}</span>`;
+    b.onclick=()=>playerSquad(i);sb.appendChild(b);sqBtns.push(b)});
+  document.body.classList.toggle('hasSq',squads.length>0);
+}
+function playerSquad(i){
+  if(state!=='play'||!squads[i])return;
+  if(selCountry<0||C[selCountry].owner!==P)selCountry=F[P].owned[0];
+  const q=squads[i],why=squadWhyNot(P,q,selCountry);
+  if(why){addLog(why,'bad',2200);return}
+  const us=buildSquad(P,q,selCountry);addLog(`🎖 ${q.n} is training in ${C[selCountry].name} — ${us.length} units`,'good',2200);
 }
 function playerBuild(t){
   if(state!=='play')return;
@@ -1356,8 +1583,9 @@ function updateHUD(){
     pc.textContent=day+(ws.length?`⚔ At war with ${ws.length>3?ws.slice(0,3).map(o=>o.name).join(', ')+` +${ws.length-3} more`:ws.map(o=>o.name).join(', ')}`:'🕊 At peace — every nation decides for itself whether to attack you')}
   if(selCountry<0||C[selCountry].owner!==P)selCountry=f.owned[0]??-1;
   $('bWhere').textContent=selCountry>=0?C[selCountry].name:'—';
-  for(const t of TYPES)buildCost[t].textContent=costOf(P,t);
-  for(const t of TYPES)buildBtns[t].disabled=(selCountry>=0&&C[selCountry].integ<.5)||f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].dock)||(UT[t].fuel&&f.mech>=fuelCap(f));
+  for(const t of PTYPES)buildCost[t].textContent=costOf(P,t);
+  squads.forEach((q,i)=>{const b=sqBtns[i];if(!b)return;const why=selCountry>=0?squadWhyNot(P,q,selCountry):'—';b.disabled=!!why;b.title=why||`Build ${q.n}: ${q.slots.length} units in ${FORMS[q.form]} formation`;b.querySelector('.c').textContent=squadCost(P,q)});
+  for(const t of PTYPES)buildBtns[t].disabled=(selCountry>=0&&C[selCountry].integ<.5)||f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].dock)||(UT[t].fuel&&f.mech>=fuelCap(f));
   const sc=selCountry>=0?C[selCountry]:null;
   $('misC').textContent=MIS.cost;
   $('bMis').disabled=time<playerPeace||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
@@ -1368,7 +1596,8 @@ function updateHUD(){
   const si=$('selinfo');
   if(sel.size){const n={};for(const u of sel)n[u.t]=(n[u.t]||0)+1;
     let cut=0,vet=0,tr=0;for(const u of sel){if(!u.sup)cut++;if(u.rank)vet++;if(u.train>0)tr++}
-    si.textContent=`${sel.size} selected · `+TYPES.filter(t=>n[t]).map(t=>`${n[t]} ${UT[t].n.toLowerCase()}`).join(', ')+(vet?` · ★${vet} veteran`:'')+(tr?` · ⏳ ${tr} still training`:'')+
+    const sqs=new Set([...sel].map(u=>u.sq||0)),one=sqs.size===1&&!sqs.has(0)?sel.values().next().value:null;
+    si.textContent=(one?`🎖 ${one.sqn} (${(FORMS[one.sqf]||'').slice(2)}) · `:'')+`${sel.size} selected · `+PTYPES.filter(t=>n[t]).map(t=>`${n[t]} ${UT[t].n.toLowerCase()}`).join(', ')+(vet?` · ★${vet} veteran`:'')+(tr?` · ⏳ ${tr} still training`:'')+
       (cut?` · ⛔ ${cut} out of supply — H to retreat`:' — right-click enemy land to invade, your land to guard it');si.style.color=cut?'#ffc28a':'';
     si.classList.remove('hidden')}else si.classList.add('hidden');
 }
@@ -1402,17 +1631,19 @@ function command(wx,wy){
   const ci=landAt(wx,wy);
   if(ci>=0&&C[ci].owner!==P&&!war(P,C[ci].owner)&&canDeclare(F[C[ci].owner])){askWar(C[ci].owner,()=>command(wx,wy));return}
   if(ci>=0&&C[ci].owner!==P&&war(P,C[ci].owner)){
-    const c=C[ci];
-    list.forEach((u,k)=>{const a=k*2.4,r=Math.min(9,1.6*Math.sqrt(k));u.order={x:c.cap.x+Math.cos(a)*r,y:c.cap.y+Math.sin(a)*r,cap:ci};u.tgt=null;u.scan=0});
+    const c=C[ci],pl=squadPlaces(list,c.cap.x,c.cap.y);
+    list.forEach((u,k)=>{const a=k*2.4,r=Math.min(9,1.6*Math.sqrt(k)),q=pl.get(u);u.order={x:c.cap.x+Math.cos(a)*r,y:c.cap.y+Math.sin(a)*r,cap:ci};if(q&&q.sv)u.order.sv=q.sv;u.tgt=null;u.scan=0});
     markers.push({x:c.cap.x,y:c.cap.y,life:.8,max:.8,atk:true});
   }else if(ci>=0&&C[ci].owner===P){
-    list.forEach((u,k)=>{u.order=guardOrder(ci,k,wx,wy);u.tgt=null;u.scan=0});
+    const pl=squadPlaces(list,wx,wy);
+    list.forEach((u,k)=>{const q=pl.get(u);u.order=q?{x:q.x,y:q.y,cap:-1,guard:ci,sv:q.sv}:guardOrder(ci,k,wx,wy);u.tgt=null;u.scan=0});
     markers.push({x:wx,y:wy,life:.6,max:.6});addLog(`🛡 ${list.length} unit${list.length>1?'s':''} guarding ${C[ci].name}`,'',1600);
   }else{
     if(ci>=0&&C[ci].owner!==P&&(time<playerPeace||F[C[ci].owner].pact>time||F[C[ci].owner].truce>time)){const o=F[C[ci].owner];
       addLog(time<playerPeace?`Ceasefire: no wars for ${fmtT(playerPeace-time)} — your troops will stop at ${o.name}'s border`:
         o.pact>time?`Pact with ${o.name} — your troops may pass through but not attack`:o.truce>time?`Truce with ${o.name} for ${fmtT(o.truce-time)} — your troops stop at its border`:'','',2600)}
-    list.forEach((u,k)=>{const a=k*2.4,r=2.6*Math.sqrt(k);u.order={x:wx+Math.cos(a)*r,y:wy+Math.sin(a)*r,cap:-1,move:true};u.tgt=null});
+    const pl=squadPlaces(list,wx,wy);
+    list.forEach((u,k)=>{const a=k*2.4,r=2.6*Math.sqrt(k),q=pl.get(u);u.order=q?{x:q.x,y:q.y,cap:-1,move:true,sv:q.sv}:{x:wx+Math.cos(a)*r,y:wy+Math.sin(a)*r,cap:-1,move:true};u.tgt=null});
     markers.push({x:wx,y:wy,life:.6,max:.6});
   }
 }
@@ -1422,7 +1653,8 @@ function clickAt(sx,sy,shift,touch){
   if(state!=='play')return;
   if(aiming){if(playerMissile(wx,wy)&&F[P].gold<MIS.cost)toggleAim(false);return} // keep aiming while you can afford another
   const u=unitAt(wx,wy,true);
-  if(u){if(shift||touch){sel.has(u)?sel.delete(u):sel.add(u)}else{sel.clear();sel.add(u)}return}
+  if(u){const grp=u.sq?units.filter(o=>o.f===P&&o.sq===u.sq&&o.hp>0):[u]; // clicking a squad member picks up the whole squad
+    if(shift||touch){const on=sel.has(u);for(const o of grp)on?sel.delete(o):sel.add(o)}else{sel.clear();for(const o of grp)sel.add(o)}return}
   if(touch&&sel.size){command(wx,wy);return}
   const ci=countryAt(wx,wy);
   if(ci>=0&&C[ci].owner===P)selCountry=ci;
@@ -1485,12 +1717,17 @@ function drawGroups(){const el=$('groups'),ks=Object.keys(groups).filter(n=>(gro
   el.innerHTML=ks.map(n=>`<button data-g="${n}">${n} · <b>${groups[n].length}</b></button>`).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>recallGroup(b.dataset.g))}
 addEventListener('keydown',e=>{
-  const k=e.key.toLowerCase();keys.add(k);
+  const k=e.key.toLowerCase();
+  if(!$('designer').classList.contains('hidden')){if(k==='escape'||(k==='u'&&e.target.tagName!=='INPUT'))closeDesigner();return}
+  if(e.target.tagName==='INPUT')return;
+  keys.add(k);
   if(state!=='play')return;
   const dg=/^Digit([1-9])$/.exec(e.code);
   if(dg&&(e.ctrlKey||e.metaKey)){e.preventDefault();setGroup(dg[1]);return}
   if(dg&&e.shiftKey){recallGroup(dg[1]);return}
-  if(k>='1'&&k<='6')playerBuild(TYPES[+k-1]);
+  if(/^[0-9]$/.test(k)){const t=PTYPES[k==='0'?9:+k-1];if(t)playerBuild(t)}
+  else if(SQKEYS.includes(k))playerSquad(SQKEYS.indexOf(k));
+  else if(k==='u')openDesigner();
   else if(k==='e')selectAll();
   else if(k==='h')retreat();
   else if(k==='v')toggleMap();
@@ -1524,6 +1761,7 @@ function selectAll(){sel.clear();for(const u of units)if(u.f===P)sel.add(u)}
 function togglePause(){paused=!paused;$('bPause').textContent=paused?'▶':'⏸';$('bPause').classList.toggle('on',paused)}
 function focusHome(){const f=F[P];const c=C[selCountry>=0&&C[selCountry].owner===P?selCountry:f.owned[0]];if(c)flyTo(c.cap.x,c.cap.y,Math.max(cam.z,3.2))}
 function flyTo(x,y,z){cam.z=z;clampCam();cam.x=x-VW/2/cam.z;cam.y=y-VH/2/cam.z;clampCam()}
+$('bDz').onclick=()=>openDesigner();$('bDzM').onclick=()=>openDesigner();
 $('bMis').onclick=()=>toggleAim();$('bTech').onclick=()=>toggleTech();$('cpX').onclick=()=>openInfo(-1);
 $('cpFac').onclick=()=>{if(buildFactory(P,infoC))addLog(`🏭 Factory built in ${C[infoC].name} (level ${C[infoC].fac})`,'good',2000);updatePanels()};
 $('cpFort').onclick=()=>{playerFortify(infoC);updatePanels()};
@@ -1551,6 +1789,160 @@ document.querySelectorAll('#ctl [data-sp]').forEach(b=>b.onclick=()=>{speed=+b.d
   document.querySelectorAll('#ctl [data-sp]').forEach(x=>x.classList.toggle('on',x===b))});
 document.querySelectorAll('#diff button').forEach(b=>b.onclick=()=>{diff=+b.dataset.d;
   document.querySelectorAll('#diff button').forEach(x=>x.classList.toggle('on',x===b))});
+
+// ─── workshop UI ───
+let dzTab='unit',dzSel=0,qzSel=0,dzWasPaused=false,dzDrag=-1;
+const mirror=h=>h.concat(h.slice(1,-1).reverse().map(([x,y])=>[x,-y]));
+const PRESETS=[['●','Round',{pts:16,spike:0,len:1,taper:0,twist:0}],['■','Block',{pts:4,spike:0,len:1,taper:0,twist:1}],
+  ['▲','Wedge',{pts:3,spike:0,len:1,taper:0,twist:0}],['◆','Diamond',{pts:4,spike:0,len:1.35,taper:0,twist:0}],
+  ['⬢','Hex',{pts:6,spike:0,len:1,taper:0,twist:0}],['★','Star',{pts:5,spike:.55,len:1,taper:0,twist:0}],
+  ['➤','Dart',[[1.5,0],[-.9,.85],[-.45,0],[-.9,-.85]]],['✚','Cross',[[.42,-1],[.42,-.42],[1,-.42],[1,.42],[.42,.42],[.42,1],[-.42,1],[-.42,.42],[-1,.42],[-1,-.42],[-.42,-.42],[-.42,-1]]],
+  ['✈','Jet',mirror([[1.5,0],[.35,.22],[.05,1.15],[-.3,1.15],[-.2,.22],[-.85,.22],[-1.1,.6],[-1.25,.6],[-1.1,0]])],
+  ['⛊','Shield',mirror([[1.2,0],[.75,.8],[-.2,1],[-1,.9],[-1,0]])],['☗','Bunker',mirror([[.9,0],[.9,.55],[.2,1],[-.9,1],[-.9,0]])],
+  ['✦','Spark',{pts:4,spike:.7,len:1.2,taper:0,twist:0}]];
+const SHAPE_SL=[['pts','Corners',3,16,1],['spike','Spikes',0,.75,.05],['len','Length',.6,1.8,.05],['taper','Taper',-.6,.6,.05],['twist','Twist',0,1,.05],['size','Size',.8,1.4,.05]];
+const fielded=t=>units.some(u=>u.t===t&&u.hp>0);
+function commitDesigns(save){applyDesigns(designs);if(save!==false)storeDesigns();rebuildBuildBar();if(state==='play')updateHUD()}
+function newDesign(){
+  const id=DSLOTS.find(x=>!designs.some(d=>d.id===x));if(!id)return;
+  const sh={pts:5,spike:0,len:1.25,taper:.25,twist:0};
+  designs.push({id,n:'Design '+(DSLOTS.indexOf(id)+1),base:'tank',lv:{hp:3,dmg:3,rof:3,range:3,speed:3},shape:sh,poly:makePoly(sh),size:1,spin:true});
+  commitDesigns();dzSel=designs.findIndex(d=>d.id===id);renderDesigner();
+}
+function newSquad(){
+  if(squads.length>=SQKEYS.length)return;
+  squads.push({n:'Squad '+(squads.length+1),slots:['inf','inf','inf','tank','tank','art'],form:'wedge'});
+  qzSel=squads.length-1;commitDesigns();renderDesigner();
+}
+function openDesigner(tab){if(tab)dzTab=tab;if(state==='play'){dzWasPaused=paused;paused=true}show('designer',1);renderDesigner()}
+function closeDesigner(){show('designer',0);if(state==='play')paused=dzWasPaused;storeDesigns()}
+function initDesigner(){
+  document.querySelectorAll('#designer [data-tab]').forEach(b=>b.onclick=()=>{dzTab=b.dataset.tab;renderDesigner()});
+  $('dzX').onclick=closeDesigner;
+  $('dPresets').innerHTML=PRESETS.map(([i,n],k)=>`<button data-p="${k}" title="${n}">${i}</button>`).join('');
+  $('dPresets').onclick=e=>{const b=e.target.closest('[data-p]'),d=designs[dzSel];if(!b||!d)return;const p=PRESETS[+b.dataset.p][2];
+    if(Array.isArray(p)){d.poly=normPoly(p);d.shape.custom=true}else{Object.assign(d.shape,p,{custom:false});d.poly=makePoly(d.shape)}commitDesigns();renderDesigner()};
+  $('dShape').innerHTML=SHAPE_SL.map(([k,n,a,b,st])=>`<div class="srow sh"><span>${n}</span><input type="range" id="ds_${k}" min="${a}" max="${b}" step="${st}"><b id="dsv_${k}"></b></div>`).join('');
+  for(const [k] of SHAPE_SL)$('ds_'+k).oninput=e=>{const d=designs[dzSel];if(!d)return;const v=+e.target.value;
+    if(k==='size')d.size=v;else{d.shape[k]=v;d.shape.custom=false;d.poly=makePoly(d.shape)}commitDesigns(false);renderDesigner()};
+  $('dSpin').onchange=e=>{const d=designs[dzSel];if(d){d.spin=e.target.checked;commitDesigns();renderDesigner()}};
+  $('dStats').innerHTML=STATS.map(k=>`<div class="srow"><span>${STATN[k]}</span><input type="range" id="dl_${k}" min="1" max="5" step="1"><b id="dlv_${k}"></b></div>`).join('');
+  for(const k of STATS)$('dl_'+k).oninput=e=>{const d=designs[dzSel];if(!d)return;d.lv[k]=+e.target.value;commitDesigns(false);renderDesigner()};
+  for(const id of ['ds_','dl_'])document.querySelectorAll(`[id^=${id}]`).forEach(el=>el.onchange=()=>storeDesigns());
+  $('dName').oninput=e=>{const d=designs[dzSel];if(!d)return;d.n=e.target.value.trim()||'Unit';commitDesigns();renderDesigner()};
+  $('dSlots').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='dNew')newDesign();else{dzSel=+b.dataset.i;renderDesigner()}};
+  $('dBase').onclick=e=>{const b=e.target.closest('[data-b]'),d=designs[dzSel];if(!b||!d||b.disabled)return;d.base=b.dataset.b;commitDesigns();renderDesigner()};
+  $('dDel').onclick=()=>{const d=designs[dzSel];if(!d)return;
+    if(state==='play'&&fielded(d.id)){$('dNote').textContent=`You still have ${d.n} units in the field — they need to be gone before the design can be scrapped.`;return}
+    designs.splice(dzSel,1);dzSel=Math.max(0,dzSel-1);commitDesigns();renderDesigner()};
+  // drawing the shape: drag corners, double-click to add / remove them
+  const cv2=$('dCv'),geo=()=>{const d=designs[dzSel];return{d,cx:cv2.width/2,cy:cv2.height/2,S:cv2.width*.27}};
+  const at=e=>{const r=cv2.getBoundingClientRect();return[(e.clientX-r.left)*cv2.width/r.width,(e.clientY-r.top)*cv2.height/r.height]};
+  const hitV=(x,y)=>{const {d,cx,cy,S}=geo();let best=-1,bd=24*24;d.poly.forEach(([px,py],i)=>{const dd=(cx+px*S-x)**2+(cy+py*S-y)**2;if(dd<bd){bd=dd;best=i}});return best};
+  cv2.onpointerdown=e=>{if(!designs[dzSel])return;const [x,y]=at(e);dzDrag=hitV(x,y);if(dzDrag>=0)cv2.setPointerCapture(e.pointerId)};
+  cv2.onpointermove=e=>{if(dzDrag<0)return;const {d,cx,cy,S}=geo(),[x,y]=at(e);let px=(x-cx)/S,py=(y-cy)/S;const r=Math.hypot(px,py);if(r>1.6){px*=1.6/r;py*=1.6/r}
+    d.poly[dzDrag]=[+px.toFixed(3),+py.toFixed(3)];d.shape.custom=true;commitDesigns(false);drawUnitCv()};
+  cv2.onpointerup=cv2.onpointercancel=()=>{if(dzDrag>=0){dzDrag=-1;storeDesigns();renderDesigner()}};
+  cv2.ondblclick=e=>{const {d,cx,cy,S}=geo();if(!d)return;const [x,y]=at(e),v=hitV(x,y);
+    if(v>=0){if(d.poly.length>3)d.poly.splice(v,1)}
+    else{const px=(x-cx)/S,py=(y-cy)/S;let bi=0,bd=1e9;
+      d.poly.forEach((a,i)=>{const b=d.poly[(i+1)%d.poly.length],dx=b[0]-a[0],dy=b[1]-a[1],t=clamp(((px-a[0])*dx+(py-a[1])*dy)/(dx*dx+dy*dy||1),0,1),
+        dd=(a[0]+dx*t-px)**2+(a[1]+dy*t-py)**2;if(dd<bd){bd=dd;bi=i}});
+      if(d.poly.length<24)d.poly.splice(bi+1,0,[+clamp(px,-1.6,1.6).toFixed(3),+clamp(py,-1.6,1.6).toFixed(3)])}
+    d.shape.custom=true;commitDesigns();renderDesigner()};
+  // squads
+  $('qSlots').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='qNew')newSquad();else{qzSel=+b.dataset.i;renderDesigner()}};
+  $('qForms').innerHTML=Object.entries(FORMS).map(([k,n])=>`<button data-f="${k}">${n}</button>`).join('');
+  $('qForms').onclick=e=>{const b=e.target.closest('[data-f]'),q=squads[qzSel];if(!b||!q)return;q.form=b.dataset.f;commitDesigns();renderDesigner()};
+  $('qPal').onclick=e=>{const b=e.target.closest('[data-t]'),q=squads[qzSel];if(!b||!q)return;
+    if(q.slots.length>=SQMAX){$('qNote').textContent=`A squad holds up to ${SQMAX} units.`;return}q.slots.push(b.dataset.t);commitDesigns();renderDesigner()};
+  $('qList').onclick=e=>{const b=e.target.closest('button'),q=squads[qzSel];if(!b||!q)return;const i=+b.dataset.i;
+    if(b.dataset.a==='x')q.slots.splice(i,1);else{const j=i+(+b.dataset.a);if(j>=0&&j<q.slots.length)[q.slots[i],q.slots[j]]=[q.slots[j],q.slots[i]]}
+    commitDesigns();renderDesigner()};
+  $('qName').oninput=e=>{const q=squads[qzSel];if(!q)return;q.n=e.target.value.trim()||'Squad';commitDesigns();renderDesigner()};
+  $('qDel').onclick=()=>{if(!squads[qzSel])return;squads.splice(qzSel,1);qzSel=Math.max(0,qzSel-1);commitDesigns();renderDesigner()};
+}
+function fmt1(v){return v>=100?Math.round(v):+v.toFixed(1)}
+function renderDesigner(){
+  document.querySelectorAll('#designer [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===dzTab));
+  show('tabUnit',dzTab==='unit');show('tabSquad',dzTab==='squad');
+  if(dzTab==='unit')renderUnitTab();else renderSquadTab();
+}
+function renderUnitTab(){
+  dzSel=clamp(dzSel,0,Math.max(0,designs.length-1));const d=designs[dzSel];
+  $('dSlots').innerHTML=designs.map((o,i)=>`<button class="slot${i===dzSel?' on':''}" data-i="${i}">${svgShape(UT[o.id].sh,PCOL)}<span>${esc(o.n)}</span><small>${UT[o.id].cost}💰 · key ${DKEYS[DSLOTS.indexOf(o.id)]}</small></button>`).join('')+
+    (designs.length<DSLOTS.length?'<button class="slot new" id="dNew">＋ New design</button>':'');
+  show('dEmpty',!d);show('dGrid',!!d);show('dDel',!!d);if(!d)return;
+  const T=UT[d.id],B=UT[d.base],locked=state==='play'&&fielded(d.id);
+  if(document.activeElement!==$('dName'))$('dName').value=d.n;
+  $('dBase').innerHTML=TYPES.map(t=>`<button data-b="${t}" class="${t===d.base?'on':''}" ${locked&&t!==d.base?'disabled':''} title="${UT[t].desc}">${svgShape(UT[t].sh,PCOL)}${UT[t].n}</button>`).join('');
+  const show1=(k,v,unit)=>{const r=T[k]/B[k];return `${fmt1(v)}<small>${unit}</small> <span class="${r>1.001?'up':r<.999?'dn':''}">${r>1.001?'+':''}${r!==1?Math.round((r-1)*100)+'%':''}</span>`};
+  const vals={hp:[T.hp,' hp'],dmg:[T.dmg,' dmg'],rof:[T.rof,'/s'],range:[T.range,' rng'],speed:[T.speed,' spd']};
+  for(const k of STATS){$('dl_'+k).value=d.lv[k];$('dlv_'+k).innerHTML=show1(k,...vals[k])}
+  for(const [k] of SHAPE_SL){const v=k==='size'?d.size:d.shape[k];$('ds_'+k).value=v;$('dsv_'+k).textContent=k==='pts'?v:(+v).toFixed(2)}
+  $('dSpin').checked=!!d.spin;
+  const tr=[B.air?'✈ flies over sea':'',B.sea?'⚓ coastal, needs a dock':'',B.fuel?'⛽ burns fuel':'',B.splash?'💥 splash damage':'',B.nocap||B.air?'can\'t capture':'🏳 can capture capitals',MOD[d.base].air===0?'can\'t hit aircraft':''].filter(Boolean);
+  $('dSum').innerHTML=`<b>${T.cost} 💰</b> &nbsp;(${B.n} costs ${B.cost}) · upkeep ${(T.upk*60).toFixed(1)}/min · trains in ${TRAIN[d.id]} days · DPS ${fmt1(T.dmg*T.rof)}<br>${tr.join(' · ')}`;
+  $('dMU').innerHTML=TYPES.map(b=>{const r=duel(d.id,b),cls=r>=1.15?'w':r<=.87?'l':'e',
+    txt=MOD[d.id][b]===0?'can\'t hit it':r>=50?'untouchable':r>=1.15?`wins ×${r.toFixed(1)}`:r<=.87?`loses ×${(1/r).toFixed(1)}`:'even';
+    return `<div class="${cls}">${svgShape(UT[b].sh,'#9fb3d1')}<span><b>${txt}</b>vs ${UT[b].n}</span></div>`}).join('');
+  $('dNote').textContent=locked?`You have ${d.n} units in the field: stat and shape changes refit them right away, but the chassis is locked.`:'';
+  drawUnitCv();
+}
+function drawUnitCv(){
+  const cv2=$('dCv'),g=cv2.getContext('2d'),w=cv2.width,h=cv2.height,d=designs[dzSel];g.clearRect(0,0,w,h);if(!d)return;
+  const cx=w/2,cy=h/2,S=w*.27;
+  g.strokeStyle='rgba(255,255,255,.05)';g.lineWidth=1;for(let k=-4;k<=4;k++){g.beginPath();g.moveTo(cx+k*S*.4,0);g.lineTo(cx+k*S*.4,h);g.moveTo(0,cy+k*S*.4);g.lineTo(w,cy+k*S*.4);g.stroke()}
+  g.strokeStyle='rgba(255,255,255,.12)';g.setLineDash([6,6]);g.beginPath();g.arc(cx,cy,S*1.25,0,6.283);g.stroke();g.setLineDash([]);
+  g.fillStyle='rgba(240,191,58,.5)';g.font='bold 22px system-ui';g.textAlign='right';g.fillText('front ➜',w-14,cy-S*1.35);
+  g.fillStyle='rgba(0,0,0,.35)';shapePath(g,{poly:d.poly},cx+6,cy+8,S,0);g.fill();
+  shapePath(g,{poly:d.poly},cx,cy,S,0);g.fillStyle=PUNIT;g.fill();g.lineJoin='round';g.lineWidth=5;g.strokeStyle='#060a12';g.stroke();
+  for(const [px,py] of d.poly){g.beginPath();g.arc(cx+px*S,cy+py*S,8,0,6.283);g.fillStyle='#f0bf3a';g.fill();g.lineWidth=2.5;g.strokeStyle='#060a12';g.stroke()}
+  // real size, next to the base unit, as it looks on the map
+  const z=3.2,sz=UT[d.id].size*z*.55*2,bs=UT[d.base].size*z*.55*2,by=h-30;
+  g.fillStyle='rgba(255,255,255,.45)';g.font='18px system-ui';g.textAlign='left';g.fillText('on the map:',14,by+6);
+  shapePath(g,{poly:d.poly},150,by,sz,0);g.fillStyle=PUNIT;g.fill();g.lineWidth=2;g.stroke();
+  shapePath(g,UT[d.base].sh,150+sz+bs+18,by,bs,0);g.fillStyle='#8d99ae';g.fill();g.stroke();
+}
+function squadRoles(q){
+  const r={inf:0,tank:0,air:0,ship:0,cap:0};let hp=0,slow=1e9,slowT='',rng=0,fuel=0,upk=0;
+  for(const t of q.slots){const T=UT[t],dps=T.dmg*T.rof*(T.splash?1.4:1);
+    for(const v of ['inf','tank','air','ship'])r[v]+=dps*MOD[t][v];r.cap+=dps*GMOD[t];hp+=T.hp;upk+=T.upk;rng=Math.max(rng,T.range);if(T.fuel)fuel++;
+    if(!T.air&&!T.sea&&T.speed<slow){slow=T.speed;slowT=T.n}}
+  return{r,hp,slow,slowT,rng,fuel,upk};
+}
+function renderSquadTab(){
+  qzSel=clamp(qzSel,0,Math.max(0,squads.length-1));const q=squads[qzSel];
+  $('qSlots').innerHTML=squads.map((o,i)=>`<button class="slot${i===qzSel?' on':''}" data-i="${i}">🎖 <span>${esc(o.n)}</span><small>${o.slots.length} units · ${squadCost(state==='play'?P:-1,o)}💰 · key ${SQKEYS[i].toUpperCase()}</small></button>`).join('')+
+    (squads.length<SQKEYS.length?'<button class="slot new" id="qNew">＋ New squad</button>':'');
+  show('qEmpty',!q);show('qGrid',!!q);show('qDel',!!q);if(!q)return;
+  if(document.activeElement!==$('qName'))$('qName').value=q.n;
+  document.querySelectorAll('#qForms button').forEach(b=>b.classList.toggle('on',b.dataset.f===q.form));
+  $('qPal').innerHTML=PTYPES.map(t=>`<button data-t="${t}" title="${esc(UT[t].desc)}">${svgShape(UT[t].sh,PCOL)}${esc(UT[t].n)} <span style="color:#ffe08a">${UT[t].cost}</span></button>`).join('');
+  $('qN').textContent=q.slots.length;
+  $('qList').innerHTML=q.slots.map((t,i)=>`<div class="qi"><em>${i+1}</em>${svgShape(UT[t].sh,PCOL)}${esc(UT[t].n)}<button data-i="${i}" data-a="-1">◀</button><button data-i="${i}" data-a="1">▶</button><button data-i="${i}" data-a="x">✕</button></div>`).join('')||'<span style="color:var(--dim);font-size:12px">Empty. Click units above to add them.</span>';
+  const R=squadRoles(q),cost=squadCost(state==='play'?P:-1,q);
+  $('qSum').innerHTML=q.slots.length?`<b>${cost} 💰</b> · ${q.slots.length} army places · upkeep ${(R.upk*60).toFixed(1)}/min · ${R.fuel?R.fuel+' ⛽ fuel':'no fuel'}<br>`+
+    `${Math.round(R.hp)} total health · reach ${Math.round(R.rng)} · ${R.slow<1e9?`marches at the ${R.slowT.toLowerCase()}'s pace (${fmt1(R.slow)})`:'all aircraft / ships'}`:'Add some units.';
+  const lab={inf:['Infantry','inf'],tank:['Armor','tank'],air:['Aircraft','air'],ship:['Ships','ship'],cap:['Capitals (siege)',null]},mx=Math.max(1,...Object.values(R.r));
+  $('qRoles').innerHTML=Object.entries(lab).map(([k,[n,t]])=>`<div>${t?svgShape(UT[t].sh,'#9fb3d1'):'<span style="width:15px">🏰</span>'}<span style="width:92px">${n}</span><span class="bar"><i style="width:${Math.round(R.r[k]/mx*100)}%"></i></span><b style="width:34px;text-align:right">${fmt1(R.r[k])}</b></div>`).join('');
+  const weak=[];if(q.slots.length>=3){
+    if(R.r.air<mx*.25)weak.push('aircraft would shred it — add Flak ✚ or fighters');
+    if(R.r.tank<mx*.35)weak.push('weak against armor — add tanks or fighters');
+    if(R.r.cap<mx*.35)weak.push('slow to crack capitals — add artillery');
+    if(q.slots.every(t=>UT[t].air||UT[t].nocap))weak.push('nothing in it can capture a capital');}
+  $('qNote').textContent=weak.length?'⚠ '+weak.join(' · '):q.slots.length>=3?'✓ Well rounded.':'';
+  drawSquadCv();
+}
+function drawSquadCv(){
+  const cv2=$('qCv'),g=cv2.getContext('2d'),w=cv2.width,h=cv2.height,q=squads[qzSel];g.clearRect(0,0,w,h);if(!q)return;
+  const n=q.slots.length,off=q.slots.map((t,i)=>formOff(q.form,i,n,0));let ext=7;for(const [x,y] of off)ext=Math.max(ext,Math.abs(x)+5,Math.abs(y)*1.2+5);
+  const k=Math.min(13,(Math.min(w,h)*.42)/ext),cx=w/2-10,cy=h/2;
+  g.strokeStyle='rgba(240,191,58,.35)';g.lineWidth=3;g.beginPath();g.moveTo(w-70,cy);g.lineTo(w-22,cy);g.moveTo(w-36,cy-12);g.lineTo(w-22,cy);g.lineTo(w-36,cy+12);g.stroke();
+  q.slots.forEach((t,i)=>{const [ox,oy]=off[i],x=cx+ox*k,y=cy+oy*k,sh=UT[t].sh,sz=UT[t].size*k*.7;
+    shapePath(g,sh,x,y,sz,0);g.fillStyle=PUNIT;g.fill();g.lineJoin='round';g.lineWidth=3;g.strokeStyle='#060a12';g.stroke();
+    g.fillStyle='#ffe08a';g.font='bold 17px system-ui';g.textAlign='center';g.fillText(i+1,x,y-sz-8)});
+}
 
 // ─── flow ───
 function show(id,on){$(id).classList.toggle('hidden',!on)}
@@ -1600,13 +1992,13 @@ $('bKeep').onclick=()=>{keepPlaying=true;state='play';show('end',0);saveGame(tru
 
 // ─── save / continue: the whole war goes into localStorage, autosaved every 20s ───
 const SAVE_KEY='sq_save_v1',CKEYS=['owner','fort','fac','integ','dock','garMax','gar','alertT','tcd','threat','lastHit','capBy','capProg'];
-const UKEYS=['id','f','t','x','y','hp','mhp','cd','ang','xp','rank','lastFight','train','trainMax','order'];
+const UKEYS=['id','f','t','x','y','hp','mhp','cd','ang','xp','rank','lastFight','train','trainMax','order','sq','sqi','sqf','sqn'];
 let saveT=20;
 function occRLE(){const out=[];let v=occ[0],n=0;for(let i=0;i<occ.length;i++){if(occ[i]===v)n++;else{out.push(v,n);v=occ[i];n=1}}out.push(v,n);return out}
 function snapshot(){
   return{v:1,date:Date.now(),name:F[P].name,day:Math.floor(time),owned:F[P].owned.length,
     g:{P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,rebelT,integT,seed,selCountry,
-      cam:{...cam},groups:Object.fromEntries(Object.entries(groups).map(([k,g])=>[k,g.filter(u=>u.hp>0).map(u=>u.id)]))},
+      cam:{...cam},designs,squads,nextSq,groups:Object.fromEntries(Object.entries(groups).map(([k,g])=>[k,g.filter(u=>u.hp>0).map(u=>u.id)]))},
     C:C.map(c=>CKEYS.map(k=>c[k])),
     F:F.map(f=>{const o={...f};delete o.rgb;return o}),
     U:units.filter(u=>u.hp>0).map(u=>UKEYS.map(k=>u[k])),
@@ -1625,13 +2017,15 @@ function loadGame(s){
   ({P,time,diff,pdoc,FOG,playerPeace,aiPeace,aiMult,winGoal,stats,nextUid,keepPlaying,weary,infamy,econHold,rebelT,integT,seed,selCountry}=g);
   s.C.forEach((a,i)=>CKEYS.forEach((k,j)=>{C[i][k]=a[j]}));
   F=s.F;
-  units=s.U.map(a=>{const u={tgt:null,scan:rand()*.3,sup:true,home:true,vis:true,blocked:0};UKEYS.forEach((k,j)=>{u[k]=a[j]});return u});
+  if(g.designs){squads=(g.squads||[]).filter(validSquad);applyDesigns(g.designs);nextSq=g.nextSq||1;storeDesigns()} // the war's own designs come back with it
+  units=s.U.map(a=>{const u={tgt:null,scan:rand()*.3,sup:true,home:true,vis:true,blocked:0};UKEYS.forEach((k,j)=>{if(a[j]!=null)u[k]=a[j]});return u}).filter(u=>UT[u.t]);
   const byId=new Map(units.map(u=>[u.id,u]));
   groups={};for(const [k,ids] of Object.entries(g.groups||{})){const a=ids.map(i=>byId.get(i)).filter(Boolean);if(a.length)groups[k]=a}
   for(let i=0,p=0;i<s.occ.length;i+=2){const v=s.occ[i],n=s.occ[i+1];if(v>=0)for(let k=p;k<p+n;k++)if(grid[k]>=0)setOcc(k,v);p+=n}
   for(const c of C)c.occChanged=false;
   missiles=s.missiles||[];raids=s.raids||[];
   for(const f of F)recalc(f);
+  recount();rebuildBuildBar();
   supDirty=true;visT=0;checkT=1;saveT=20;infoC=-1;paused=false;state='play';
   $('fogChk').checked=FOG;
   show('pickbar',0);show('pickhint',0);show('menu',0);show('end',0);['top','board','build','ctl','powers'].forEach(i=>show(i,1));
@@ -1661,7 +2055,7 @@ function frame(now){
 // ─── boot ───
 addEventListener('resize',resize);
 async function boot(){
-  resize();initHUD();
+  resize();loadDesignStore();initHUD();
   try{
     const [hi,lo]=await Promise.all(['50m','110m'].map(r=>fetch(`https://cdn.jsdelivr.net/npm/world-atlas@2/countries-${r}.json`).then(x=>x.json())));
     buildWorld(hi,new Set(topojson.feature(lo,lo.objects.countries).features.map(f=>f.properties&&f.properties.name)));
@@ -1984,6 +2378,54 @@ function runSmoke(){
   let fine=true;for(let i=0;i<30*20;i++){step(STEP);if(units.some(u=>!isFinite(u.x)))fine=false}
   ok(fine&&F[P].alive!==undefined,'a loaded war keeps running');
   ok(saveGame(true)&&readSave()&&readSave().name===F[P].name,'saves to localStorage and reads back');dropSave();
+  }
+  {// workshop: designed units and squads
+  aiDocs=false;resetWorld();seed=77;startGame(fr);warAll();C[fr].oil=5; // enough fuel for the test tanks
+  const mk=(id,base,lv,sh)=>({id,n:'T'+id,base,lv:Object.assign({hp:3,dmg:3,rof:3,range:3,speed:3},lv),shape:sh,poly:makePoly(sh),size:1,spin:true});
+  const sh5={pts:5,spike:0,len:1.2,taper:.2,twist:0};
+  applyDesigns([mk('c0','tank',{},sh5),mk('c1','inf',{hp:5,speed:1},{pts:5,spike:.5,len:1,taper:0,twist:0}),mk('c9','tank',{},sh5)]);
+  ok(designs.length===2&&PTYPES.length===8,'designs register as new unit types (bad slots rejected)');
+  ok(UT.c0.cost===UT.tank.cost&&UT.c0.hp===UT.tank.hp&&UT.c0.dmg===UT.tank.dmg&&UT.c0.fuel===1,'a design with no changes matches its chassis exactly');
+  ok(UT.c1.hp===UT.inf.hp*1.55&&UT.c1.speed===UT.inf.speed*.7&&UT.c1.cost!==UT.inf.cost,`stat levels change the unit and its price (${UT.c1.cost} vs ${UT.inf.cost})`);
+  {const d=mk('c2','art',{hp:5,dmg:5,rof:5,range:5,speed:5},sh5),lo=mk('c3','art',{hp:1,dmg:1,rof:1,range:1,speed:1},sh5);applyDesigns([...designs,d,lo]);
+   ok(UT.c2.cost>UT.art.cost*2&&UT.c3.cost<UT.art.cost*.6,`maxed designs cost a lot (${UT.c2.cost}), stripped ones little (${UT.c3.cost})`);
+   ok(Math.abs(duel('c2','art')-duel('art','c3'))<5&&duel('c0','tank')>.99&&duel('c0','tank')<1.01,'equal-gold match-ups: an unchanged design is dead even with its chassis');
+   applyDesigns(designs.filter(x=>x.id<'c2'))}
+  ok(MOD.c0.inf===MOD.tank.inf&&MOD.inf.c1===MOD.inf.inf&&MOD.c0.c1===MOD.tank.inf&&GMOD.c0===GMOD.tank&&TRAIN.c1>0,'designs inherit their chassis match-ups');
+  ok(designs.every(d=>d.poly.length>=3&&d.poly.every(([x,y])=>Math.hypot(x,y)<=1.2501)),'generated shapes are normalised');
+  F[P].gold=1e4;const mech0=F[P].mech,cu=build(P,'c0',fr);
+  ok(cu&&cu.t==='c0'&&F[P].mech===mech0+1&&cu.mhp===UT.c0.hp,'you can build your own design (and it burns fuel like a tank)');
+  designs[1].lv.hp=1;const c1u=build(P,'c1',fr),hp0=c1u.mhp;applyDesigns(designs);
+  ok(c1u.mhp<hp0&&Math.abs(c1u.mhp-UT.c1.hp)<1e-9,'editing a design refits units already in the field');
+  ok(F[P].army===units.filter(u=>u.f===P).length&&Math.abs(F[P].upk-units.filter(u=>u.f===P).reduce((s,u)=>s+upkOf(P,u.t),0))<1e-9,'counters stay right after a refit');
+  // squads
+  squads=[{n:'Fist',slots:['tank','c0','inf','inf','c1','art'],form:'wedge'}];
+  ok(!!squadWhyNot(P,{n:'X',slots:Array(40).fill('inf'),form:'line'},fr),'a squad bigger than your army cap is refused');
+  const a0=F[P].army,g0=F[P].gold,cost=squadCost(P,squads[0]),us=buildSquad(P,squads[0],fr);
+  ok(us&&us.length===6&&F[P].army===a0+6&&Math.abs(F[P].gold-(g0-cost))<1e-6,`a squad trains all at once for ${cost} gold`);
+  ok(us.every(u=>u.sq===us[0].sq&&u.sqf==='wedge')&&new Set(us.map(u=>u.sqi)).size===6,'squad members know their squad and their place');
+  F[P].gold=5;const a1=F[P].army,duo={n:'Duo',slots:['inf','inf'],form:'line'};ok(!buildSquad(P,duo,fr)&&F[P].army===a1&&squadWhyNot(P,duo,fr).includes('gold'),'a squad you can\'t afford builds nothing (all or nothing)');
+  F[P].gold=1e4;
+  for(const f of Object.keys(FORMS)){let close=1e9;const o=[...Array(12)].map((_,i)=>formOff(f,i,12,.7));
+    for(let i=0;i<12;i++)for(let j=i+1;j<12;j++)close=Math.min(close,Math.hypot(o[i][0]-o[j][0],o[i][1]-o[j][1]));
+    ok(close>=5.5,`${FORMS[f]} formation keeps 12 units apart (closest ${close.toFixed(1)})`)}
+  for(const u of us){u.train=0;u.x=C[fr].cap.x;u.y=C[fr].cap.y}
+  sel.clear();for(const u of us)sel.add(u);
+  const tx=C[fr].cap.x+30,ty=C[fr].cap.y+10;command(tx,ty);
+  const slowest=Math.min(...us.filter(u=>!UT[u.t].air).map(u=>UT[u.t].speed));
+  ok(us.every(u=>u.order&&u.order.sv===slowest)&&new Set(us.map(u=>Math.round(u.order.x)+','+Math.round(u.order.y))).size===6,'orders put each member on its own formation spot, moving at the slowest member\'s pace');
+  {const tip=us.find(u=>u.sqi===0).order,back=us.find(u=>u.sqi===5).order,hx=tx-C[fr].cap.x,hy=ty-C[fr].cap.y;
+   ok((tip.x-back.x)*hx+(tip.y-back.y)*hy>0,'the wedge points the way the squad is heading')}
+  for(let i=0;i<30*12;i++)step(STEP);
+  {const al=us.filter(u=>u.hp>0);let cx=0,cy=0;for(const u of al){cx+=u.x;cy+=u.y}cx/=al.length;cy/=al.length;
+   ok(al.length&&Math.max(...al.map(u=>Math.hypot(u.x-cx,u.y-cy)))<30,'the squad arrives together')}
+  sel.clear();clickAt(...w2s(us[2].x,us[2].y),false,false);ok(sel.size===us.filter(u=>u.hp>0).length,'clicking one member selects the whole squad');
+  // the workshop survives a save
+  const sv=JSON.parse(JSON.stringify(snapshot())),nU=units.length;applyDesigns([]);squads=[];resetWorld();
+  ok(loadGame(sv)&&UT.c0&&designs.length===2&&squads.length===1&&units.length===nU,'designs, squads and designed units come back from a save');
+  ok(units.filter(u=>u.sq).length>=6&&F.every(f=>!f.alive||f.army===units.filter(u=>u.f===f.id).length),'squad tags and counters survive loading');
+  let fine=true;for(let i=0;i<30*10;i++){step(STEP);if(units.some(u=>!isFinite(u.x)))fine=false}ok(fine,'a war with designed units keeps running');
+  dropSave();
   }
   document.title=`SMOKE ${fail?'FAIL':'PASS'} ${pass}/${pass+fail}`;
   const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=document.title+'\n'+out.join('\n');document.body.appendChild(pre);
