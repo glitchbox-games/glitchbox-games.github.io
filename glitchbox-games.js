@@ -3,6 +3,8 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Be the Dungeon',     file:'be-the-dungeon.html',         emoji:'🕳️',color:['#0a0508','#1e0a12'],category:'strategy',   tags:['new','hot'],blurb:'You are the dungeon. The adventurers learn from every raid'},
+  {name:'Idle Universe',      file:'idle-universe.html',          emoji:'🌌',color:['#04030c','#140b2c'],category:'simulation', tags:['new','hot'],blurb:'One tap, one particle. Grow it into stars, life and minds, then crunch it all'},
   {name:'Shape Conquest',     file:'shape-conquest.html',         emoji:'🌍',color:['#0d1624','#152238'],category:'strategy',   tags:['new','hot'],blurb:'Pick any country, build an army of shapes, invade the world'},
   {name:'Scrawl',             file:'scrawl.html',                 emoji:'🖍️',color:['#0a0614','#1c1030'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One player draws, everyone races to guess the word — 2 to 8 players'},
   {name:'Gridlock',           file:'gridlock.html',               emoji:'\u26a1',color:['#04060e','#0a1a34'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Three to eight light cycles, one grid, nobody stops'},
@@ -54,6 +56,51 @@ const _SC=(c)=>{for(let y=0;y<200;y+=4){c.fillStyle='rgba(0,0,0,0.1)';c.fillRect
 
 // ── THUMBNAIL DRAW FUNCTIONS ──
 const DRAW={
+
+'idle-universe':(c)=>{
+  const g=c.createRadialGradient(160,104,0,160,104,190); g.addColorStop(0,'#1c1238'); g.addColorStop(1,'#04030c'); c.fillStyle=g; c.fillRect(0,0,320,200);
+  _ST(c,60);
+  // nebula wash
+  [[70,60,70,'255,90,180'],[250,150,80,'60,200,255'],[230,40,50,'160,110,255']].forEach(([x,y,r,col])=>{ const n=c.createRadialGradient(x,y,0,x,y,r); n.addColorStop(0,`rgba(${col},.32)`); n.addColorStop(1,`rgba(${col},0)`); c.fillStyle=n; c.fillRect(0,0,320,200); });
+  // orbits + planets around a young star
+  c.strokeStyle='rgba(190,200,255,.18)'; c.lineWidth=1;
+  [[60,20],[92,30],[124,41]].forEach(([rx,ry])=>{ c.beginPath(); c.ellipse(160,104,rx,ry,0,0,6.283); c.stroke(); });
+  const s=c.createRadialGradient(160,104,0,160,104,46); s.addColorStop(0,'rgba(255,255,240,1)'); s.addColorStop(.25,'rgba(255,220,130,.9)'); s.addColorStop(1,'rgba(255,170,60,0)'); c.fillStyle=s; c.beginPath(); c.arc(160,104,46,0,6.283); c.fill();
+  c.strokeStyle='rgba(255,180,80,.9)'; c.lineWidth=2.5; c.beginPath(); c.ellipse(160,104,24,9,0,3.4,6.0); c.stroke();
+  _C(c,218,113,6,'#c99b6a'); _C(c,94,93,5,'#3aa0ff'); _C(c,92,91,2.5,'#46d17a'); _C(c,268,88,4,'#9c7fc9');
+  // quark triplets drifting in from the edges
+  [[34,160],[290,170],[40,30]].forEach(([x,y])=>{ ['#ff4d5a','#4dff88','#4d8aff'].forEach((col,i)=>_C(c,x+Math.cos(i*2.1)*5,y+Math.sin(i*2.1)*5,2.2,col)); });
+  // a comet
+  for(let i=0;i<22;i++){ c.fillStyle=`rgba(255,220,130,${(1-i/22)*.55})`; c.fillRect(250+i*2.2,22+i*.8,3,2); }
+  _C(c,250,22,3.5,'#fff3c4');
+  c.font='bold 13px Orbitron, monospace'; c.fillStyle='rgba(255,255,255,.9)'; c.textAlign='left'; c.fillText('1.000 Qa',14,24);
+  _SC(c);
+},
+
+'be-the-dungeon':(c)=>{
+  _F(c,0,0,320,200,'#0e0a10');
+  const T=20;
+  // a winding tunnel carved through rock
+  const floor=[[0,5],[1,5],[2,5],[3,5],[3,4],[3,3],[3,2],[4,2],[5,2],[6,2],[7,2],[8,2],[8,3],[8,4],[8,5],[8,6],[8,7],[9,7],[10,7],[11,7],[12,7],[12,6],[12,5],[12,4],[12,3],[13,3],[14,3],[14,4],[14,5],[14,6],[15,5],[15,6],[13,5],[13,6]];
+  for(let y=0;y<10;y++) for(let x=0;x<16;x++){ const h=((x*73+y*151)%17)/17; _F(c,x*T,y*T,T,T,`rgb(${14+h*8|0},${10+h*6|0},${16+h*8|0})`); }
+  floor.forEach(([x,y])=>{ _F(c,x*T,y*T,T,T,'#4a3e48'); _F(c,x*T+1,y*T+1,T/2-1,T/2-1,'#564852'); _F(c,x*T+T/2,y*T+T/2,T/2-1,T/2-1,'#50434d'); });
+  // wall faces
+  floor.forEach(([x,y])=>{ if(!floor.some(([a,b])=>a===x&&b===y-1)) _F(c,x*T,y*T-6,T,6,'#4e3f48'); });
+  // torchlight + the heart's glow
+  [[60,30],[170,130],[250,50]].forEach(([x,y])=>{ const g=c.createRadialGradient(x,y,0,x,y,60); g.addColorStop(0,'rgba(255,150,60,.28)'); g.addColorStop(1,'rgba(255,150,60,0)'); c.fillStyle=g; c.fillRect(0,0,320,200); _C(c,x,y-4,3,'#ffb050'); });
+  const hg=c.createRadialGradient(290,110,0,290,110,70); hg.addColorStop(0,'rgba(255,40,80,.5)'); hg.addColorStop(1,'rgba(255,40,80,0)'); c.fillStyle=hg; c.fillRect(0,0,320,200);
+  // the heart
+  c.save(); c.translate(290,112); c.fillStyle='#e0334a'; c.beginPath(); c.moveTo(0,14); c.bezierCurveTo(-22,0,-15,-19,-5,-15); c.bezierCurveTo(-2,-14,0,-11,0,-9); c.bezierCurveTo(0,-11,2,-14,5,-15); c.bezierCurveTo(15,-19,22,0,0,14); c.fill(); c.fillStyle='rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(-7,-7,3,5,-.5,0,6.283); c.fill(); c.restore();
+  // traps and the raiders' planned route
+  c.strokeStyle='rgba(255,90,70,.7)'; c.lineWidth=2; c.setLineDash([5,5]); c.beginPath(); c.moveTo(0,110); c.lineTo(70,110); c.lineTo(70,50); c.lineTo(170,50); c.lineTo(170,150); c.lineTo(250,150); c.lineTo(250,70); c.lineTo(290,70); c.lineTo(290,105); c.stroke(); c.setLineDash([]);
+  [[70,70],[210,150]].forEach(([x,y])=>{ for(let a=0;a<3;a++) for(let b=0;b<3;b++){ c.fillStyle='#d8d0d8'; c.beginPath(); c.moveTo(x-7+a*7-2,y-5+b*6+2); c.lineTo(x-7+a*7,y-5+b*6-4); c.lineTo(x-7+a*7+2,y-5+b*6+2); c.fill(); } });
+  // a raider with a torch and a goblin waiting for him
+  _C(c,120,50,9,'rgba(255,200,120,.25)'); _F(c,116,46,8,9,'#c0392b'); _C(c,120,42,4,'#f0c8a0'); _L(c,125,48,131,38,'#ddd',2);
+  _C(c,152,52,6,'#5aa040'); c.fillStyle='#5aa040'; c.beginPath(); c.moveTo(148,50); c.lineTo(140,46); c.lineTo(149,54); c.moveTo(156,50); c.lineTo(164,46); c.lineTo(155,54); c.fill(); _F(c,149,50,2,2,'#ffe14a'); _F(c,154,50,2,2,'#ffe14a');
+  // the guild's eye
+  _C(c,296,22,12,'rgba(0,0,0,.7)'); c.fillStyle='#f4e8d8'; c.beginPath(); c.ellipse(296,22,9,5.5,0,0,6.283); c.fill(); _C(c,296,22,4,'#c0303a'); _C(c,296,22,1.8,'#000');
+  _SC(c);
+},
 
 'shape-conquest':(c)=>{
   _GV(c,0,0,320,200,'#0b1320','#0d1624','#111d30');

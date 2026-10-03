@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idle Universe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Exo+2:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="glitchbox-save.js" data-pos="bottom-left"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03040a;--panel:#080a16;--panel2:#0d1022;--line:rgba(140,160,255,.12);
+  --text:#dfe4ff;--muted:#7680a8;--dim:#454c70;
+  --gold:#ffd36a;--cyan:#6ee7ff;--violet:#b28cff;--pink:#ff7ad9;--green:#7dffb0;--red:#ff6b7a;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#app{display:grid;grid-template-columns:1fr 430px;grid-template-rows:auto 1fr;height:100vh}
+/* top bar */
+#top{grid-column:1/3;display:flex;align-items:center;gap:18px;padding:10px 18px;background:linear-gradient(180deg,#070915,#04050c);border-bottom:1px solid var(--line);position:relative;z-index:3}
+#logo{font-family:Orbitron;font-weight:900;font-size:15px;letter-spacing:3px;background:linear-gradient(90deg,#fff,#b28cff,#6ee7ff);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+#era{font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+#era b{color:var(--violet);font-weight:700}
+#ticker{flex:1;overflow:hidden;white-space:nowrap;font-size:13px;color:#9aa3cf;font-style:italic;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+#ticker span{display:inline-block;transition:opacity .6s}
+.topbtn{background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:15px;cursor:pointer}
+.topbtn:hover{border-color:var(--violet)}
+/* stage */
+#stage{position:relative;overflow:hidden;min-height:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;display:block}
+#hud{position:absolute;left:0;right:0;top:18px;text-align:center;pointer-events:none;z-index:2}
+#energy{font-family:Orbitron;font-weight:700;font-size:40px;letter-spacing:1px;text-shadow:0 0 24px rgba(178,140,255,.6)}
+#energy small{font-size:16px;color:var(--muted);font-weight:500;margin-left:6px;letter-spacing:2px}
+#eps{font-size:15px;color:var(--cyan);margin-top:2px;letter-spacing:1px}
+#buffs{display:flex;justify-content:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.buff{font-size:12px;padding:3px 10px;border-radius:20px;background:rgba(255,211,106,.12);border:1px solid rgba(255,211,106,.4);color:var(--gold)}
+#hint{position:absolute;left:0;right:0;bottom:22%;text-align:center;font-size:14px;color:rgba(220,225,255,.55);letter-spacing:3px;pointer-events:none;animation:pulse 2.4s infinite;z-index:2}
+@keyframes pulse{50%{opacity:.25}}
+#floaters{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.fl{position:absolute;font-family:Orbitron;font-weight:700;font-size:16px;color:#fff;text-shadow:0 0 10px var(--violet);animation:flt 1.1s ease-out forwards;white-space:nowrap}
+.fl.gold{color:var(--gold);font-size:20px;text-shadow:0 0 14px #f90}
+@keyframes flt{from{transform:translate(-50%,0);opacity:1}to{transform:translate(-50%,-80px);opacity:0}}
+/* side panel */
+#side{min-width:0;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#tabs{display:flex;border-bottom:1px solid var(--line)}
+.tab{flex:1;background:none;border:none;padding:12px 4px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;position:relative;font-weight:600}
+.tab.on{color:var(--text);border-bottom-color:var(--violet)}
+.tab .dot{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);display:none}
+.tab .dot.show{display:block}
+#pane{flex:1;overflow-y:auto;padding:12px;min-height:0}
+#pane::-webkit-scrollbar{width:8px}#pane::-webkit-scrollbar-thumb{background:#1e2342;border-radius:4px}
+.buyrow{display:flex;gap:6px;margin-bottom:10px;align-items:center}
+.buyrow span{font-size:11px;color:var(--muted);letter-spacing:2px;margin-right:auto}
+.qbtn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600}
+.qbtn.on{border-color:var(--violet);color:#fff;background:#1a1640}
+/* buildings */
+.bld{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;padding:9px 10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);margin-bottom:7px;cursor:pointer;transition:transform .08s,border-color .15s,opacity .15s;position:relative;overflow:hidden}
+.bld:hover{border-color:rgba(178,140,255,.45)}
+.bld:active{transform:scale(.985)}
+.bld.no{opacity:.5;cursor:default}
+.bld.locked{opacity:.35;cursor:default;filter:grayscale(1)}
+.bld .ic{font-size:28px;text-align:center;filter:drop-shadow(0 0 8px rgba(178,140,255,.4))}
+.bld .nm{font-weight:700;font-size:15px}
+.bld .cs{font-size:13px;color:var(--gold);margin-top:1px}
+.bld.no .cs{color:var(--red)}
+.bld .ds{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+.bld .ow{font-family:Orbitron;font-size:26px;font-weight:700;color:rgba(255,255,255,.18)}
+.bld .bar{position:absolute;left:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--violet),var(--cyan));opacity:.6}
+/* upgrades */
+.sect{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin:10px 2px 8px}
+.ugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px}
+.ug{aspect-ratio:1;border-radius:10px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;position:relative;transition:transform .08s}
+.ug:hover{border-color:var(--gold);transform:translateY(-2px)}
+.ug.no{opacity:.45}
+.ug.own{opacity:.9;border-color:rgba(125,255,176,.25);cursor:default}
+.ug .tier{position:absolute;bottom:2px;right:5px;font-size:9px;font-family:Orbitron;color:var(--gold)}
+/* tooltip */
+#tip{position:fixed;z-index:50;pointer-events:none;max-width:290px;background:#0b0e20f2;border:1px solid rgba(178,140,255,.4);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.4;box-shadow:0 10px 40px #000a;display:none}
+#tip h4{font-size:14px;margin-bottom:3px}
+#tip .c{color:var(--gold);font-size:12px}
+#tip .q{color:var(--muted);font-style:italic;font-size:12px;margin-top:5px}
+#tip .e{color:var(--green);font-size:12.5px;margin-top:3px}
+/* cosmos */
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.card h3{font-family:Orbitron;font-size:14px;letter-spacing:2px;margin-bottom:6px}
+.card p{font-size:13px;color:#aab2da;line-height:1.45}
+.big{font-family:Orbitron;font-size:28px;font-weight:700;color:var(--violet);text-shadow:0 0 18px rgba(178,140,255,.5)}
+.btn{display:inline-block;background:linear-gradient(135deg,#3b1f8f,#1c2a7a);border:1px solid #6d5cff;border-radius:10px;padding:10px 16px;font-weight:700;letter-spacing:1.5px;cursor:pointer;font-size:13px;text-transform:uppercase}
+.btn:hover{filter:brightness(1.25)}
+.btn[disabled]{opacity:.35;cursor:default;filter:none}
+.btn.red{background:linear-gradient(135deg,#6b1028,#3a0a2a);border-color:#ff4d7a}
+.tree{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.node{background:#0a0c1c;border:1px solid var(--line);border-radius:10px;padding:9px;cursor:pointer;font-size:12px;line-height:1.35}
+.node b{display:block;font-size:13px;margin-bottom:2px}
+.node .k{color:var(--violet);font-family:Orbitron;font-size:11px;margin-top:4px}
+.node.own{border-color:rgba(125,255,176,.5);background:#0b1a16}
+.node.own .k{color:var(--green)}
+.node.lock{opacity:.35;cursor:default}
+.node.can{border-color:rgba(178,140,255,.6);box-shadow:0 0 14px rgba(178,140,255,.15)}
+/* stats / achievements */
+.stat{display:flex;justify-content:space-between;font-size:13px;padding:6px 2px;border-bottom:1px solid #12152a}
+.stat span:first-child{color:var(--muted)}
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px}
+.ac{aspect-ratio:1;border-radius:10px;background:#090b18;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;filter:grayscale(1);opacity:.25}
+.ac.got{filter:none;opacity:1;border-color:rgba(255,211,106,.4);background:#14110a}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(2,3,8,.82);backdrop-filter:blur(6px);z-index:40;display:none;align-items:center;justify-content:center;padding:16px}
+#modal.show{display:flex}
+#mbox{background:#0a0c1c;border:1px solid rgba(178,140,255,.35);border-radius:16px;padding:24px;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 90px #000}
+#mbox h2{font-family:Orbitron;font-size:20px;letter-spacing:3px;margin-bottom:10px}
+#mbox p{color:#aab2da;line-height:1.5;margin-bottom:12px;font-size:14px}
+.laws{display:grid;gap:8px;margin:12px 0}
+.law{background:#0d1022;border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;text-align:left}
+.law:hover{border-color:var(--violet);background:#141236}
+.law b{font-size:15px}.law .g{color:var(--green);font-size:13px;margin-top:3px}.law .bd{color:var(--red);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+textarea{width:100%;height:90px;background:#05060e;border:1px solid var(--line);border-radius:8px;color:var(--text);font-size:11px;padding:8px;font-family:monospace}
+/* toast */
+#toasts{position:fixed;right:446px;bottom:16px;z-index:45;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{background:#0b0e20f2;border:1px solid rgba(255,211,106,.45);border-radius:10px;padding:9px 14px;font-size:13px;animation:tin .35s ease-out;box-shadow:0 8px 30px #000a;max-width:300px}
+.toast b{color:var(--gold)}
+@keyframes tin{from{transform:translateY(16px);opacity:0}}
+/* ending */
+#ending{position:fixed;inset:0;z-index:60;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px}
+#ending.show{display:flex}
+#ending .ln{font-family:Orbitron;color:#cfd6ff;font-size:18px;letter-spacing:2px;opacity:0;margin:8px 0;transition:opacity 1.6s}
+#ending .ln.v{opacity:1}
+@media (max-width:860px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 46vh minmax(0,1fr)}
+  #top{gap:10px;padding:8px 12px}
+  #logo{font-size:12px;letter-spacing:2px}
+  #era{font-size:10px;letter-spacing:1px;margin-right:auto;overflow:hidden;text-overflow:ellipsis}
+  .buyrow span{display:none}
+  #top{grid-column:1}
+  #ticker{display:none}
+  #side{border-left:none;border-top:1px solid var(--line)}
+  #energy{font-size:28px}
+  #toasts{right:12px;bottom:auto;top:60px}
+  .tab{font-size:10px;letter-spacing:.5px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="logo">IDLE UNIVERSE</div>
+    <div id="era">Era · <b id="eraName">The Void</b></div>
+    <div id="ticker"><span id="tick"></span></div>
+    <button class="topbtn" id="sndBtn" title="Sound">🔊</button>
+    <button class="topbtn" id="optBtn" title="Options">⚙️</button>
+  </div>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="hud"><div id="energy">0<small>ENERGY</small></div><div id="eps">0 per second</div><div id="buffs"></div></div>
+    <div id="hint">TAP THE SINGULARITY</div>
+    <div id="floaters"></div>
+  </div>
+  <div id="side">
+    <div id="tabs">
+      <button class="tab on" data-t="build">Build</button>
+      <button class="tab" data-t="ups">Upgrades<i class="dot" id="dotUps"></i></button>
+      <button class="tab" data-t="cosmos">Cosmos<i class="dot" id="dotCos"></i></button>
+      <button class="tab" data-t="stats">Stats</button>
+      <button class="tab" data-t="ach">Trophies</button>
+    </div>
+    <div id="pane"></div>
+  </div>
+</div>
+<div id="tip"></div>
+<div id="modal"><div id="mbox"></div></div>
+<div id="toasts"></div>
+<div id="ending"></div>
+<pre id="smokeout" style="display:none"></pre>
+
+<script>
+'use strict';
+/* ═══════════════════════════ NUMBERS ═══════════════════════════ */
+const SUF=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qad','Qid','Sxd','Spd','Ocd','Nod','Vg','Uvg','Dvg','Tvg','Qavg','Qivg','Sxvg','Spvg','Ocvg','Novg','Tg'];
+function fmt(n,dec){
+ if(!isFinite(n)) return '∞';
+ if(n<0) return '-'+fmt(-n,dec);
+ if(n<1000){ return n<10&&dec!==0&&n%1? n.toFixed(1) : Math.floor(n).toLocaleString('en-US'); }
+ const e=Math.floor(Math.log10(n)), t=Math.floor(e/3);
+ if(sciOn()||t>=SUF.length){ return (n/10**e).toFixed(2)+'e'+e; }
+ const v=n/10**(t*3);
+ return (v>=100?v.toFixed(1):v>=10?v.toFixed(2):v.toFixed(3))+' '+SUF[t];
+}
+function sciOn(){ try{ return S.opts.sci; }catch(e){ return 0; } }
+function fmtTime(s){ s=Math.floor(s); if(s<60) return s+'s'; if(s<3600) return Math.floor(s/60)+'m '+(s%60)+'s'; if(s<86400) return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m'; return Math.floor(s/86400)+'d '+Math.floor(s%86400/3600)+'h'; }
+
+/* ═══════════════════════════ DATA ═══════════════════════════ */
+// The ladder of creation. Each rung is ~10x pricier and ~6-7x stronger than the last,
+// so the newest building is always the best deal per energy — until upgrades say otherwise.
+const B=[
+ {id:'foam',  n:'Quantum Foam',      ic:'💫',base:15,     r:0.1,   era:'The Void',           d:'Virtual particles blink in and out. Some forget to leave.'},
+ {id:'quark', n:'Quark Soup',        ic:'🔴',base:100,    r:1,     era:'Quark Epoch',        d:'A trillion-degree broth. Do not stir.'},
+ {id:'proton',n:'Proton Forge',      ic:'⚛️',base:1100,   r:8,     era:'Hadron Epoch',       d:'Three quarks walk into a bar. They never leave.'},
+ {id:'hydro', n:'Hydrogen Cloud',    ic:'☁️',base:12e3,   r:47,    era:'Recombination',      d:'The universe goes transparent. You can finally see.'},
+ {id:'neb',   n:'Nebula',            ic:'🌫️',base:13e4,   r:400,   era:'The Dark Ages',      d:'A nursery the size of a thousand solar systems.'},
+ {id:'star',  n:'Star',              ic:'⭐',base:14e5,   r:3000,  era:'First Light',        d:'Gravity squeezes until something ignites.'},
+ {id:'nova',  n:'Supernova Remnant', ic:'💥',base:2e7,    r:35e3,  era:'Stellar Forges',     d:'Every atom of iron in your blood came from one of these.'},
+ {id:'planet',n:'Planet',            ic:'🪐',base:33e7,   r:44e4,  era:'Planetary Age',      d:'Leftover dust, rolled into balls. Surprisingly popular.'},
+ {id:'life',  n:'Living World',      ic:'🌍',base:51e8,   r:52e5,  era:'Age of Life',        d:'Chemistry that started copying itself. Things got out of hand.'},
+ {id:'civ',   n:'Civilization',      ic:'🏙️',base:75e9,   r:6e7,  era:'Age of Minds',       d:'Matter that looks up and asks why. You owe it an answer.'},
+ {id:'dyson', n:'Dyson Sphere',      ic:'🌞',base:1e12,   r:6e8,   era:'Kardashev II',       d:'Why let starlight escape when you could keep it?'},
+ {id:'clust', n:'Galaxy Cluster',    ic:'🌌',base:14e12,  r:65e8,  era:'Cosmic Web',         d:'A thousand galaxies, bound by dark matter and spite.'},
+ {id:'sim',   n:'Simulation',        ic:'🖥️',base:17e13,  r:6e10,  era:'The Simulation',     d:'A universe inside your universe. It is idling too.'},
+];
+const NB=B.length;
+const RATE_K=4;   // global pace dial: every building's output is scaled by this
+// Era backgrounds: hot bright plasma early, a dark middle age, then starlight returns.
+const ERA_BG=[['#05030a','#0c0618'],['#1a0805','#3a1308'],['#1a0620','#30103a'],['#06101f','#0d1d36'],['#030409','#090a16'],['#050714','#121634'],['#0a0614','#1c0f2c'],['#04080f','#0b1626'],['#030c0b','#0a1f1c'],['#05060f','#0f1430'],['#0d0803','#24180a'],['#04030c','#120b26'],['#020806','#04140c']];
+
+// Upgrade names per building, in tier order. Past the list we fall back to Mk numerals.
+const TIER_AT=[1,5,25,50,100,150,200,250];
+const TIER_COST=[10,50,500,5e4,5e6,5e8,5e10,5e12];
+const TNAMES={
+ foam:['Uncertainty Principle','Vacuum Fluctuation','Casimir Plates','Zero-Point Harvest','Planck Lattice','Foam Weaving','Spacetime Lace','Quantum Overflow'],
+ quark:['Color Charge','Gluon Glue','Up & Down','Strange Attractors','Charm Offensive','Top Shelf','Bottom Line','Asymptotic Freedom'],
+ proton:['Strong Force','Isospin','Neutron Spare Parts','Deuterium Bond','Baryon Assembly Line','Nucleosynthesis','Mass Gap','Proton Decay Insurance'],
+ hydro:['Electron Capture','Lyman Alpha','21-cm Whisper','Cold Clumps','Jeans Instability','Molecular Clouds','Hydrogen Rain','Cosmic Dawn'],
+ neb:['Pillars of Creation','Bok Globules','Shockwave Seeding','Emission Glow','Dust Lanes','Protostellar Disks','Stellar Wombs','Orion Protocol'],
+ star:['Main Sequence','Proton-Proton Chain','CNO Cycle','Red Giant Phase','Helium Flash','Blue Supergiants','Wolf-Rayet Winds','Population III'],
+ nova:['Core Collapse','Iron Catastrophe','r-Process','Neutron Star Mergers','Magnetars','Kilonova Gold','Shock Fronts','Hypernova'],
+ planet:['Accretion','Hot Jupiters','Goldilocks Zone','Tidal Locking','Plate Tectonics','Magnetospheres','Ring Systems','Rogue Worlds'],
+ life:['RNA World','Photosynthesis','Cambrian Explosion','Eyes','Symbiosis','Flowering','Warm Blood','Panspermia'],
+ civ:['Fire','Writing','Printing Press','Steam Engine','Transistor','Internet','Fusion Power','Hive Mind'],
+ dyson:['Swarm Satellites','Statite Shells','Matrioshka Brain','Stellar Lifting','Shkadov Thruster','Star Tap','Nicoll-Dyson Beam','Total Capture'],
+ clust:['Dark Matter Halo','Galactic Filaments','Great Attractor','Intracluster Medium','Galaxy Cannibalism','Bullet Collision','Laniakea','Cosmic Web Spinning'],
+ sim:['Hello World','Recursion','Garbage Collection','Overclock','Cloud Universe','Nested Instances','Root Access','Source Code'],
+};
+// Synergies: building A gets +x% per building B owned.
+const SYN=[
+ {id:'syn0',n:'Gluon Seeding',a:1,b:0,p:.02,req:[0,50,1,25],cost:9e3,q:'The foam feeds the soup. Physicists call this "cheating".'},
+ {id:'syn1',n:'Stellar Nurseries',a:5,b:4,p:.02,req:[4,25,5,10],cost:8e7,q:'Each nebula is a crib for a dozen stars.'},
+ {id:'syn2',n:'Second Generation',a:6,b:5,p:.01,req:[5,50,6,10],cost:3e9,q:'Stars that die rich leave rich children.'},
+ {id:'syn3',n:'Heavy Element Rain',a:7,b:6,p:.02,req:[6,25,7,10],cost:4e10,q:'Planets made of dead stars. Recycling at its finest.'},
+ {id:'syn4',n:'Panspermia',a:8,b:7,p:.02,req:[7,50,8,10],cost:6e11,q:'Life hitches a ride on every rock it can.'},
+ {id:'syn5',n:'Galactic Internet',a:9,b:9,p:.005,req:[9,25,9,25],cost:1e14,q:'Each civilization is a little smarter for every other one it can hear.'},
+ {id:'syn6',n:'Stellar Engineering',a:10,b:5,p:.005,req:[10,10,5,100],cost:2e15,q:'Every star is an unbuilt Dyson sphere.'},
+ {id:'syn7',n:'Recursive Cosmos',a:12,b:11,p:.03,req:[11,25,12,5],cost:5e17,q:'The simulation simulates clusters that run simulations.'},
+];
+// Click upgrades: x2 the tap, and a slice of passive income per tap.
+const CLICKUPS=[
+ {id:'c0',n:'Fingertip Fusion',ic:'👆',cost:100,  x:2,p:0,  req:()=>S.clicks>=30,q:'Your touch runs hot.'},
+ {id:'c1',n:'Pressure Points',ic:'✋',cost:1e3,  x:2,p:0,  req:()=>S.clicks>=150,q:'Squeeze harder. The universe is soft.'},
+ {id:'c2',n:'Big Bang Reflex',ic:'💥',cost:5e4,  x:1,p:.01,req:()=>S.clicks>=400,q:'Every tap is a little genesis.'},
+ {id:'c3',n:'Creator\'s Hand',ic:'🖐️',cost:5e6,  x:1,p:.01,req:()=>S.clicks>=1000,q:'You are not tapping the universe. You are conducting it.'},
+ {id:'c4',n:'Prime Mover',ic:'☝️',cost:5e8,  x:1,p:.01,req:()=>S.clicks>=2500,q:'Before the first cause, there was you, tapping.'},
+ {id:'c5',n:'Omnipotent Poke',ic:'🫵',cost:5e11, x:1,p:.01,req:()=>S.clicks>=5000,q:'One finger. Infinite consequences.'},
+ {id:'c6',n:'Touch of Eternity',ic:'✨',cost:5e14, x:1,p:.01,req:()=>S.clicks>=9000,q:'Time itself flinches.'},
+];
+// Global multipliers, unlocked by lifetime-of-this-universe energy.
+const GLOBALUPS=[
+ {id:'g0',n:'Cosmic Inflation',ic:'🎈',cost:5e4,  m:1.1,req:()=>S.run>=2e4,q:'Space stretches. So does your income.'},
+ {id:'g1',n:'Fine-Tuning',ic:'🎚️',cost:5e6,  m:1.15,req:()=>S.run>=2e6,q:'Nudge the constants. Nobody is watching.'},
+ {id:'g2',n:'Anthropic Principle',ic:'👁️',cost:5e8,  m:1.2,req:()=>S.run>=2e8,q:'The universe is profitable because you are here to notice.'},
+ {id:'g3',n:'Dark Energy Tap',ic:'🌀',cost:5e10, m:1.25,req:()=>S.run>=2e10,q:'68% of everything, finally on the books.'},
+ {id:'g4',n:'Holographic Principle',ic:'🪞',cost:5e13, m:1.3,req:()=>S.run>=2e13,q:'Everything inside is written on the edges. Double-billing.'},
+ {id:'g5',n:'Theory of Everything',ic:'📜',cost:5e16, m:1.5,req:()=>S.run>=2e16,q:'It fits on a T-shirt. The T-shirt costs a lot.'},
+ {id:'g6',n:'Comet Lures',ic:'☄️',cost:3e5, m:1,comet:1,req:()=>S.comets>=3,q:'Comets come a little more often.'},
+ {id:'g7',n:'Comet Tails',ic:'🌠',cost:3e9, m:1,comet:2,req:()=>S.comets>=10,q:'Comet effects last longer.'},
+];
+// Dark Matter tree: permanent, survives every Big Crunch.
+const TREE=[
+ {id:'heat',  n:'Residual Heat',      k:1,  pre:[],              d:'Taps ×3, and every tap also yields 1% of energy/sec.'},
+ {id:'seed',  n:'Primordial Seed',    k:2,  pre:['heat'],        d:'Each new universe starts with 20 Quantum Foam and 10 Quark Soup.'},
+ {id:'lure',  n:'Comet Memory',       k:3,  pre:['heat'],        d:'Comets appear 30% more often.'},
+ {id:'infl',  n:'Inflation Field',    k:5,  pre:['seed'],        d:'Everything costs 10% less.'},
+ {id:'laws',  n:'Wider Physics',      k:4,  pre:['lure'],        d:'Choose from 4 laws of physics instead of 3.'},
+ {id:'oracle',n:'Upgrade Oracle',     k:8,  pre:['infl'],        d:'Upgrades buy themselves when affordable (toggle in Options).'},
+ {id:'tails', n:'Long Tails',         k:8,  pre:['lure'],        d:'Comet effects last 50% longer.'},
+ {id:'flow',  n:'Dark Flow',          k:12, pre:['oracle'],      d:'Away time earns 100% instead of 50%.'},
+ {id:'arch',  n:'Auto-Architect',     k:20, pre:['oracle'],      d:'Buys the best-value building every 3 seconds (toggle in Options).'},
+ {id:'rebate',n:'Entropy Rebate',     k:30, pre:['infl','tails'],d:'Building prices grow ×1.14 per copy instead of ×1.15.'},
+ {id:'golden',n:'Golden Ratio',       k:40, pre:['tails'],       d:'Lucky comets pay twice as much.'},
+ {id:'echo',  n:'Multiversal Echo',   k:60, pre:['arch','golden'],d:'Trophies give +2% production each instead of +1%.'},
+ {id:'second',n:'Second Law Repealed',k:120,pre:['rebate','echo'],d:'All production ×3.'},
+ {id:'immune',n:'Heat-Death Immunity',k:250,pre:['second'],      d:'Each Dark Matter ever earned gives +15% instead of +10%.'},
+ {id:'omega', n:'Omega Point',        k:1000,pre:['immune'],     d:'Leave the simulation. See what is outside.'},
+];
+// Laws of physics: from the second universe on, each Big Bang picks one.
+const LAWS=[
+ {id:'std',  n:'Standard Model',     g:'Nothing changes.',bd:'Nothing changes.'},
+ {id:'grav', n:'Strong Gravity',     g:'Stars, Nebulae and Galaxy Clusters ×3',bd:'Quantum Foam, Quark Soup, Proton Forges ×0.5'},
+ {id:'fast', n:'Fast Light',         g:'Comets come twice as often',bd:'All production ×0.85'},
+ {id:'cold', n:'Cold Universe',      g:'Away time earns ×3',bd:'Taps ×0.25'},
+ {id:'fert', n:'Fertile Chemistry',  g:'Living Worlds and Civilizations ×4',bd:'Dyson Spheres ×0.5'},
+ {id:'obs',  n:'Observer Effect',    g:'Taps ×10 and yield +5% of energy/sec',bd:'All buildings ×0.7'},
+ {id:'vac',  n:'False Vacuum',       g:'All production ×2.5',bd:'1 in 4 comets is a void bubble that erases 10% of your biggest building'},
+ {id:'rich', n:'Rich Matter',        g:'The first four buildings ×10',bd:'Everything past Nebula ×0.8'},
+ {id:'cheap',n:'Loose Constants',    g:'Prices grow ×1.12 per copy',bd:'Upgrades cost ×3'},
+];
+const NEWS=[
+ [0,'Nothing exists. It is very quiet.'],[0,'Scientists confirm: there are no scientists yet.'],[0,'Breaking: a small fluctuation refuses to un-fluctuate.'],
+ [1,'Temperature: 10 trillion degrees. Forecast: slightly less.'],[1,'Quarks protest being confined. "We were never consulted."'],[1,'Local gluon: "I just hold things together, man."'],
+ [2,'Antimatter loses the war by one part in a billion. Matter declares victory.'],[2,'Proton lifetime estimated at "longer than you will be around".'],
+ [3,'The universe becomes transparent. Embarrassing photos from the first 380,000 years now visible.'],[3,'The cosmic microwave background is just your universe\'s baby picture.'],
+ [4,'The Dark Ages: no stars yet. Hydrogen clouds report feeling "heavy".'],[4,'A nebula forms in the shape of a horse. Nobody is around to notice.'],
+ [5,'FIRST LIGHT. Everybody blink.'],[5,'Star discovers that being 15 million degrees inside is "actually fine".'],
+ [6,'Supernova visible from 10 billion light-years away. Neighbors complain.'],[6,'Gold minted in a neutron-star collision. Market crashes, briefly.'],
+ [7,'A planet forms. It immediately gets hit by another planet. The debris becomes a moon.'],[7,'Gas giant claims it is "just big-boned".'],
+ [8,'Single-celled life invents sex. Productivity drops 40%.'],[8,'Dinosaurs reign for 165 million years. Asteroid unavailable for comment.'],[8,'Tardigrade survives everything. Asked how, says nothing.'],
+ [9,'A civilization invents the wheel, then the meme.'],[9,'Primates point telescopes at you. Try to look busy.'],[9,'Philosophers debate whether the universe has a purpose. You check your income.'],
+ [10,'Dyson swarm completed. The star is reportedly "furious".'],[10,'Astronomers elsewhere notice a star going dark and assume aliens. They are right.'],
+ [11,'The cosmic web is complete. It looks suspiciously like a brain.'],[11,'Two galaxies collide. Zero stars hit each other. Space is big.'],
+ [12,'A simulated universe inside your universe has started its own idle game.'],[12,'Simulated scientists detect a rounding error. Patch scheduled.'],[12,'You feel watched. You are.'],
+];
+const ACH=[];
+(function(){
+ const tot=[[1e3,'Spark','🕯️'],[1e6,'Kindling','🔥'],[1e9,'Inferno','🌋'],[1e12,'Furnace of Creation','☀️'],[1e15,'Stellar Fortune','💰'],[1e18,'Galactic Hoard','💎'],[1e21,'Cosmic Treasury','🏦'],[1e24,'Infinite Hunger','🕳️'],[1e30,'Beyond Counting','♾️']];
+ tot.forEach(([v,n,ic],i)=>ACH.push({id:'t'+i,n,ic,d:'Produce '+fmt(v)+' energy in total.',t:()=>S.all>=v}));
+ const eps=[[10,'Trickle'],[1e3,'Stream'],[1e6,'River'],[1e9,'Ocean'],[1e12,'Torrent of Light'],[1e15,'Supernova Pace']];
+ eps.forEach(([v,n],i)=>ACH.push({id:'e'+i,n,ic:'⚡',d:'Reach '+fmt(v)+' energy per second.',t:()=>EPS>=v}));
+ B.forEach((b,i)=>ACH.push({id:'b'+i,n:'First '+b.n,ic:b.ic,d:'Own a '+b.n+'.',t:()=>S.owned[i]>=1}));
+ [[100,'Centurion of Foam',0],[100,'Stellar Hundred',5],[100,'Hundred Worlds',7],[100,'Hundred Minds',9],[50,'Simulation Farm',12]]
+   .forEach(([v,n,i],k)=>ACH.push({id:'m'+k,n,ic:B[i].ic,d:'Own '+v+' '+B[i].n+'.',t:()=>S.owned[i]>=v}));
+ [[100,'Tap Tap'],[1000,'Repetitive Creation'],[10000,'Finger of God']].forEach(([v,n],i)=>ACH.push({id:'k'+i,n,ic:'👆',d:'Tap '+fmt(v)+' times.',t:()=>S.clicksAll>=v}));
+ [[1,'Shooting Star'],[10,'Comet Chaser'],[50,'Comet Collector'],[150,'Halley\'s Regular']].forEach(([v,n],i)=>ACH.push({id:'q'+i,n,ic:'☄️',d:'Catch '+v+' comet'+(v>1?'s':'')+'.',t:()=>S.cometsAll>=v}));
+ [[1,'Big Crunch'],[3,'Cyclic Cosmology'],[10,'Eternal Return'],[25,'Ouroboros']].forEach(([v,n],i)=>ACH.push({id:'p'+i,n,ic:'🌀',d:'Crunch the universe '+v+' time'+(v>1?'s':'')+'.',t:()=>S.crunches>=v}));
+ ACH.push({id:'x0',n:'Patience',ic:'⏳',d:'Come back to over an hour of away earnings.',t:()=>S.flags.longAway});
+ ACH.push({id:'x1',n:'Lawmaker',ic:'⚖️',d:'Play a universe under every law of physics.',t:()=>LAWS.every(l=>S.lawsSeen.includes(l.id))});
+ ACH.push({id:'x2',n:'Full Bloom',ic:'🌳',d:'Own every Dark Matter node.',t:()=>TREE.every(t=>S.tree[t.id])});
+ ACH.push({id:'x3',n:'Speedrun the Cosmos',ic:'🏁',d:'Reach Galaxy Clusters within 2 hours of a Big Bang.',t:()=>S.owned[11]>=1&&(S.playRun<7200)});
+ ACH.push({id:'x4',n:'Hands Off',ic:'🧘',d:'Reach 1 million energy/sec having tapped fewer than 20 times this universe.',t:()=>EPS>=1e6&&S.clicks<20});
+})();
+
+/* ═══════════════════════════ STATE ═══════════════════════════ */
+const SAVE_KEY='idle-universe-v1';
+function fresh(keep){
+ const s={
+  e:0, run:0, all:0, clicks:0, clicksAll:0, comets:0, cometsAll:0,
+  owned:Array(NB).fill(0), ups:{}, ach:{}, tree:{}, dm:0, dmTotal:0, crunches:0,
+  law:'std', lawsSeen:['std'], pendingLaw:false, playRun:0, playAll:0, bestEps:0,
+  flags:{}, opts:{sound:1,sci:0,oracle:1,arch:1,qty:1}, buffs:[], last:Date.now(), ended:0,
+ };
+ if(keep){ for(const k of ['all','clicksAll','cometsAll','ach','tree','dm','dmTotal','crunches','lawsSeen','playAll','bestEps','flags','opts','ended']) s[k]=keep[k]; }
+ return s;
+}
+let S=fresh();
+let EPS=0, CLICK=1, MULT=[], GMUL=1;
+
+/* ═══════════════════════════ ECONOMY ═══════════════════════════ */
+const has=id=>!!S.ups[id], tree=id=>!!S.tree[id];
+function scale(){ if(S.law==='cheap') return 1.12; return tree('rebate')?1.14:1.15; }
+function costMul(){ return tree('infl')?0.9:1; }
+function upCostMul(){ return (S.law==='cheap'?3:1)*costMul(); }
+function bCost(i,n=1,owned=S.owned[i]){
+ const s=scale(), c0=B[i].base*costMul()*s**owned;
+ return n===1?c0:c0*(s**n-1)/(s-1);
+}
+function maxBuy(i){
+ const s=scale(), c0=B[i].base*costMul()*s**S.owned[i];
+ if(S.e<c0) return 0;
+ return Math.floor(Math.log(S.e*(s-1)/c0+1)/Math.log(s));
+}
+function lawMul(i){
+ switch(S.law){
+  case 'grav': return (i===4||i===5||i===11)?3:(i<=2?.5:1);
+  case 'fert': return (i===8||i===9)?4:(i===10?.5:1);
+  case 'obs':  return .7;
+  case 'rich': return i<=3?10:(i>=5?.8:1);
+ } return 1;
+}
+function tiersOwned(i){ let n=0; for(let t=0;t<8;t++) if(S.ups['t'+i+'_'+t]) n++; return n; }
+function achBonus(){ return 1+Object.keys(S.ach).length*(tree('echo')?.02:.01); }
+function dmBonus(){ return 1+S.dmTotal*(tree('immune')?.15:.10); }
+function recalc(){
+ GMUL=dmBonus()*achBonus();
+ for(const g of GLOBALUPS) if(has(g.id)) GMUL*=g.m;
+ if(tree('second')) GMUL*=3;
+ if(S.law==='fast') GMUL*=.85;
+ if(S.law==='vac') GMUL*=2.5;
+ let eps=0;
+ for(let i=0;i<NB;i++){
+  let m=2**tiersOwned(i)*lawMul(i);
+  for(const s of SYN) if(s.a===i&&has(s.id)) m*=1+s.p*S.owned[s.b];
+  MULT[i]=m;
+  eps+=B[i].r*S.owned[i]*m*RATE_K;
+ }
+ EPS=eps*GMUL*buffMul('frenzy');
+ let cx=1, cp=0;
+ for(const c of CLICKUPS) if(has(c.id)){ cx*=c.x; cp+=c.p; }
+ if(tree('heat')){ cx*=3; cp+=.01; }
+ if(S.law==='obs'){ cx*=10; cp+=.05; }
+ if(S.law==='cold') cx*=.25;
+ CLICK=(cx*dmBonus()+EPS*cp)*buffMul('burst');
+ if(EPS>S.bestEps) S.bestEps=EPS;
+}
+function bRate(i){ return B[i].r*RATE_K*MULT[i]*GMUL*buffMul('frenzy'); }
+function buffMul(kind){ let m=1; for(const b of S.buffs) if(b.k===kind) m*=b.m; return m; }
+
+function earn(x){ S.e+=x; S.run+=x; S.all+=x; }
+function buy(i,n){
+ n=n||qtyFor(i); if(n<=0) return false;
+ const c=bCost(i,n); if(S.e<c) return false;
+ S.e-=c; S.owned[i]+=n; recalc(); sfx('buy',i); dirty=true; vis.sync(); return true;
+}
+function qtyFor(i){ const q=S.opts.qty; return q==='max'?Math.max(1,maxBuy(i)):q; }
+
+/* upgrades list (built once) */
+const UPS=[];
+for(let i=0;i<NB;i++) for(let t=0;t<8;t++){
+ const nm=(TNAMES[B[i].id]||[])[t]||(B[i].n+' Mk '+(t+1));
+ UPS.push({id:'t'+i+'_'+t,n:nm,ic:B[i].ic,tier:t+1,cost:B[i].base*TIER_COST[t],kind:'tier',b:i,
+   req:()=>S.owned[i]>=TIER_AT[t]&&(t===0||has('t'+i+'_'+(t-1))),
+   eff:B[i].n+' production ×2.',q:'Unlocked at '+TIER_AT[t]+' '+B[i].n+'.'});
+}
+SYN.forEach(s=>UPS.push({id:s.id,n:s.n,ic:'🔗',cost:s.cost,kind:'syn',
+ req:()=>S.owned[s.req[0]]>=s.req[1]&&S.owned[s.req[2]]>=s.req[3],
+ eff:B[s.a].n+' +'+Math.round(s.p*1000)/10+'% for each '+B[s.b].n+' owned.',q:s.q}));
+CLICKUPS.forEach(c=>UPS.push({id:c.id,n:c.n,ic:c.ic,cost:c.cost,kind:'click',req:c.req,
+ eff:(c.x>1?'Taps ×'+c.x+'.':'Taps also yield +1% of energy/sec.'),q:c.q}));
+GLOBALUPS.forEach(g=>UPS.push({id:g.id,n:g.n,ic:g.ic,cost:g.cost,kind:'global',req:g.req,
+ eff:g.comet===1?'Comets appear 25% more often.':g.comet===2?'Comet effects last 40% longer.':'All production ×'+g.m+'.',q:g.q}));
+const UPMAP=Object.fromEntries(UPS.map(u=>[u.id,u]));
+function upCost(u){ return u.cost*upCostMul(); }
+function availUps(){ return UPS.filter(u=>!has(u.id)&&u.req()).sort((a,b)=>a.cost-b.cost); }
+function buyUp(id){
+ const u=UPMAP[id]; if(!u||has(id)||!u.req()) return false;
+ const c=upCost(u); if(S.e<c) return false;
+ S.e-=c; S.ups[id]=1; recalc(); sfx('up'); dirty=true; return true;
+}
+
+/* tap */
+function tap(px,py){
+ const g=CLICK; earn(g); S.clicks++; S.clicksAll++;
+ recalc(); vis.pulse(); sfx('tap');
+ if(px!=null) floater('+'+fmt(g),px,py);
+ hideHint();
+}
+
+/* ═══════════════════════════ COMETS ═══════════════════════════ */
+let cometTimer=60+Math.random()*60;
+function cometInterval(){
+ let base=100+Math.random()*120;
+ if(has('g6')) base/=1.25; if(tree('lure')) base/=1.3; if(S.law==='fast') base/=2;
+ return base;
+}
+function buffDur(){ return (has('g7')?1.4:1)*(tree('tails')?1.5:1); }
+function catchComet(c,px,py){
+ S.comets++; S.cometsAll++;
+ if(S.law==='vac'&&Math.random()<.25){
+  let top=-1; for(let i=NB-1;i>=0;i--) if(S.owned[i]>0){top=i;break;}
+  if(top>=0){ const lost=Math.max(1,Math.floor(S.owned[top]*.1)); S.owned[top]-=lost; recalc(); vis.sync();
+   toast('🫧 <b>Void bubble!</b> '+lost+' '+B[top].n+' erased from existence.'); floater('VOID',px,py,true); sfx('void'); return; }
+ }
+ const r=Math.random(); let msg;
+ if(r<.45){
+  const g=Math.min(S.e*.15+13, EPS/buffMul('frenzy')*900+13)*(tree('golden')?2:1);
+  earn(g); msg='☄️ <b>Lucky comet!</b> +'+fmt(g)+' energy'; floater('+'+fmt(g),px,py,true);
+ } else if(r<.80){
+  addBuff('frenzy',7,60*buffDur(),'Frenzy ×7'); msg='🔥 <b>Comet frenzy!</b> Production ×7 for '+Math.round(60*buffDur())+'s'; floater('FRENZY',px,py,true);
+ } else if(r<.93){
+  addBuff('burst',333,10*buffDur(),'Starburst taps ×333'); msg='✨ <b>Starburst!</b> Taps ×333 for '+Math.round(10*buffDur())+'s — tap fast!'; floater('STARBURST',px,py,true);
+ } else {
+  for(let k=0;k<7;k++) setTimeout(()=>vis.spawnComet(true),k*350); msg='🌠 <b>Meteor shower!</b> Catch the little ones.'; floater('SHOWER',px,py,true);
+ }
+ if(c&&c.mini){ const g=EPS/buffMul('frenzy')*20+5; earn(g); recalc(); floater('+'+fmt(g),px,py,true); sfx('comet'); return; }
+ recalc(); toast(msg); sfx('comet');
+}
+function addBuff(k,m,dur,label){ S.buffs=S.buffs.filter(b=>b.k!==k); S.buffs.push({k,m,t:dur,max:dur,label}); recalc(); }
+
+/* ═══════════════════════════ PRESTIGE ═══════════════════════════ */
+const CRUNCH_AT=1e10;
+const dmFor=all=>Math.floor(Math.pow(all/CRUNCH_AT,.25));   // fourth root: 16x the energy for 2x the Dark Matter
+function dmPending(){ return Math.max(0,dmFor(S.all)-S.dmTotal); }
+function canCrunch(){ return S.run>=CRUNCH_AT&&dmPending()>0; }
+function crunch(){
+ if(!canCrunch()) return false;
+ const g=dmPending();
+ const keep=JSON.parse(JSON.stringify(S));
+ keep.dm+=g; keep.dmTotal+=g; keep.crunches++;
+ S=fresh(keep);
+ if(tree('seed')){ S.owned[0]=20; S.owned[1]=10; }
+ S.pendingLaw=true;
+ recalc(); vis.reset(); dirty=true; save();
+ return g;
+}
+function buyNode(id){
+ const n=TREE.find(t=>t.id===id); if(!n||S.tree[id]) return false;
+ if(!n.pre.every(p=>S.tree[p])||S.dm<n.k) return false;
+ S.dm-=n.k; S.tree[id]=1; recalc(); sfx('up'); dirty=true;
+ if(id==='omega') setTimeout(ending,600);
+ return true;
+}
+function lawChoices(){
+ const pool=LAWS.filter(l=>l.id!=='std');
+ const n=tree('laws')?4:3, out=[];
+ // prefer laws you have never played, so Lawmaker is reachable
+ const unseen=pool.filter(l=>!S.lawsSeen.includes(l.id)).sort(()=>Math.random()-.5);
+ const seen=pool.filter(l=>S.lawsSeen.includes(l.id)).sort(()=>Math.random()-.5);
+ for(const l of unseen.concat(seen)) if(out.length<n) out.push(l);
+ return [LAWS[0]].concat(out);
+}
+function setLaw(id){ S.law=id; if(!S.lawsSeen.includes(id)) S.lawsSeen.push(id); S.pendingLaw=false; recalc(); dirty=true; save(); }
+
+/* ═══════════════════════════ ACHIEVEMENTS ═══════════════════════════ */
+function checkAch(){
+ for(const a of ACH) if(!S.ach[a.id]&&a.t()){
+  S.ach[a.id]=1; recalc(); toast('🏆 <b>'+a.n+'</b> — '+a.d+' <span style="color:#7dffb0">(+'+(tree('echo')?2:1)+'% production)</span>'); sfx('ach'); dirty=true;
+ }
+}
+
+/* ═══════════════════════════ SAVE ═══════════════════════════ */
+function snapshot(){ S.last=Date.now(); return JSON.parse(JSON.stringify(S)); }
+function restore(d){
+ const base=fresh();
+ S=Object.assign(base,d);
+ S.opts=Object.assign(fresh().opts,d.opts||{});
+ S.flags=d.flags||{}; S.owned=(d.owned||[]).concat(Array(NB).fill(0)).slice(0,NB);
+ S.buffs=d.buffs||[];
+ recalc(); vis.reset(); dirty=true;
+}
+function save(){ if(DEMO) return; try{ localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot())); }catch(e){} }
+function offlineGain(sec){
+ recalc();
+ const eff=(tree('flow')?1:.5)*(S.law==='cold'?3:1);
+ return EPS/buffMul('frenzy')*sec*eff;
+}
+function load(){
+ let d=null; try{ d=JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){}
+ if(!d) return;
+ restore(d);
+ const away=Math.min(7*86400,(Date.now()-(d.last||Date.now()))/1000);
+ S.buffs=[]; recalc();
+ if(away>60&&EPS>0){
+  const g=offlineGain(away); earn(g);
+  if(away>=3600) S.flags.longAway=1;
+  showModal('<h2>WHILE YOU WERE AWAY</h2><p>The universe kept expanding for <b>'+fmtTime(away)+'</b>.</p><div class="big">+'+fmt(g)+'</div><p style="margin-top:8px">energy, at '+Math.round((tree('flow')?100:50)*(S.law==='cold'?3:1))+'% efficiency.</p><div class="row"><button class="btn" onclick="closeModal()">Continue</button></div>');
+ }
+}
+if(window.GBSave) GBSave.register({ save:()=>S.all>0?snapshot():null, load:d=>{restore(d);save();}, autosave:60 });
+
+/* ═══════════════════════════ AUDIO ═══════════════════════════ */
+let AC=null, master=null, padOn=false;
+function audio(create){
+ if(AC||!create) return AC;
+ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); master=AC.createGain(); master.gain.value=.5; master.connect(AC.destination);}catch(e){ AC=null; }
+ return AC;
+}
+const PENTA=[0,2,4,7,9,12,14,16,19,21];
+function tone(f,dur,type,vol,delay=0,slide){
+ if(!S.opts.sound||!audio()) return;
+ const t=AC.currentTime+delay, o=AC.createOscillator(), g=AC.createGain();
+ o.type=type; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+dur);
+ g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+ o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+.05);
+}
+function sfx(k,i){
+ if(!S.opts.sound) return;
+ const root=220*2**((Math.min(eraIdx(),12))/24);
+ if(k==='tap'){ const n=PENTA[Math.floor(Math.random()*PENTA.length)]; tone(root*2*2**(n/12),.25,'sine',.12); tone(root*4*2**(n/12),.12,'triangle',.03); }
+ else if(k==='buy'){ tone(root*2**((i%7)/12)*1.5,.18,'triangle',.1); tone(root*3,.25,'sine',.05,.05); }
+ else if(k==='up'){ [0,4,7,12].forEach((n,j)=>tone(root*2*2**(n/12),.3,'sine',.08,j*.06)); }
+ else if(k==='ach'){ [0,7,12,16,19].forEach((n,j)=>tone(root*2*2**(n/12),.5,'triangle',.07,j*.08)); }
+ else if(k==='comet'){ tone(1800,.6,'sine',.08,0,300); [0,5,9,12].forEach((n,j)=>tone(root*4*2**(n/12),.4,'sine',.05,.1+j*.05)); }
+ else if(k==='void'){ tone(200,1.2,'sawtooth',.08,0,40); }
+ else if(k==='crunch'){ tone(60,3,'sawtooth',.15,0,20); tone(2000,3,'sine',.06,0,30); }
+}
+function startPad(){
+ if(padOn||!S.opts.sound||!audio(true)) return; padOn=true; if(AC.state==='suspended') AC.resume();
+ const g=AC.createGain(); g.gain.value=0; g.connect(master); g.gain.linearRampToValueAtTime(.035,AC.currentTime+6);
+ const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=500; lp.connect(g);
+ [55,82.4,110,164.8].forEach((f,k)=>{ const o=AC.createOscillator(); o.type=k%2?'triangle':'sine'; o.frequency.value=f; o.detune.value=(k-1.5)*6; o.connect(lp); o.start(); });
+ const lfo=AC.createOscillator(), lg=AC.createGain(); lfo.frequency.value=.05; lg.gain.value=250; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+ startPad.gain=g;
+}
+
+/* ═══════════════════════════ VISUALS ═══════════════════════════ */
+const cv=document.getElementById('cv'), cx=cv.getContext('2d');
+let W=800,H=600,DPR=1;
+function resize(){ const r=cv.getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1); W=Math.max(200,r.width); H=Math.max(200,r.height); cv.width=W*DPR; cv.height=H*DPR; cx.setTransform(DPR,0,0,DPR,0,0); vis.layout(); }
+function eraIdx(){ for(let i=NB-1;i>=0;i--) if(S.owned[i]>0) return i; return 0; }
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function sprite(size,draw){ const c=document.createElement('canvas'); c.width=c.height=size; draw(c.getContext('2d'),size); return c; }
+const NEB_SPR=[['#ff5ab4','#7a3cff'],['#3cc8ff','#4a2cff'],['#ff9a3c','#ff3c6e'],['#5affc8','#2c7aff']].map(([a,b])=>sprite(256,(g,s)=>{
+ for(let k=0;k<14;k++){ const x=rnd(.25,.75)*s,y=rnd(.25,.75)*s,r=rnd(.12,.32)*s; const gr=g.createRadialGradient(x,y,0,x,y,r); const col=k%2?a:b;
+  gr.addColorStop(0,col+'40'); gr.addColorStop(1,col+'00'); g.fillStyle=gr; g.fillRect(0,0,s,s); }
+}));
+const GAL_SPR=sprite(128,(g,s)=>{
+ const c=s/2; const gr=g.createRadialGradient(c,c,0,c,c,s*.18); gr.addColorStop(0,'rgba(255,240,220,.9)'); gr.addColorStop(1,'rgba(255,200,150,0)'); g.fillStyle=gr; g.fillRect(0,0,s,s);
+ for(let k=0;k<600;k++){ const arm=k%2, t=Math.random()*3.2, a=t*1.7+arm*Math.PI+rnd(-.25,.25), r=(t/3.2)*s*.46;
+  g.fillStyle=`rgba(${180+Math.random()*75|0},${190+Math.random()*60|0},255,${.25+Math.random()*.5})`; g.fillRect(c+Math.cos(a)*r,c+Math.sin(a)*r,1.2,1.2); }
+});
+const GLOW=sprite(64,(g,s)=>{ const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.2,'rgba(255,255,255,.5)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,s,s); });
+const CAPS=[60,45,30,30,9,140,8,8,8,26,24,10,6], PER=[8,6,5,4,1.2,14,1,1,1,3,3,1.2,.8];
+const vis={
+ ents:[], counts:Array(NB).fill(0), sparks:[], comets:[], rings:[], pulseT:0, t:0, bg:[...ERA_BG[0]], bgStars:[], heartX:0, heartY:0, R:0,
+ reset(){ this.ents=[]; this.counts.fill(0); this.sparks=[]; this.bg=[...ERA_BG[eraIdx()]]; this.sync(); },
+ layout(){ this.heartX=W/2; this.heartY=H*.56; this.R=Math.min(W,H); this.bgStars=[]; for(let k=0;k<220;k++) this.bgStars.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*1.3+.2,p:Math.random()*6}); },
+ want(i){ const n=S.owned[i]; if(!n) return 0;
+  // older matter gets absorbed as the universe matures: quarks thin out once stars and planets arrive
+  const age=eraIdx()-i, fade=(i<=3&&age>2)?Math.max(.12,1-(age-2)*.22):1;
+  return Math.max(1,Math.round(Math.min(CAPS[i],Math.ceil(Math.log2(n+1)*PER[i]))*fade)); },
+ sync(){
+  for(let i=0;i<NB;i++){ const w=this.want(i);
+   while(this.counts[i]<w){ this.ents.push(this.make(i)); this.counts[i]++; }
+   if(this.counts[i]>w){ let drop=this.counts[i]-w; this.ents=this.ents.filter(e=>!(e.k===i&&drop-->0)); this.counts[i]=w; }
+  }
+ },
+ make(k){
+  const R=this.R, e={k,born:this.t,p:Math.random()*6.28};
+  const far=()=>{ const a=Math.random()*6.28, r=rnd(.12,.62)*R; return [this.heartX+Math.cos(a)*r*1.3,this.heartY+Math.sin(a)*r*.8]; };
+  switch(k){
+   case 0: [e.x,e.y]=[Math.random()*W,Math.random()*H]; e.f=rnd(1,3); break;
+   case 1: case 2: case 3: [e.x,e.y]=far(); e.vx=rnd(-8,8); e.vy=rnd(-8,8); e.rot=rnd(2,5)*(Math.random()<.5?-1:1); break;
+   case 4: [e.x,e.y]=far(); e.spr=NEB_SPR[Math.random()*4|0]; e.s=rnd(.35,.7)*R; e.rot=rnd(-.02,.02); e.a=Math.random()*6.28; break;
+   case 5: [e.x,e.y]=[Math.random()*W,Math.random()*H]; e.s=rnd(.6,2.2); e.col=['#ffd6a0','#fff4e0','#cfe0ff','#a8c4ff','#ffb08a'][Math.random()*5|0]; e.tw=rnd(1,4); break;
+   case 6: [e.x,e.y]=far(); e.per=rnd(4,9); e.col=['#ff7ad9','#6ee7ff','#ffd36a'][Math.random()*3|0]; break;
+   case 7: case 8: { const idx=this.ents.filter(q=>q.k===7||q.k===8).length; e.orb=.13+idx*.035; e.sp=.6/Math.sqrt(e.orb*10); e.sz=rnd(4,9);
+     e.col=k===7?['#c99b6a','#8fa6c9','#d7b37a','#9c7fc9','#c9806a'][Math.random()*5|0]:'#3aa0ff'; break; }
+   case 9: { const a=Math.random()*6.28, r=rnd(.2,.5)*R; e.x=this.heartX+Math.cos(a)*r*1.4; e.y=this.heartY+Math.sin(a)*r*.75; break; }
+   case 10: e.a=Math.random()*6.28; e.len=rnd(.2,.5); e.lay=Math.random()*3|0; break;
+   case 11: [e.x,e.y]=[Math.random()*W,Math.random()*H*.9]; e.s=rnd(50,110); e.rot=rnd(-.15,.15); e.a=Math.random()*6.28; e.tilt=rnd(.35,1); break;
+   case 12: e.y=Math.random()*H; e.h=rnd(2,14); e.next=rnd(0,4); break;
+  }
+  return e;
+ },
+ pulse(){ this.pulseT=1; for(let k=0;k<8;k++){ const a=Math.random()*6.28,v=rnd(80,260); this.sparks.push({x:this.heartX,y:this.heartY,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,c:k%2?'#b28cff':'#fff'}); } },
+ spawnComet(mini){
+  const fromL=Math.random()<.5, y=rnd(.12,.75)*H;
+  this.comets.push({x:fromL?-40:W+40,y,vx:(fromL?1:-1)*rnd(mini?140:70,mini?220:110),vy:rnd(-15,15),mini:!!mini,life:0,trail:[]});
+ },
+ hitComet(px,py){
+  for(const c of this.comets){ if(Math.hypot(c.x-px,c.y-py)<(c.mini?26:38)){ this.comets.splice(this.comets.indexOf(c),1); for(let k=0;k<24;k++){ const a=Math.random()*6.28,v=rnd(60,300); this.sparks.push({x:c.x,y:c.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1.4,c:'#ffd36a'}); } return c; } }
+  return null;
+ },
+ draw(dt){
+  this.t+=dt; const t=this.t, era=eraIdx(), ctx=cx;
+  // background crossfade
+  const tgt=ERA_BG[era]; for(let j=0;j<2;j++) this.bg[j]=lerpCol(this.bg[j],tgt[j],Math.min(1,dt*.8));
+  const bgG=ctx.createRadialGradient(this.heartX,this.heartY,0,this.heartX,this.heartY,Math.max(W,H)*.8);
+  bgG.addColorStop(0,this.bg[1]); bgG.addColorStop(1,this.bg[0]); ctx.fillStyle=bgG; ctx.fillRect(0,0,W,H);
+  // far stars appear once matter is transparent
+  if(era>=3){ const a=Math.min(1,(era-2)*.35); for(const s of this.bgStars){ ctx.globalAlpha=a*(.35+.35*Math.sin(t*.7+s.p)); ctx.fillStyle='#cfd8ff'; ctx.fillRect(s.x,s.y,s.s,s.s); } ctx.globalAlpha=1; }
+  ctx.globalCompositeOperation='lighter';
+  for(const e of this.ents) if(e.k===11) this.drawEnt(e,dt,t);
+  for(const e of this.ents) if(e.k===4) this.drawEnt(e,dt,t);
+  ctx.globalCompositeOperation='source-over';
+  for(const e of this.ents) if(e.k!==4&&e.k!==11&&e.k!==10&&e.k!==12&&e.k!==7&&e.k!==8&&e.k!==9) this.drawEnt(e,dt,t);
+  this.drawCivNet(t);
+  // orbits & planets behind/in front of heart by y
+  const orb=this.ents.filter(e=>e.k===7||e.k===8);
+  if(orb.length){ ctx.strokeStyle='rgba(180,190,255,.07)'; ctx.lineWidth=1; for(const e of orb){ ctx.beginPath(); ctx.ellipse(this.heartX,this.heartY,e.orb*this.R*1.5,e.orb*this.R*.5,0,0,6.28); ctx.stroke(); } }
+  for(const e of orb) if(Math.sin(t*e.sp+e.p)<0) this.drawEnt(e,dt,t);
+  for(const e of this.ents) if(e.k===10&&e.lay===0) this.drawEnt(e,dt,t);
+  this.drawHeart(dt,t,era);
+  for(const e of this.ents) if(e.k===10&&e.lay>0) this.drawEnt(e,dt,t);
+  for(const e of orb) if(Math.sin(t*e.sp+e.p)>=0) this.drawEnt(e,dt,t);
+  // comets
+  for(const c of this.comets){
+   c.x+=c.vx*dt; c.y+=c.vy*dt; c.life+=dt; c.trail.unshift([c.x,c.y]); if(c.trail.length>(c.mini?14:28)) c.trail.pop();
+   ctx.globalCompositeOperation='lighter';
+   for(let j=0;j<c.trail.length;j++){ const [x,y]=c.trail[j], a=1-j/c.trail.length; ctx.globalAlpha=a*.6; ctx.drawImage(GLOW,x-(c.mini?8:14)*a,y-(c.mini?8:14)*a,(c.mini?16:28)*a,(c.mini?16:28)*a); }
+   ctx.globalAlpha=1; ctx.drawImage(GLOW,c.x-(c.mini?12:22),c.y-(c.mini?12:22),c.mini?24:44,c.mini?24:44);
+   ctx.globalCompositeOperation='source-over';
+   ctx.fillStyle='#fff3c4'; ctx.beginPath(); ctx.arc(c.x,c.y,c.mini?3:5,0,6.28); ctx.fill();
+   if(!c.mini){ ctx.strokeStyle=`rgba(255,211,106,${.4+.3*Math.sin(t*8)})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(c.x,c.y,16+3*Math.sin(t*6),0,6.28); ctx.stroke(); }
+  }
+  this.comets=this.comets.filter(c=>c.x>-80&&c.x<W+80);
+  // simulation glitch overlay
+  for(const e of this.ents) if(e.k===12) this.drawEnt(e,dt,t);
+  // sparks
+  ctx.globalCompositeOperation='lighter';
+  for(const s of this.sparks){ s.x+=s.vx*dt; s.y+=s.vy*dt; s.vx*=.94; s.vy*=.94; s.l-=dt*1.6; ctx.globalAlpha=Math.max(0,s.l); ctx.fillStyle=s.c; ctx.fillRect(s.x-1.5,s.y-1.5,3,3); }
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  this.sparks=this.sparks.filter(s=>s.l>0);
+  for(const r of this.rings){ r.r+=dt*r.v; r.a-=dt*.5; ctx.strokeStyle=`rgba(255,211,106,${Math.max(0,r.a)})`; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,6.28); ctx.stroke(); }
+  this.rings=this.rings.filter(r=>r.a>0);
+ },
+ drawEnt(e,dt,t){
+  const ctx=cx, hx=this.heartX, hy=this.heartY, R=this.R;
+  switch(e.k){
+   case 0: { const a=Math.max(0,Math.sin(t*e.f+e.p)); if(a<.02&&Math.random()<.3){ e.x=Math.random()*W; e.y=Math.random()*H; }
+     ctx.fillStyle=`rgba(200,190,255,${a*.7})`; ctx.fillRect(e.x,e.y,1.6,1.6); break; }
+   case 1: case 2: case 3: {
+     e.x+=e.vx*dt; e.y+=e.vy*dt; if(e.x<0||e.x>W) e.vx*=-1; if(e.y<0||e.y>H) e.vy*=-1;
+     e.vx+=rnd(-20,20)*dt; e.vy+=rnd(-20,20)*dt; e.vx*=.995; e.vy*=.995;
+     const a=t*e.rot+e.p;
+     if(e.k===1){ const cols=['#ff4d5a','#4dff88','#4d8aff']; for(let j=0;j<3;j++){ const aa=a+j*2.094, x=e.x+Math.cos(aa)*6, y=e.y+Math.sin(aa)*6; ctx.fillStyle=cols[j]; ctx.beginPath(); ctx.arc(x,y,2.4,0,6.28); ctx.fill(); }
+       ctx.strokeStyle='rgba(255,220,120,.25)'; ctx.beginPath(); ctx.arc(e.x,e.y,6,0,6.28); ctx.stroke(); }
+     else if(e.k===2){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=.35; ctx.drawImage(GLOW,e.x-14,e.y-14,28,28); ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+       for(let j=0;j<3;j++){ const aa=a*.5+j*2.094; ctx.fillStyle=j===2?'#8a9bd0':'#ff8a5a'; ctx.beginPath(); ctx.arc(e.x+Math.cos(aa)*3.5,e.y+Math.sin(aa)*3.5,3.3,0,6.28); ctx.fill(); } }
+     else { ctx.fillStyle='#bfe0ff'; ctx.beginPath(); ctx.arc(e.x,e.y,3,0,6.28); ctx.fill(); ctx.strokeStyle='rgba(140,200,255,.35)'; ctx.beginPath(); ctx.ellipse(e.x,e.y,11,5,a*.3,0,6.28); ctx.stroke();
+       ctx.fillStyle='#fff'; ctx.fillRect(e.x+Math.cos(a)*11-1,e.y+Math.sin(a)*5-1,2,2); }
+     break; }
+   case 4: { e.a+=e.rot*dt; ctx.save(); ctx.translate(e.x,e.y); ctx.rotate(e.a); ctx.globalAlpha=.55+.15*Math.sin(t*.3+e.p); ctx.drawImage(e.spr,-e.s/2,-e.s/2,e.s,e.s); ctx.restore(); ctx.globalAlpha=1; break; }
+   case 5: { const a=.55+.45*Math.sin(t*e.tw+e.p); ctx.globalAlpha=a; ctx.fillStyle=e.col; ctx.beginPath(); ctx.arc(e.x,e.y,e.s,0,6.28); ctx.fill();
+     if(e.s>1.8){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=a*.5; ctx.drawImage(GLOW,e.x-e.s*6,e.y-e.s*6,e.s*12,e.s*12); ctx.fillStyle=e.col; ctx.fillRect(e.x-e.s*5,e.y-.5,e.s*10,1); ctx.fillRect(e.x-.5,e.y-e.s*5,1,e.s*10); ctx.globalCompositeOperation='source-over'; }
+     ctx.globalAlpha=1; break; }
+   case 6: { const ph=((t+e.p*3)%e.per)/e.per; const r=ph*55; ctx.strokeStyle=e.col; ctx.globalAlpha=(1-ph)*.7; ctx.lineWidth=2.2*(1-ph)+.4; ctx.beginPath(); ctx.arc(e.x,e.y,r,0,6.28); ctx.stroke();
+     ctx.globalAlpha=(1-ph)*.25; ctx.beginPath(); ctx.arc(e.x,e.y,r*.7,0,6.28); ctx.stroke(); ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.fillRect(e.x-1,e.y-1,2,2); break; }
+   case 7: case 8: { const a=t*e.sp+e.p, x=hx+Math.cos(a)*e.orb*R*1.5, y=hy+Math.sin(a)*e.orb*R*.5, depth=.75+.25*Math.sin(a), s=e.sz*depth;
+     ctx.fillStyle=e.col; ctx.beginPath(); ctx.arc(x,y,s,0,6.28); ctx.fill();
+     if(e.k===8){ ctx.fillStyle='#46d17a'; ctx.beginPath(); ctx.arc(x-s*.3,y-s*.2,s*.5,0,6.28); ctx.fill(); ctx.fillStyle='rgba(255,255,255,.6)'; ctx.fillRect(x-s*.6,y+s*.2,s*.9,1); }
+     const sh=ctx.createLinearGradient(x-s,y,x+s,y); const left=Math.cos(a)>0; sh.addColorStop(left?0:1,'rgba(0,0,0,0)'); sh.addColorStop(left?1:0,'rgba(0,0,0,.65)'); ctx.fillStyle=sh; ctx.beginPath(); ctx.arc(x,y,s,0,6.28); ctx.fill();
+     break; }
+   case 10: { const r=R*(.075+e.lay*.012), a=e.a+t*(.2+e.lay*.07)*(e.lay%2?-1:1);
+     ctx.strokeStyle=`rgba(255,${190-e.lay*30},90,.85)`; ctx.lineWidth=3-e.lay*.6; ctx.beginPath(); ctx.ellipse(hx,hy,r,r*.38+e.lay*3,0,a,a+e.len*Math.PI*2); ctx.stroke(); break; }
+   case 11: { e.a+=e.rot*dt*.2; ctx.save(); ctx.translate(e.x,e.y); ctx.scale(1,e.tilt); ctx.rotate(e.a); ctx.globalAlpha=.6; ctx.drawImage(GAL_SPR,-e.s/2,-e.s/2,e.s,e.s); ctx.restore(); ctx.globalAlpha=1; break; }
+   case 12: { e.next-=dt; if(e.next<0){ e.next=rnd(1.5,6); e.on=.18; e.y=Math.random()*H; e.dx=rnd(-30,30); }
+     if(e.on>0){ e.on-=dt; ctx.fillStyle='rgba(125,255,176,.12)'; ctx.fillRect(0,e.y,W,e.h);
+       try{ ctx.drawImage(cv,0,e.y*DPR,W*DPR,e.h*DPR,e.dx,e.y,W,e.h); }catch(_){}
+       ctx.fillStyle='rgba(125,255,176,.7)'; ctx.font='10px monospace'; ctx.fillText(Math.random().toString(2).slice(2,30),Math.random()*W,e.y+e.h); }
+     break; }
+  }
+ },
+ drawCivNet(t){
+  const civ=this.ents.filter(e=>e.k===9); if(!civ.length) return; const ctx=cx;
+  ctx.lineWidth=1;
+  for(let a=0;a<civ.length;a++) for(let b=a+1;b<civ.length;b++){ const d=Math.hypot(civ[a].x-civ[b].x,civ[a].y-civ[b].y); if(d<this.R*.28){
+   ctx.strokeStyle=`rgba(110,231,255,${.18*(1-d/(this.R*.28))})`; ctx.beginPath(); ctx.moveTo(civ[a].x,civ[a].y); ctx.lineTo(civ[b].x,civ[b].y); ctx.stroke();
+   const f=((t*.4+a*.13)%1); ctx.fillStyle='rgba(180,245,255,.8)'; ctx.fillRect(civ[a].x+(civ[b].x-civ[a].x)*f-1,civ[a].y+(civ[b].y-civ[a].y)*f-1,2,2); } }
+  for(const e of civ){ const on=.5+.5*Math.sin(t*3+e.p*5); ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=.3+on*.5; ctx.drawImage(GLOW,e.x-9,e.y-9,18,18); ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over'; ctx.fillStyle='#e8fbff'; ctx.fillRect(e.x-1.5,e.y-1.5,3,3); }
+ },
+ drawHeart(dt,t,era){
+  const ctx=cx, x=this.heartX, y=this.heartY; this.pulseT=Math.max(0,this.pulseT-dt*4);
+  const p=1+this.pulseT*.15, base=this.R*(era<5?.055:.065)*p;
+  let core,halo;
+  if(era===0){ core='#ffffff'; halo='rgba(200,170,255,'; }
+  else if(era<=2){ core='#fff0d0'; halo='rgba(255,130,60,'; }
+  else if(era<=4){ core='#e8f4ff'; halo='rgba(100,170,255,'; }
+  else if(era>=12){ core='#e8fff0'; halo='rgba(125,255,176,'; }
+  else { core='#fffbe8'; halo='rgba(255,200,90,'; }
+  ctx.globalCompositeOperation='lighter';
+  for(let k=3;k>=1;k--){ const r=base*(1.4+k*1.3)*(1+.04*Math.sin(t*1.6+k)); const g=ctx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,halo+(.32/k)+')'); g.addColorStop(1,halo+'0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,6.28); ctx.fill(); }
+  if(era>=5){ ctx.save(); ctx.translate(x,y); ctx.rotate(t*.05); for(let k=0;k<12;k++){ ctx.rotate(Math.PI/6); const l=base*(2.2+.6*Math.sin(t*1.3+k*1.7)); const g=ctx.createLinearGradient(0,0,l,0); g.addColorStop(0,halo+'.35)'); g.addColorStop(1,halo+'0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,-base*.25); ctx.lineTo(l,0); ctx.lineTo(0,base*.25); ctx.fill(); } ctx.restore(); }
+  ctx.globalCompositeOperation='source-over';
+  const g=ctx.createRadialGradient(x-base*.3,y-base*.3,0,x,y,base); g.addColorStop(0,'#ffffff'); g.addColorStop(.6,core); g.addColorStop(1,halo+'.9)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,era===0?base*.45:base,0,6.28); ctx.fill();
+  if(era>=1&&era<=2){ for(let k=0;k<5;k++){ const a=t*2+k*1.26; ctx.fillStyle='rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(x+Math.cos(a)*base*.55,y+Math.sin(a*1.3)*base*.55,base*.12,0,6.28); ctx.fill(); } }
+  if(era===0){ ctx.strokeStyle=`rgba(220,200,255,${.4+.3*Math.sin(t*3)})`; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(x,y,base*(1+.3*((t*.8)%1)),0,6.28); ctx.stroke(); }
+ },
+};
+function hex2(c){ c=c.replace('#',''); return [0,2,4].map(i=>parseInt(c.slice(i,i+2),16)); }
+function lerpCol(a,b,f){ const A=hex2(a),Bc=hex2(b); return '#'+A.map((v,i)=>Math.round(v+(Bc[i]-v)*f).toString(16).padStart(2,'0')).join(''); }
+
+/* ═══════════════════════════ UI ═══════════════════════════ */
+const $=id=>document.getElementById(id);
+let tab='build', dirty=true, tipFor=null;
+function floater(txt,x,y,gold){ const d=document.createElement('div'); d.className='fl'+(gold?' gold':''); d.textContent=txt; d.style.left=(x+rnd(-14,14))+'px'; d.style.top=(y-10)+'px'; $('floaters').appendChild(d); setTimeout(()=>d.remove(),1100); }
+function toast(html){ const d=document.createElement('div'); d.className='toast'; d.innerHTML=html; $('toasts').appendChild(d); setTimeout(()=>{d.style.transition='opacity .5s';d.style.opacity=0;},4500); setTimeout(()=>d.remove(),5000); while($('toasts').children.length>4) $('toasts').firstChild.remove(); }
+function showModal(h){ $('mbox').innerHTML=h; $('modal').classList.add('show'); }
+function closeModal(){ $('modal').classList.remove('show'); }
+let hinted=false; function hideHint(){ if(!hinted){ hinted=true; $('hint').style.display='none'; } }
+
+function renderPane(){
+ const p=$('pane'), st=p.scrollTop;
+ if(tab==='build') p.innerHTML=buildHTML();
+ else if(tab==='ups') p.innerHTML=upsHTML();
+ else if(tab==='cosmos') p.innerHTML=cosmosHTML();
+ else if(tab==='stats') p.innerHTML=statsHTML();
+ else p.innerHTML=achHTML();
+ p.scrollTop=st; dirty=false;
+}
+function buildHTML(){
+ const q=S.opts.qty;
+ let h='<div class="buyrow"><span>BUY</span>'+[1,10,100,'max'].map(v=>`<button class="qbtn ${q===v?'on':''}" data-q="${v}">${v==='max'?'MAX':'×'+v}</button>`).join('')+'</div>';
+ let shown=0; const top=eraIdx();
+ for(let i=0;i<NB;i++){
+  const known=S.owned[i]>0||i<=top+1||S.run>=B[i].base*.5;
+  if(!known){ if(shown++<1) h+=`<div class="bld locked"><div class="ic">❔</div><div><div class="nm">???</div><div class="ds">Keep growing to discover what comes next.</div></div><div class="ow"></div></div>`; continue; }
+  const n=qtyFor(i), c=bCost(i,n), ok=S.e>=c;
+  const share=EPS>0?bRate(i)*S.owned[i]/EPS:0;
+  h+=`<div class="bld ${ok?'':'no'}" data-b="${i}"><div class="ic">${B[i].ic}</div><div><div class="nm">${B[i].n}${n>1?` <span style="color:var(--muted);font-weight:500">×${n}</span>`:''}</div><div class="cs">⚡ ${fmt(c)}</div><div class="ds">${fmt(bRate(i))}/s each</div></div><div class="ow">${S.owned[i]||''}</div><div class="bar" style="width:${(share*100).toFixed(1)}%"></div></div>`;
+ }
+ return h;
+}
+function upsHTML(){
+ const av=availUps();
+ let h='<div class="sect">Available · '+av.length+'</div>';
+ h+=av.length?'<div class="ugrid">'+av.map(u=>`<div class="ug ${S.e>=upCost(u)?'':'no'}" data-u="${u.id}">${u.ic}${u.tier?`<span class="tier">${roman(u.tier)}</span>`:''}</div>`).join('')+'</div>':'<p style="color:var(--muted);font-size:13px;padding:6px">Nothing yet. Own more buildings, tap more, and catch comets to reveal upgrades.</p>';
+ const own=UPS.filter(u=>has(u.id));
+ if(own.length) h+='<div class="sect">Owned · '+own.length+'</div><div class="ugrid">'+own.map(u=>`<div class="ug own" data-u="${u.id}">${u.ic}${u.tier?`<span class="tier">${roman(u.tier)}</span>`:''}</div>`).join('')+'</div>';
+ return h;
+}
+const roman=n=>['','I','II','III','IV','V','VI','VII','VIII'][n]||n;
+function cosmosHTML(){
+ const pend=dmPending(), law=LAWS.find(l=>l.id===S.law);
+ let h=`<div class="card"><h3>🌀 THE BIG CRUNCH</h3><p>Collapse this universe back into a singularity. You lose your energy, buildings and upgrades, and keep <b>Dark Matter</b>, trophies and the tree below.</p>
+ <p style="margin-top:8px">Each Dark Matter ever earned gives <b>+${tree('immune')?15:10}% production</b> forever.</p>
+ <div style="display:flex;align-items:center;gap:14px;margin-top:12px"><div><div style="font-size:11px;color:var(--muted);letter-spacing:2px">CRUNCH NOW FOR</div><div class="big">+${fmt(pend,0)} DM</div></div>
+ <button class="btn red" data-act="crunch" ${canCrunch()?'':'disabled'}>Big Crunch</button></div>
+ ${S.run<CRUNCH_AT?`<p style="margin-top:8px;font-size:12px">Needs ${fmt(CRUNCH_AT)} energy produced in this universe (${(S.run/CRUNCH_AT*100).toFixed(1)}%).</p>`:pend===0?`<p style="margin-top:8px;font-size:12px">Next Dark Matter at ${fmt((S.dmTotal+1)**4*CRUNCH_AT)} lifetime energy.</p>`:''}</div>`;
+ h+=`<div class="card"><h3>⚖️ LAW OF THIS UNIVERSE</h3><p><b>${law.n}</b> — <span style="color:var(--green)">${law.g}</span>${law.id!=='std'?' · <span style="color:var(--red)">'+law.bd+'</span>':''}</p>${S.crunches?'':'<p style="margin-top:6px;font-size:12px">After your first Big Crunch you choose the laws of each new universe.</p>'}</div>`;
+ h+=`<div class="card"><h3>🌑 DARK MATTER TREE</h3><p>Unspent: <b style="color:var(--violet)">${fmt(S.dm,0)} DM</b> · Lifetime: ${fmt(S.dmTotal,0)}</p><div class="tree" style="margin-top:10px">`;
+ for(const n of TREE){ const own=S.tree[n.id], pre=n.pre.every(p=>S.tree[p]), can=!own&&pre&&S.dm>=n.k;
+  h+=`<div class="node ${own?'own':pre?(can?'can':''):'lock'}" data-n="${n.id}"><b>${n.n}</b>${pre||own?n.d:'Requires '+n.pre.map(p=>TREE.find(t=>t.id===p).n).join(' + ')}<div class="k">${own?'✓ OWNED':n.k+' DM'}</div></div>`; }
+ return h+'</div></div>';
+}
+function statsHTML(){
+ const rows=[['Energy',fmt(S.e)],['Energy / sec',fmt(EPS)],['Per tap',fmt(CLICK)],['Produced this universe',fmt(S.run)],['Produced all time',fmt(S.all)],['Best energy / sec',fmt(S.bestEps)],
+  ['Buildings owned',S.owned.reduce((a,b)=>a+b,0)],['Upgrades owned',Object.keys(S.ups).length+' / '+UPS.length],['Taps (this / all)',S.clicks+' / '+S.clicksAll],['Comets caught (this / all)',S.comets+' / '+S.cometsAll],
+  ['Big Crunches',S.crunches],['Dark Matter bonus','×'+dmBonus().toFixed(2)],['Trophy bonus','×'+achBonus().toFixed(2)],['Universe age',fmtTime(S.playRun)],['Total play time',fmtTime(S.playAll)]];
+ let h='<div class="card">'+rows.map(r=>`<div class="stat"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')+'</div>';
+ h+='<div class="card"><h3>PRODUCTION</h3>'+B.map((b,i)=>S.owned[i]?`<div class="stat"><span>${b.ic} ${b.n} ×${S.owned[i]}</span><span>${fmt(bRate(i)*S.owned[i])}/s</span></div>`:'').join('')+'</div>';
+ return h;
+}
+function achHTML(){
+ const got=Object.keys(S.ach).length;
+ return `<div class="sect">Trophies · ${got} / ${ACH.length} · +${got*(tree('echo')?2:1)}% production</div><div class="ach">`+ACH.map(a=>`<div class="ac ${S.ach[a.id]?'got':''}" data-a="${a.id}">${a.ic}</div>`).join('')+'</div>';
+}
+function lawModal(){
+ const ch=lawChoices();
+ showModal(`<h2>A NEW UNIVERSE</h2><p>The singularity waits. Before it bangs, choose the law that will govern this universe.</p><div class="laws">`+
+  ch.map(l=>`<button class="law" data-law="${l.id}"><b>${l.n}</b>${S.lawsSeen.includes(l.id)?'':' <span style="color:var(--gold);font-size:11px">NEW</span>'}<div class="g">+ ${l.g}</div>${l.id!=='std'?`<div class="bd">− ${l.bd}</div>`:''}</button>`).join('')+'</div>');
+}
+function optModal(){
+ showModal(`<h2>OPTIONS</h2>
+ <div class="row"><button class="btn" data-act="sound">Sound: ${S.opts.sound?'ON':'OFF'}</button><button class="btn" data-act="sci">Numbers: ${S.opts.sci?'Scientific':'Named'}</button></div>
+ ${tree('oracle')?`<div class="row"><button class="btn" data-act="oracle">Upgrade Oracle: ${S.opts.oracle?'ON':'OFF'}</button></div>`:''}
+ ${tree('arch')?`<div class="row"><button class="btn" data-act="arch">Auto-Architect: ${S.opts.arch?'ON':'OFF'}</button></div>`:''}
+ <p style="margin-top:16px">Your progress saves automatically in this browser every few seconds.${window.GBSave?' Signed-in players can also use the GLITCHBOX save button.':''}</p>
+ <div class="row"><button class="btn" data-act="export">Export save</button><button class="btn" data-act="import">Import save</button></div>
+ <textarea id="saveTxt" placeholder="Save code appears here, or paste one to import"></textarea>
+ <div class="row"><button class="btn red" data-act="wipe">Erase everything</button><button class="btn" style="margin-left:auto" onclick="closeModal()">Close</button></div>`);
+}
+
+/* tooltip */
+function tipHTML(el){
+ if(el.dataset.b!=null){ const i=+el.dataset.b, b=B[i]; return `<h4>${b.ic} ${b.n}</h4><div class="c">Owned ${S.owned[i]} · ${fmt(bRate(i))}/s each · ${fmt(bRate(i)*S.owned[i])}/s total</div><div class="e">${MULT[i]>1?'Multiplier ×'+fmt(MULT[i]):''}</div><div class="q">${b.d}</div>`; }
+ if(el.dataset.u){ const u=UPMAP[el.dataset.u]; return `<h4>${u.ic} ${u.n}</h4>${has(u.id)?'<div class="c" style="color:var(--green)">Owned</div>':`<div class="c">⚡ ${fmt(upCost(u))}</div>`}<div class="e">${u.eff}</div><div class="q">${u.q}</div>`; }
+ if(el.dataset.a){ const a=ACH.find(x=>x.id===el.dataset.a); return `<h4>${S.ach[a.id]?a.ic+' '+a.n:'🔒 '+a.n}</h4><div class="q" style="font-style:normal">${a.d}</div>`; }
+ return null;
+}
+document.addEventListener('mousemove',ev=>{
+ const el=ev.target.closest&&ev.target.closest('[data-b],[data-u],[data-a]'), tp=$('tip');
+ if(!el){ tp.style.display='none'; tipFor=null; return; }
+ tipFor=el; const h=tipHTML(el); if(!h){ tp.style.display='none'; return; }
+ tp.innerHTML=h; tp.style.display='block';
+ const r=tp.getBoundingClientRect(); let x=ev.clientX-r.width-16, y=ev.clientY-10; if(x<8) x=ev.clientX+16; if(y+r.height>innerHeight-8) y=innerHeight-r.height-8; tp.style.left=x+'px'; tp.style.top=y+'px';
+});
+
+document.addEventListener('click',ev=>{
+ const t=ev.target; startPad();
+ const tb=t.closest('.tab'); if(tb){ tab=tb.dataset.t; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===tb)); renderPane(); return; }
+ const q=t.closest('[data-q]'); if(q){ S.opts.qty=q.dataset.q==='max'?'max':+q.dataset.q; renderPane(); return; }
+ const b=t.closest('.bld[data-b]'); if(b){ if(buy(+b.dataset.b)){ renderPane(); const r=b.getBoundingClientRect(); b.animate([{boxShadow:'0 0 0 0 #b28cff'},{boxShadow:'0 0 24px 2px transparent'}],{duration:400}); } return; }
+ const u=t.closest('.ug[data-u]'); if(u){ if(buyUp(u.dataset.u)){ renderPane(); $('tip').style.display='none'; } return; }
+ const n=t.closest('.node[data-n]'); if(n){ if(buyNode(n.dataset.n)) renderPane(); return; }
+ const lw=t.closest('[data-law]'); if(lw){ setLaw(lw.dataset.law); closeModal(); toast('⚖️ This universe runs on <b>'+LAWS.find(l=>l.id===S.law).n+'</b>.'); renderPane(); return; }
+ const a=t.closest('[data-act]'); if(a) act(a.dataset.act);
+});
+function act(k){
+ if(k==='crunch'){
+  showModal(`<h2>BIG CRUNCH?</h2><p>Everything in this universe collapses. You gain <b style="color:var(--violet)">${fmt(dmPending(),0)} Dark Matter</b>.</p><div class="row"><button class="btn red" data-act="crunchGo">Collapse it</button><button class="btn" onclick="closeModal()">Not yet</button></div>`); return; }
+ if(k==='crunchGo'){ closeModal(); crunchFx(); return; }
+ if(k==='sound'){ S.opts.sound=S.opts.sound?0:1; if(startPad.gain) startPad.gain.gain.value=S.opts.sound?.035:0; $('sndBtn').textContent=S.opts.sound?'🔊':'🔇'; optModal(); return; }
+ if(k==='sci'){ S.opts.sci=S.opts.sci?0:1; dirty=true; optModal(); return; }
+ if(k==='oracle'){ S.opts.oracle=S.opts.oracle?0:1; optModal(); return; }
+ if(k==='arch'){ S.opts.arch=S.opts.arch?0:1; optModal(); return; }
+ if(k==='export'){ $('saveTxt').value=btoa(unescape(encodeURIComponent(JSON.stringify(snapshot())))); $('saveTxt').select(); return; }
+ if(k==='import'){ try{ const d=JSON.parse(decodeURIComponent(escape(atob($('saveTxt').value.trim())))); if(!d.owned) throw 0; restore(d); save(); closeModal(); toast('Save imported.'); }catch(e){ toast('That save code did not work.'); } return; }
+ if(k==='wipe'){ showModal(`<h2>ERASE EVERYTHING?</h2><p>Every universe, Dark Matter and trophy will be gone. This cannot be undone.</p><div class="row"><button class="btn red" data-act="wipeGo">Erase</button><button class="btn" onclick="closeModal()">Cancel</button></div>`); return; }
+ if(k==='wipeGo'){ try{localStorage.removeItem(SAVE_KEY);}catch(e){} S=fresh(); recalc(); vis.reset(); closeModal(); dirty=true; hinted=false; $('hint').style.display=''; return; }
+}
+let crunching=0;
+function crunchFx(){
+ crunching=2.2; sfx('crunch');
+ setTimeout(()=>{ const g=crunch(); toast('🌀 The universe collapses. <b>+'+fmt(g,0)+' Dark Matter</b>.'); checkAch(); vis.rings.push({x:vis.heartX,y:vis.heartY,r:5,v:900,a:1.2}); if(S.pendingLaw) lawModal(); tab='cosmos'; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t==='cosmos')); renderPane(); },2200);
+}
+$('optBtn').onclick=()=>optModal();
+$('sndBtn').onclick=()=>{ S.opts.sound=S.opts.sound?0:1; $('sndBtn').textContent=S.opts.sound?'🔊':'🔇'; if(startPad.gain) startPad.gain.gain.value=S.opts.sound?.035:0; startPad(); };
+$('modal').addEventListener('click',e=>{ if(e.target.id==='modal'&&!S.pendingLaw) closeModal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!S.pendingLaw) closeModal(); });
+
+cv.addEventListener('pointerdown',ev=>{
+ startPad();
+ const r=cv.getBoundingClientRect(), px=ev.clientX-r.left, py=ev.clientY-r.top;
+ const c=vis.hitComet(px,py); if(c){ catchComet(c,px,py); dirty=true; return; }
+ if(Math.hypot(px-vis.heartX,py-vis.heartY)<Math.max(70,vis.R*.16)) tap(px,py);
+});
+cv.addEventListener('pointermove',ev=>{ const r=cv.getBoundingClientRect(), px=ev.clientX-r.left, py=ev.clientY-r.top; const over=vis.comets.some(c=>Math.hypot(c.x-px,c.y-py)<38)||Math.hypot(px-vis.heartX,py-vis.heartY)<Math.max(70,vis.R*.16); cv.style.cursor=over?'pointer':'default'; });
+
+/* ═══════════════════════════ LOOP ═══════════════════════════ */
+let tickI=0, tickT=0, autoT=0, saveT=0, uiT=0, achT=0;
+function newsPick(){ const era=eraIdx(); const pool=NEWS.filter(n=>n[0]<=era&&n[0]>=era-3); return pool[Math.random()*pool.length|0][1]; }
+function step(dt){
+ // economy
+ S.playRun+=dt; S.playAll+=dt;
+ for(const b of S.buffs) b.t-=dt;
+ if(S.buffs.some(b=>b.t<=0)){ S.buffs=S.buffs.filter(b=>b.t>0); recalc(); dirty=true; }
+ earn(EPS*dt);
+ cometTimer-=dt; if(cometTimer<=0){ cometTimer=cometInterval(); if(S.all>50) vis.spawnComet(false); }
+ autoT+=dt; if(autoT>=3){ autoT=0;
+  if(tree('oracle')&&S.opts.oracle){ for(const u of availUps()) if(S.e>=upCost(u)*1.0) buyUp(u.id); }
+  if(tree('arch')&&S.opts.arch){ let best=-1,bv=0; for(let i=0;i<NB;i++){ if(S.owned[i]===0&&i>eraIdx()+1) continue; const v=bRate(i)/bCost(i); if(v>bv){bv=v;best=i;} } if(best>=0&&S.e>=bCost(best)) buy(best,1); }
+ }
+ achT+=dt; if(achT>=.5){ achT=0; checkAch(); }
+}
+let lastT=performance.now();
+function frame(now){
+ let dt=Math.min(.25,(now-lastT)/1000); lastT=now;
+ step(dt);
+ if(crunching>0){ crunching-=dt; const f=1-Math.max(0,crunching)/2.2; for(const e of vis.ents){ if(e.x!=null){ e.x+=(vis.heartX-e.x)*f*.12; e.y+=(vis.heartY-e.y)*f*.12; } } }
+ vis.draw(dt);
+ if(crunching>0){ cx.fillStyle=`rgba(255,255,255,${Math.max(0,1-crunching/0.4)*.9})`; cx.fillRect(0,0,W,H); }
+ uiT+=dt; if(uiT>.1){ uiT=0; hud(); }
+ saveT+=dt; if(saveT>10){ saveT=0; save(); }
+ tickT-=dt; if(tickT<=0){ tickT=9; const el=$('tick'); el.style.opacity=0; setTimeout(()=>{ el.textContent=newsPick(); el.style.opacity=1; },600); }
+ requestAnimationFrame(frame);
+}
+let lastAvail=-1, lastEra=-1, paneT=0;
+function hud(){
+ $('energy').innerHTML=fmt(S.e)+'<small>ENERGY</small>';
+ $('eps').textContent=fmt(EPS)+' per second'+(CLICK>1?' · '+fmt(CLICK)+' per tap':'');
+ $('buffs').innerHTML=S.buffs.map(b=>`<span class="buff">${b.label} · ${Math.ceil(b.t)}s</span>`).join('');
+ const era=eraIdx(); if(era!==lastEra){ if(lastEra>=0&&era>lastEra) toast('🌌 A new era begins: <b>'+B[era].era+'</b>'); lastEra=era; $('eraName').textContent=B[era].era; dirty=true; }
+ const av=availUps(); $('dotUps').classList.toggle('show',av.some(u=>S.e>=upCost(u)));
+ $('dotCos').classList.toggle('show',canCrunch()||TREE.some(n=>!S.tree[n.id]&&n.pre.every(p=>S.tree[p])&&S.dm>=n.k));
+ if(av.length!==lastAvail){ lastAvail=av.length; dirty=true; }
+ paneT+=.1;
+ if(dirty) renderPane();
+ else if(tab==='build') renderPaneLight();
+ else if(tab==='ups') document.querySelectorAll('.ug[data-u]:not(.own)').forEach(el=>el.classList.toggle('no',S.e<upCost(UPMAP[el.dataset.u])));
+ else if(paneT>1){ paneT=0; renderPane(); }
+ document.title=(S.e>0?fmt(S.e)+' · ':'')+'Idle Universe';
+ if(SMOKE) document.title=SMOKE_TITLE;
+}
+// cheap in-place refresh for the build list (keeps hover state & avoids layout thrash)
+function renderPaneLight(){
+ const rows=document.querySelectorAll('.bld[data-b]');
+ rows.forEach(r=>{ const i=+r.dataset.b, n=qtyFor(i), c=bCost(i,n); r.classList.toggle('no',S.e<c); r.querySelector('.cs').textContent='⚡ '+fmt(c); const nm=r.querySelector('.nm'); nm.innerHTML=B[i].n+(n>1?` <span style="color:var(--muted);font-weight:500">×${n}</span>`:''); r.querySelector('.ds').textContent=fmt(bRate(i))+'/s each'; r.querySelector('.ow').textContent=S.owned[i]||''; r.querySelector('.bar').style.width=((EPS>0?bRate(i)*S.owned[i]/EPS:0)*100).toFixed(1)+'%'; });
+ // a building may have just been discovered
+ const want=B.filter((b,i)=>S.owned[i]>0||i<=eraIdx()+1||S.run>=B[i].base*.5).length;
+ if(want!==rows.length) renderPane();
+}
+function ending(){
+ const el=$('ending'); S.ended=1; save();
+ const lines=['You collapsed the last universe into a point.','Then you looked at the point closely.','It was a screen. Someone was tapping it.','They had been tapping it the whole time.','Thank you for playing Idle Universe.','The universe keeps idling. So can you.'];
+ el.innerHTML=lines.map(l=>`<div class="ln">${l}</div>`).join('')+'<div class="ln"><button class="btn" id="endBtn" style="margin-top:24px">Keep going</button></div>';
+ el.classList.add('show');
+ [...el.children].forEach((c,i)=>setTimeout(()=>c.classList.add('v'),800+i*2200));
+ setTimeout(()=>{ const b=$('endBtn'); if(b) b.onclick=()=>el.classList.remove('show'); },100);
+}
+
+/* ═══════════════════════════ BOOT ═══════════════════════════ */
+const SMOKE=location.hash.includes('smoke'); let SMOKE_TITLE='SMOKE RUNNING';
+window.addEventListener('resize',resize);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
+window.addEventListener('beforeunload',save);
+if(!SMOKE&&!location.hash.includes('demo')){ load(); }
+// #demo<N> previews era N with a fat stack of every building up to it (not saved)
+const DEMO=location.hash.match(/demo(\d+)/); if(DEMO){ for(let i=0;i<=Math.min(NB-1,+DEMO[1]);i++) S.owned[i]=60+i*3; S.e=1e15; S.run=S.all=1e16; window.save=()=>{}; }
+recalc(); resize(); vis.sync();
+$('sndBtn').textContent=S.opts.sound?'🔊':'🔇';
+if(S.all>0) hideHint();
+if(S.pendingLaw&&!SMOKE) lawModal();
+$('tick').textContent=newsPick();
+renderPane();
+requestAnimationFrame(frame);
+window.__IU={get S(){return S},set S(v){S=v},B,UPS,TREE,LAWS,ACH,recalc,buy,buyUp,buyNode,bCost,maxBuy,tap,crunch,dmPending,canCrunch,setLaw,catchComet,step,fmt,snapshot,restore,offlineGain,vis,availUps,get EPS(){return EPS},get CLICK(){return CLICK},fresh,CRUNCH_AT};
+
+/* ═══════════════════════════ SMOKE TESTS ═══════════════════════════ */
+if(SMOKE) setTimeout(()=>{
+ const out=[]; let pass=0, fail=0;
+ const ok=(c,m)=>{ if(c){pass++;} else {fail++; out.push('FAIL '+m);} };
+ const near=(a,b,m)=>ok(Math.abs(a-b)<=Math.abs(b)*1e-9+1e-9,m+' ('+a+' vs '+b+')');
+ try{
+  S=fresh(); recalc();
+  ok(fmt(0)==='0','fmt 0'); ok(fmt(999)==='999','fmt 999'); ok(fmt(1500)==='1.500 K','fmt 1.5K: '+fmt(1500)); ok(fmt(2.5e9)==='2.500 B','fmt B'); ok(fmt(1e300).includes('e'),'fmt sci fallback'); ok(fmt(Infinity)==='∞','fmt inf');
+  ok(EPS===0,'start eps 0'); ok(CLICK===1,'start click 1');
+  tap(); ok(S.e===1&&S.clicks===1,'tap earns 1');
+  near(bCost(0),15,'foam base cost'); near(bCost(0,2),15+15*1.15,'cost of 2'); near(bCost(0,10),15*(1.15**10-1)/.15,'geometric sum');
+  S.e=14; ok(!buy(0,1),'cannot afford'); S.e=15; ok(buy(0,1)&&S.owned[0]===1&&S.e<1e-9,'buy foam');
+  near(EPS,0.1*RATE_K*achBonus()*dmBonus(),'eps after foam');
+  S.e=1e6; ok(maxBuy(0)>0,'maxBuy>0'); const mb=maxBuy(0); ok(bCost(0,mb)<=S.e&&bCost(0,mb+1)>S.e,'maxBuy is exact');
+  S.opts.qty='max'; const before=S.owned[0]; buy(0); ok(S.owned[0]===before+mb,'buy max'); S.opts.qty=1;
+  // tier upgrade
+  S=fresh(); S.owned[1]=1; recalc(); const e1=EPS; ok(UPMAP['t1_0'].req(),'tier unlocks at 1'); S.e=1e9; ok(buyUp('t1_0'),'buy tier'); near(EPS,e1*2,'tier doubles');
+  ok(!buyUp('t1_0'),'no double buy'); ok(!UPMAP['t1_1'].req(),'tier 2 locked until 5 owned');
+  // synergy
+  S=fresh(); S.owned[0]=50; S.owned[1]=25; S.e=1e9; recalc(); const s0=bRate(1); ok(buyUp('syn0'),'buy synergy'); near(bRate(1),s0*(1+.02*50),'synergy math');
+  // click upgrade
+  S=fresh(); S.clicks=30; S.e=1e6; recalc(); ok(buyUp('c0'),'click up'); ok(CLICK===2,'click x2');
+  S.owned[5]=10; recalc(); S.clicks=400; buyUp('c1'); buyUp('c2'); recalc(); near(CLICK,4+EPS*.01,'click pct of eps');
+  // buffs
+  S=fresh(); S.owned[2]=10; S.all=1e5; checkAch(); recalc(); const be=EPS; addBuff('frenzy',7,60,'x'); near(EPS,be*7,'frenzy x7'); step(61); near(EPS,be,'frenzy expires');
+  // comets: lucky capped at 15% bank
+  S=fresh(); S.owned[3]=5; recalc(); S.e=1000; const r0=Math.random; Math.random=()=>0.1; catchComet({},0,0); Math.random=r0; ok(S.e>1000&&S.e<=1000*1.15+13+1e-6,'lucky capped by bank: '+S.e); ok(S.comets===1,'comet counted');
+  // vacuum law void bubble
+  S=fresh(); S.law='vac'; S.owned[4]=20; recalc(); Math.random=()=>0.1; catchComet({},0,0); Math.random=r0; ok(S.owned[4]===18,'void bubble erases 10%');
+  // laws
+  S=fresh(); S.owned[5]=10; S.owned[0]=10; recalc(); const st=bRate(5), fo=bRate(0); setLaw('grav'); near(bRate(5),st*3,'gravity triples stars'); near(bRate(0),fo*.5,'gravity halves foam');
+  setLaw('cheap'); near(bCost(5,1,0),B[5].base,'cheap law base'); near(bCost(5,1,1),B[5].base*1.12,'cheap law scale'); ok(upCost(UPMAP.t5_0)===UPMAP.t5_0.cost*3,'cheap law upgrade cost');
+  // crunch
+  S=fresh(); S.run=S.all=CRUNCH_AT*81; S.owned[3]=40; S.ups.t0_0=1; ok(canCrunch(),'can crunch'); ok(dmPending()===3,'dm = 4th root: '+dmPending());
+  S.ach.t0=1; const g=crunch(); ok(g===3&&S.dm===3&&S.dmTotal===3,'crunch grants dm'); ok(S.owned[3]===0&&!S.ups.t0_0&&S.e===0,'crunch resets run'); ok(S.ach.t0===1&&S.crunches===1,'crunch keeps trophies'); ok(S.pendingLaw,'law pending after crunch');
+  ok(!canCrunch(),'cannot crunch again immediately'); S.run=CRUNCH_AT; S.all=CRUNCH_AT*81; ok(dmPending()===0,'no double-dip dm');
+  recalc(); ok(Math.abs(dmBonus()-1.3)<1e-9,'dm bonus 10% each');
+  // tree
+  ok(!buyNode('seed'),'tree prereq enforced'); ok(buyNode('heat')&&S.dm===2,'buy heat'); recalc(); ok(Math.abs(CLICK-3*dmBonus())<1e-9,'heat triples tap');
+  ok(buyNode('seed'),'buy seed'); S.dm=0; S.run=S.all=CRUNCH_AT*1e4; crunch(); ok(S.owned[0]===20&&S.owned[1]===10,'seed start');
+  S.dm=1e4; for(const n of TREE) if(n.id!=='omega') buyNode(n.id); ok(TREE.filter(n=>n.id!=='omega').every(n=>S.tree[n.id]),'whole tree purchasable'); ok(scale()===1.14,'rebate scale');
+  near(bCost(0,1,0),B[0].base*.9,'inflation discount');
+  // law choices
+  ok(lawChoices().length===5,'4 laws +standard with wider physics');
+  // save roundtrip
+  S.e=12345; const snap=snapshot(); S=fresh(); restore(snap); ok(S.e===12345&&S.tree.heat===1&&S.owned[0]===20,'save roundtrip');
+  // offline
+  S=fresh(); S.owned[5]=10; recalc(); near(offlineGain(100),EPS*100*.5,'offline 50%'); S.tree.flow=1; near(offlineGain(100),EPS*100,'dark flow 100%');
+  // achievements
+  S=fresh(); S.all=2000; S.owned[0]=1; checkAch(); ok(S.ach.t0&&S.ach.b0,'achievements unlock'); recalc(); ok(Math.abs(achBonus()-1-Object.keys(S.ach).length*.01)<1e-9,'ach bonus');
+  // auto-architect & oracle
+  S=fresh(); S.tree={oracle:1,arch:1}; S.e=1e5; S.clicks=30; recalc(); autoT=3; step(.01); ok(S.ups.c0===1,'oracle buys upgrades'); ok(S.owned.some(n=>n>0),'architect buys');
+  // render every era without throwing
+  for(let era=0;era<NB;era++){ S=fresh(); for(let i=0;i<=era;i++) S.owned[i]=200; recalc(); vis.sync(); vis.spawnComet(false); vis.spawnComet(true); for(let k=0;k<5;k++) vis.draw(.05); }
+  ok(true,'render all eras');
+  ok(vis.counts.every((c,i)=>c<=CAPS[i]),'entity caps respected');
+  // ui panes render
+  for(const t of ['build','ups','cosmos','stats','ach']){ tab=t; renderPane(); ok($('pane').innerHTML.length>50,'pane '+t); }
+  // every upgrade has a reachable requirement function
+  ok(UPS.every(u=>typeof u.req==='function'&&u.cost>0),'upgrades well-formed'); ok(UPS.length===NB*8+SYN.length+CLICKUPS.length+GLOBALUPS.length,'upgrade count');
+  ok(new Set(UPS.map(u=>u.id)).size===UPS.length,'upgrade ids unique'); ok(new Set(ACH.map(a=>a.id)).size===ACH.length,'ach ids unique');
+ }catch(e){ fail++; out.push('EXCEPTION '+e.stack); }
+ const res=(fail?'SMOKE FAIL ':'SMOKE PASS ')+pass+'/'+(pass+fail);
+ out.unshift(res); $('smokeout').textContent=out.join('\n'); $('smokeout').style.display='block'; SMOKE_TITLE=res; document.title=res;
+ S=fresh(); recalc();
+},300);
+</script>
+<script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
+</body>
+</html>

@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Be the Dungeon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="glitchbox-save.js" data-pos="top-left"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#07050a;--panel:#0f0b12;--panel2:#171019;--line:rgba(255,120,80,.13);--text:#eadfd6;--muted:#8a7a78;--gold:#ffc65a;--blood:#e0334a;--soul:#8fd6ff;--green:#7ee08a;--ember:#ff7a3a}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Alegreya Sans',sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;height:100vh}
+#main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+#stage{flex:1;position:relative;min-height:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#banner{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-family:'Pirata One',serif;font-size:30px;letter-spacing:2px;color:#ffd9b0;text-shadow:0 0 18px #ff5a2a,0 2px 0 #000;pointer-events:none;white-space:nowrap;transition:opacity .4s}
+#speed{position:absolute;right:12px;top:12px;display:none;gap:6px}
+#speed button{background:#1a1219e8;border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-weight:800;cursor:pointer;font-size:13px}
+#speed button.on{border-color:var(--ember);color:#fff}
+#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:#140d14ee;border:1px solid rgba(255,190,120,.35);border-radius:10px;padding:9px 16px;font-size:15px;max-width:min(680px,92%);text-align:center;line-height:1.35;pointer-events:none;transition:opacity .3s}
+#hint b{color:var(--gold)}
+/* toolbar */
+#bar{display:flex;gap:6px;padding:8px 10px;background:linear-gradient(180deg,#0d090f,#09060b);border-top:1px solid var(--line);overflow-x:auto;min-height:84px;align-items:stretch}
+#bar::-webkit-scrollbar{height:6px}#bar::-webkit-scrollbar-thumb{background:#2a1c25;border-radius:3px}
+.grp{display:flex;gap:6px;padding-right:8px;border-right:1px solid var(--line)}
+.grp:last-child{border-right:none}
+.tool{position:relative;width:66px;min-width:66px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;transition:transform .08s,border-color .15s}
+.tool:hover{border-color:rgba(255,160,90,.5);transform:translateY(-2px)}
+.tool.on{border-color:var(--ember);background:#2a1418;box-shadow:0 0 16px rgba(255,90,40,.25)}
+.tool.poor{opacity:.5}
+.tool.locked{opacity:.4;filter:grayscale(1)}
+.tool canvas{width:36px;height:36px}
+.tool .nm{font-size:11px;font-weight:700;line-height:1;white-space:nowrap}
+.tool .cs{font-size:11px;color:var(--gold);font-weight:700}
+.tool .cs.s{color:var(--soul)}
+.tool .hk{position:absolute;top:2px;left:5px;font-size:9px;color:var(--muted)}
+/* side */
+#side{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow-y:auto}
+#side::-webkit-scrollbar{width:7px}#side::-webkit-scrollbar-thumb{background:#2a1c25;border-radius:3px}
+.title{font-family:'Pirata One',serif;font-size:30px;text-align:center;padding:12px 0 2px;color:#ffd9b0;text-shadow:0 0 16px rgba(255,90,40,.5);letter-spacing:1px}
+.sub{text-align:center;font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+.res{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:0 12px}
+.res div{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 4px;text-align:center}
+.res b{display:block;font-size:20px;font-weight:800}
+.res span{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+#hpbar{margin:8px 12px 0;height:16px;border-radius:8px;background:#200a10;border:1px solid #4a1520;position:relative;overflow:hidden}
+#hpfill{height:100%;background:linear-gradient(90deg,#8a0f25,#e0334a);transition:width .3s}
+#hptxt{position:absolute;inset:0;text-align:center;font-size:11px;font-weight:800;line-height:15px;text-shadow:0 1px 2px #000}
+.sec{margin:12px 12px 0;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+.sec h3{font-family:'Pirata One',serif;font-size:19px;font-weight:400;letter-spacing:1px;color:#ffcfa0;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.sec h3 small{font-family:'Alegreya Sans';font-size:11px;color:var(--muted);letter-spacing:1px;margin-left:auto}
+.party{display:flex;flex-wrap:wrap;gap:5px}
+.pm{display:flex;align-items:center;gap:5px;background:#0c080e;border:1px solid var(--line);border-radius:7px;padding:3px 7px 3px 3px;font-size:12px;font-weight:700}
+.pm canvas{width:24px;height:24px}
+.pm.hero{border-color:var(--gold);color:var(--gold)}
+.intel{font-size:13px;line-height:1.4;color:#cdbdb3}
+.intel li{margin-left:16px;margin-bottom:3px}
+.tag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:1px 6px;margin:2px 3px 0 0;background:#2a1418;border:1px solid #5a2430;color:#ffb0a0}
+.btn{display:block;width:calc(100% - 24px);margin:10px 12px 0;padding:12px;border-radius:10px;border:1px solid #ff6a3a;background:linear-gradient(180deg,#8a2414,#5a120c);font-family:'Pirata One',serif;font-size:22px;letter-spacing:1px;cursor:pointer;color:#ffe8d0;text-shadow:0 1px 0 #000}
+.btn:hover{filter:brightness(1.2)}
+.btn.alt{background:linear-gradient(180deg,#1d2a40,#121a2a);border-color:#4a7ab0;font-size:18px;padding:9px}
+.btn[disabled]{opacity:.4;cursor:default;filter:none}
+.row2{display:flex;gap:8px;margin:8px 12px 0}
+.row2 .btn{margin:0;width:auto;flex:1}
+.mini{background:#0c080e;border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:12px;font-weight:700;cursor:pointer}
+.mini.on{border-color:var(--soul);color:var(--soul)}
+/* tooltip */
+#tip{position:fixed;z-index:50;pointer-events:none;max-width:280px;background:#120c12f4;border:1px solid rgba(255,160,90,.4);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.38;box-shadow:0 10px 40px #000c;display:none}
+#tip h4{font-family:'Pirata One',serif;font-weight:400;font-size:18px;color:#ffd9b0}
+#tip .c{color:var(--gold);font-weight:700}#tip .s{color:var(--soul);font-weight:700}
+#tip .q{color:var(--muted);font-style:italic;margin-top:4px}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(4,2,6,.84);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:40;padding:16px}
+#modal.show{display:flex}
+#mbox{background:#120c13;border:1px solid rgba(255,140,80,.35);border-radius:16px;padding:22px 24px;max-width:640px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 30px 90px #000}
+#mbox h2{font-family:'Pirata One',serif;font-weight:400;font-size:36px;color:#ffd9b0;text-shadow:0 0 18px rgba(255,90,40,.5);margin-bottom:6px}
+#mbox p{line-height:1.5;color:#d5c5bb;margin-bottom:10px}
+#mbox .btn{width:100%;margin:12px 0 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rc{background:#1a1119;border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;font-size:13px;line-height:1.35}
+.rc:hover{border-color:var(--soul)}
+.rc b{font-size:15px;display:block}
+.rc .k{color:var(--soul);font-weight:800;margin-top:4px}
+.rc.done{opacity:.5;cursor:default;border-color:#2a4a2a}
+.rc.poor{opacity:.55}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.stats div{background:#1a1119;border-radius:9px;padding:8px;text-align:center}
+.stats b{display:block;font-size:22px}.stats span{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.lesson{background:#1a0e12;border-left:3px solid var(--blood);padding:7px 10px;margin:6px 0;border-radius:0 8px 8px 0;font-size:14px;line-height:1.4}
+.lesson.good{border-left-color:var(--green);background:#0f1a12}
+@media (max-width:900px){
+ #wrap{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+ #side{max-height:38vh;border-left:none;border-top:1px solid var(--line)}
+ .title{display:none}.sub{display:none}
+ #banner{font-size:22px}
+ #hint{font-size:13px;top:10px;bottom:auto;padding:7px 11px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+ <div id="main">
+  <div id="stage"><canvas id="cv"></canvas><div id="banner"></div>
+   <div id="speed"><button data-sp="0">❚❚</button><button data-sp="1" class="on">1×</button><button data-sp="2">2×</button><button data-sp="4">4×</button></div>
+   <div id="hint"></div>
+  </div>
+  <div id="bar"></div>
+ </div>
+ <aside id="side">
+  <div class="title">Be the Dungeon</div><div class="sub">They are coming for your heart</div>
+  <div class="res"><div><b id="rDay">1</b><span>Day</span></div><div><b id="rGold" style="color:var(--gold)">0</b><span>Gold</span></div><div><b id="rSoul" style="color:var(--soul)">0</b><span>Souls</span></div></div>
+  <div id="hpbar"><div id="hpfill"></div><div id="hptxt"></div></div>
+  <div class="sec"><h3>⚔️ Tonight's Raid <small id="partyN"></small></h3><div class="party" id="party"></div></div>
+  <div class="sec"><h3>👁️ Guild Intel <small><button class="mini" id="intelBtn">Show on map (I)</button></small></h3><div class="intel" id="intel"></div></div>
+  <button class="btn" id="goBtn">Open the Gates</button>
+  <div class="row2"><button class="btn alt" id="resBtn">💀 Dark Rites</button><button class="btn alt" id="helpBtn" style="flex:.5">?</button></div>
+  <div style="height:14px"></div>
+ </aside>
+</div>
+<div id="tip"></div>
+<div id="modal"><div id="mbox"></div></div>
+<pre id="smokeout" style="display:none;position:fixed;top:0;left:0;z-index:99;background:#000;color:#0f0;padding:10px;max-height:100vh;overflow:auto"></pre>
+<script>
+'use strict';
+/* ═══════════════════════════ CONSTANTS ═══════════════════════════ */
+const COLS=21, ROWS=13, TS=48;
+const ROCK=0, FLOOR=1, BED=2, GATE=3, HEART=4;
+const GX=0, GY=6, HX=18, HY=6;
+const LAST_DAY=30;
+const CARVE_T=4;
+const GLOOM=.01;   // share of max HP the dark drains from a raider for every tile walked — long tunnels kill   // seconds a raider spends hacking at the Heart before running with the shard
+const idx=(x,y)=>y*COLS+x, tx=i=>i%COLS, ty=i=>(i/COLS)|0;
+const GATE_I=idx(GX,GY), HEART_I=idx(HX,HY);
+
+// ── traps: placed on floor, they never block a path ──
+const TRAPS={
+ spike:{n:'Spike Plate',cost:20,hidden:true, dmg:18,cd:1.4,cat:'trap', d:'Hidden. Stabs everyone on the tile. Re-arms fast.'},
+ arrow:{n:'Arrow Turret',cost:45,hidden:false,dmg:10,cd:1,range:3.6,cat:'ranged',d:'Shoots the nearest intruder it can see.'},
+ slime:{n:'Acid Puddle',cost:30,hidden:false,dps:5,slow:.45,cat:'trap',unlock:4,d:'Halves speed and burns whoever wades through.'},
+ pit:  {n:'Pit Trap',cost:55,hidden:true, dmg:55,stun:2.2,cat:'trap',unlock:6,d:'Hidden. The first to step in falls hard. Springs once per raid.'},
+ flame:{n:'Flame Vent',cost:70,hidden:false,dmg:26,cd:2.6,r:1.3,cat:'fire',unlock:10,d:'Erupts when intruders come near, burning everything around it.'},
+ fear: {n:'Ward of Dread',cost:85,hidden:false,r:1.7,cd:7,flee:2.6,cat:'fear',unlock:16,d:'Terrifies intruders, sending them running back toward your traps.'},
+};
+// ── monsters: guard a home tile, chase within a leash, respawn after every raid ──
+const MONS={
+ goblin:{n:'Goblin',     cost:25, hp:65,  dmg:8, cd:.7, spd:2.3,range:.95,aggro:3.4,cat:'melee',d:'Cheap, fast and spiteful.'},
+ skel:  {n:'Skeleton',   cost:45, hp:90,  dmg:13, cd:1,  spd:1.6,range:.95,aggro:3,  cat:'melee',rise:true,d:'Gets back up once.'},
+ ooze:  {n:'Slime',      cost:40, hp:135, dmg:6, cd:1,  spd:1.1,range:.95,aggro:2.6,cat:'melee',split:true,slowHit:true,unlock:3,d:'Slows what it touches. Splits in two when it dies.'},
+ orc:   {n:'Orc Brute',  cost:90, hp:270, dmg:22,cd:1.3,spd:1.4,range:1,  aggro:3,  cat:'melee',unlock:8,d:'A wall of muscle that hits like a falling door.'},
+ mage:  {n:'Dark Mage',  cost:110,hp:70,  dmg:20,cd:1.6,spd:1.3,range:4,  aggro:4.4,cat:'magic',proj:'bolt',splash:.9,unlock:12,d:'Hurls exploding shadow bolts from range.'},
+ wraith:{n:'Wraith',     cost:130,hp:130, dmg:18,cd:1,  spd:2.2,range:.95,aggro:4.2,cat:'melee',drain:.6,unlock:20,d:'Drains life to heal itself. Hard to pin down.'},
+ dragon:{n:'Dragon',     cost:400,hp:1120,dmg:42,cd:2.2,spd:1.2,range:2.6,aggro:4,  cat:'fire',breath:true,max:1,unlock:45,d:'Breathes a cone of fire. You may only keep one.'},
+};
+// ── adventurers ──
+const CLS={
+ warrior:{n:'Warrior',hp:70, dmg:7, cd:1,  spd:1.6, range:.95,armor:1,col:'#c0392b'},
+ rogue:  {n:'Rogue',  hp:44, dmg:6, cd:.7, spd:2.0, range:.95,detect:2.2,disarm:2.2,trapRes:.5,col:'#2e7d4f'},
+ archer: {n:'Archer', hp:38, dmg:6, cd:1.2,spd:1.7, range:4,proj:'arrow',col:'#a8742c'},
+ cleric: {n:'Cleric', hp:52, dmg:3, cd:1.2,spd:1.5, range:.95,heal:12,healCd:2.2,healR:3,col:'#e8e0c8'},
+ mage:   {n:'Mage',   hp:34, dmg:10,cd:1.8,spd:1.5, range:3.5,proj:'fire',splash:.9,col:'#3a6fd8'},
+ knight: {n:'Knight', hp:120,dmg:10,cd:1.2,spd:1.25,range:.95,armor:4,col:'#9aa6b4'},
+};
+const HEROES={
+ 5: {n:'Brannoc the Unbent',  base:'knight',hp:300,dmg:18,armor:6,title:'An unbreakable shield-knight'},
+ 10:{n:'Ysolde Lightbringer', base:'cleric',hp:300,dmg:8, heal:22,healR:3.6,title:'Her prayers mend the whole party'},
+ 15:{n:'Varek Ninefingers',   base:'rogue', hp:260,dmg:14,detect:4,disarm:1,spd:2.3,title:'Sees every trap. Disarms them in a blink'},
+ 20:{n:'Archmage Quill',      base:'mage',  hp:280,dmg:30,splash:1.5,range:4.2,title:'Fireballs that level whole rooms'},
+ 25:{n:'Sir Galen Dragonbane',base:'knight',hp:620,dmg:24,armor:7,title:'Has killed four dragons. Wants a fifth'},
+ 30:{n:'The Hero of Legend',  base:'warrior',hp:1300,dmg:30,armor:5,heal:15,healR:2,title:'The one the songs are about'},
+};
+const RITES=[
+ {id:'heart', n:'Blood Heart',   ic:'❤️',max:5, k:l=>5+l*5,  d:'+60 Heart max HP (and heal it).'},
+ {id:'lair',  n:'Deeper Lairs',  ic:'🕳️',max:6, k:l=>3+l*4,  d:'+3 monster capacity.'},
+ {id:'sharp', n:'Serrated Steel',ic:'🗡️',max:4, k:l=>6+l*6,  d:'+20% trap damage.'},
+ {id:'blood', n:'Bloodlust',     ic:'🩸',max:4, k:l=>6+l*6,  d:'+15% monster health and damage.'},
+ {id:'tithe', n:'Dark Tithe',    ic:'🪙',max:3, k:l=>5+l*5,  d:'+15 gold every morning.'},
+ {id:'regen', n:'Beating Stone', ic:'💓',max:2, k:l=>8+l*8,  d:'The Heart regenerates +25% more each night.'},
+];
+const ITEMS={
+ frost:{n:'Frostweave Cloaks',d:'fire damage halved'},
+ holy:{n:'Holy Water',d:'skeletons stay dead'},
+ poles:{n:'Ten-Foot Poles',d:'pits found from 1.5 tiles'},
+ shields:{n:'Tower Shields',d:'warriors and knights take 40% less from arrows and bolts'},
+ salt:{n:'Salt Sacks',d:'slimes no longer split'},
+ wards:{n:'Warding Charms',d:'magic damage −30%'},
+ courage:{n:'Battle Hymns',d:'half the party ignores fear'},
+ lanterns:{n:'Hooded Lanterns',d:'the gloom drains half as much'},
+};
+
+/* ═══════════════════════════ STATE ═══════════════════════════ */
+let G=null;      // persistent game
+let R=null;      // the current raid
+function rng(seed){ let a=seed>>>0; return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function newGame(){
+ const map=new Array(COLS*ROWS).fill(ROCK);
+ for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) if(x===0||y===0||x===COLS-1||y===ROWS-1) map[idx(x,y)]=BED;
+ for(let x=1;x<=16;x++) map[idx(x,GY)]=FLOOR;
+ for(let y=5;y<=7;y++) for(let x=17;x<=19;x++) map[idx(x,y)]=FLOOR;
+ map[GATE_I]=GATE; map[HEART_I]=HEART;
+ G={ v:1, day:1, gold:200, souls:0, heartMax:300, heartHp:300, map, traps:{}, mons:{},
+  unlocked:{spike:1,arrow:1,goblin:1,skel:1}, rites:{}, seed:(Math.random()*1e9)|0,
+  guild:{ danger:new Array(COLS*ROWS).fill(0), known:{}, cause:{trap:0,ranged:0,fire:0,melee:0,magic:0,fear:0,gloom:0}, killedBy:{}, items:{}, pitDeaths:0, fearRuns:0, lessons:['The Adventurers\' Guild has heard of a new dungeon. They know nothing about it — yet.'], witnesses:0 },
+  stats:{kills:0,escaped:0,raids:0,heroKills:0,goldEarned:0}, won:false, over:false };
+ G.nextParty=makeParty(G.day);
+ return G;
+}
+
+/* ═══════════════════════════ GRID / PATHING ═══════════════════════════ */
+const walk=(i)=>{ const t=G.map[i]; return t===FLOOR||t===GATE; };
+function nbrs(i){ const x=tx(i),y=ty(i),o=[]; if(x>0)o.push(i-1); if(x<COLS-1)o.push(i+1); if(y>0)o.push(i-COLS); if(y<ROWS-1)o.push(i+COLS); return o; }
+// Dijkstra over 4-neighbour tiles. cost(i) is the price of stepping onto i. Goal may be unwalkable (the Heart).
+function findPath(from,goal,cost){
+ const N=COLS*ROWS, dist=new Float64Array(N).fill(Infinity), prev=new Int32Array(N).fill(-1), done=new Uint8Array(N);
+ dist[from]=0;
+ for(;;){
+  let u=-1,best=Infinity; for(let i=0;i<N;i++) if(!done[i]&&dist[i]<best){best=dist[i];u=i;}
+  if(u<0) return null; if(u===goal) break; done[u]=1;
+  for(const v of nbrs(u)){ if(v!==goal&&!walk(v)) continue; const d=best+(cost?cost(v):1)+heurTie(v); if(d<dist[v]){dist[v]=d;prev[v]=u;} }
+ }
+ const p=[]; for(let c=goal;c!==from;c=prev[c]){ p.push(c); if(prev[c]<0) return null; } p.reverse(); return p;
+}
+const heurTie=v=>((v*2654435761)>>>0)%97*1e-6;   // break ties deterministically, but not always the same direction
+function connected(){ return !!findPath(GATE_I,HEART_I,null); }
+
+/* ═══════════════════════════ BUILD ═══════════════════════════ */
+const DIG_COST=6, FILL_COST=4;
+function monCap(){ return 4+Math.floor(G.day/3)+3*(G.rites.lair|0); }   // the lair deepens a little every few days on its own
+function monCount(){ return Object.keys(G.mons).length; }
+function trapDmgMul(){ return 1+.2*(G.rites.sharp|0); }
+function monMul(){ return 1+.15*(G.rites.blood|0); }
+function inChamberCore(i){ return i===HEART_I; }
+function canBuild(tool,i){
+ const t=G.map[i], x=tx(i), y=ty(i);
+ if(tool==='dig'){ if(t!==ROCK) return 'Only solid rock can be dug.'; if(!nbrs(i).some(n=>G.map[n]===FLOOR||G.map[n]===GATE)) return 'Dig next to an existing tunnel.'; if(G.gold<DIG_COST) return 'Not enough gold.'; return null; }
+ if(tool==='fill'){ if(t!==FLOOR) return 'Only open floor can be walled up.'; if(G.traps[i]||G.mons[i]) return 'Clear the tile first.';
+  if(G.gold<FILL_COST) return 'Not enough gold.';
+  G.map[i]=ROCK; const ok=connected(); G.map[i]=FLOOR; return ok?null:'The path from the gate to the Heart must stay open.'; }
+ if(tool==='sell'){ return (G.traps[i]||G.mons[i])?null:'Nothing to sell here.'; }
+ if(TRAPS[tool]){ if(!G.unlocked[tool]) return 'Locked — unlock it with Dark Rites.'; if(t!==FLOOR) return 'Traps go on open floor.'; if(G.traps[i]||G.mons[i]) return 'Tile already occupied.';
+  if(i===idx(1,GY)) return 'Too close to the gate.'; if(G.gold<TRAPS[tool].cost) return 'Not enough gold.'; return null; }
+ if(MONS[tool]){ if(!G.unlocked[tool]) return 'Locked — unlock it with Dark Rites.'; if(t!==FLOOR) return 'Monsters need open floor.'; if(G.traps[i]||G.mons[i]) return 'Tile already occupied.';
+  if(i===idx(1,GY)) return 'Too close to the gate.'; if(monCount()>=monCap()) return 'Lair is full ('+monCap()+'). Deepen it with Dark Rites.';
+  if(MONS[tool].max&&Object.values(G.mons).filter(m=>m===tool).length>=MONS[tool].max) return 'Only one '+MONS[tool].n+' per dungeon.';
+  if(G.gold<MONS[tool].cost) return 'Not enough gold.'; return null; }
+ return 'Unknown tool.';
+}
+function build(tool,i){
+ const why=canBuild(tool,i); if(why) return why;
+ if(tool==='dig'){ G.gold-=DIG_COST; G.map[i]=FLOOR; sfx('dig'); fxBurst((tx(i)+.5),(ty(i)+.5),'#6a5a60',10); }
+ else if(tool==='fill'){ G.gold-=FILL_COST; G.map[i]=ROCK; sfx('dig'); }
+ else if(tool==='sell'){ const k=G.traps[i]||G.mons[i]; const def=TRAPS[k]||MONS[k]; G.gold+=Math.floor(def.cost*.7); delete G.traps[i]; delete G.mons[i]; sfx('coin'); }
+ else if(TRAPS[tool]){ G.gold-=TRAPS[tool].cost; G.traps[i]=tool; sfx('place'); }
+ else if(MONS[tool]){ G.gold-=MONS[tool].cost; G.mons[i]=tool; sfx('place'); }
+ mapDirty=true; previewDirty=true; ui();
+ return null;
+}
+
+/* ═══════════════════════════ THE GUILD (learning) ═══════════════════════════ */
+function shares(){ const c=G.guild.cause, t=Object.values(c).reduce((a,b)=>a+b,0)||1; const s={}; for(const k in c) s[k]=c[k]/t; s._total=t; return s; }
+function knownTrapsValid(){ const k={}; for(const i in G.guild.known){ if(G.traps[i]===G.guild.known[i]) k[i]=G.guild.known[i]; } return k; }
+function classWeights(day){
+ const s=G.guild.seen?shares():{trap:0,ranged:0,fire:0,melee:0,magic:0,fear:0,gloom:0};
+ const nKnown=Object.keys(knownTrapsValid()).length;
+ return {
+  warrior:3+4*s.melee,
+  rogue:.5+7*(s.trap+s.fire*.5)+Math.min(3,nKnown*.5),
+  archer:1.4+2.2*s.melee,
+  cleric:day>=2?.7+3*(s.melee+s.magic+s.fire)+3.5*(s.gloom||0):0,
+  mage:day>=3?.9+2*s.melee:0,
+  knight:day>=4?.8+5*s.ranged+2.5*s.melee+2*s.magic:0,
+ };
+}
+function partySize(day){ return Math.min(15,2+Math.floor((day-1)*.45)); }
+function makeParty(day){
+ const r=rng(G.seed+day*7919), w=classWeights(day), out=[];
+ const n=partySize(day), keys=Object.keys(w);
+ if(HEROES[day]) out.push('hero');
+ // the guild always sends a rogue once it has mapped traps
+ if(day>=3&&Object.keys(knownTrapsValid()).length>=2) out.push('rogue');
+ // no party is all one thing: rogues cap at 30%, any other class at 40% (warriors are the filler)
+ const cap=k=>Math.ceil(n*(k==='rogue'?.3:.4));
+ while(out.length<n){ for(const k of keys) if(k!=='warrior'&&out.filter(x=>x===k).length>=cap(k)) w[k]=0; const tot=keys.reduce((a,k)=>a+w[k],0); let p=r()*tot; for(const k of keys){ p-=w[k]; if(p<=0){ out.push(k); break; } } if(p>0) out.push('warrior'); }
+ // marching order: armour first, rogues scouting in front when traps are known, casters at the back
+ const ord={hero:0,knight:1,rogue:Object.keys(G.guild.known).length?0.5:2,warrior:2,archer:4,mage:4,cleric:5};
+ return out.sort((a,b)=>ord[a]-ord[b]);
+}
+function guildLearn(){
+ const g=G.guild, lessons=[], witnesses=R.advs.filter(a=>a.state==='escaped');
+ g.witnesses=witnesses.length;
+ for(let i=0;i<g.danger.length;i++) g.danger[i]*=.55;
+ // the dead are always found: bodies mark the tiles they died on, and wounds reveal the cause
+ for(const d of R.deaths){ g.danger[d.tile]+=2.2; for(const n of nbrs(d.tile)) g.danger[n]+=.6; }
+ for(const k in g.cause) g.cause[k]*=.6;
+ for(const k in R.cause) g.cause[k]+=R.cause[k];
+ g.seen=1;
+ for(const k in R.killedBy) g.killedBy[k]=(g.killedBy[k]||0)+R.killedBy[k];
+ // forget traps that are gone
+ for(const i in g.known) if(G.traps[i]!==g.known[i]) delete g.known[i];
+ if(witnesses.length){
+  let newT=0; for(const i in R.known){ if(G.traps[i]&&!g.known[i]){ g.known[i]=G.traps[i]; newT++; } }
+  for(let i=0;i<R.dmgMap.length;i++) g.danger[i]+=Math.min(3,R.dmgMap[i]/25);
+  lessons.push({t:`${witnesses.length} survivor${witnesses.length>1?'s':''} crawled out. They mapped ${newT?newT+' new trap'+(newT>1?'s':''):'no new traps'}${newT?' and marked where it hurt':' but marked where it hurt'}.`});
+ } else if(R.advs.length) lessons.push({t:'No one came back. The guild only knows where the bodies were found.',good:1});
+ // what killed them shapes who they send
+ const s=shares(), top=Object.entries(s).filter(e=>e[0][0]!=='_').sort((a,b)=>b[1]-a[1])[0];
+ const why={trap:'traps — they will bring more Rogues',ranged:'arrows and bolts — they will bring armoured Knights',melee:'claws and blades — they will bring Warriors, Knights and Clerics',fire:'fire — expect Rogues and fire-proofing',magic:'dark magic — expect Knights and charms',fear:'terror',gloom:'the gloom of your long tunnels — expect Clerics and lanterns'};
+ if(top&&top[1]>.3&&R.advs.length) lessons.push({t:'Most of their pain came from <b>'+why[top[0]]+'</b>.'});
+ // equipment answers
+ const deaths=R.deaths.length||0, it=g.items, before=Object.assign({},it);
+ const on=(k,cond,off)=>{ if(cond) it[k]=1; else if(off) delete it[k]; };
+ on('frost',s.fire>.3,s.fire<.12);
+ on('holy',(g.killedBy.skel||0)>=4&&(g.killedBy.skel||0)/Math.max(1,G.stats.kills)>.2,false);
+ on('poles',g.pitDeaths>=2,false);
+ on('shields',s.ranged>.3,s.ranged<.12);
+ on('salt',(g.killedBy.ooze||0)>=4,false);
+ on('wards',s.magic>.28,s.magic<.1);
+ on('courage',g.fearRuns>=8,false);
+ on('lanterns',(s.gloom||0)>.3,(s.gloom||0)<.12);
+ for(const k in it) if(!before[k]) lessons.push({t:'The guild is issuing <b>'+ITEMS[k].n+'</b> — '+ITEMS[k].d+'.'});
+ for(const k in before) if(!it[k]) lessons.push({t:'The guild stopped packing '+ITEMS[k].n+'.',good:1});
+ g.lessons=lessons;
+}
+function guildSummary(){
+ const g=G.guild, k=Object.keys(knownTrapsValid()).length, s=shares(), out=[];
+ out.push(`They know <b>${k}</b> of your ${Object.keys(G.traps).length} traps.`);
+ if(g.seen){ const parts=Object.entries(s).filter(e=>e[0][0]!=='_'&&e[1]>.08).sort((a,b)=>b[1]-a[1]).map(e=>e[0]+' '+Math.round(e[1]*100)+'%'); if(parts.length) out.push('Their wounds: '+parts.join(', ')+'.'); }
+ if(G.day>1) out.push(g.witnesses?`${g.witnesses} witness${g.witnesses>1?'es':''} escaped last raid.`:'Nobody escaped last raid. 🤫');
+ return out;
+}
+
+/* ═══════════════════════════ RAID SIM ═══════════════════════════ */
+function unitFrom(kind,def,x,y,lvl){ return Object.assign({kind,x,y,hp:def.hp,max:def.hp,cdT:0,state:'idle',path:null,pi:0,repath:0,face:0,flash:0,walk:Math.random()*6,slowT:0,stun:0,fleeT:0,tile:idx(x|0,y|0)},def,{lvl}); }
+function startRaid(){
+ if(G.over) return;
+ // raiders get tougher every night, and much tougher in the last stretch
+ const day=G.day, hpS=1+.06*(day-1)+.0065*(day-1)**2, dmS=1+.05*(day-1)+.001*(day-1)**2;
+ R={ t:0, advs:[], mons:[], projs:[], spawnQ:G.nextParty.slice(), spawnT:.5, known:Object.assign({},knownTrapsValid()), knowV:0,
+   dmgMap:new Array(COLS*ROWS).fill(0), deaths:[], cause:{trap:0,ranged:0,fire:0,melee:0,magic:0,fear:0,gloom:0}, killedBy:{},
+   trapState:{}, heartDmg:0, gold:0, souls:0, ended:false, fleeing:false, total:G.nextParty.length, raidDanger:new Array(COLS*ROWS).fill(0) };
+ R.hpS=hpS; R.dmS=dmS; R.trapS=1+.06*(day-1);
+ // rogues only dismantle what the guild already mapped, or hidden plates they sniff out themselves
+ R.disarmable=Object.assign({},R.known);
+ for(const i in G.traps) R.trapState[i]={cd:0,sprung:false,fire:0,aim:0};
+ for(const i in G.mons){ const k=G.mons[i], d=MONS[k], m=unitFrom('mon',d,tx(+i)+.5,ty(+i)+.5); m.type=k; m.home=+i; m.hp=m.max=Math.round(d.hp*monMul()*(1+.05*(G.day-1)));   /* the dungeon grows with its age */ m.dmg=d.dmg*monMul(); m.state='home'; R.mons.push(m); }
+ G.phase='raid'; sfx('horn'); banner('The gates open',2.2);
+}
+function spawnAdv(cls){
+ const day=G.day; let def;
+ if(cls==='hero'){ const h=HEROES[day]; def=Object.assign({},CLS[h.base],h,{hero:true}); }
+ else def=Object.assign({},CLS[cls]);
+ const a=unitFrom('adv',def,GX+.5,GY+.5);
+ a.cls=cls==='hero'?HEROES[day].base:cls; a.isHero=cls==='hero'; a.name=def.n;
+ a.hp=a.max=Math.round(def.hp*R.hpS*(a.isHero?1:1)); a.dmg=def.dmg*R.dmS; a.healT=0; a.state='move'; a.disT=0;
+ // a third of each party ignores fear once the guild has hymns
+ a.brave=a.isHero||(G.guild.items.courage&&Math.random()<.5);
+ R.advs.push(a);
+}
+function advCost(a){
+ const hasRogue=R.advs.some(o=>o.cls==='rogue'&&o.hp>0&&o.state!=='escaped');
+ return i=>{
+  let c=1+Math.min(5,G.guild.danger[i]*1.1)+R.raidDanger[i]*2.5;
+  if(R.known[i]) c+=hasRogue?1.2:9;
+  return c;
+ };
+}
+function repath(u,goal,cost){ const p=findPath(u.tile,goal,cost); u.path=p; u.pi=0; }
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function los(x0,y0,x1,y1){
+ const n=Math.ceil(Math.hypot(x1-x0,y1-y0)*3);
+ for(let k=1;k<n;k++){ const x=x0+(x1-x0)*k/n, y=y0+(y1-y0)*k/n, t=G.map[idx(x|0,y|0)]; if(t===ROCK||t===BED) return false; }
+ return true;
+}
+function alive(u){ return u.hp>0&&u.state!=='escaped'&&u.state!=='dead'; }
+function damage(target,amt,src){
+ if(!alive(target)) return;
+ let d=amt;
+ if(target.kind==='adv'){
+  const it=G.guild.items;
+  if(src.cat==='fire'&&it.frost) d*=.5;
+  if(src.cat==='magic'&&it.wards) d*=.7;
+  if((src.cat==='ranged'||src.proj)&&it.shields&&(target.cls==='warrior'||target.cls==='knight')) d*=.6;
+  if(src.kind==='trap'&&target.trapRes) d*=target.trapRes;
+  if(target.armor&&src.cat!=='fire'&&src.cat!=='magic') d=Math.max(1,d-target.armor);
+  R.dmgMap[target.tile]+=d; R.cause[src.cat]=(R.cause[src.cat]||0)+d;
+ } else if(target.kind==='mon'){
+  if(target.armor) d=Math.max(1,d-target.armor);
+ }
+ target.hp-=d; target.flash=.15; if(d>=3) fxText(target.x+(Math.random()-.5)*.3,target.y-.4,Math.round(d),target.kind==='adv'?'#ffd0a0':'#ff6a6a');
+ fxBurst(target.x,target.y,target.kind==='adv'?'#b0102a':(target.type==='skel'?'#e8e2d0':target.type==='ooze'?'#5fd06a':'#6a0f1a'),4);
+ if(src.drainer){ src.drainer.hp=Math.min(src.drainer.max,src.drainer.hp+d*src.drainer.drain); }
+ if(target.hp<=0) die(target,src);
+ else if(target.kind==='adv'&&!target.isHero&&target.cls!=='knight'&&target.hp<target.max*.2&&target.state!=='flee'){ target.state='flee'; target.path=null; fxText(target.x,target.y-.7,'flees!','#fff'); }
+}
+function die(u,src){
+ u.hp=0;
+ if(u.kind==='adv'){
+  u.state='dead'; R.deaths.push({tile:u.tile,by:src.type,cls:u.cls});
+  if(u.shard>0){ G.heartHp=Math.min(G.heartMax,G.heartHp+u.shard); R.heartDmg-=u.shard; R.recovered=(R.recovered||0)+u.shard; fxText(u.x,u.y-1.3,'shard recovered','#ff9aa8',1); shardFly.push({x:u.x,y:u.y,t:0}); u.shard=0; } R.killedBy[src.type]=(R.killedBy[src.type]||0)+1; if(src.type==='pit') G.guild.pitDeaths++;
+  R.raidDanger[u.tile]+=1.5; R.knowV++;
+  const g=Math.round((14+G.day*2)*(u.isHero?6:u.cls==='knight'?1.6:1)); const s=u.isHero?10:1;
+  R.gold+=g; R.souls+=s; G.gold+=g; G.souls+=s; G.stats.kills++; G.stats.goldEarned+=g; if(u.isHero) G.stats.heroKills++;
+  fxText(u.x,u.y-.9,'+'+g+'g','#ffc65a',1); fxBurst(u.x,u.y,'#b0102a',18); sfx('die');
+  // when half the party is gone, the rest lose their nerve
+  const dead=R.advs.filter(a=>a.state==='dead').length;
+  if(!R.fleeing&&dead>=Math.ceil(R.total*.6)&&R.spawnQ.length===0){ R.fleeing=true; for(const a of R.advs) if(alive(a)&&!a.isHero){ a.state='flee'; a.path=null; } banner('The raiders break and run!',1.8); }
+ } else {
+  const d=MONS[u.type];
+  if(d.rise&&!u.risen&&!G.guild.items.holy){ u.state='down'; u.riseT=3; u.risen=true; fxBurst(u.x,u.y,'#e8e2d0',14); sfx('bones'); return; }
+  u.state='dead'; fxBurst(u.x,u.y,'#40303a',16); sfx('mdie');
+  if(d.split&&!u.mini&&!G.guild.items.salt){ for(let k=0;k<2;k++){ const m=unitFrom('mon',Object.assign({},d,{hp:20,dmg:2}),u.x+(k?.2:-.2),u.y); m.type='ooze'; m.mini=true; m.home=u.home; m.state='home'; m.tile=u.tile; R.mons.push(m); } }
+ }
+}
+function enterTile(u,i){
+ u.tile=i;
+ if(u.kind!=='adv') return;
+ // the gloom: every step deeper in the dark costs a little life
+ if(i!==GATE_I){ const g=u.max*GLOOM*(u.isHero?.5:1)*(G.guild.items.lanterns?.5:1); u.hp-=g; R.cause.gloom+=g; R.dmgMap[i]+=g*.3; if(!HEADLESS&&Math.random()<.5) parts.push({x:u.x,y:u.y-.2,vx:(Math.random()-.5)*.4,vy:-.5,l:.8,c:'rgba(120,60,160,.8)',s:3,g:0});
+  if(u.hp<=0){ die(u,{kind:'gloom',type:'gloom',cat:'gloom'}); return; }
+  if(!u.isHero&&u.cls!=='knight'&&u.hp<u.max*.2&&u.state!=='flee'){ u.state='flee'; u.path=null; } }
+ const k=G.traps[i]; if(!k) return; const st=R.trapState[i]; if(!st||st.dead) return;
+ const T=TRAPS[k];
+ if(k==='spike'&&st.cd<=0){ st.cd=T.cd; st.fire=.35; reveal(i); for(const a of R.advs) if(alive(a)&&a.tile===i) damage(a,T.dmg*trapDmgMul()*R.trapS,{kind:'trap',type:'spike',cat:'trap'}); sfx('spike'); }
+ if(k==='pit'&&!st.sprung){ st.sprung=true; reveal(i); damage(u,T.dmg*trapDmgMul()*R.trapS,{kind:'trap',type:'pit',cat:'trap'}); if(alive(u)) u.stun=T.stun; sfx('pit'); }
+ if(k==='slime') reveal(i);
+}
+function reveal(i){ if(!R.known[i]&&G.traps[i]){ R.known[i]=G.traps[i]; R.knowV++; fxText(tx(i)+.5,ty(i)+.2,'!','#ffe14a',1); } }
+function advTarget(a){ return a.state==='flee'?GATE_I:HEART_I; }
+function stepRaid(dt){
+ if(!R||R.ended) return;
+ R.t+=dt;
+ // marching in
+ if(R.spawnQ.length){ R.spawnT-=dt; if(R.spawnT<=0){ spawnAdv(R.spawnQ.shift()); R.spawnT=.75; } }
+ const advs=R.advs, mons=R.mons;
+ // ── traps ──
+ for(const i in R.trapState){
+  const st=R.trapState[i], k=G.traps[i]; if(!k||st.dead) continue; const T=TRAPS[k], cxp=tx(+i)+.5, cyp=ty(+i)+.5;
+  st.cd-=dt; st.fire=Math.max(0,st.fire-dt);
+  if(k==='arrow'&&st.cd<=0){ let best=null,bd=T.range; for(const a of advs) if(alive(a)){ const d=Math.hypot(a.x-cxp,a.y-cyp); if(d<bd&&los(cxp,cyp,a.x,a.y)){bd=d;best=a;} }
+   if(best){ st.cd=T.cd; st.aim=Math.atan2(best.y-cyp,best.x-cxp); R.projs.push({x:cxp,y:cyp,tgt:best,spd:9,dmg:T.dmg*trapDmgMul()*R.trapS,kind:'arrow',src:{kind:'trap',type:'arrow',cat:'ranged',proj:1},from:'dun'}); reveal(+i); sfx('twang'); } }
+  if(k==='flame'&&st.cd<=0){ if(advs.some(a=>alive(a)&&Math.hypot(a.x-cxp,a.y-cyp)<T.r)){ st.cd=T.cd; st.fire=.7; reveal(+i); for(const a of advs) if(alive(a)&&Math.hypot(a.x-cxp,a.y-cyp)<T.r) damage(a,T.dmg*trapDmgMul()*R.trapS,{kind:'trap',type:'flame',cat:'fire'}); fxFire(cxp,cyp,T.r); sfx('fire'); } }
+  if(k==='fear'&&st.cd<=0){ const hit=advs.filter(a=>alive(a)&&!a.brave&&a.state!=='flee'&&Math.hypot(a.x-cxp,a.y-cyp)<T.r); if(hit.length){ st.cd=T.cd; st.fire=1; reveal(+i);
+    for(const a of hit){ a.fleeT=T.flee; a.path=null; R.cause.fear+=4; G.guild.fearRuns++; fxText(a.x,a.y-.6,'!!','#c08aff'); } sfx('fear'); } }
+  if(k==='slime'){ for(const a of advs) if(alive(a)&&a.tile===+i){ a.slowT=.3; damage(a,T.dps*trapDmgMul()*R.trapS*dt,{kind:'trap',type:'slime',cat:'trap'}); } }
+ }
+ // ── adventurers ──
+ for(const a of advs){
+  if(!alive(a)) continue;
+  a.flash=Math.max(0,a.flash-dt); a.cdT-=dt; a.slowT-=dt;
+  if(a.stun>0){ a.stun-=dt; continue; }
+  // rogues spot hidden traps
+  const det=a.detect||(G.guild.items.poles?1.5:0);
+  if(det){ for(const i in G.traps){ if(R.known[i]||R.trapState[i].dead) continue; const d=Math.hypot(tx(+i)+.5-a.x,ty(+i)+.5-a.y); if(d<det&&(a.detect||G.traps[i]==='pit')){ reveal(+i); if(a.detect) R.disarmable[i]=G.traps[i]; } } }
+  // visible traps are seen from a few tiles away
+  for(const i in G.traps){ if(R.known[i]||TRAPS[G.traps[i]].hidden||R.trapState[i].dead) continue; const cxp=tx(+i)+.5, cyp=ty(+i)+.5; if(Math.hypot(cxp-a.x,cyp-a.y)<3&&los(a.x,a.y,cxp,cyp)) reveal(+i); }
+  // heal
+  if(a.heal){ a.healT-=dt; if(a.healT<=0){ let w=null; for(const o of advs) if(alive(o)&&o.hp<o.max&&dist(o,a)<a.healR&&(!w||o.hp/o.max<w.hp/w.max)) w=o; if(w){ a.healT=a.healCd||2.2; w.hp=Math.min(w.max,w.hp+a.heal*R.dmS); fxHeal(w); } } }
+  // fear
+  if(a.fleeT>0){ a.fleeT-=dt; moveTo(a,GATE_I,dt,advCost(a)); if(a.fleeT<=0) a.path=null; continue; }
+  // fight a monster in reach
+  let foe=null, fd=a.range+.15;
+  for(const m of mons) if(alive(m)&&m.state!=='down'){ const d=dist(a,m); if(d<fd&&(a.range<1.5||los(a.x,a.y,m.x,m.y))){fd=d;foe=m;} }
+  if(foe&&a.state!=='flee'){ a.face=Math.atan2(foe.y-a.y,foe.x-a.x); if(a.cdT<=0){ a.cdT=a.cd; attack(a,foe); } continue; }
+  if(foe&&a.state==='flee'&&fd<.8&&a.cdT<=0){ a.cdT=a.cd; attack(a,foe); }
+  // rogue disarms known traps in reach
+  if(a.cls==='rogue'&&a.state!=='flee'&&(a.kits=a.kits??(a.isHero?4:2))>0){ let tgt=null; for(const i in R.disarmable){ if(!G.traps[i]||R.trapState[i].dead) continue; const d=Math.hypot(tx(+i)+.5-a.x,ty(+i)+.5-a.y); if(d<1.15){tgt=+i;break;} }
+   if(tgt!=null){ a.disT+=dt; a.disarming=tgt; if(a.disT>=(a.disarm||1.8)){ disarm(tgt,a); a.kits--; a.disT=0; a.disarming=null; } continue; } else { a.disT=0; a.disarming=null; } }
+  // carve a shard out of the Heart, then run for the gate with it
+  if(a.state!=='flee'&&Math.hypot(HX+.5-a.x,HY+.5-a.y)<1.15){ a.face=Math.atan2(HY+.5-a.y,HX+.5-a.x); a.carve=(a.carve||0)+dt;
+   if(a.cdT<=0){ a.cdT=a.cd; a.shard=(a.shard||0)+hitHeart(a.dmg*(a.proj?.6:1)); a.lunge=.15; }
+   if(a.carve>=(a.isHero?6:CARVE_T)){ a.state='flee'; a.path=null; fxText(a.x,a.y-.8,'shard stolen!','#ff6a7a',1); banner('A raider runs with a piece of your Heart!',1.6); }
+   continue; }
+  const goal=advTarget(a);
+  if(a.state==='flee'&&a.tile===GATE_I){ a.state='escaped'; G.stats.escaped++; fxText(a.x,a.y-.5,'escaped','#aaa'); continue; }
+  if(a.knowV!==R.knowV){ a.knowV=R.knowV; a.path=null; }
+  moveTo(a,goal,dt,advCost(a));
+ }
+ // ── monsters ──
+ for(const m of mons){
+  if(m.state==='dead') continue;
+  m.flash=Math.max(0,m.flash-dt); m.cdT-=dt; m.slowT-=dt;
+  if(m.state==='down'){ m.riseT-=dt; if(m.riseT<=0){ m.state='home'; m.hp=m.max*.5; fxBurst(m.x,m.y,'#e8e2d0',10); } continue; }
+  const hx=tx(m.home)+.5, hy=ty(m.home)+.5;
+  let foe=null, fd=Infinity;
+  for(const a of advs) if(alive(a)){ const d=dist(a,m), dh=Math.hypot(a.x-hx,a.y-hy); if(d<m.aggro+(m.state==='chase'?1.5:0)&&dh<m.aggro+2.5&&d<fd&&los(m.x,m.y,a.x,a.y)){fd=d;foe=a;} }
+  if(foe){
+   m.state='chase'; m.face=Math.atan2(foe.y-m.y,foe.x-m.x);
+   if(fd<=m.range+.1&&(m.range<1.5||los(m.x,m.y,foe.x,foe.y))){ if(m.cdT<=0){ m.cdT=m.cd; attack(m,foe); } }
+   else moveTo(m,foe.tile,dt,null,foe);
+  } else if(Math.hypot(m.x-hx,m.y-hy)>.1){ m.state='return'; moveTo(m,m.home,dt,null,null,true); }
+  else m.state='home';
+ }
+ // ── projectiles ──
+ for(const p of R.projs){
+  if(p.heart){ const dx=HX+.5-p.x, dy=HY+.5-p.y, d=Math.hypot(dx,dy); if(d<.3){ p.done=1; hitHeart(p.dmg); if(p.kind==='fire') fxFire(p.x,p.y,.6); continue; } p.x+=dx/d*p.spd*dt; p.y+=dy/d*p.spd*dt; p.ang=Math.atan2(dy,dx); continue; }
+  const t=p.tgt; if(!alive(t)&&t.state!=='down'){ p.done=1; continue; }
+  const dx=t.x-p.x, dy=t.y-p.y, d=Math.hypot(dx,dy); p.ang=Math.atan2(dy,dx);
+  if(d<.25){ p.done=1;
+   if(p.splash){ const pool=p.from==='adv'?R.mons:R.advs; for(const u of pool) if(alive(u)&&dist(u,t)<p.splash) damage(u,p.dmg,p.src); fxFire(t.x,t.y,p.splash,p.kind==='bolt'?'#9a5aff':null); sfx(p.kind==='bolt'?'bolt':'fire'); }
+   else damage(t,p.dmg,p.src);
+   continue; }
+  p.x+=dx/d*p.spd*dt; p.y+=dy/d*p.spd*dt;
+ }
+ R.projs=R.projs.filter(p=>!p.done);
+ separate(dt);
+ // end?
+ if(!R.spawnQ.length&&R.advs.every(a=>!alive(a))) endRaid();
+ if(G.heartHp<=0&&!R.ended) endRaid();
+ if(R.t>240&&!R.ended){ for(const a of R.advs) if(alive(a)){ a.state='escaped'; } endRaid(); }   // safety valve
+}
+function attack(u,t){
+ u.lunge=.15;
+ if(u.kind==='adv'){
+  if(u.proj){ R.projs.push({x:u.x,y:u.y,tgt:t,spd:8,dmg:u.dmg,kind:u.proj==='fire'?'fire':'arrow',splash:u.splash,src:{kind:'adv',type:u.cls},from:'adv'}); sfx('twang'); }
+  else { damage(t,u.dmg,{kind:'adv',type:u.cls}); sfx('hit'); }
+  return;
+ }
+ const d=MONS[u.type], src={kind:'mon',type:u.type,cat:d.cat,drainer:d.drain?u:null};
+ if(d.breath){ for(const a of R.advs) if(alive(a)){ const dd=dist(a,u), ang=Math.abs(angDiff(Math.atan2(a.y-u.y,a.x-u.x),u.face)); if(dd<d.range+.4&&ang<.7) damage(a,u.dmg*R.dmS,src); } fxBreath(u); sfx('fire'); return; }
+ if(d.proj){ R.projs.push({x:u.x,y:u.y,tgt:t,spd:7,dmg:u.dmg*R.dmS,kind:'bolt',splash:d.splash,src,from:'mon'}); sfx('bolt'); return; }
+ damage(t,u.dmg*R.dmS,src); if(d.slowHit) t.slowT=1.2; sfx('hit');
+}
+const angDiff=(a,b)=>{ let d=a-b; while(d>Math.PI)d-=6.2832; while(d<-Math.PI)d+=6.2832; return d; };
+function disarm(i,a){ const k=G.traps[i]; R.trapState[i].dead=true; delete G.traps[i]; delete R.known[i]; delete R.disarmable[i]; R.knowV++; fxText(tx(i)+.5,ty(i)+.4,'disarmed','#9fe0ff',1); fxBurst(tx(i)+.5,ty(i)+.5,'#9fe0ff',10); sfx('disarm'); R.disarmed=(R.disarmed||0)+1; R.disarmedList=(R.disarmedList||[]).concat(TRAPS[k].n); mapDirty=true; }
+// the Heart is living stone: blows only half land
+function hitHeart(d){ d=Math.min(d,G.heartHp); G.heartHp-=d; R.heartDmg+=d; heartShake=.3; sfx('heart'); fxBurst(HX+.5,HY+.5,'#ff2a4a',6); return d; }
+function moveTo(u,goal,dt,cost,chase,home){
+ u.repath-=dt;
+ if(!u.path||u.pi>=u.path.length||u.repath<=0||(u.goal!==goal)){ u.goal=goal; u.repath=u.kind==='adv'?1.6:.45; if(u.tile===goal&&chase){ u.path=[]; } else repath(u,goal,cost); }
+ let tx0,ty0;
+ if(u.path&&u.pi<u.path.length){ const n=u.path[u.pi]; if(n===HEART_I){ tx0=HX+.5; ty0=HY+.5; } else { tx0=tx(n)+.5; ty0=ty(n)+.5; } }
+ else if(chase){ tx0=chase.x; ty0=chase.y; } else if(home){ tx0=tx(u.home)+.5; ty0=ty(u.home)+.5; } else return;
+ const dx=tx0-u.x, dy=ty0-u.y, d=Math.hypot(dx,dy);
+ // the badly wounded limp — a fast monster near the gate can still catch a runner
+ let sp=u.spd*(u.slowT>0?.5:1)*dt*(u.kind==='adv'&&u.hp<u.max*.3?.8:1);
+ if(d<1e-4){ if(u.path) u.pi++; return; }
+ u.face=Math.atan2(dy,dx); u.walk+=dt*u.spd*7;
+ if(d<=sp){ u.x=tx0; u.y=ty0; if(u.path) u.pi++; }
+ else { u.x+=dx/d*sp; u.y+=dy/d*sp; }
+ const ni=idx(u.x|0,u.y|0); if(ni!==u.tile&&(walk(ni))) enterTile(u,ni);
+}
+// soft push so crowds spread inside a tile without leaving the floor. The push is sideways to the
+// direction of travel, so two units meeting head-on in a corridor slide past instead of deadlocking.
+function separate(dt){
+ const all=R.advs.filter(alive).concat(R.mons.filter(m=>m.state!=='dead'&&m.state!=='down'));
+ const k=Math.min(1,dt*6);
+ for(let i=0;i<all.length;i++) for(let j=i+1;j<all.length;j++){
+  const a=all[i], b=all[j], dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy), min=.42;
+  if(d>=min) continue;
+  const p=(min-d)*.5*k, f=a.face||0; let px=-Math.sin(f), py=Math.cos(f);
+  let side=dx*px+dy*py; if(Math.abs(side)<.02) side=(i+j)%2?1:-1;
+  const sg=side>0?1:-1;
+  nudge(a,-px*p*sg,-py*p*sg); nudge(b,px*p*sg,py*p*sg);
+ }
+}
+function nudge(u,dx,dy){ const nx=u.x+dx, ny=u.y+dy; const t=G.map[idx(nx|0,ny|0)]; if(t===FLOOR||t===GATE){ const fx=nx-(nx|0), fy=ny-(ny|0); if(fx>.18&&fx<.82&&fy>.18&&fy<.82){ u.x=nx; u.y=ny; } } }
+function endRaid(){
+ if(R.ended) return; R.ended=true;
+ for(const a of R.advs) if(alive(a)){ a.state='escaped'; }
+ G.stats.raids++;
+ guildLearn();
+ const lost=G.heartHp<=0;
+ if(lost){ G.over=true; G.phase='over'; save(); if(!QUIET()) setTimeout(()=>showOver(),900); return; }
+ // night falls: income, healing, pits reset, monsters respawn
+ const tithe=30+7*G.day+15*(G.rites.tithe|0);
+ G.gold+=tithe; R.tithe=tithe;
+ const regen=Math.round(G.heartMax*(.25+.25*(G.rites.regen|0)));
+ G.heartHp=Math.min(G.heartMax,G.heartHp+regen); R.regen=regen;
+ const finished=G.day;
+ if(finished>=LAST_DAY&&!G.won){ G.won=true; }
+ G.day++;
+ G.nextParty=makeParty(G.day);
+ G.phase='report';
+ save();
+ if(!QUIET()) setTimeout(()=>showReport(finished),700);
+}
+
+/* ═══════════════════════════ FX (render-only state) ═══════════════════════════ */
+let parts=[], texts=[], heartShake=0, shardFly=[];
+function fxBurst(x,y,col,n){ if(HEADLESS) return; for(let k=0;k<n;k++){ const a=Math.random()*6.28, v=.5+Math.random()*2.2; parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,l:.5+Math.random()*.5,c:col,s:2+Math.random()*2,g:3}); } }
+function fxFire(x,y,r,col){ if(HEADLESS) return; for(let k=0;k<26*r;k++){ const a=Math.random()*6.28, v=Math.random()*r*2.4; parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.5,l:.35+Math.random()*.4,c:col||(['#ffdc5a','#ff8a2a','#ff4a1a'][k%3]),s:3+Math.random()*4,g:-1.5,glow:1}); } lights.push({x,y,r:r*3,l:.5,c:col?'154,90,255':'255,140,60'}); }
+function fxBreath(u){ if(HEADLESS) return; for(let k=0;k<60;k++){ const a=u.face+(Math.random()-.5)*1.3, v=2+Math.random()*4; parts.push({x:u.x,y:u.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5+Math.random()*.3,c:['#ffdc5a','#ff8a2a','#ff4a1a'][k%3],s:4+Math.random()*5,g:-.5,glow:1}); } lights.push({x:u.x+Math.cos(u.face)*1.5,y:u.y+Math.sin(u.face)*1.5,r:4,l:.6,c:'255,140,60'}); }
+function fxHeal(w){ if(HEADLESS) return; for(let k=0;k<8;k++) parts.push({x:w.x+(Math.random()-.5)*.5,y:w.y,vx:0,vy:-1-Math.random(),l:.7,c:'#9dff9d',s:2.5,g:0,glow:1}); }
+function fxText(x,y,t,c,big){ if(HEADLESS) return; texts.push({x,y,t:String(t),c,l:big?1.4:.8,big}); if(texts.length>40) texts.splice(0,texts.length-40); }
+let lights=[];
+
+/* ═══════════════════════════ RENDER ═══════════════════════════ */
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const WW=COLS*TS, WH=ROWS*TS;
+let scale=1, ox=0, oy=0, DPR=1, mapDirty=true, previewDirty=true, preview=null, showIntel=false;
+const mapCv=document.createElement('canvas'); mapCv.width=WW; mapCv.height=WH; const mctx=mapCv.getContext('2d');
+const lightCv=document.createElement('canvas'); lightCv.width=WW; lightCv.height=WH; const lctx=lightCv.getContext('2d');
+function resize(){ const r=cv.getBoundingClientRect(); DPR=Math.min(2,devicePixelRatio||1); cv.width=Math.max(1,r.width*DPR); cv.height=Math.max(1,r.height*DPR); scale=Math.min(r.width/WW,r.height/WH); ox=(r.width-WW*scale)/2; oy=(r.height-WH*scale)/2; }
+function hash(i,k){ let h=(i*374761393+k*668265263)^0x5bd1e995; h=Math.imul(h^h>>>13,1274126177); return ((h^h>>>16)>>>0)/4294967296; }
+function drawMap(){
+ const c=mctx; c.clearRect(0,0,WW,WH);
+ for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+  const i=idx(x,y), t=G.map[i], X=x*TS, Y=y*TS;
+  if(t===FLOOR||t===GATE||t===HEART){
+   c.fillStyle='#2b2329'; c.fillRect(X,Y,TS,TS);
+   for(let sy=0;sy<2;sy++) for(let sx=0;sx<2;sx++){ const h=hash(i,sx+sy*2); const off=(sy%2)*0; const l=36+h*12|0; c.fillStyle=`rgb(${l+6},${l-2},${l+4})`; c.fillRect(X+sx*24+1+off,Y+sy*24+1,22,22);
+    if(h>.82){ c.strokeStyle='rgba(0,0,0,.35)'; c.lineWidth=1; c.beginPath(); c.moveTo(X+sx*24+4,Y+sy*24+6); c.lineTo(X+sx*24+12,Y+sy*24+12); c.lineTo(X+sx*24+10,Y+sy*24+19); c.stroke(); }
+    if(h<.07){ c.fillStyle='rgba(70,110,60,.35)'; c.fillRect(X+sx*24+2,Y+sy*24+14,9,6); } }
+   // shadow cast by the wall above
+   if(y>0&&isSolid(G.map[idx(x,y-1)])){ const g=c.createLinearGradient(0,Y,0,Y+14); g.addColorStop(0,'rgba(0,0,0,.55)'); g.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=g; c.fillRect(X,Y,TS,14); }
+   if(x>0&&isSolid(G.map[idx(x-1,y)])){ const g=c.createLinearGradient(X,0,X+8,0); g.addColorStop(0,'rgba(0,0,0,.4)'); g.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=g; c.fillRect(X,Y,8,TS); }
+   if(x<COLS-1&&isSolid(G.map[idx(x+1,y)])){ const g=c.createLinearGradient(X+TS,0,X+TS-8,0); g.addColorStop(0,'rgba(0,0,0,.4)'); g.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=g; c.fillRect(X+TS-8,Y,8,TS); }
+   if(t===GATE){ c.fillStyle='#120c10'; c.fillRect(X,Y,10,TS); c.strokeStyle='#6a5a52'; c.lineWidth=3; for(let k=0;k<4;k++){ c.beginPath(); c.moveTo(X+3+k*0,Y+6+k*11); c.lineTo(X+12,Y+6+k*11); c.stroke(); } c.fillStyle='#7a6a60'; for(let k=0;k<3;k++) c.fillRect(X+2,Y+2,4,TS-4); }
+  } else {
+   const bed=t===BED;
+   // rock next to a tunnel catches the light; deep rock fades to black
+   let near=false; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const nx=x+dx, ny=y+dy; if(nx>=0&&ny>=0&&nx<COLS&&ny<ROWS&&!isSolid(G.map[idx(nx,ny)])) near=true; }
+   const base=bed?12:near?34:22;
+   c.fillStyle=`rgb(${base},${base-6},${base+3})`; c.fillRect(X,Y,TS,TS);
+   // chunky stones
+   for(let k=0;k<4;k++){ const h=hash(i,k+50), h2=hash(i,k+70), w=10+h*14, hh=8+h2*10, sx=X+h2*(TS-w), sy=Y+h*(TS-hh);
+    c.fillStyle=`rgba(${base+14},${base+8},${base+16},.55)`; c.beginPath(); c.ellipse(sx+w/2,sy+hh/2,w/2,hh/2,h*3,0,6.28); c.fill();
+    c.fillStyle=`rgba(0,0,0,.25)`; c.beginPath(); c.ellipse(sx+w/2+1.5,sy+hh/2+2,w/2,hh/2*.6,h*3,0,3.14); c.fill(); }
+   for(let k=0;k<6;k++){ const h=hash(i,k+9), h2=hash(i,k+31); c.fillStyle=`rgba(${bed?40:80},${bed?34:66},${bed?44:76},${.2+h2*.3})`; c.fillRect(X+h*44,Y+h2*44,2+h*3,2); }
+   if(!bed&&hash(i,99)<.05){ const cx1=X+10+hash(i,98)*28, cy1=Y+10+hash(i,97)*24; c.fillStyle='rgba(150,90,255,.55)'; c.beginPath(); c.moveTo(cx1,cy1-6); c.lineTo(cx1+3,cy1); c.lineTo(cx1,cy1+4); c.lineTo(cx1-3,cy1); c.closePath(); c.fill(); c.fillStyle='rgba(220,190,255,.8)'; c.fillRect(cx1-.5,cy1-4,1,3); }
+   // a wall face where rock meets floor below — gives the dungeon its depth
+   if(!bed&&y<ROWS-1&&!isSolid(G.map[idx(x,y+1)])){
+    c.fillStyle='#4a3c44'; c.fillRect(X,Y+TS-18,TS,18);
+    c.fillStyle='#5a4a52'; c.fillRect(X,Y+TS-18,TS,3);
+    c.strokeStyle='rgba(20,14,18,.7)'; c.lineWidth=1; c.beginPath();
+    c.moveTo(X,Y+TS-9.5); c.lineTo(X+TS,Y+TS-9.5);
+    for(let k=0;k<3;k++){ const bx=X+k*16+(x%2?8:0); c.moveTo(bx+.5,Y+TS-18); c.lineTo(bx+.5,Y+TS-9.5); c.moveTo(bx+8.5,Y+TS-9.5); c.lineTo(bx+8.5,Y+TS); }
+    c.stroke();
+   }
+   if(bed){ c.strokeStyle='rgba(0,0,0,.5)'; c.strokeRect(X+.5,Y+.5,TS-1,TS-1); }
+  }
+ }
+ mapDirty=false;
+}
+function isSolid(t){ return t===ROCK||t===BED; }
+function torches(){ const out=[]; for(let y=1;y<ROWS-1;y++) for(let x=1;x<COLS-1;x++){ const i=idx(x,y); if(G.map[i]===ROCK&&!isSolid(G.map[idx(x,y+1)])&&hash(i,77)<.32) out.push([x,y]); } return out; }
+let TORCH=[];
+function W2S(x,y){ return [x*TS,y*TS]; }
+let animT=0;
+function render(dt){
+ animT+=dt;
+ const c=ctx; c.setTransform(DPR,0,0,DPR,0,0); c.fillStyle='#050307'; c.fillRect(0,0,cv.width,cv.height);
+ if(mapDirty){ drawMap(); TORCH=torches(); }
+ c.save(); c.translate(ox,oy); c.scale(scale,scale);
+ if(heartShake>0){ heartShake-=dt; c.translate((Math.random()-.5)*heartShake*14,(Math.random()-.5)*heartShake*14); }
+ c.drawImage(mapCv,0,0);
+ const building=G.phase==='build';
+ // intel heatmap
+ if(showIntel||G.phase==='build'&&hover&&tool==='intel'){ for(let i=0;i<G.guild.danger.length;i++){ const d=G.guild.danger[i]; if(d>.05&&walk(i)){ c.fillStyle=`rgba(255,40,60,${Math.min(.5,d*.12)})`; c.fillRect(tx(i)*TS,ty(i)*TS,TS,TS); } } }
+ // traps
+ for(const i in G.traps) drawTrap(c,+i,G.traps[i]);
+ // predicted path
+ if(building){ if(previewDirty){ preview=predictPath(); previewDirty=false; } drawPreview(c); }
+ // heart
+ drawHeart(c);
+ // torches
+ for(const [x,y] of TORCH) drawTorch(c,x,y);
+ // units
+ const units=[];
+ if(R&&G.phase!=='build'){ for(const m of R.mons) if(m.state!=='dead') units.push(m); for(const a of R.advs) if(a.state!=='escaped'&&(a.state!=='dead')) units.push(a); }
+ else for(const i in G.mons) units.push({kind:'mon',type:G.mons[i],x:tx(+i)+.5,y:ty(+i)+.5,hp:1,max:1,face:0,walk:animT*.6+ +i,flash:0,state:'home',ghost:1});
+ units.sort((a,b)=>a.y-b.y);
+ if(R&&G.phase!=='build') for(const a of R.advs) if(a.state==='dead') drawCorpse(c,a);
+ for(const u of units) drawUnit(c,u);
+ // projectiles
+ if(R) for(const p of R.projs) drawProj(c,p);
+ // particles
+ for(const p of parts){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=p.g*dt; p.vx*=.96; p.l-=dt; if(p.l<=0) continue; c.globalAlpha=Math.min(1,p.l*2); if(p.glow) c.globalCompositeOperation='lighter'; c.fillStyle=p.c; const s=p.s*(p.glow?Math.min(1,p.l*2):1); c.fillRect(p.x*TS-s/2,p.y*TS-s/2,s,s); c.globalCompositeOperation='source-over'; }
+ c.globalAlpha=1; parts=parts.filter(p=>p.l>0); if(parts.length>900) parts.splice(0,parts.length-900);
+ // lighting
+ drawLight(c,dt);
+ // hover / placement ghost
+ if(building) drawHover(c);
+ for(const f of shardFly){ f.t+=dt*1.3; const k=Math.min(1,f.t), x=f.x+(HX+.5-f.x)*k, y=f.y+(HY+.5-f.y)*k-Math.sin(k*3.14)*2; c.fillStyle='#ff4a6a'; c.shadowColor='#ff4a6a'; c.shadowBlur=12; c.beginPath(); c.arc(x*TS,y*TS,5,0,6.28); c.fill(); c.shadowBlur=0; }
+ shardFly=shardFly.filter(f=>f.t<1);
+ // floating text
+ c.textAlign='center'; c.textBaseline='middle';
+ for(const t of texts){ t.y-=dt*(t.big?.6:.9); t.l-=dt; c.globalAlpha=Math.max(0,Math.min(1,t.l*2)); c.font=`800 ${t.big?18:14}px 'Alegreya Sans',sans-serif`; c.fillStyle='#000'; c.fillText(t.t,t.x*TS+1,t.y*TS+1); c.fillStyle=t.c; c.fillText(t.t,t.x*TS,t.y*TS); }
+ c.globalAlpha=1; texts=texts.filter(t=>t.l>0);
+ c.restore();
+}
+function drawLight(c,dt){
+ const L=lctx; L.globalCompositeOperation='source-over'; L.clearRect(0,0,WW,WH);
+ L.fillStyle=G.phase==='build'?'rgba(4,2,8,.3)':'rgba(4,2,8,.66)'; L.fillRect(0,0,WW,WH);
+ L.globalCompositeOperation='destination-out';
+ const hole=(x,y,r,a)=>{ const g=L.createRadialGradient(x*TS,y*TS,0,x*TS,y*TS,r*TS); g.addColorStop(0,`rgba(0,0,0,${a})`); g.addColorStop(1,'rgba(0,0,0,0)'); L.fillStyle=g; L.fillRect(x*TS-r*TS,y*TS-r*TS,r*TS*2,r*TS*2); };
+ for(const [x,y] of TORCH) hole(x+.5,y+1,3.2+Math.sin(animT*9+x)*.12,.95);
+ hole(HX+.5,HY+.5,4.2+Math.sin(animT*2.4)*.3,1);
+ hole(GX+.8,GY+.5,2.2,.7);
+ if(R&&G.phase!=='build'){ for(const a of R.advs) if(alive(a)) hole(a.x,a.y,2.3,.85); }
+ for(const l of lights){ l.l-=dt; if(l.l>0) hole(l.x,l.y,l.r,Math.min(1,l.l*2)); }
+ for(const i in G.traps) if(G.traps[i]==='flame'||G.traps[i]==='fear') hole(tx(+i)+.5,ty(+i)+.5,1.1,.4);
+ c.drawImage(lightCv,0,0);
+ // warm glows on top
+ c.globalCompositeOperation='lighter';
+ for(const [x,y] of TORCH){ const g=c.createRadialGradient((x+.5)*TS,(y+.75)*TS,0,(x+.5)*TS,(y+.75)*TS,TS*2.4); g.addColorStop(0,'rgba(255,140,60,.16)'); g.addColorStop(1,'rgba(255,140,60,0)'); c.fillStyle=g; c.fillRect((x-2)*TS,(y-1.6)*TS,TS*5,TS*5); }
+ const hg=c.createRadialGradient((HX+.5)*TS,(HY+.5)*TS,0,(HX+.5)*TS,(HY+.5)*TS,TS*3.5); const hp=G.heartHp/G.heartMax; hg.addColorStop(0,`rgba(255,30,70,${.22+.08*Math.sin(animT*hbRate())})`); hg.addColorStop(1,'rgba(255,30,70,0)'); c.fillStyle=hg; c.fillRect((HX-3.5)*TS,(HY-3.5)*TS,TS*8,TS*8);
+ for(const l of lights) if(l.l>0){ const g=c.createRadialGradient(l.x*TS,l.y*TS,0,l.x*TS,l.y*TS,l.r*TS); g.addColorStop(0,`rgba(${l.c},${.35*Math.min(1,l.l*2)})`); g.addColorStop(1,`rgba(${l.c},0)`); c.fillStyle=g; c.fillRect((l.x-l.r)*TS,(l.y-l.r)*TS,l.r*TS*2,l.r*TS*2); }
+ c.globalCompositeOperation='source-over';
+ lights=lights.filter(l=>l.l>0);
+}
+const hbRate=()=>3+ (1-G.heartHp/G.heartMax)*9;
+function drawHeart(c){
+ const x=(HX+.5)*TS, y=(HY+.5)*TS, beat=Math.pow(Math.max(0,Math.sin(animT*hbRate())),8), s=1+beat*.09, hp=G.heartHp/G.heartMax;
+ c.save(); c.translate(x,y); c.scale(s,s);
+ c.fillStyle='rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(0,18,20,6,0,0,6.28); c.fill();
+ // veins into the floor
+ c.strokeStyle='rgba(140,10,30,.7)'; c.lineWidth=3; for(let k=0;k<6;k++){ const a=k*1.05+.3; c.beginPath(); c.moveTo(0,4); c.quadraticCurveTo(Math.cos(a)*18,Math.sin(a)*14+8,Math.cos(a)*30,Math.sin(a)*22+10); c.stroke(); }
+ // the crystal-flesh heart
+ const g=c.createRadialGradient(-5,-8,2,0,0,22); g.addColorStop(0,'#ff9aa8'); g.addColorStop(.4,'#e0334a'); g.addColorStop(1,'#5a0818'); c.fillStyle=g;
+ c.beginPath(); c.moveTo(0,16); c.bezierCurveTo(-26,0,-18,-22,-6,-18); c.bezierCurveTo(-2,-17,0,-13,0,-11); c.bezierCurveTo(0,-13,2,-17,6,-18); c.bezierCurveTo(18,-22,26,0,0,16); c.fill();
+ c.strokeStyle='#2a0008'; c.lineWidth=2; c.stroke();
+ c.fillStyle='rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(-8,-9,4,6,-.5,0,6.28); c.fill();
+ // cracks as it weakens
+ if(hp<.66){ c.strokeStyle='#1a0006'; c.lineWidth=1.5; c.beginPath(); c.moveTo(2,-10); c.lineTo(5,-2); c.lineTo(1,4); if(hp<.33){ c.moveTo(-10,-6); c.lineTo(-4,0); c.lineTo(-8,8); } c.stroke(); }
+ c.restore();
+}
+function drawTorch(c,x,y){ const X=(x+.5)*TS, Y=(y+1)*TS-12; c.fillStyle='#3a2a20'; c.fillRect(X-2,Y-4,4,10); const f=Math.sin(animT*13+x*3)*1.5;
+ c.globalCompositeOperation='lighter'; c.fillStyle='rgba(255,120,40,.8)'; c.beginPath(); c.ellipse(X,Y-8+f*.3,4,7+f,0,0,6.28); c.fill(); c.fillStyle='rgba(255,230,140,.9)'; c.beginPath(); c.ellipse(X,Y-6,2,4,0,0,6.28); c.fill(); c.globalCompositeOperation='source-over'; }
+function drawTrap(c,i,k){
+ const X=tx(i)*TS, Y=ty(i)*TS, cx0=X+TS/2, cy0=Y+TS/2, st=R&&G.phase!=='build'?R.trapState[i]:null, fire=st?st.fire:0;
+ const known=G.phase==='build'?G.guild.known[i]===k:(R&&R.known[i]);
+ c.save();
+ if(k==='spike'){ c.fillStyle='#3a3238'; c.fillRect(X+8,Y+8,TS-16,TS-16); c.strokeStyle='#1a1418'; c.strokeRect(X+8.5,Y+8.5,TS-17,TS-17);
+  for(let a=0;a<3;a++) for(let b=0;b<3;b++){ const px=X+14+a*10, py=Y+14+b*10; if(fire>0){ c.fillStyle='#d8d0d8'; c.beginPath(); c.moveTo(px-3,py+3); c.lineTo(px,py-7); c.lineTo(px+3,py+3); c.fill(); c.fillStyle='#8a0f25'; c.fillRect(px-1,py-6,2,2); } else { c.fillStyle='#14100f'; c.fillRect(px-1.5,py-1.5,3,3); } } }
+ else if(k==='pit'){ if(st&&st.sprung){ const g=c.createRadialGradient(cx0,cy0,2,cx0,cy0,TS/2); g.addColorStop(0,'#000'); g.addColorStop(1,'#1a1216'); c.fillStyle=g; c.beginPath(); c.ellipse(cx0,cy0,TS/2-4,TS/2-8,0,0,6.28); c.fill(); }
+  else { c.strokeStyle='rgba(20,14,16,.6)'; c.lineWidth=1; c.strokeRect(X+6.5,Y+6.5,TS-13,TS-13); c.beginPath(); c.moveTo(X+7,Y+7); c.lineTo(X+TS-7,Y+TS-7); c.moveTo(X+TS-7,Y+7); c.lineTo(X+7,Y+TS-7); c.stroke(); } }
+ else if(k==='arrow'){ c.fillStyle='#4a3a32'; c.beginPath(); c.arc(cx0,cy0,13,0,6.28); c.fill(); c.strokeStyle='#2a1e18'; c.lineWidth=2; c.stroke();
+  const a=st?st.aim:(-Math.PI/2+Math.sin(animT*.8+i)*.6); c.translate(cx0,cy0); c.rotate(a); c.fillStyle='#8a6a40'; c.fillRect(-4,-3,18,6); c.strokeStyle='#d8c8a8'; c.lineWidth=2; c.beginPath(); c.arc(6,0,9,-1.2,1.2); c.stroke(); c.fillStyle='#bbb'; c.fillRect(12,-1,6,2); }
+ else if(k==='flame'){ c.fillStyle='#2a2024'; c.fillRect(X+9,Y+9,TS-18,TS-18); c.strokeStyle='#5a4448'; c.lineWidth=2; for(let k2=0;k2<4;k2++){ c.beginPath(); c.moveTo(X+13+k2*7,Y+12); c.lineTo(X+13+k2*7,Y+TS-12); c.stroke(); }
+  const charge=st?Math.max(0,1-st.cd/TRAPS.flame.cd):(.5+.5*Math.sin(animT*2+i)); c.globalCompositeOperation='lighter'; c.fillStyle=`rgba(255,${90+charge*80|0},30,${.15+charge*.45})`; c.fillRect(X+10,Y+10,TS-20,TS-20); c.globalCompositeOperation='source-over'; }
+ else if(k==='slime'){ const w=Math.sin(animT*2+i)*1.5; c.fillStyle='rgba(90,210,90,.55)'; c.beginPath(); c.ellipse(cx0,cy0+2,17+w,12-w*.5,0,0,6.28); c.fill(); c.fillStyle='rgba(190,255,170,.5)'; c.beginPath(); c.ellipse(cx0-6,cy0-2,4,2,0,0,6.28); c.fill(); for(let b=0;b<3;b++){ const ph=(animT*.7+b*.33+i*.1)%1; c.strokeStyle=`rgba(200,255,180,${1-ph})`; c.beginPath(); c.arc(cx0-8+b*8,cy0+2,ph*3,0,6.28); c.stroke(); } }
+ else if(k==='fear'){ c.translate(cx0,cy0); c.rotate(animT*.3); c.strokeStyle=`rgba(180,110,255,${.5+.3*Math.sin(animT*3)+fire*.5})`; c.lineWidth=2; c.beginPath(); for(let p=0;p<5;p++){ const a=p*2.513-1.57; c[p?'lineTo':'moveTo'](Math.cos(a)*15,Math.sin(a)*15); } c.closePath(); c.stroke(); c.beginPath(); c.arc(0,0,17,0,6.28); c.stroke();
+  if(fire>0){ c.strokeStyle=`rgba(180,110,255,${fire})`; c.beginPath(); c.arc(0,0,TRAPS.fear.r*TS*(1-fire*.5),0,6.28); c.stroke(); } }
+ c.restore();
+ if(known&&(G.phase==='build'||showIntel)){ c.font='14px sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='rgba(0,0,0,.7)'; c.beginPath(); c.arc(X+TS-9,Y+9,9,0,6.28); c.fill(); c.fillText('👁️',X+TS-9,Y+10); }
+ if(st&&st.dead){ /* disarmed: drawn as removed */ }
+}
+function drawCorpse(c,a){ const X=a.x*TS, Y=a.y*TS; c.fillStyle='rgba(90,0,14,.5)'; c.beginPath(); c.ellipse(X,Y+6,12,6,0,0,6.28); c.fill(); c.fillStyle=CLS[a.cls]?CLS[a.cls].col:'#888'; c.globalAlpha=.6; c.fillRect(X-9,Y+2,18,6); c.globalAlpha=1; }
+function drawProj(c,p){ const X=p.x*TS, Y=p.y*TS; c.save(); c.translate(X,Y); c.rotate(p.ang||0);
+ if(p.kind==='arrow'){ c.strokeStyle='#e8d8b8'; c.lineWidth=2; c.beginPath(); c.moveTo(-10,0); c.lineTo(6,0); c.stroke(); c.fillStyle='#ccc'; c.beginPath(); c.moveTo(9,0); c.lineTo(4,-3); c.lineTo(4,3); c.fill(); }
+ else { const col=p.kind==='bolt'?'154,90,255':'255,140,40'; c.globalCompositeOperation='lighter'; const g=c.createRadialGradient(0,0,0,0,0,12); g.addColorStop(0,`rgba(255,255,255,.95)`); g.addColorStop(.3,`rgba(${col},.9)`); g.addColorStop(1,`rgba(${col},0)`); c.fillStyle=g; c.beginPath(); c.arc(0,0,12,0,6.28); c.fill(); c.globalCompositeOperation='source-over'; lights.push({x:p.x,y:p.y,r:1.4,l:.05,c:col}); }
+ c.restore(); }
+function drawUnit(c,u){
+ const X=u.x*TS, Y=u.y*TS, bob=Math.sin(u.walk||0)*1.6, lunge=u.lunge>0?(u.lunge-=1/60,4):0, fx=Math.cos(u.face||0), fy=Math.sin(u.face||0);
+ c.save(); c.translate(X+fx*lunge,Y+fy*lunge+(u.kind==='adv'?bob*.6:0));
+ if(u.state==='down'){ c.fillStyle='#d8d0c0'; for(let k=0;k<6;k++) c.fillRect(-10+k*4,4+(k%2)*3,4,2); c.restore(); return; }
+ if(u.ghost) c.globalAlpha=.92;
+ c.fillStyle='rgba(0,0,0,.4)'; const big=u.type==='dragon'?2:u.type==='orc'?1.35:u.isHero?1.2:1; c.beginPath(); c.ellipse(0,13*big,11*big,4*big,0,0,6.28); c.fill();
+ const flip=fx<-.1?-1:1; c.scale(flip,1);
+ if(u.kind==='adv') drawAdv(c,u); else drawMon(c,u);
+ c.scale(flip,1);
+ if(u.flash>0){ c.globalCompositeOperation='lighter'; c.fillStyle=`rgba(255,255,255,${u.flash*3})`; c.beginPath(); c.arc(0,0,12*big,0,6.28); c.fill(); c.globalCompositeOperation='source-over'; }
+ c.restore();
+ // health bar
+ if(u.hp<u.max&&u.hp>0&&!u.ghost){ const w=u.isHero||u.type==='dragon'?40:26, X0=X-w/2, Y0=Y-(u.type==='dragon'?40:u.isHero?30:24); c.fillStyle='rgba(0,0,0,.7)'; c.fillRect(X0-1,Y0-1,w+2,5); c.fillStyle=u.kind==='adv'?'#e8c040':'#d0304a'; c.fillRect(X0,Y0,w*u.hp/u.max,3); }
+ if(u.shard>0){ const sy=Y-30+Math.sin(animT*6)*2; c.save(); c.globalCompositeOperation='lighter'; const g=c.createRadialGradient(X,sy,0,X,sy,12); g.addColorStop(0,'rgba(255,60,90,.9)'); g.addColorStop(1,'rgba(255,60,90,0)'); c.fillStyle=g; c.fillRect(X-12,sy-12,24,24); c.restore(); c.fillStyle='#ff4a6a'; c.beginPath(); c.moveTo(X,sy-6); c.lineTo(X+4,sy); c.lineTo(X,sy+6); c.lineTo(X-4,sy); c.closePath(); c.fill(); }
+ if(u.isHero){ c.font="700 12px 'Alegreya Sans'"; c.textAlign='center'; c.fillStyle='#ffc65a'; c.fillText(u.name,X,Y-36); }
+ if(u.disarming!=null){ c.strokeStyle='#9fe0ff'; c.lineWidth=2; c.beginPath(); c.arc(X,Y-20,6,-1.57,-1.57+6.28*(u.disT/(u.disarm||1.8))); c.stroke(); }
+ if(u.stun>0){ c.fillStyle='#ffe14a'; for(let k=0;k<3;k++){ const a=animT*5+k*2.1; c.fillRect(X+Math.cos(a)*9-1.5,Y-20+Math.sin(a)*3-1.5,3,3); } }
+ if(u.fleeT>0||u.state==='flee'){ c.font='12px sans-serif'; c.textAlign='center'; c.fillText(u.fleeT>0?'😱':'💨',X+10,Y-18); }
+}
+function drawAdv(c,u){
+ const col=CLS[u.cls].col, s=u.isHero?1.2:1; c.scale(s,s);
+ if(u.isHero){ c.fillStyle='#8a1a1a'; c.beginPath(); c.moveTo(-6,-6); c.lineTo(-11,12); c.lineTo(3,12); c.closePath(); c.fill(); }
+ // legs
+ const st=Math.sin(u.walk||0)*3; c.fillStyle='#2a2028'; c.fillRect(-4,6,3,6+st*.3); c.fillRect(1,6,3,6-st*.3);
+ // body
+ c.fillStyle=col; c.beginPath(); c.roundRect?c.roundRect(-6,-5,12,13,3):c.rect(-6,-5,12,13); c.fill();
+ c.fillStyle='rgba(0,0,0,.25)'; c.fillRect(-6,3,12,2);
+ // head
+ c.fillStyle='#f0c8a0'; c.beginPath(); c.arc(0,-10,5.5,0,6.28); c.fill();
+ c.fillStyle='#1a1014'; c.fillRect(1.5,-11,1.6,1.6);
+ const k=u.cls;
+ if(k==='warrior'){ c.fillStyle='#6a4a2a'; c.fillRect(-5,-16,10,3); c.strokeStyle='#d8d8e0'; c.lineWidth=2.5; c.beginPath(); c.moveTo(6,2); c.lineTo(15,-9); c.stroke(); c.fillStyle='#8a6a3a'; c.fillRect(4,0,4,3); }
+ if(k==='knight'){ c.fillStyle='#b8c0cc'; c.beginPath(); c.arc(0,-11,6.5,3.3,6.1); c.fill(); c.fillRect(-6.5,-12,13,4); c.fillStyle='#222'; c.fillRect(0,-11,6,1.5); c.fillStyle='#5a6a8a'; c.beginPath(); c.moveTo(-10,-4); c.lineTo(-3,-4); c.lineTo(-3,6); c.lineTo(-6.5,10); c.lineTo(-10,6); c.closePath(); c.fill(); c.strokeStyle='#e8e0c0'; c.lineWidth=1; c.stroke(); c.strokeStyle='#e0e0e8'; c.lineWidth=2.5; c.beginPath(); c.moveTo(6,2); c.lineTo(14,-10); c.stroke(); }
+ if(k==='rogue'){ c.fillStyle='#1e4a30'; c.beginPath(); c.moveTo(-6.5,-9); c.quadraticCurveTo(0,-20,6.5,-9); c.lineTo(6,-6); c.lineTo(-6,-6); c.fill(); c.fillStyle='#ccc'; c.fillRect(6,0,7,2); }
+ if(k==='archer'){ c.strokeStyle='#8a5a2a'; c.lineWidth=2; c.beginPath(); c.arc(7,-2,10,-1.2,1.2); c.stroke(); c.strokeStyle='#ddd'; c.lineWidth=.8; c.beginPath(); c.moveTo(10.6,-11.3); c.lineTo(10.6,7.3); c.stroke(); c.fillStyle='#4a7a3a'; c.beginPath(); c.moveTo(-5,-14); c.lineTo(5,-14); c.lineTo(-7,-19); c.fill(); }
+ if(k==='cleric'){ c.fillStyle='#d8a830'; c.fillRect(-1,-3,2,8); c.fillRect(-3,-1,6,2); c.strokeStyle='#a88a5a'; c.lineWidth=2; c.beginPath(); c.moveTo(9,12); c.lineTo(9,-16); c.stroke(); c.globalCompositeOperation='lighter'; c.fillStyle='rgba(255,240,150,.7)'; c.beginPath(); c.arc(9,-17,3.5+Math.sin(animT*4),0,6.28); c.fill(); c.globalCompositeOperation='source-over'; }
+ if(k==='mage'){ c.fillStyle='#2a4aa8'; c.beginPath(); c.moveTo(-7,-12); c.lineTo(7,-12); c.lineTo(2,-26); c.closePath(); c.fill(); c.strokeStyle='#6a4a2a'; c.lineWidth=2; c.beginPath(); c.moveTo(9,12); c.lineTo(9,-12); c.stroke(); c.globalCompositeOperation='lighter'; c.fillStyle='rgba(255,140,40,.85)'; c.beginPath(); c.arc(9,-13,3.5,0,6.28); c.fill(); c.globalCompositeOperation='source-over'; }
+ if(u.isHero){ c.fillStyle='#ffc65a'; c.beginPath(); c.moveTo(-5,-15); c.lineTo(-5,-20); c.lineTo(-2,-17); c.lineTo(0,-21); c.lineTo(2,-17); c.lineTo(5,-20); c.lineTo(5,-15); c.closePath(); c.fill(); }
+}
+function drawMon(c,u){
+ const t=u.type, w=u.walk||0;
+ if(t==='goblin'){ const b=Math.abs(Math.sin(w))*2; c.translate(0,-b); c.fillStyle='#3a6a2a'; c.beginPath(); c.ellipse(0,3,7,7,0,0,6.28); c.fill(); c.fillStyle='#5aa040'; c.beginPath(); c.arc(0,-6,7,0,6.28); c.fill(); c.beginPath(); c.moveTo(-5,-8); c.lineTo(-15,-12); c.lineTo(-6,-4); c.moveTo(5,-8); c.lineTo(15,-12); c.lineTo(6,-4); c.fill(); c.fillStyle='#ffe14a'; c.fillRect(-4,-8,2.5,2.5); c.fillRect(2,-8,2.5,2.5); c.fillStyle='#c8c0b0'; c.fillRect(6,0,8,2); }
+ if(t==='skel'){ c.strokeStyle='#e8e2d0'; c.lineWidth=2; c.beginPath(); c.moveTo(0,-4); c.lineTo(0,8); for(let k=0;k<3;k++){ c.moveTo(-5,-2+k*3); c.lineTo(5,-2+k*3); } c.moveTo(0,8); c.lineTo(-4,14+Math.sin(w)*2); c.moveTo(0,8); c.lineTo(4,14-Math.sin(w)*2); c.stroke(); c.fillStyle='#f0ead8'; c.beginPath(); c.arc(0,-10,6,0,6.28); c.fill(); c.fillStyle='#1a1014'; c.fillRect(-3.5,-11,2.5,3); c.fillRect(1,-11,2.5,3); c.fillRect(-2,-6,4,1);
+  if(u.risen){ c.fillStyle='rgba(120,200,255,.6)'; c.fillRect(-3.5,-11,2.5,3); c.fillRect(1,-11,2.5,3); } c.strokeStyle='#a8a090'; c.lineWidth=2; c.beginPath(); c.moveTo(6,0); c.lineTo(13,-8); c.stroke(); }
+ if(t==='ooze'){ const s=u.mini?.6:1, q=Math.sin(animT*5+(u.x||0))*1.5; c.scale(s,s); c.fillStyle='rgba(80,200,90,.75)'; c.beginPath(); c.moveTo(-12-q,10); c.quadraticCurveTo(-13,-12+q,0,-12+q); c.quadraticCurveTo(13,-12+q,12+q,10); c.closePath(); c.fill(); c.fillStyle='rgba(220,255,200,.5)'; c.beginPath(); c.ellipse(-5,-6,3,2,0,0,6.28); c.fill(); c.fillStyle='#103010'; c.fillRect(-4,-2,2.5,3.5); c.fillRect(2,-2,2.5,3.5); }
+ if(t==='orc'){ c.scale(1.35,1.35); c.fillStyle='#5a5a2a'; c.beginPath(); c.ellipse(0,2,10,9,0,0,6.28); c.fill(); c.fillStyle='#6a8a3a'; c.beginPath(); c.arc(0,-9,7,0,6.28); c.fill(); c.fillStyle='#fff'; c.fillRect(-4,-5,2,3); c.fillRect(2,-5,2,3); c.fillStyle='#e0302a'; c.fillRect(-4,-11,2.5,2); c.fillRect(1.5,-11,2.5,2); c.strokeStyle='#5a3a1a'; c.lineWidth=3.5; c.beginPath(); c.moveTo(8,4); c.lineTo(16,-10); c.stroke(); c.fillStyle='#777'; c.fillRect(13,-15,8,7); }
+ if(t==='mage'){ c.fillStyle='#3a1a5a'; c.beginPath(); c.moveTo(-9,12); c.lineTo(-5,-10); c.lineTo(5,-10); c.lineTo(9,12); c.closePath(); c.fill(); c.fillStyle='#2a0a40'; c.beginPath(); c.arc(0,-11,7,3.1,6.3); c.lineTo(0,-22); c.closePath(); c.fill(); c.fillStyle='#c070ff'; c.fillRect(-3,-11,2,2); c.fillRect(1,-11,2,2);
+  c.strokeStyle='#4a3a2a'; c.lineWidth=2; c.beginPath(); c.moveTo(10,12); c.lineTo(10,-14); c.stroke(); c.globalCompositeOperation='lighter'; c.fillStyle=`rgba(170,90,255,${.6+.3*Math.sin(animT*6)})`; c.beginPath(); c.arc(10,-16,4.5,0,6.28); c.fill(); c.globalCompositeOperation='source-over'; }
+ if(t==='wraith'){ const fl=Math.sin(animT*3+(u.x||0))*2; c.translate(0,fl-3); const g=c.createLinearGradient(0,-16,0,16); g.addColorStop(0,'rgba(40,30,60,.95)'); g.addColorStop(1,'rgba(40,30,60,0)'); c.fillStyle=g; c.beginPath(); c.moveTo(-10,16); c.quadraticCurveTo(-12,-18,0,-18); c.quadraticCurveTo(12,-18,10,16); for(let k=0;k<4;k++) c.lineTo(6-k*5,10+(k%2)*6); c.closePath(); c.fill(); c.fillStyle='#8fd6ff'; c.shadowColor='#8fd6ff'; c.shadowBlur=8; c.fillRect(-4,-9,3,2); c.fillRect(2,-9,3,2); c.shadowBlur=0; }
+ if(t==='dragon'){ c.scale(1.9,1.9); const fl=Math.sin(animT*4)*.5; c.fillStyle='#6a1010'; c.beginPath(); c.moveTo(-2,-4); c.lineTo(-16,-16-fl*6); c.lineTo(-12,-2); c.closePath(); c.fill(); c.beginPath(); c.moveTo(2,-4); c.lineTo(-6,-18-fl*6); c.lineTo(4,-2); c.closePath(); c.fill();
+  c.fillStyle='#a02020'; c.beginPath(); c.ellipse(-2,2,11,7,0,0,6.28); c.fill(); c.beginPath(); c.moveTo(-12,4); c.quadraticCurveTo(-20,8,-18,0); c.lineTo(-10,2); c.fill(); c.beginPath(); c.ellipse(9,-4,6,4.5,-.3,0,6.28); c.fill(); c.fillStyle='#ffd040'; c.fillRect(10,-6,2,2); c.fillStyle='#e8d8c0'; c.beginPath(); c.moveTo(6,-8); c.lineTo(5,-12); c.lineTo(8,-8.5); c.fill(); c.fillStyle='#ffb070'; c.fillRect(-8,4,12,2); }
+}
+function drawPreview(c){
+ if(!preview) return; c.save(); c.strokeStyle='rgba(255,90,70,.55)'; c.lineWidth=3; c.setLineDash([6,8]); c.lineDashOffset=-animT*30; c.beginPath(); c.moveTo((GX+.5)*TS,(GY+.5)*TS);
+ for(const i of preview){ c.lineTo((tx(i)+.5)*TS,(ty(i)+.5)*TS); } c.stroke(); c.restore(); }
+function predictPath(){ const fake={tile:GATE_I}; const hasRogue=G.nextParty.includes('rogue')||(G.nextParty.includes('hero')&&HEROES[G.day]&&HEROES[G.day].base==='rogue'); const kn=knownTrapsValid();
+ return findPath(GATE_I,HEART_I,i=>1+Math.min(5,G.guild.danger[i]*1.1)+(kn[i]?(hasRogue?1.2:9):0)); }
+let hover=null, tool='spike';
+function drawHover(c){
+ if(hover==null) return; const X=tx(hover)*TS, Y=ty(hover)*TS, why=TOOLS[tool]&&TOOLS[tool].act?canBuild(tool,hover):null;
+ c.strokeStyle=why?'rgba(255,70,70,.8)':'rgba(255,220,140,.9)'; c.lineWidth=2; c.strokeRect(X+1,Y+1,TS-2,TS-2);
+ const r=TRAPS[tool]?(TRAPS[tool].range||TRAPS[tool].r):MONS[tool]?MONS[tool].aggro:0;
+ const placed=G.traps[hover]||G.mons[hover]; const rr=r||(placed?(TRAPS[placed]?(TRAPS[placed].range||TRAPS[placed].r):MONS[placed].aggro):0);
+ if(rr){ c.strokeStyle='rgba(255,220,140,.35)'; c.setLineDash([4,4]); c.beginPath(); c.arc(X+TS/2,Y+TS/2,rr*TS,0,6.28); c.stroke(); c.setLineDash([]); }
+}
+
+/* ═══════════════════════════ AUDIO ═══════════════════════════ */
+let AC=null, master=null;
+function initAudio(){ if(AC) return; try{ AC=new (window.AudioContext||window.webkitAudioContext)(); master=AC.createGain(); master.gain.value=.45; master.connect(AC.destination); }catch(e){} }
+let muted=false;
+function nz(dur,f,vol,q){ if(!AC||muted) return; const t=AC.currentTime, b=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length); const s=AC.createBufferSource(); s.buffer=b; const fl=AC.createBiquadFilter(); fl.type='bandpass'; fl.frequency.value=f; fl.Q.value=q||1; const g=AC.createGain(); g.gain.value=vol; s.connect(fl); fl.connect(g); g.connect(master); s.start(t); }
+function tn(f,dur,type,vol,slide,delay){ if(!AC||muted) return; const t=AC.currentTime+(delay||0), o=AC.createOscillator(), g=AC.createGain(); o.type=type; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+dur); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur); o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+.02); }
+let lastSfx={};
+function sfx(k){
+ if(!AC||muted||HEADLESS) return; const now=performance.now(); if(lastSfx[k]&&now-lastSfx[k]<45) return; lastSfx[k]=now;
+ switch(k){
+  case 'dig': nz(.15,300,.5,.8); break;
+  case 'place': tn(180,.12,'square',.08,90); nz(.08,1200,.2); break;
+  case 'coin': tn(1200,.08,'square',.06); tn(1600,.12,'square',.05,null,.06); break;
+  case 'spike': nz(.12,2500,.5,2); tn(900,.08,'sawtooth',.06,300); break;
+  case 'pit': nz(.4,180,.7,.6); tn(200,.4,'sine',.15,50); break;
+  case 'twang': tn(420,.15,'triangle',.08,200); nz(.05,3000,.15); break;
+  case 'fire': nz(.5,700,.45,.5); break;
+  case 'bolt': tn(300,.3,'sawtooth',.06,900); break;
+  case 'fear': tn(110,.9,'sawtooth',.07,70); tn(116,.9,'sawtooth',.06,74); break;
+  case 'hit': nz(.06,900+Math.random()*600,.35,3); break;
+  case 'die': tn(300,.35,'sawtooth',.08,80); nz(.2,500,.3); break;
+  case 'mdie': tn(160,.4,'square',.06,40); break;
+  case 'bones': for(let k=0;k<4;k++) tn(800+Math.random()*900,.05,'square',.04,null,k*.05); break;
+  case 'disarm': tn(1400,.06,'square',.05); tn(900,.1,'square',.05,null,.07); break;
+  case 'heart': tn(70,.25,'sine',.35,40); tn(55,.3,'sine',.3,35,.14); break;
+  case 'horn': tn(147,1.2,'sawtooth',.08,140); tn(220,1.2,'sawtooth',.05,210); break;
+  case 'win': [0,4,7,12].forEach((n,j)=>tn(262*2**(n/12),.6,'triangle',.08,null,j*.12)); break;
+ }
+}
+let beatT=0;
+function heartbeatAudio(dt){ if(!AC||muted||G.phase!=='raid') return; beatT-=dt; if(beatT<=0){ beatT=6.28/hbRate(); tn(55,.18,'sine',.18,35); tn(48,.2,'sine',.14,30,.13); } }
+
+/* ═══════════════════════════ UI ═══════════════════════════ */
+const $=id=>document.getElementById(id);
+const TOOLS={
+ dig:{n:'Dig',act:1,key:'Q',d:'Carve rock into tunnel. '+DIG_COST+' gold.',cost:DIG_COST},
+ fill:{n:'Wall up',act:1,key:'W',d:'Turn floor back into rock. '+FILL_COST+' gold. The gate must still reach the Heart.',cost:FILL_COST},
+ sell:{n:'Sell',act:1,key:'E',d:'Remove a trap or monster for 70% of its price.'},
+};
+for(const k in TRAPS) TOOLS[k]={n:TRAPS[k].n,act:1,trap:1,d:TRAPS[k].d,cost:TRAPS[k].cost};
+for(const k in MONS) TOOLS[k]={n:MONS[k].n,act:1,mon:1,d:MONS[k].d,cost:MONS[k].cost};
+const KEYS={dig:'Q',fill:'W',sell:'E',spike:'1',arrow:'2',slime:'3',pit:'4',flame:'5',fear:'6',goblin:'7',skel:'8',ooze:'',orc:'9',mage:'0'};
+function iconCanvas(k,size){
+ const c=document.createElement('canvas'); c.width=c.height=size*2; const x=c.getContext('2d'); x.scale(size*2/48,size*2/48); x.translate(24,26);
+ if(MONS[k]){ drawMon(x,{type:k,walk:0,x:0}); }
+ else if(TRAPS[k]){ x.translate(-24,-26); drawTrap(x,0,k); }
+ else if(CLS[k]){ drawAdv(x,{cls:k,walk:0}); }
+ else if(k==='hero'){ drawAdv(x,{cls:'knight',walk:0,isHero:true}); }
+ else { x.font='30px sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(k==='dig'?'⛏️':k==='fill'?'🧱':'💰',0,-2); }
+ return c;
+}
+function buildBar(){
+ const bar=$('bar'); bar.innerHTML='';
+ const groups=[['dig','fill','sell'],Object.keys(TRAPS),Object.keys(MONS)];
+ for(const gp of groups){ const g=document.createElement('div'); g.className='grp';
+  for(const k of gp){ const key=k;
+   const b=document.createElement('div'); b.className='tool'; b.dataset.t=key;
+   const unlocked=k==='dig'||k==='fill'||k==='sell'||G.unlocked[key];
+   b.appendChild(iconCanvas(k,36));
+   const def=TRAPS[k]||MONS[k];
+   b.insertAdjacentHTML('beforeend',`<div class="nm">${TOOLS[k].n.replace('Arrow ','').replace(' Plate','').replace('Ward of ','').replace('Orc ','').replace('Dark ','').replace('Acid ','')}</div>`+
+    (unlocked?(def?`<div class="cs">${def.cost}g</div>`:k==='dig'?`<div class="cs">${DIG_COST}g</div>`:k==='fill'?`<div class="cs">${FILL_COST}g</div>`:'<div class="cs">70%</div>'):`<div class="cs s">🔒 ${def.unlock}💀</div>`)+
+    `<span class="hk">${KEYS[key]||''}</span>`);
+   if(!unlocked) b.classList.add('locked');
+   g.appendChild(b); }
+  bar.appendChild(g); }
+ syncBar();
+}
+function syncBar(){ document.querySelectorAll('.tool').forEach(b=>{ const k=b.dataset.t; b.classList.toggle('on',k===tool); const c=costOf(k); b.classList.toggle('poor',c!=null&&G.gold<c); }); }
+function costOf(k){ if(k==='dig') return DIG_COST; if(k==='fill') return FILL_COST; if(k==='sell') return null;return (TRAPS[k]||MONS[k]||{}).cost; }
+function placeKind(k){ return TRAPS[k]?{trap:k}:MONS[k]?{mon:k}:{op:k}; }
+function ui(){
+ $('rDay').textContent=G.day>LAST_DAY?G.day+'∞':G.day; $('rGold').textContent=G.gold; $('rSoul').textContent=G.souls;
+ $('hpfill').style.width=(G.heartHp/G.heartMax*100)+'%'; $('hptxt').textContent='HEART '+Math.ceil(G.heartHp)+' / '+G.heartMax;
+ const p=G.nextParty, counts={}; for(const k of p) counts[k]=(counts[k]||0)+1;
+ $('party').innerHTML=''; for(const k in counts){ const d=document.createElement('div'); d.className='pm'+(k==='hero'?' hero':''); const ic=k==='hero'?iconCanvas('knight',24):iconCanvas(k,24); if(k==='hero'){ const x=ic.getContext('2d'); } d.appendChild(ic); d.insertAdjacentHTML('beforeend',(k==='hero'?HEROES[G.day].n:CLS[k].n)+(counts[k]>1?' ×'+counts[k]:'')); $('party').appendChild(d); }
+ $('partyN').textContent=G.phase==='build'?p.length+' raiders · day '+G.day:'';
+ const items=Object.keys(G.guild.items).map(k=>`<span class="tag" title="${ITEMS[k].d}">${ITEMS[k].n}</span>`).join('');
+ $('intel').innerHTML='<ul>'+guildSummary().map(s=>'<li>'+s+'</li>').join('')+'</ul>'+(items?'<div style="margin-top:6px">Equipped: '+items+'</div>':'');
+ $('goBtn').disabled=G.phase!=='build'; $('goBtn').textContent=G.phase==='raid'?'Raid in progress…':G.over?'Fallen':'Open the Gates';
+ $('resBtn').disabled=G.phase==='raid';
+ $('speed').style.display=G.phase==='raid'?'flex':'none';
+ $('intelBtn').classList.toggle('on',showIntel);
+ syncBar(); hintUpdate();
+}
+let bannerT=0; function banner(t,d){ $('banner').textContent=t; $('banner').style.opacity=1; bannerT=d||2; }
+function hintUpdate(){
+ let h='';
+ if(G.phase==='build'){
+  if(G.day===1&&!Object.keys(G.traps).length&&!Object.keys(G.mons).length) h='Two raiders come tonight. Pick <b>Spike Plate</b> (1) and click the tunnel to hide traps, or post a <b>Goblin</b> (7). The red dashes show the route they will take.';
+  else if(G.day===1) h='Dig a winding route with <b>Dig</b> (Q) and <b>Wall up</b> (W) the shortcut — every tile they walk, the gloom drains 1% of their life. When ready: <b>Open the Gates</b> (Space).';
+  else if(G.day===2) h='Survivors tell the guild what they saw — 👁️ marks traps they know about. <b>Kill every raider</b> and they learn far less.';
+  else if(G.day===3) h='Known traps get avoided or disarmed by Rogues. Move a trap (Sell, then rebuild) and the guild\'s map goes stale.';
+ }
+ $('hint').innerHTML=h; $('hint').style.display=h?'':'none';
+}
+// ── input ──
+function tileAt(ev){ const r=cv.getBoundingClientRect(); const x=(ev.clientX-r.left-ox)/scale/TS, y=(ev.clientY-r.top-oy)/scale/TS; if(x<0||y<0||x>=COLS||y>=ROWS) return null; return idx(x|0,y|0); }
+let painting=false;
+cv.addEventListener('pointerdown',ev=>{ initAudio(); const i=tileAt(ev); if(i==null) return; if(G.phase!=='build') return; painting=true; act(i); });
+cv.addEventListener('pointermove',ev=>{ hover=tileAt(ev); if(painting&&hover!=null&&(tool==='dig'||tool==='fill'||tool==='sell')) act(hover); tipTile(ev); });
+window.addEventListener('pointerup',()=>painting=false);
+cv.addEventListener('pointerleave',()=>{ hover=null; $('tip').style.display='none'; });
+cv.addEventListener('contextmenu',e=>{ e.preventDefault(); const i=tileAt(e); if(i!=null&&G.phase==='build'&&(G.traps[i]||G.mons[i])){ const t=tool; tool='sell'; act(i); tool=t; syncBar(); } });
+let lastErr=0;
+function act(i){
+ const why=build(tool,i);
+ if(why&&(!painting||performance.now()-lastErr>900)&&!(painting&&why==='Nothing to sell here.')){ flashErr(why); lastErr=performance.now(); }
+}
+// kept for tests and old call sites: monsters go through build() like everything else
+function buildMon(k,i){ const why=build(k,i); if(!why) fxBurst(tx(i)+.5,ty(i)+.5,'#8a6aff',10); return why; }
+function flashErr(t){ if(!t) return; banner(t,1.4); }
+function tipTile(ev){
+ const tp=$('tip'); if(hover==null||G.phase==='raid'){ tp.style.display='none'; return; }
+ const k=G.traps[hover]||G.mons[hover]; if(!k){ tp.style.display='none'; return; }
+ const isT=!!G.traps[hover], d=isT?TRAPS[k]:MONS[k], known=isT&&G.guild.known[hover]===k;
+ tp.innerHTML=`<h4>${d.n}</h4><div>${d.d}</div>${isT?(known?'<div class="q" style="color:#ff9a8a">👁️ The guild knows this trap is here.</div>':'<div class="q">The guild does not know about this one.</div>'):''}<div class="q">Right-click to sell for ${Math.floor(d.cost*.7)}g</div>`;
+ tp.style.display='block'; tp.style.left=Math.min(innerWidth-300,ev.clientX+16)+'px'; tp.style.top=(ev.clientY+12)+'px';
+}
+$('bar').addEventListener('click',ev=>{ const b=ev.target.closest('.tool'); if(!b) return; initAudio(); const k=b.dataset.t;
+ const unlocked=k==='dig'||k==='fill'||k==='sell'||G.unlocked[k]; if(!unlocked){ openRites(); return; } tool=k; syncBar(); });
+$('bar').addEventListener('mousemove',ev=>{ const b=ev.target.closest('.tool'), tp=$('tip'); if(!b){ tp.style.display='none'; return; } const k=b.dataset.t, pk=placeKind(k);
+ const d=pk.mon?MONS[pk.mon]:pk.trap?TRAPS[pk.trap]:null;
+ let h=`<h4>${d?d.n:TOOLS[k].n}</h4><div>${d?d.d:TOOLS[k].d}</div>`;
+ if(d&&pk.mon) h+=`<div class="q">HP ${Math.round(d.hp*monMul())} · dmg ${Math.round(d.dmg*monMul())} · ${d.range>1.5?'ranged':'melee'}</div>`;
+ if(d&&pk.trap&&d.dmg) h+=`<div class="q">Damage ${Math.round(d.dmg*trapDmgMul())}${d.hidden?' · hidden until sprung':' · visible'}</div>`;
+ if(d&&!G.unlocked[k]) h+=`<div class="s">Unlock with ${d.unlock} souls (Dark Rites)</div>`;
+ tp.innerHTML=h; tp.style.display='block'; const r=b.getBoundingClientRect(); tp.style.left=Math.min(innerWidth-290,r.left)+'px'; tp.style.top=(r.top-tp.offsetHeight-8)+'px'; });
+$('bar').addEventListener('mouseleave',()=>$('tip').style.display='none');
+$('goBtn').onclick=()=>{ initAudio(); if(G.phase==='build') startRaid(); ui(); };
+$('intelBtn').onclick=()=>{ showIntel=!showIntel; ui(); };
+$('resBtn').onclick=()=>openRites();
+$('helpBtn').onclick=()=>help();
+let speed=1;
+$('speed').addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(!b) return; speed=+b.dataset.sp; document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('on',x===b)); });
+document.addEventListener('keydown',ev=>{
+ if($('modal').classList.contains('show')){ if(ev.key==='Escape'&&!G.over&&G.phase!=='report') closeModal(); if(ev.key==='Enter'){ const b=$('mbox').querySelector('.btn'); if(b) b.click(); } return; }
+ const k=ev.key.toUpperCase();
+ if(ev.key===' '){ ev.preventDefault(); if(G.phase==='build'){ initAudio(); startRaid(); ui(); } else if(G.phase==='raid'){ speed=speed?0:1; document.querySelectorAll('#speed button').forEach(x=>x.classList.toggle('on',+x.dataset.sp===speed)); } return; }
+ if(k==='I'){ showIntel=!showIntel; ui(); return; }
+ for(const t in KEYS) if(KEYS[t]===k){ const ok=t==='dig'||t==='fill'||t==='sell'||G.unlocked[t]; if(ok){ tool=t; syncBar(); } return; }
+});
+// ── modals ──
+function showModal(h,cls){ $('mbox').innerHTML=h; $('modal').classList.add('show'); }
+function closeModal(){ $('modal').classList.remove('show'); }
+$('modal').addEventListener('click',e=>{ if(e.target.id==='modal'&&G.phase==='build') closeModal(); });
+function openRites(){
+ const un=[...Object.keys(TRAPS).filter(k=>TRAPS[k].unlock).map(k=>({k,d:TRAPS[k],kind:'Trap'})),...Object.keys(MONS).filter(k=>MONS[k].unlock).map(k=>({k,d:MONS[k],kind:'Monster'}))].sort((a,b)=>a.d.unlock-b.d.unlock);
+ let h=`<h2>💀 Dark Rites</h2><p>Spend the <b style="color:var(--soul)">souls</b> of fallen heroes. You have <b style="color:var(--soul)">${G.souls}</b>.</p><div class="grid2">`;
+ for(const u of un){ const done=G.unlocked[u.k]; h+=`<div class="rc ${done?'done':G.souls<u.d.unlock?'poor':''}" data-unlock="${u.k}"><b>${u.d.n}</b><span style="color:var(--muted);font-size:11px">${u.kind.toUpperCase()}</span><br>${u.d.d}<div class="k">${done?'✓ Unlocked':u.d.unlock+' souls'}</div></div>`; }
+ h+='</div><h3 style="font-family:Pirata One;font-weight:400;font-size:22px;margin:14px 0 6px;color:#ffcfa0">Rites of Power</h3><div class="grid2">';
+ for(const r of RITES){ const l=G.rites[r.id]|0, max=l>=r.max, k=r.k(l); h+=`<div class="rc ${max?'done':G.souls<k?'poor':''}" data-rite="${r.id}"><b>${r.ic} ${r.n} <span style="color:var(--muted);font-size:12px">${l}/${r.max}</span></b>${r.d}<div class="k">${max?'✓ Mastered':k+' souls'}</div></div>`; }
+ h+='</div><button class="btn" onclick="closeModal()">Back to the dark</button>';
+ showModal(h);
+ $('mbox').querySelectorAll('[data-unlock]').forEach(el=>el.onclick=()=>{ const k=el.dataset.unlock; const d=TRAPS[k]||MONS[k]; if(G.unlocked[k]||G.souls<d.unlock) return; G.souls-=d.unlock; G.unlocked[k]=1; sfx('win'); buildBar(); ui(); openRites(); });
+ $('mbox').querySelectorAll('[data-rite]').forEach(el=>el.onclick=()=>{ if(rite(el.dataset.rite)){ ui(); openRites(); } });
+}
+function rite(id){ const r=RITES.find(x=>x.id===id), l=G.rites[id]|0; if(l>=r.max||G.souls<r.k(l)) return false; G.souls-=r.k(l); G.rites[id]=l+1; if(id==='heart'){ G.heartMax+=60; G.heartHp+=60; } sfx('win'); return true; }
+function showReport(day){
+ const kills=R.deaths.length, esc=R.advs.filter(a=>a.state==='escaped').length;
+ const les=G.guild.lessons.map(l=>`<div class="lesson ${l.good?'good':''}">${l.t}</div>`).join('');
+ const dis=R.disarmed?`<div class="lesson">Rogues disarmed ${R.disarmed} trap${R.disarmed>1?'s':''}: ${R.disarmedList.join(', ')}. They are gone — rebuild them.</div>`:'';
+ const win=G.won&&day===LAST_DAY;
+ showModal(`<h2>${win?'The Guild Gives Up':kills===R.total?'Not One Escaped':'Dawn, Day '+(day+1)}</h2>
+ ${win?'<p>Thirty nights. Thirty raids. The Adventurers\' Guild has struck your dungeon from its maps and its songs. <b>You are a legend.</b> The dark goes on — keep going in endless mode, if you dare.</p>':''}
+ <div class="stats"><div><b>${kills}/${R.total}</b><span>Slain</span></div><div><b style="color:${esc?'#ff9a8a':'#7ee08a'}">${esc}</b><span>Escaped</span></div><div><b style="color:var(--gold)">+${R.gold+R.tithe}</b><span>Gold</span></div><div><b style="color:var(--soul)">+${R.souls}</b><span>Souls</span></div></div>
+ <p style="font-size:14px">Shards carried out of the dungeon: <b style="color:#ff6a7a">${Math.round(R.heartDmg)}</b> Heart${R.recovered?` (you clawed back <b style="color:#7ee08a">${Math.round(R.recovered)}</b> from carriers you caught)`:''}. Overnight the Heart regrew ${R.regen}. Tithe from the dark: ${R.tithe}g.</p>
+ <h3 style="font-family:Pirata One;font-weight:400;font-size:22px;color:#ffcfa0;margin-top:6px">What the guild learned</h3>${les}${dis}
+ <p style="margin-top:10px;font-size:14px">Tomorrow: <b>${G.nextParty.length}</b> raiders${HEROES[G.day]?', led by <b style="color:var(--gold)">'+HEROES[G.day].n+'</b> — '+HEROES[G.day].title:''}.</p>
+ <button class="btn" id="contBtn">Prepare the dungeon</button>`);
+ $('contBtn').onclick=()=>{ closeModal(); G.phase='build'; R=null; mapDirty=true; previewDirty=true; ui(); if(win) sfx('win'); };
+ sfx(kills===R.total?'win':'coin');
+}
+function showOver(){
+ showModal(`<h2>The Heart Is Shattered</h2><p>On day <b>${G.day}</b> the adventurers reached your Heart and broke it. Your halls go quiet. Somewhere, a bard starts writing.</p>
+ <div class="stats"><div><b>${G.day-1}</b><span>Days survived</span></div><div><b>${G.stats.kills}</b><span>Slain</span></div><div><b>${G.stats.heroKills}</b><span>Heroes</span></div><div><b>${G.stats.escaped}</b><span>Escaped</span></div></div>
+ <p>Best: day ${Math.max(best(),G.day)}.</p><button class="btn" id="againBtn">Grow a new dungeon</button>`);
+ setBest(G.day);
+ $('againBtn').onclick=()=>{ closeModal(); clearSave(); newGame(); R=null; G.phase='build'; mapDirty=true; previewDirty=true; buildBar(); ui(); };
+}
+function help(){
+ showModal(`<h2>How to Be the Dungeon</h2>
+ <p>Each night a party from the <b>Adventurers' Guild</b> marches in from the gate on the left and heads for your <b>Heart</b> on the right. Whoever reaches it hacks off a <b>shard</b> and runs for the gate — catch the carrier and the shard flies home. If the Heart is carved to nothing, you lose. Survive <b>30 nights</b>.</p>
+ <p>🛠️ <b>By day</b> you dig tunnels, hide traps and post monsters. Raiders always follow a route to the Heart — the <span style="color:#ff6a5a">red dashes</span> show the one they plan to take. Walls can't fully block them; make the road long and cruel instead: the <b>gloom</b> drains 1% of a raider's life for every tile they walk, there and back.</p>
+ <p>👁️ <b>The guild learns.</b> Anyone who escapes reports which traps they saw and where it hurt. Next time they route around known traps, send Rogues to disarm them, and bring gear against whatever killed them most — fire cloaks, holy water, tower shields. <b>Leave no witnesses</b> and they learn only where the bodies lie.</p>
+ <p>💀 Kills give gold and <b>souls</b>. Spend souls in <b>Dark Rites</b> to unlock slimes, pits, flame vents, dark mages, wraiths and a dragon — and to strengthen the Heart.</p>
+ <p style="font-size:13px;color:var(--muted)">Keys: Q dig · W wall · E sell · 1–6 traps · 7–0 monsters · right-click sells · Space opens the gates / pauses · I shows guild intel.</p>
+ <button class="btn" onclick="closeModal()">Into the dark</button>`);
+}
+
+/* ═══════════════════════════ SAVE ═══════════════════════════ */
+const SKEY='be-the-dungeon-v1';
+function save(){ if(HEADLESS) return; try{ localStorage.setItem(SKEY,JSON.stringify(snap())); }catch(e){} }
+function snap(){ const g=JSON.parse(JSON.stringify(G)); if(g.phase==='raid'||g.phase==='report') g.phase='build'; return g; }
+function loadSave(){ try{ const d=JSON.parse(localStorage.getItem(SKEY)); if(d&&d.v===1&&!d.over) return d; }catch(e){} return null; }
+function clearSave(){ try{ localStorage.removeItem(SKEY); }catch(e){} }
+function best(){ try{ return +localStorage.getItem(SKEY+'-best')||0; }catch(e){ return 0; } }
+function setBest(d){ try{ if(d>best()) localStorage.setItem(SKEY+'-best',d); }catch(e){} }
+function restore(d){ G=d; G.phase='build'; R=null; mapDirty=true; previewDirty=true; buildBar(); ui(); }
+if(window.GBSave) GBSave.register({ save:()=>G&&!G.over&&(G.day>1||Object.keys(G.traps).length)?snap():null, load:d=>{ restore(d); save(); }, autosave:0 });
+
+/* ═══════════════════════════ LOOP ═══════════════════════════ */
+const HEADLESS=location.hash.includes('sim');
+function QUIET(){ return SMOKE||HEADLESS; }
+const SMOKE=location.hash.includes('smoke');
+let lastT=performance.now();
+function frame(now){
+ const rdt=Math.min(.05,(now-lastT)/1000); lastT=now;
+ if(G.phase==='raid'&&R&&!R.ended){ const sub=speed; for(let k=0;k<sub*2;k++) stepRaid(rdt/2); }
+ else if(G.phase==='raid'&&R&&R.ended){ /* lingering */ }
+ heartbeatAudio(rdt);
+ if(bannerT>0){ bannerT-=rdt; if(bannerT<=0) $('banner').style.opacity=0; }
+ render(rdt*(G.phase==='raid'?Math.max(speed,.0001):1));
+ uiT+=rdt; if(uiT>.25){ uiT=0; if(G.phase==='raid'){ $('rGold').textContent=G.gold; $('rSoul').textContent=G.souls; $('hpfill').style.width=(G.heartHp/G.heartMax*100)+'%'; $('hptxt').textContent='HEART '+Math.ceil(G.heartHp)+' / '+G.heartMax; } }
+ requestAnimationFrame(frame);
+}
+let uiT=0;
+window.addEventListener('resize',resize);
+(function boot(){
+ const d=(!SMOKE&&!HEADLESS)?loadSave():null;
+ if(d){ G=d; G.phase='build'; } else { newGame(); G.phase='build'; }
+ resize(); buildBar(); ui();
+ if(!d&&!SMOKE&&!HEADLESS) help();
+ requestAnimationFrame(frame);
+})();
+window.__ui=ui; window.__BD={get G(){return G},set G(v){G=v},get R(){return R},newGame,build,buildMon,canBuild,startRaid,stepRaid,findPath,connected,makeParty,classWeights,guildLearn,knownTrapsValid,predictPath,rite,snap,restore,idx,TRAPS,MONS,CLS,HEROES,GATE_I,HEART_I,partySize,endRaid};
+
+/* ═══════════════════════════ SMOKE TESTS ═══════════════════════════ */
+function simRaid(maxT){ const D=window.__BD; D.startRaid(); let t=0; while(!D.R.ended&&t<(maxT||300)){ D.stepRaid(1/30); t+=1/30; } return D.R; }
+if(SMOKE) setTimeout(()=>{
+ const out=[]; let pass=0, fail=0; const ok=(c,m)=>{ if(c) pass++; else { fail++; out.push('FAIL '+m); } };
+ const origShow=window.showReport; window.setTimeout_=setTimeout;
+ try{
+  newGame(); G.phase='build';
+  ok(connected(),'starter dungeon connected');
+  ok(G.map[GATE_I]===GATE&&G.map[HEART_I]===HEART,'gate & heart placed');
+  // dig adjacency
+  ok(canBuild('dig',idx(5,3))!==null,'cannot dig unconnected rock');
+  ok(canBuild('dig',idx(5,5))===null,'can dig beside tunnel'); build('dig',idx(5,5)); ok(G.map[idx(5,5)]===FLOOR,'dig made floor');
+  ok(canBuild('dig',idx(0,3))!==null,'cannot dig bedrock');
+  // wall up can't sever the only route
+  ok(canBuild('fill',idx(8,GY))!==null,'fill blocked when it disconnects');
+  ok(canBuild('fill',idx(5,5))===null,'fill ok on spur');
+  // traps / monsters
+  const g0=G.gold; ok(build('spike',idx(6,GY))===null&&G.gold===g0-20,'place spike');
+  ok(canBuild('arrow',idx(6,GY))!==null,'one thing per tile');
+  ok(canBuild('pit',idx(7,GY))!==null,'pit locked at start');
+  ok(buildMon('goblin',idx(10,GY))===null,'place goblin');
+  ok(canBuild('spike',idx(1,GY))!==null,'not on gate doorstep');
+  // monster cap
+  G.gold=1e5; let placed=0; for(let x=2;x<=16;x++) if(buildMon('skel',idx(x,GY))===null) placed++; ok(Object.keys(G.mons).length===monCap()&&monCap()===4,'monster cap ('+Object.keys(G.mons).length+')');
+  // pathing respects known traps
+  newGame(); G.phase='build'; for(let x=3;x<=12;x++){ build('dig',idx(x,5)); } // a parallel lane above
+  G.gold=1e4; build('spike',idx(8,GY)); G.nextParty=['warrior'];
+  let p=predictPath(); ok(p&&p.includes(idx(8,GY)),'unknown trap: straight route');
+  G.guild.known[idx(8,GY)]='spike'; p=predictPath(); ok(p&&!p.includes(idx(8,GY)),'known trap: detour');
+  G.nextParty=['rogue','warrior']; p=predictPath(); ok(p&&p.includes(idx(8,GY)),'with a rogue they go through to disarm');
+  delete G.traps[idx(8,GY)]; ok(!knownTrapsValid()[idx(8,GY)],'moved trap: knowledge stale');
+  // raid: undefended → heart takes damage, adventurers survive
+  newGame(); G.phase='build'; const hp0=G.heartHp; G.nextParty=['warrior','warrior']; let r=simRaid(200); ok(r.ended,'raid ends'); ok(r.heartDmg>0,'undefended heart damaged'); ok(r.advs.every(a=>a.state==='escaped'&&a.shard>0),'raiders escape with shards'); ok(Math.abs(r.heartDmg-r.advs.reduce((s,a)=>s+a.shard,0))<1e-6,'heart damage = shards carried');
+  // raid: strong defence kills everyone, no witnesses
+  newGame(); G.phase='build'; G.gold=1e5; G.unlocked.orc=1; G.rites.lair=2; for(const x of [10,12,14]) buildMon('orc',idx(x,GY)); for(const x of [11,13]) buildMon('goblin',idx(x,GY)); for(const x of [4,7,9,15]) build('spike',idx(x,GY));
+  G.nextParty=['warrior','warrior']; r=simRaid(200); ok(r.deaths.length===2,'defended: all slain ('+r.deaths.length+')'); ok(G.guild.witnesses===0,'no witnesses'); ok(Object.keys(G.guild.known).length===0,'guild learned no traps without witnesses');
+  ok(G.guild.danger.some(d=>d>1),'bodies mark danger'); ok(G.souls>=2&&G.day===2,'souls & day advance');
+  // witnesses report traps: a warrior trips a spike, then turns back and gets out alive
+  newGame(); G.phase='build'; G.gold=1e4; build('spike',idx(4,GY)); G.nextParty=['warrior']; G.day=3; startRaid();
+  for(let k=0;k<30*20&&!(R.advs[0]&&R.advs[0].x>7);k++) stepRaid(1/30);
+  R.advs[0].state='flee'; R.advs[0].path=null; for(let k=0;k<30*30&&!R.ended;k++) stepRaid(1/30);
+  ok(R.advs[0].state==='escaped','warrior escaped ('+R.advs[0].state+')');
+  ok(G.guild.known[idx(4,GY)]==='spike','witness reported the spike'); ok(G.guild.witnesses===1,'witness counted');
+  ok(G.guild.danger[idx(4,GY)]>0,'witness marked where it hurt');
+  // catching a carrier returns the shard
+  newGame(); G.phase='build'; G.nextParty=['warrior']; startRaid(); for(let k=0;k<30*40&&!(R.advs[0]&&R.advs[0].shard>0&&R.advs[0].state==='flee');k++) stepRaid(1/30);
+  const hpMid=G.heartHp, sh=R.advs[0].shard; ok(sh>0&&hpMid<G.heartMax,'carrier holds a shard'); damage(R.advs[0],9999,{kind:'mon',type:'goblin',cat:'melee'}); ok(Math.abs(G.heartHp-(hpMid+sh))<1e-6,'killing the carrier restores the Heart'); R.ended=true;
+  // rogue disarms a known trap
+  newGame(); G.phase='build'; G.gold=1e4; build('arrow',idx(8,GY)); G.guild.known[idx(8,GY)]='arrow'; G.nextParty=['rogue']; G.day=5; r=simRaid(200); ok(r.disarmed>=1&&!G.traps[idx(8,GY)],'rogue disarmed the turret');
+  // learning shapes the party
+  newGame(); G.guild.seen=1; G.guild.cause={trap:100,ranged:0,fire:0,melee:0,magic:0,fear:0}; const w1=classWeights(6); G.guild.cause={trap:0,ranged:0,fire:0,melee:100,magic:0,fear:0}; const w2=classWeights(6);
+  ok(w1.rogue>w2.rogue*2,'trap deaths → more rogues'); ok(w2.knight>w1.knight&&w2.warrior>w1.warrior,'melee deaths → more knights & warriors');
+  // equipment adapts
+  newGame(); G.phase='build'; R={advs:[{state:'dead'}],deaths:[{tile:idx(5,GY),by:'flame'}],cause:{fire:200,trap:0,ranged:0,melee:0,magic:0,fear:0},killedBy:{flame:1},known:{},dmgMap:new Array(COLS*ROWS).fill(0)}; guildLearn(); ok(G.guild.items.frost,'fire → frost cloaks');
+  // skeleton rises once
+  newGame(); G.phase='build'; G.gold=1e4; buildMon('skel',idx(10,GY)); startRaid(); const sk=R.mons[0]; damage(sk,999,{kind:'adv',type:'warrior'}); ok(sk.state==='down','skeleton goes down'); for(let k=0;k<120;k++) stepRaid(1/30); ok(sk.state!=='down'&&sk.hp>0,'skeleton rises'); damage(sk,999,{kind:'adv',type:'warrior'}); ok(sk.state==='dead','second death is final'); R.ended=true;
+  // slime splits
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.ooze=1; buildMon('ooze',idx(10,GY)); startRaid(); damage(R.mons[0],999,{kind:'adv',type:'warrior'}); ok(R.mons.filter(m=>m.mini&&m.state!=='dead').length===2,'slime splits'); R.ended=true;
+  // heroes
+  newGame(); G.day=5; G.nextParty=makeParty(5); ok(G.nextParty[0]==='hero','day 5 has a hero');
+  ok(partySize(1)===2&&partySize(30)>10,'party grows');
+  // rites
+  newGame(); G.souls=100; ok(rite('heart')&&G.heartMax===360,'heart rite'); ok(rite('lair')&&monCap()===7,'lair rite');
+  // save roundtrip
+  newGame(); G.gold=777; build('spike',idx(4,GY)); const s=snap(); newGame(); restore(JSON.parse(JSON.stringify(s))); ok(G.gold===757&&G.traps[idx(4,GY)]==='spike','save roundtrip');
+  // render a raid frame in every state without throwing
+  newGame(); G.phase='build'; G.gold=1e5; Object.assign(G.unlocked,{slime:1,pit:1,flame:1,fear:1,ooze:1,orc:1,mage:1,wraith:1,dragon:1}); G.rites.lair=6;
+  const tr=['spike','arrow','slime','pit','flame','fear']; tr.forEach((k,j)=>build(k,idx(3+j,GY))); ['goblin','skel','orc','mage','wraith','dragon'].forEach((k,j)=>buildMon(k,idx(10+j,GY))); buildMon('ooze',idx(16,GY));
+  render(.016); G.nextParty=['hero','knight','rogue','archer','cleric','mage','warrior']; G.day=30; startRaid(); for(let k=0;k<300;k++){ stepRaid(1/30); if(k%10===0) render(.033); } ok(true,'render all units/traps');
+  while(!R.ended) stepRaid(1/30);
+  ok(true,'big raid completes');
+ }catch(e){ fail++; out.push('EXCEPTION '+e.stack); }
+ const res=(fail?'SMOKE FAIL ':'SMOKE PASS ')+pass+'/'+(pass+fail); out.unshift(res); $('smokeout').textContent=out.join('\n'); $('smokeout').style.display='block'; document.title=res;
+ setTimeout(()=>{ closeModal(); },0);
+},400);
+</script>
+<script src="glitchbox-menu.js" data-pos="top-left" defer></script>
+</body>
+</html>
