@@ -51,6 +51,14 @@ button.on{background:#2d4270;border-color:#5b7fc4}
 .sqb .c{color:#ffe08a;font-variant-numeric:tabular-nums}.sqb .k{font-size:10px;color:var(--dim)}
 .sqb svg{width:14px;height:14px;margin-right:-4px}
 body.hasSq #selinfo{bottom:146px} body.hasSq #groups{bottom:180px}
+#abil{position:fixed;bottom:146px;left:50%;transform:translateX(-50%);display:flex;gap:5px;padding:5px;z-index:2}
+#abil button{padding:5px 9px;font-size:12px;white-space:nowrap}#abil button small{color:var(--dim);font-size:10px;margin-left:3px}
+#abil button.aim{background:#6a1f1f;border-color:#ff5a5a}#abil button.rdy{border-color:#f0bf3a99}
+body.hasSq #abil{bottom:180px} body.hasAb #groups{bottom:182px} body.hasSq.hasAb #groups{bottom:216px}
+.mods{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.mods .mc{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.mods .mc>span{width:66px;font-size:11px;color:var(--dim);letter-spacing:.04em}
+.mod{padding:4px 8px;font-size:12px;border-radius:7px}.mod .c{color:#ffe08a;margin-left:3px;font-size:11px}
+.mod.on{background:#4a3a12;border-color:#f0bf3a;color:#fff}.mod.act::after{content:' ▸';color:#ff9f6a;font-size:10px}
 #build .where{font-size:12px;color:var(--dim);max-width:130px;line-height:1.2;margin-right:2px}
 #build .where b{color:var(--ink);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ub{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:74px;padding:6px 8px}
@@ -60,9 +68,9 @@ body.hasSq #selinfo{bottom:146px} body.hasSq #groups{bottom:180px}
 .ub.mine{border-color:#f0bf3a55}
 #build.many .ub{min-width:60px;padding:5px 6px;font-size:12px}
 
-#ctl{position:fixed;bottom:10px;right:10px;padding:6px;display:flex;gap:5px}
+#ctl{position:fixed;bottom:calc(10px + var(--rb,0px));right:10px;padding:6px;display:flex;gap:5px}
 #ctl button{padding:6px 9px;font-size:12px}
-#powers{position:fixed;bottom:62px;right:10px;padding:6px;display:flex;gap:5px}
+#powers{position:fixed;bottom:calc(62px + var(--rb,0px));right:10px;padding:6px;display:flex;gap:5px}
 #powers button{padding:6px 9px;font-size:12px}
 #powers .c{color:#ffe08a;font-variant-numeric:tabular-nums}
 #powers button.aim{background:#6a1f1f;border-color:#ff5a5a}
@@ -81,7 +89,7 @@ body.aiming canvas{cursor:crosshair}
 #cpanel .c,#techp .c{color:#ffe08a;font-variant-numeric:tabular-nums}
 #cpanel .note{margin-top:7px;color:#b8c3d6;line-height:1.35}
 #cpanel .note.bad{color:#ffb4b4} #cpanel .note.good{color:#b9f5cc}
-#techp{position:fixed;bottom:112px;right:10px;width:250px;padding:10px 12px;font-size:12px}
+#techp{position:fixed;bottom:calc(112px + var(--rb,0px));right:10px;width:250px;padding:10px 12px;font-size:12px}
 #techp h4{margin:0 0 6px;font-size:11px;letter-spacing:.08em;color:var(--dim);font-weight:600}
 #techp .tr{display:flex;align-items:center;gap:8px;padding:4px 0}
 #techp .tr .nm{flex:1;line-height:1.2} #techp .tr .nm small{display:block;color:var(--dim)}
@@ -207,6 +215,7 @@ body.aiming canvas{cursor:crosshair}
 <div id="board" class="panel hidden"><h4>WORLD POWERS</h4><div id="boardRows"></div></div>
 <div id="log"></div>
 <div id="selinfo" class="panel hidden"></div>
+<div id="abil" class="panel hidden"></div>
 <div id="groups" class="panel hidden" title="Army groups: Ctrl+1–9 saves the selection, Shift+1–9 recalls it (twice to jump there)"></div>
 
 <div id="build" class="panel hidden">
@@ -286,7 +295,7 @@ body.aiming canvas{cursor:crosshair}
     <a class="quit" href="index.html" target="_top">⏏ Back to the arcade</a>
     <div class="keys">
       <kbd>Drag</kbd> select units · <kbd>Right-click</kbd> move / invade · <kbd>Wheel</kbd> zoom ·
-      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>7</kbd>–<kbd>0</kbd> your designs · <kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd> squads · <kbd>U</kbd> workshop · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>R</kbd> research · <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> save army group · <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd> recall · <kbd>H</kbd> retreat · <kbd>V</kbd> strategic map · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
+      <kbd>WASD</kbd> pan · <kbd>1</kbd>–<kbd>6</kbd> build · <kbd>7</kbd>–<kbd>0</kbd> your designs · <kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd> squads · <kbd>U</kbd> workshop · <kbd>N</kbd> atomic bomb · <kbd>B</kbd> carpet bomb · <kbd>L</kbd> missile pod · <kbd>K</kbd> EMP · <kbd>Q</kbd> overdrive · <kbd>T</kbd> warp · <kbd>O</kbd> self-destruct · <kbd>M</kbd> missile · <kbd>G</kbd> fortify · <kbd>R</kbd> research · <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> save army group · <kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd> recall · <kbd>H</kbd> retreat · <kbd>V</kbd> strategic map · <kbd>E</kbd> select army · <kbd>F</kbd> go home · <kbd>P</kbd> pause
     </div>
   </div>
 </div>
@@ -315,10 +324,15 @@ body.aiming canvas{cursor:crosshair}
           <div class="lbl">STATS — every boost raises the price</div>
           <div id="dStats"></div>
           <div class="dsum" id="dSum"></div>
-          <div class="lbl">MATCH-UPS — the same gold spent on each, head to head</div>
+          <div class="lbl">MATCH-UPS — the same gold spent on each, head to head (triggered abilities not counted)</div>
           <div class="mu" id="dMU"></div>
           <div class="dnote" id="dNote"></div>
           <div class="row2" style="margin-top:8px"><button id="dDel">🗑 Delete design</button></div>
+        </div>
+        <div style="grid-column:1/-1">
+          <div class="lbl">MODULES — bolt on up to 4: weapons, special abilities (▸ = you trigger it) and gear · <span id="dModN" style="color:#ffe08a"></span></div>
+          <div class="mods" id="dMods"></div>
+          <div class="dsum" id="dModInfo"></div>
         </div>
       </div>
     </div>
@@ -460,7 +474,41 @@ const STATS=Object.keys(LV), STATN={hp:'Armor',dmg:'Firepower',rof:'Fire rate',r
 const DSLOTS=['c0','c1','c2','c3'], DKEYS=['7','8','9','0'], SQKEYS=['z','x','c'], SQMAX=12;
 const FORMS={wedge:'▲ Wedge',line:'┃ Line',column:'━ Column',box:'■ Box',ring:'◯ Ring'};
 const DESIGN_KEY='sq_designs_v1';
-let designs=[], squads=[], PTYPES=TYPES.slice(), nextSq=1;
+// modules: gear and special abilities bolted onto a design. cost: flat gold, or 'N%' of the design's price.
+// act: 'aim' = click a target, 'now' = fires at once; only = the chassis it fits; cd = reload in days
+const MODMAX=4, AIR=['air'], GROUND=['inf','tank','art','sam'];
+const MODS={
+  nuke   :{i:'☢',n:'Atomic bomb',cat:'Weapons',cost:220,act:'aim',key:'n',cd:120,only:AIR,d:'Bombing run: flies to the spot you click and drops an atomic bomb. Everything in a huge blast dies — yours too — capitals are flattened and fallout poisons the ground. 120-day reload. The whole world will hate you.'},
+  carpet :{i:'💣',n:'Carpet bombs',cat:'Weapons',cost:45,act:'aim',key:'b',cd:40,only:AIR,d:'Bombing run: flies to the spot you click and lays a string of bombs. Hits troops and capital defences. 40-day reload.'},
+  mpod   :{i:'🚀',n:'Missile pod',cat:'Weapons',cost:60,act:'aim',key:'l',cd:60,d:'Fires a free cruise missile at any spot up to 200 away. 60-day reload.'},
+  emp    :{i:'🧲',n:'EMP burst',cat:'Weapons',cost:45,act:'now',key:'k',cd:50,d:'Freezes every enemy unit within 32 for 6 days: they can\'t move or shoot. 50-day reload.'},
+  boom   :{i:'💥',n:'Self-destruct',cat:'Weapons',cost:15,act:'now',key:'o',cd:0,d:'Blows itself up on command — or automatically when it dies — hitting every enemy within 18 for heavy damage.'},
+  flame  :{i:'🔥',n:'Flamethrower',cat:'Weapons',cost:'10%',d:'+80% damage against infantry, but range −35%.'},
+  aa     :{i:'🎆',n:'AA missiles',cat:'Weapons',cost:'20%',d:'Can hit aircraft, and hits them twice as hard.'},
+  torp   :{i:'🌊',n:'Torpedoes',cat:'Weapons',cost:'15%',d:'×2 damage against warships.'},
+  siege  :{i:'🏗',n:'Siege charges',cat:'Weapons',cost:'25%',d:'×2 damage against capital defences.'},
+  cryo   :{i:'❄',n:'Cryo rounds',cat:'Weapons',cost:'15%',d:'Every hit slows the target by 50% for 3 days.'},
+  poison :{i:'☣',n:'Gas shells',cat:'Weapons',cost:'25%',d:'Hits leave a toxic cloud that hurts enemies standing in it.'},
+  scope  :{i:'🎯',n:'Long-range scope',cat:'Weapons',cost:'20%',d:'+35% range.'},
+  armor  :{i:'🧱',n:'Reactive armor',cat:'Defence',cost:'30%',d:'Takes 25% less damage from everything.'},
+  shield :{i:'🔰',n:'Energy shield',cat:'Defence',cost:'30%',d:'A shield worth 50% of its health soaks up hits first. Recharges after 5 quiet days.'},
+  repair :{i:'🔧',n:'Self-repair',cat:'Defence',cost:'20%',d:'Heals 2% of its health a day, anywhere — even out of supply.'},
+  stealth:{i:'🥷',n:'Stealth',cat:'Defence',cost:'35%',d:'Enemy troops and capital guns can only target it from within 14.'},
+  warp   :{i:'🌀',n:'Warp drive',cat:'Mobility',cost:40,act:'aim',key:'t',cd:45,d:'Teleports up to 70 toward the spot you click. 45-day reload.'},
+  boost  :{i:'⚡',n:'Overdrive',cat:'Mobility',cost:25,act:'now',key:'q',cd:40,d:'Double speed and +30% damage for 8 days. 40-day reload.'},
+  amphib :{i:'🚤',n:'Amphibious',cat:'Mobility',cost:10,only:GROUND,d:'Crosses water at full speed instead of crawling.'},
+  reactor:{i:'⚛',n:'Nuclear reactor',cat:'Mobility',cost:'30%',fuel:1,d:'Needs no fuel ⛽ at all.'},
+  medic  :{i:'🩹',n:'Field medic',cat:'Support',cost:20,d:'Heals friendly units within 22 by 1.5% of their health a day.'},
+  aura   :{i:'📢',n:'Command aura',cat:'Support',cost:'25%',d:'Friendly units within 25 deal +15% damage.'},
+  radar  :{i:'📡',n:'Radar',cat:'Support',cost:12,d:'Sees twice as far through the fog.'},
+  loot   :{i:'💰',n:'Plunder',cat:'Support',cost:15,d:'Every kill pays you gold worth 40% of the victim\'s price.'},
+  barracks:{i:'🏕',n:'Mobile barracks',cat:'Support',cost:60,d:'Trains a free infantry beside it every 30 days while it\'s in supply and you have army room (they still cost upkeep).'},
+};
+const MODK=Object.keys(MODS), MODCATS=['Weapons','Defence','Mobility','Support'];
+function modFits(base,k){const M=MODS[k];return(!M.only||M.only.includes(base))&&(!M.fuel||!!UT[base].fuel)}
+function modCost(k,price){const c=MODS[k].cost;return typeof c==='string'?Math.round(price*parseFloat(c)/100):c}
+const hasM=(t,k)=>!!(UT[t]&&UT[t].mods&&UT[t].mods[k]);
+let designs=[], squads=[], PTYPES=TYPES.slice(), nextSq=1, AURA_ON=false, clouds=[];
 const bt=t=>UT[t]&&UT[t].base||t; // the base unit a type is built on
 function normPoly(p){let m=0;for(const [x,y] of p)m=Math.max(m,Math.hypot(x,y));const k=1.25/(m||1);return p.map(([x,y])=>[+(x*k).toFixed(3),+(y*k).toFixed(3)])}
 function makePoly(sh){ // corners, spikes (every other corner pulled in), length, taper (narrow nose), twist
@@ -470,18 +518,24 @@ function makePoly(sh){ // corners, spikes (every other corner pulled in), length
 }
 function designStats(d){
   const B=UT[d.base],m={};for(const k of STATS)m[k]=LV[k][d.lv[k]-1];
-  const cost=Math.max(5,Math.round(B.cost*Math.sqrt(m.hp*m.dmg*m.rof)*(1+.6*(m.range-1))*(1+.4*(m.speed-1))));
-  return{n:d.n||'Unit',base:d.base,sh:{poly:d.poly,spin:d.spin},cost,upk:cost*.003,hp:B.hp*m.hp,dmg:B.dmg*m.dmg,rof:B.rof*m.rof,
-    range:B.range*m.range,speed:B.speed*m.speed,size:B.size*d.size,fuel:B.fuel,air:B.air,sea:B.sea,nocap:B.nocap,splash:B.splash,
-    desc:`Your design on the ${B.n.toLowerCase()} chassis.`};
+  const core=Math.max(5,Math.round(B.cost*Math.sqrt(m.hp*m.dmg*m.rof)*(1+.6*(m.range-1))*(1+.4*(m.speed-1))));
+  const mods={};let extra=0,fight=0;for(const k of d.mods||[])if(MODS[k]&&modFits(d.base,k)){mods[k]=1;extra+=modCost(k,core);if(MODS[k].cat==='Defence'||MODS[k].cat==='Weapons'&&!MODS[k].act)fight+=modCost(k,core)}
+  const cost=core+extra;
+  return{n:d.n||'Unit',base:d.base,sh:{poly:d.poly,spin:d.spin},cost,core,fcost:core+fight,upk:core*.003+extra*.0008,hp:B.hp*m.hp,dmg:B.dmg*m.dmg,rof:B.rof*m.rof,
+    range:B.range*m.range*(mods.scope?1.35:1)*(mods.flame?.65:1),speed:B.speed*m.speed,size:B.size*d.size,fuel:mods.reactor?0:B.fuel,air:B.air,sea:B.sea,
+    nocap:B.nocap,splash:B.splash,mods,amphib:!!mods.amphib,stealth:!!mods.stealth,
+    desc:`Your design on the ${B.n.toLowerCase()} chassis.`+(Object.keys(mods).length?' '+Object.keys(mods).map(k=>MODS[k].i+' '+MODS[k].n).join(', '):'')};
 }
 function validDesign(d){return d&&DSLOTS.includes(d.id)&&TYPES.includes(d.base)&&d.lv&&STATS.every(k=>d.lv[k]>=1&&d.lv[k]<=5)&&Array.isArray(d.poly)&&d.poly.length>=3}
 function applyDesigns(list){ // registers the designs as real unit types; units already in the field are refitted
   designs=(list||[]).filter(validDesign).filter((d,i,a)=>a.findIndex(o=>o.id===d.id)===i).sort((a,b)=>a.id<b.id?-1:1);
-  for(const d of designs){UT[d.id]=designStats(d);GMOD[d.id]=GMOD[d.base];VIS[d.id]=VIS[d.base];
-    TRAIN[d.id]=+(TRAIN[d.base]*Math.sqrt(UT[d.id].cost/UT[d.base].cost)).toFixed(1)}
+  for(const d of designs){d.mods=(d.mods||[]).filter(k=>MODS[k]&&modFits(d.base,k)).filter((k,i,a)=>a.indexOf(k)===i).slice(0,MODMAX);
+    UT[d.id]=designStats(d);GMOD[d.id]=GMOD[d.base]*(hasM(d.id,'siege')?2:1);VIS[d.id]=VIS[d.base]*(hasM(d.id,'radar')?2:1);
+    TRAIN[d.id]=+(TRAIN[d.base]*Math.sqrt(UT[d.id].core/UT[d.base].cost)).toFixed(1)}
   PTYPES=TYPES.concat(designs.map(d=>d.id));
-  for(const a of PTYPES)for(const b of PTYPES)(MOD[a]=MOD[a]||{})[b]=MOD[bt(a)][bt(b)];
+  for(const a of PTYPES)for(const b of PTYPES){let v=MOD[bt(a)][bt(b)];
+    if(hasM(a,'aa')&&UT[b].air)v=Math.max(v,.5)*2;if(hasM(a,'torp')&&UT[b].sea)v*=2;if(hasM(a,'flame')&&bt(b)==='inf')v*=1.8;(MOD[a]=MOD[a]||{})[b]=v}
+  AURA_ON=designs.some(d=>d.mods.includes('aura'));
   for(const q of squads)q.slots=q.slots.filter(t=>PTYPES.includes(t));
   if(units.length){
     for(const u of units)if(UT[u.t]&&UT[u.t].base){const m=UT[u.t].hp*(1+.15*F[u.f].tech.arm);if(Math.abs(m-u.mhp)>1e-9){u.hp*=m/u.mhp;u.mhp=m}}
@@ -507,9 +561,11 @@ function formOff(form,i,n,ang){
   const co=Math.cos(ang),si=Math.sin(ang);return[x*co-y*si,x*si+y*co];
 }
 function duel(a,b){ // equal gold, head to head (Lanchester square law, with a nudge for range): >1 means a wins
-  const A=UT[a],B=UT[b],sp=T=>T.splash?1.3:1;
-  const sa=A.hp*A.dmg*A.rof*sp(A)*MOD[a][b]/(A.cost*A.cost)*Math.pow(A.range/B.range,.3);
-  const sb=B.hp*B.dmg*B.rof*sp(B)*MOD[b][a]/(B.cost*B.cost)*Math.pow(B.range/A.range,.3);
+  // abilities you trigger (bombs, warp…) don't count here: only the gear that fights in a straight-up battle
+  const A=UT[a],B=UT[b],sp=T=>(T.splash?1.3:1)*(T.mods&&T.mods.poison?1.25:1)*(T.mods&&T.mods.cryo?1.1:1),
+    hp=T=>T.hp/(T.mods&&T.mods.armor?.75:1)*(T.mods&&T.mods.shield?1.5:1)*(T.mods&&T.mods.repair?1.15:1)*(T.mods&&T.mods.stealth?1.3:1),c=T=>T.fcost||T.cost;
+  const sa=hp(A)*A.dmg*A.rof*sp(A)*MOD[a][b]/(c(A)*c(A))*Math.pow(A.range/B.range,.3);
+  const sb=hp(B)*B.dmg*B.rof*sp(B)*MOD[b][a]/(c(B)*c(B))*Math.pow(B.range/A.range,.3);
   return sa<=0&&sb<=0?1:sb<=0?99:sa/sb;
 }
 function squadCost(fi,q){return q.slots.reduce((s,t)=>s+(fi>=0?costOf(fi,t):UT[t].cost),0)}
@@ -865,19 +921,86 @@ function build(fi,t,ci){
 }
 function findEnemy(u,r){
   let best=null,bd=r*r;const mt=MOD[u.t];
-  near(u.x,u.y,r,o=>{if(o.hp<=0||!war(u.f,o.f)||mt[o.t]===0)return;const d=(o.x-u.x)**2+(o.y-u.y)**2;if(d<bd){bd=d;best=o}});
+  near(u.x,u.y,r,o=>{if(o.hp<=0||!war(u.f,o.f)||mt[o.t]===0)return;const d=(o.x-u.x)**2+(o.y-u.y)**2;if(UT[o.t].stealth&&d>196)return;if(d<bd){bd=d;best=o}});
   return best;
 }
 function hurt(o,dmg,by,k){ // k: the unit that fired, which earns veterancy for the kill
-  if(o.hp<=0)return;o.hp-=dmg;if(by>=0)o.lastFight=time;
+  if(o.hp<=0)return;
+  const om=UT[o.t].mods;
+  if(om&&by>=0){if(om.armor)dmg*=.75;if(om.shield&&o.shd>0){const a=Math.min(o.shd,dmg);o.shd-=a;dmg-=a}}
+  o.hp-=dmg;if(by>=0)o.lastFight=time;
   if(o.hp<=0){
     fx.push({k:1,x:o.x,y:o.y,life:.5,max:.5,col:F[o.f].color});
     if(by===P)stats.kills++; if(o.f===P){stats.lost++;weary=Math.min(1,weary+UT[o.t].cost*.0003)}
     if(F[by])F[by].kills++;
+    if(k&&hasM(k.t,'loot')&&F[k.f]){F[k.f].gold+=UT[o.t].cost*.4;if(k.f===P)fx.push({k:5,x:o.x,y:o.y,life:.9,max:.9,txt:'+'+Math.round(UT[o.t].cost*.4)+'💰'})}
+    if(om&&om.boom&&!o.blown)selfDestruct(o);
     if(k&&k.hp>0){k.xp+=UT[o.t].cost;let r=k.rank;while(r<3&&k.xp>=RANK[r+1])r++;
       if(r>k.rank){k.rank=r;k.hp=Math.min(k.mhp,k.hp+k.mhp*.25);if(k.f===P)stats.vets=Math.max(stats.vets||0,r)}}
   }
 }
+// ─── module effects ───
+function unitMods(u,T,dt){
+  const M=T.mods;
+  if(M.shield){const cap=u.mhp*.5;if(u.shd===undefined)u.shd=cap;if(time-u.lastFight>5&&u.shd<cap)u.shd=Math.min(cap,u.shd+cap*.15*dt)}
+  if(M.repair&&u.hp<u.mhp)u.hp=Math.min(u.mhp,u.hp+u.mhp*.02*dt);
+  if(M.medic)near(u.x,u.y,22,o=>{if(o.f===u.f&&o.hp>0&&o.hp<o.mhp&&(o.x-u.x)**2+(o.y-u.y)**2<484)o.hp=Math.min(o.mhp,o.hp+o.mhp*.015*dt)});
+  if(M.barracks){u.bar=(u.bar??30)-dt;if(u.bar<=0){u.bar=30;const f=F[u.f];
+    if(u.sup&&f.army<armyCap(f)&&!T.air&&landAt(u.x,u.y)>=0){const n=spawn(u.f,'inf',u.x,u.y);n.train=n.trainMax=TRAIN.inf;
+      if(f.player){stats.built++;n.order={x:n.x,y:n.y,cap:-1,move:true}}fx.push({k:3,x:u.x,y:u.y,life:.6,max:.6,col:'#9fffb0'})}}}
+}
+function abilityReady(u,k){return hasM(u.t,k)&&u.hp>0&&!(u.train>0)&&!((u.ab&&u.ab[k]||0)>time)}
+function spend(u,k){(u.ab=u.ab||{})[k]=time+MODS[k].cd}
+function gasAt(x,y,fi){
+  for(const c of clouds)if(c.f===fi&&!c.fall&&(c.x-x)**2+(c.y-y)**2<36){c.t=Math.max(c.t,6);return}
+  if(clouds.length<120)clouds.push({x,y,r:8,t:6,max:6,dps:2.5,f:fi});
+}
+function updateClouds(dt){
+  for(const c of clouds){c.t-=dt;
+    near(c.x,c.y,c.r,o=>{if(o.hp>0&&(o.x-c.x)**2+(o.y-c.y)**2<c.r*c.r&&(c.fall?!UT[o.t].air:war(c.f,o.f)))hurt(o,(c.fall?o.mhp*.04:c.dps)*dt,-1)})}
+  clouds=clouds.filter(c=>c.t>0);
+}
+function selfDestruct(u){
+  u.blown=true;const R=18;fx.push({k:4,x:u.x,y:u.y,life:.8,max:.8,r:R});
+  near(u.x,u.y,R,o=>{if(o!==u&&o.hp>0&&war(u.f,o.f)&&(o.x-u.x)**2+(o.y-u.y)**2<R*R)hurt(o,90+UT[u.t].hp*.6,u.f)});
+  for(const c of C)if(war(u.f,c.owner)&&(c.cap.x-u.x)**2+(c.cap.y-u.y)**2<R*R){c.gar=Math.max(0,c.gar-60);c.lastHit=time;c.flash=.3}
+  if(u.hp>0){u.hp=0}
+}
+function nukeAt(x,y,fi){ // the big one: kills everything in the blast (yours too), flattens capitals, leaves fallout
+  const R=48;fx.push({k:6,x,y,life:3,max:3,r:R});fx.push({k:4,x,y,life:1.6,max:1.6,r:R});
+  const hitF=new Set();
+  near(x,y,R,o=>{const d=Math.hypot(o.x-x,o.y-y);if(o.hp>0&&d<R&&(o.f===fi||war(fi,o.f))){hurt(o,500*(1-d/R)+150,o.f===fi?-1:fi);hitF.add(o.f)}});
+  for(const c of C){const d=Math.hypot(c.cap.x-x,c.cap.y-y);if(d<R+10&&war(fi,c.owner)){c.gar=0;c.lastHit=time;c.flash=1;if(c.fac)c.fac=0;recalc(F[c.owner]);hitF.add(c.owner)}}
+  clouds.push({x,y,r:R*.8,t:35,max:35,f:fi,fall:true});
+  if(fi===P){infamy+=30;stats.nukes=(stats.nukes||0)+1;for(const f of F)if(f.alive&&!f.player){f.grudge+=hitF.has(f.id)?120:20}
+    addLog('☢ Atomic bomb dropped — the whole world saw that','bad',5000)}
+}
+function carpetAt(x,y,fi,ang){
+  for(let k=-2;k<=2;k++){const bx=x+Math.cos(ang)*k*9,by=y+Math.sin(ang)*k*9,R=11;
+    fx.push({k:4,x:bx,y:by,life:.7+.12*(k+2),max:.7+.12*(k+2),r:R});
+    near(bx,by,R,o=>{if(o.hp>0&&war(fi,o.f)&&!UT[o.t].air&&(o.x-bx)**2+(o.y-by)**2<R*R)hurt(o,55,fi)});
+    for(const c of C)if(war(fi,c.owner)&&(c.cap.x-bx)**2+(c.cap.y-by)**2<R*R){c.gar=Math.max(0,c.gar-35);c.lastHit=time;c.flash=.3}}
+}
+function dropPayload(u,o){
+  const ang=Math.atan2(o.y-o.sy,o.x-o.sx);
+  if(o.drop==='nuke')nukeAt(u.x,u.y,u.f);else carpetAt(u.x,u.y,u.f,ang);
+  spend(u,o.drop);u.order={x:o.sx,y:o.sy,cap:-1,move:true}; // fly home
+}
+// use an ability: aimed ones take a target point
+function useAbility(u,k,x,y){
+  if(!abilityReady(u,k))return false;
+  if(k==='nuke'||k==='carpet'){u.order={x,y,cap:-1,move:true,drop:k,sx:u.x,sy:u.y};u.tgt=null;return true} // reload starts when the bombs fall
+  if(k==='mpod'){if(Math.hypot(x-u.x,y-u.y)>200)return false;missiles.push({f:u.f,x0:u.x,y0:u.y,x,y,t:0,dur:1.5+Math.hypot(x-u.x,y-u.y)/(500*WS),pod:1})}
+  else if(k==='warp'){const d=Math.hypot(x-u.x,y-u.y),s=Math.min(70,d);let nx=u.x,ny=u.y;
+    for(let q=s;q>0;q-=5){const tx=u.x+(x-u.x)/d*q,ty=u.y+(y-u.y)/d*q;if(!closed(u.f,ownerAt(tx,ty),ownerAt(u.x,u.y))&&(!UT[u.t].sea||landAt(tx,ty)<0)){nx=tx;ny=ty;break}}
+    if(nx===u.x&&ny===u.y)return false;fx.push({k:3,x:u.x,y:u.y,life:.5,max:.5,col:'#b98cff'});u.x=nx;u.y=ny;fx.push({k:3,x:nx,y:ny,life:.6,max:.6,col:'#b98cff'});u.order=null}
+  else if(k==='emp'){fx.push({k:3,x:u.x,y:u.y,life:.9,max:.9,col:'#7fd8ff',r:32});
+    near(u.x,u.y,32,o=>{if(o.hp>0&&war(u.f,o.f)&&(o.x-u.x)**2+(o.y-u.y)**2<1024){o.stun=time+6;o.tgt=null}})}
+  else if(k==='boost')u.boost=time+8;
+  else if(k==='boom'){selfDestruct(u);return true}
+  spend(u,k);return true;
+}
+
 // ─── supply ───
 function ownerAt(x,y){const i=landAt(x,y);return i<0?-1:C[i].owner}
 function inSupply(fi,x,y){ // on our land (or a pact partner's, for the player), a short march from it, or next to one of our warships
@@ -921,6 +1044,7 @@ function fire(u,o){
   const T=UT[u.t];u.ang=Math.atan2(o.y-u.y,o.x-u.x);
   fx.push({k:0,x:u.x,y:u.y,x2:o.x,y2:o.y,life:.18,max:.18,col:F[u.f].color,t:bt(u.t)});
   const k=unitDmg(u);u.lastFight=time;hurt(o,T.dmg*k*MOD[u.t][o.t],u.f,u);
+  if(T.mods){if(T.mods.cryo)o.slow=time+3;if(T.mods.poison)gasAt(o.x,o.y,u.f)}
   if(T.splash){fx.push({k:2,x:o.x,y:o.y,life:.35,max:.35,r:T.splash});
     near(o.x,o.y,T.splash,q=>{if(q!==o&&q.hp>0&&war(u.f,q.f)&&!UT[q.t].air&&(q.x-o.x)**2+(q.y-o.y)**2<T.splash*T.splash)hurt(q,T.dmg*k*.6*MOD[u.t][q.t],u.f,u)})}
 }
@@ -932,13 +1056,14 @@ function unitDmg(u){ // research × veterancy × doctrine × home soil × supply
   const f=F[u.f];let k=dmgMul(u.f)*(1+.15*u.rank);
   if(f.doc==='blitz'&&(bt(u.t)==='tank'||bt(u.t)==='air'))k*=1.15;
   if(u.home)k*=f.doc==='fort'?1.4:1.2;
+  if(u.boost>time)k*=1.3;if(u.aura)k*=1.15;
   return u.sup?k:k*.75;
 }
 function fireCap(u,c){
   const T=UT[u.t];u.ang=Math.atan2(c.cap.y-u.y,c.cap.x-u.x);
   fx.push({k:0,x:u.x,y:u.y,x2:c.cap.x,y2:c.cap.y,life:.18,max:.18,col:F[u.f].color,t:bt(u.t)});
   if(T.splash)fx.push({k:2,x:c.cap.x,y:c.cap.y,life:.35,max:.35,r:T.splash});
-  u.lastFight=time;c.gar=Math.max(0,c.gar-T.dmg*unitDmg(u)*GMOD[u.t]);c.lastHit=time;c.flash=.15;
+  u.lastFight=time;c.gar=Math.max(0,c.gar-T.dmg*unitDmg(u)*GMOD[u.t]);if(T.mods&&T.mods.poison)gasAt(c.cap.x,c.cap.y,u.f);c.lastHit=time;c.flash=.15;
 }
 
 function guardOK(o,t){return landAt(t.x,t.y)===o.guard||Math.hypot(t.x-o.x,t.y-o.y)<45}
@@ -946,6 +1071,8 @@ function guardOrder(ci,k,x,y){const c=C[ci],a=k*2.4,r=Math.min(14,2.2*Math.sqrt(
 function updateUnit(u,dt){
   const T=UT[u.t];
   if(u.train>0){u.train-=dt;u.scan=0;return}
+  if(u.stun>time)return; // EMP: frozen
+  if(T.mods)unitMods(u,T,dt);
   u.cd-=dt;u.scan-=dt;
   if(u.tgt&&(u.tgt.hp<=0||!war(u.f,u.tgt.f)))u.tgt=null;
   const ret=!!(u.order&&u.order.retreat);
@@ -954,7 +1081,8 @@ function updateUnit(u,dt){
   const pg=u.order&&u.order.guard>=0?u.order:null; // guarding a province: hunt down intruders on its soil, then return to post
   if(u.scan<=0){u.scan=.25+rand()*.15;u.tgt=findEnemy(u,ret||pmove||pidle?T.range:pg?T.range+60:T.range+(u.order&&u.order.move?4:18));
     if(pg&&u.tgt&&!guardOK(pg,u.tgt)&&Math.hypot(u.tgt.x-u.x,u.tgt.y-u.y)>T.range)u.tgt=null;
-    const own=ownerAt(u.x,u.y);u.home=own===u.f;u.sup=T.sea||u.home||inSupply(u.f,u.x,u.y)}
+    const own=ownerAt(u.x,u.y);u.home=own===u.f;u.sup=T.sea||u.home||inSupply(u.f,u.x,u.y);
+    if(AURA_ON){let a=false;near(u.x,u.y,25,o=>{if(!a&&o!==u&&o.f===u.f&&o.hp>0&&hasM(o.t,'aura')&&(o.x-u.x)**2+(o.y-u.y)**2<625)a=true});u.aura=a}}
   let mx=null,my=null,stop=3;
   if(u.tgt&&!ret&&!pmove){
     const d=Math.hypot(u.tgt.x-u.x,u.tgt.y-u.y);
@@ -975,6 +1103,7 @@ function updateUnit(u,dt){
     }else{
       mx=o.x;my=o.y;
       if(pg){if(C[pg.guard].owner!==u.f)u.order=null}
+      else if(o.drop&&Math.hypot(o.x-u.x,o.y-u.y)<4){dropPayload(u,o)}
       else if(Math.hypot(o.x-u.x,o.y-u.y)<3)u.order=null;
     }
   }
@@ -982,7 +1111,8 @@ function updateUnit(u,dt){
     const dx=mx-u.x,dy=my-u.y,d=Math.hypot(dx,dy);
     if(d>stop&&d>.01){
       const wet=landAt(u.x,u.y)<0;
-      let sp=(u.order&&u.order.sv?Math.min(T.speed,u.order.sv):T.speed)*(1+.15*F[u.f].tech.log)*(!T.air&&!T.sea&&u.home&&!u.tgt?1.6:1) /* rail on home soil */*(F[u.f].doc==='blitz'&&(bt(u.t)==='tank'||bt(u.t)==='air')?1.25:1);if(T.sea){if(!wet)sp*=.3}else if(!T.air&&wet)sp*=.4;
+      let sp=(u.order&&u.order.sv?Math.min(T.speed,u.order.sv):T.speed)*(1+.15*F[u.f].tech.log)*(!T.air&&!T.sea&&u.home&&!u.tgt?1.6:1) /* rail on home soil */*(F[u.f].doc==='blitz'&&(bt(u.t)==='tank'||bt(u.t)==='air')?1.25:1);if(T.sea){if(!wet)sp*=.3}else if(!T.air&&wet&&!T.amphib)sp*=.4;
+      if(u.boost>time)sp*=2;if(u.slow>time)sp*=.5;
       const s=Math.min(d-stop*.5,sp*dt);let nx=u.x+dx/d*s,ny=u.y+dy/d*s;
       if(T.sea&&wet&&landAt(nx,ny)>=0){ // warships hug the coast instead of driving inland
         if(landAt(nx,u.y)<0)ny=u.y;else if(landAt(u.x,ny)<0)nx=u.x;else{nx=u.x;ny=u.y}}
@@ -1000,7 +1130,7 @@ function updateUnit(u,dt){
     if(d<rr){if(d<.01){u.x+=rand()-.5;u.y+=rand()-.5;return}const p=(rr-d)/d*.25;u.x+=dx*p;u.y+=dy*p}});
   u.x=clamp(u.x,-90*WS,W+190*WS);u.y=clamp(u.y,2,H-2);
   // out of supply: wither; at home and out of the fight: recover
-  if(!u.sup)hurt(u,u.mhp*ATTR*(F[u.f].doc==='mass'?.5:1)*dt,-1);
+  if(!u.sup&&!(T.mods&&T.mods.repair))hurt(u,u.mhp*ATTR*(F[u.f].doc==='mass'?.5:1)*dt,-1);
   else if(u.home&&u.hp<u.mhp&&time-u.lastFight>5)u.hp=Math.min(u.mhp,u.hp+u.mhp*HEAL*dt);
 }
 
@@ -1012,7 +1142,7 @@ function updateCountry(c,dt){
     c.tcd=.8;
     let best=null,bd=(TOWER_R+4*c.fort)**2,threat=-1;
     near(c.cap.x,c.cap.y,45,o=>{if(o.hp<=0||!war(c.owner,o.f))return;const d=(o.x-c.cap.x)**2+(o.y-c.cap.y)**2;
-      if(d<2025)threat=o.f;if(d<bd){bd=d;best=o}});
+      if(d<2025)threat=o.f;if(UT[o.t].stealth&&d>196)return;if(d<bd){bd=d;best=o}});
     if(threat>=0){c.threat=time;
       if(c.owner===P&&time-c.alertT>15){c.alertT=time;addLog(`⚠ ${F[threat].name} is attacking ${c.name}!`,'bad')}}
     if(best&&c.gar>0){hurt(best,(4+c.value)*2*(1+.5*c.fort),c.owner);fx.push({k:0,x:c.cap.x,y:c.cap.y,x2:best.x,y2:best.y,life:.2,max:.2,col:'#fff',t:'tw'})}
@@ -1179,6 +1309,7 @@ function launchMissile(fi,x,y){
 }
 function boom(m){
   fx.push({k:4,x:m.x,y:m.y,life:1.1,max:1.1,r:MIS.r});
+  if(m.pod)stats.missiles++;
   near(m.x,m.y,MIS.r,o=>{if(o.hp>0&&war(m.f,o.f)&&(o.x-m.x)**2+(o.y-m.y)**2<MIS.r*MIS.r)hurt(o,MIS.dmg*(UT[o.t].air?.5:1),m.f)});
   for(const c of C)if(war(m.f,c.owner)&&(c.cap.x-m.x)**2+(c.cap.y-m.y)**2<MIS.r*MIS.r){
     c.gar=Math.max(0,c.gar-c.garMax*.6);c.lastHit=time;c.flash=.4;
@@ -1231,6 +1362,7 @@ function step(dt){
   for(const c of C)updateCountry(c,dt);
   for(const f of F)if(f.alive&&!f.player){f.think-=dt;if(f.think<=0)aiThink(f)}
   for(const m of missiles){m.t+=dt;if(m.t>=m.dur){boom(m);m.done=1}}
+  if(clouds.length)updateClouds(dt);
   if(missiles.length)missiles=missiles.filter(m=>!m.done);
   if(supDirty)calcSupply();
   if(P>=0&&F[P].alive){const wars=F.reduce((n,f)=>n+(f.alive&&!f.player&&f.atWar&&time>=playerPeace?1:0),0);
@@ -1389,6 +1521,15 @@ function render(){
   }
   if(aiming){const [wx,wy]=s2w(mouse.x,mouse.y);const [tx,ty]=w2s(wx,wy);
     ctx.strokeStyle='rgba(255,210,90,.9)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(tx,ty,MIS.r*cam.z,0,6.283);ctx.stroke()}
+  if(abAim){const [wx,wy]=s2w(mouse.x,mouse.y),[tx,ty]=w2s(wx,wy),R={nuke:48,carpet:22,mpod:MIS.r,warp:6}[abAim]*cam.z;
+    ctx.strokeStyle=abAim==='nuke'?'rgba(170,255,90,.95)':'rgba(255,210,90,.9)';ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.beginPath();ctx.arc(tx,ty,R,0,6.283);ctx.stroke();ctx.setLineDash([]);
+    ctx.font='16px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(MODS[abAim].i,tx,ty-R-6)}
+  // gas clouds and fallout
+  for(const c of clouds){const [x,y]=w2s(c.x,c.y),R=c.r*cam.z,a=Math.min(1,c.t/3);if(x<-R||x>VW+R||y<-R||y>VH+R)continue;
+    const g=ctx.createRadialGradient(x,y,0,x,y,R);
+    if(c.fall){g.addColorStop(0,`rgba(190,255,60,${.38*a})`);g.addColorStop(1,'rgba(120,200,40,0)')}else{g.addColorStop(0,`rgba(140,230,90,${.45*a})`);g.addColorStop(1,'rgba(90,180,60,0)')}
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,R,0,6.283);ctx.fill();
+    if(c.fall&&R>18){ctx.font=`${Math.min(40,R*.5)|0}px system-ui`;ctx.textAlign='center';ctx.globalAlpha=.55*a;ctx.fillText('☢',x,y+R*.15);ctx.globalAlpha=1}}
   // tracers
   for(const e of fx){
     const a=e.life/e.max;
@@ -1401,7 +1542,14 @@ function render(){
     else if(e.k===4){const [x,y]=w2s(e.x,e.y),R=e.r*cam.z,g=1-a;
       ctx.fillStyle=`rgba(255,${160+g*60|0},80,${a*.55})`;ctx.beginPath();ctx.arc(x,y,R*(.4+g*.8),0,6.283);ctx.fill();
       ctx.strokeStyle=`rgba(255,240,220,${a})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,R*(.3+g*1.1),0,6.283);ctx.stroke()}
-    else if(e.k===3){const [x,y]=w2s(e.x,e.y);ctx.strokeStyle=e.col;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,6+(1-a)*40,0,6.283);ctx.stroke();ctx.globalAlpha=1}
+    else if(e.k===3){const [x,y]=w2s(e.x,e.y);ctx.strokeStyle=e.col;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,e.r?e.r*cam.z*(1-a*.7):6+(1-a)*40,0,6.283);ctx.stroke();ctx.globalAlpha=1}
+    else if(e.k===5){const [x,y]=w2s(e.x,e.y);ctx.globalAlpha=a;ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillStyle='#ffe08a';ctx.fillText(e.txt,x,y-14-(1-a)*18);ctx.globalAlpha=1}
+    else if(e.k===6){const [x,y]=w2s(e.x,e.y),R=e.r*cam.z,g=1-a; // atomic flash + shockwave + mushroom
+      if(g<.25){ctx.fillStyle=`rgba(255,255,240,${(.25-g)*3})`;ctx.fillRect(0,0,VW,VH)}
+      ctx.strokeStyle=`rgba(255,255,255,${a*.8})`;ctx.lineWidth=4;ctx.beginPath();ctx.arc(x,y,R*(.2+g*2.2),0,6.283);ctx.stroke();
+      const cap=R*(.25+g*.45),hy=y-R*(.2+g*.9);ctx.fillStyle=`rgba(120,110,100,${a*.7})`;ctx.fillRect(x-cap*.18,hy,cap*.36,y-hy);
+      const gr=ctx.createRadialGradient(x,hy,0,x,hy,cap);gr.addColorStop(0,`rgba(255,${200-g*120|0},90,${a})`);gr.addColorStop(1,`rgba(90,70,60,${a*.5})`);
+      ctx.fillStyle=gr;ctx.beginPath();ctx.ellipse(x,hy,cap,cap*.62,0,0,6.283);ctx.fill()}
   }
   // units (ground first, aircraft on top)
   for(let pass=0;pass<2;pass++)for(const u of units){
@@ -1411,8 +1559,13 @@ function render(){
     if(!T.air&&!T.sea&&landAt(u.x,u.y)<0){ctx.strokeStyle='rgba(160,210,255,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+3,0,6.283);ctx.stroke()}
     if(T.air){ctx.fillStyle='rgba(0,0,0,.25)';shapePath(ctx,T.sh,sx+3,sy+4,s,u.ang);ctx.fill()}
     if(u.train>0){ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,s+3,-1.571,-1.571+6.283*(1-u.train/u.trainMax));ctx.stroke();ctx.globalAlpha=.45}
+    if(T.stealth)ctx.globalAlpha*=.55;
     shapePath(ctx,T.sh,sx,sy,s,typeof T.sh==='object'?(T.sh.spin?u.ang:0):T.sh===1||T.sh===4?0:u.ang);
     ctx.fillStyle=F[u.f].player?PUNIT:F[u.f].ucol;ctx.fill();ctx.globalAlpha=1;
+    if(u.shd>1){ctx.strokeStyle='rgba(110,220,255,.75)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,s+3.5,-1.571,-1.571+6.283*Math.min(1,u.shd/(u.mhp*.5)));ctx.stroke()}
+    if(u.stun>time){ctx.strokeStyle='#7fd8ff';ctx.lineWidth=1.5;ctx.setLineDash([2,2]);ctx.beginPath();ctx.arc(sx,sy,s+5,0,6.283);ctx.stroke();ctx.setLineDash([])}
+    if(u.boost>time){ctx.strokeStyle='rgba(255,170,60,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,s+2,u.ang+2.4,u.ang+3.9);ctx.stroke()}
+    if(u.slow>time){ctx.fillStyle='#bfefff';ctx.beginPath();ctx.arc(sx+s,sy-s,1.8,0,6.283);ctx.fill()}
     ctx.lineWidth=sel.has(u)?2.2:1.3;ctx.strokeStyle=sel.has(u)?'#fff':'#060a12';ctx.stroke();
     if(sel.has(u)){ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+4,0,6.283);ctx.stroke()}
     if(u.f===P&&!u.sup){ctx.strokeStyle='rgba(255,150,60,.9)';ctx.lineWidth=1.2;ctx.setLineDash([2,2]);ctx.beginPath();ctx.arc(sx,sy,s+2.5,0,6.283);ctx.stroke();ctx.setLineDash([])}
@@ -1474,6 +1627,48 @@ function rebuildBuildBar(){ // base units, then the player's designs (keys 7–0
     b.onclick=()=>playerSquad(i);sb.appendChild(b);sqBtns.push(b)});
   document.body.classList.toggle('hasSq',squads.length>0);
 }
+let abAim=null,abSig='';
+function selAbilities(){ // active abilities among the selected units: {k:{n,ready,wait}}
+  const r={};for(const u of sel){const m=UT[u.t].mods;if(!m)continue;for(const k in m)if(MODS[k].act){const a=r[k]||(r[k]={n:0,ready:0,wait:1e9});a.n++;
+    if(abilityReady(u,k))a.ready++;else a.wait=Math.min(a.wait,Math.max(0,(u.ab&&u.ab[k]||0)-time))}}
+  return r;
+}
+function updateAbil(){
+  const r=state==='play'?selAbilities():{},ks=MODK.filter(k=>r[k]);
+  const sig=ks.map(k=>k+r[k].n+'/'+r[k].ready+(r[k].ready?'':Math.ceil(r[k].wait))).join()+abAim;
+  document.body.classList.toggle('hasAb',ks.length>0);show('abil',ks.length>0);
+  if(sig===abSig)return;abSig=sig;
+  $('abil').innerHTML=ks.map(k=>{const a=r[k],M=MODS[k];return `<button data-k="${k}" class="${abAim===k?'aim':a.ready?'rdy':''}" ${a.ready?'':'disabled'} title="${esc(M.d)}">${M.i} ${M.n} ${a.n>1?`<small>${a.ready}/${a.n}</small>`:''}${a.ready?'':`<small>⏳${Math.ceil(a.wait)}d</small>`}<small>${M.key.toUpperCase()}</small></button>`}).join('');
+}
+function setAbAim(k){abAim=k;document.body.classList.toggle('aiming',!!k||aiming);abSig=''}
+function triggerAbility(k){
+  if(state!=='play')return;const M=MODS[k],us=[...sel].filter(u=>hasM(u.t,k));if(!us.length)return;
+  const rd=us.filter(u=>abilityReady(u,k));
+  if(!rd.length){addLog(`${M.i} ${M.n} is reloading`,'bad',1500);return}
+  if(M.act==='aim'){if(time<playerPeace&&k!=='warp'){addLog('No bombing or missiles during the ceasefire','bad',1800);return}
+    if(aiming)toggleAim(false);setAbAim(abAim===k?null:k);
+    if(abAim)addLog(k==='nuke'?'☢ Click the target — one bomber flies there and drops the bomb. Its blast kills your own troops too! (right-click / Esc cancels)':
+      k==='carpet'?'💣 Click where to carpet-bomb — your bombers fly there, drop, and fly home':k==='mpod'?'🚀 Click a target within 200 of your launchers':'🌀 Click where to warp (up to 70 away)','',3500);
+    return}
+  let n=0;for(const u of rd)if(useAbility(u,k,u.x,u.y))n++;
+  if(n)addLog(`${M.i} ${M.n}${n>1?` ×${n}`:''}!`,'good',1500);abSig='';
+}
+function aimAbility(wx,wy){
+  const k=abAim,M=MODS[k],rd=[...sel].filter(u=>abilityReady(u,k));setAbAim(null);
+  const tgt=ownerAt(wx,wy);
+  if(k!=='warp'&&tgt>=0&&tgt!==P&&!war(P,tgt)){addLog(`You're at peace with ${F[tgt].name} — declare war first`,'bad',2200);return}
+  let n=0;
+  if(k==='nuke'){const u=rd.sort((a,b)=>Math.hypot(a.x-wx,a.y-wy)-Math.hypot(b.x-wx,b.y-wy))[0];if(u&&useAbility(u,k,wx,wy))n=1}
+  else rd.forEach((u,i)=>{const a=i*2.4,r=k==='warp'?2.6*Math.sqrt(i):0;if(useAbility(u,k,wx+Math.cos(a)*r,wy+Math.sin(a)*r))n++});
+  if(!n)addLog(k==='mpod'?'🚀 Out of range — launchers reach 200':k==='warp'?'🌀 Can\'t warp there':`${M.i} nothing ready`,'bad',1800);
+  else{markers.push({x:wx,y:wy,life:.8,max:.8,atk:true});
+    addLog(k==='nuke'?'☢ Bomber inbound…':k==='carpet'?`💣 ${n} bomber${n>1?'s':''} on a bombing run`:k==='mpod'?`🚀 ${n} missile${n>1?'s':''} away`:`🌀 ${n} unit${n>1?'s':''} warped`,'good',2000)}
+}
+function fitRight(){ // a long build bar pushes the bottom-right controls up instead of hiding under them
+  let rb=0;if(innerWidth>700){const b=$('build').getBoundingClientRect(),c=$('ctl');
+    if(b.width&&b.right>innerWidth-10-c.offsetWidth-8)rb=b.height+6}
+  document.body.style.setProperty('--rb',rb+'px');
+}
 function playerSquad(i){
   if(state!=='play'||!squads[i])return;
   if(selCountry<0||C[selCountry].owner!==P)selCountry=F[P].owned[0];
@@ -1501,6 +1696,7 @@ function playerFortify(ci){
 function toggleAim(on){
   aiming=on===undefined?!aiming:on;
   if(aiming&&state!=='play')aiming=false;
+  if(aiming&&abAim)setAbAim(null);
   document.body.classList.toggle('aiming',aiming);$('bMis').classList.toggle('aim',aiming);
   if(aiming)addLog(`☢ Click where missiles should land — ${MIS.cost} gold each, fire as many as you can afford (Esc / right-click stops)`,'',3000);
 }
@@ -1589,7 +1785,7 @@ function updateHUD(){
   const sc=selCountry>=0?C[selCountry]:null;
   $('misC').textContent=MIS.cost;
   $('bMis').disabled=time<playerPeace||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
-  updatePanels();
+  updatePanels();updateAbil();fitRight();
   const top=F.filter(x=>x.alive).sort((a,b)=>b.owned.length-a.owned.length||b.income-a.income);
   let rows=top.slice(0,7);if(!rows.includes(f))rows[6]=f;
   $('boardRows').innerHTML=rows.map(x=>`<div class="row${x.player?' me':''}"><span class="d" style="background:${x.player?PCOL:x.color}"></span><span class="n">${top.indexOf(x)+1}. ${x.name}${x.pact>time?' 🤝':x.atWar&&!x.player?' ⚔':''}</span><b>${x.owned.length}</b></div>`).join('');
@@ -1651,6 +1847,7 @@ function clickAt(sx,sy,shift,touch){
   const [wx,wy]=s2w(sx,sy);
   if(state==='pick'){const ci=countryAt(wx,wy);if(ci>=0)choosePick(ci);return}
   if(state!=='play')return;
+  if(abAim){aimAbility(wx,wy);return}
   if(aiming){if(playerMissile(wx,wy)&&F[P].gold<MIS.cost)toggleAim(false);return} // keep aiming while you can afford another
   const u=unitAt(wx,wy,true);
   if(u){const grp=u.sq?units.filter(o=>o.f===P&&o.sq===u.sq&&o.hp>0):[u]; // clicking a squad member picks up the whole squad
@@ -1671,9 +1868,10 @@ cv.addEventListener('pointerdown',e=>{
   cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   const touch=e.pointerType==='touch';
   if(pts.size===2){const [p1,p2]=[...pts.values()];pinch={d:Math.hypot(p1.x-p2.x,p1.y-p2.y),z:cam.z};drag=null;return}
+  if(e.button===2&&abAim){setAbAim(null);return}
   if(e.button===2&&aiming){toggleAim(false);return}
   if(e.button===2){if(state==='play'){const [wx,wy]=s2w(e.clientX,e.clientY);command(wx,wy)}return}
-  const pan=e.button===1||(touch&&!aiming)||state==='pick'||state==='menu';
+  const pan=e.button===1||(touch&&!aiming&&!abAim)||state==='pick'||state==='menu';
   drag={sx:e.clientX,sy:e.clientY,cx:e.clientX,cy:e.clientY,lx:e.clientX,ly:e.clientY,moved:false,box:!pan,pan,touch,shift:e.shiftKey};
 });
 cv.addEventListener('pointermove',e=>{
@@ -1728,13 +1926,14 @@ addEventListener('keydown',e=>{
   if(/^[0-9]$/.test(k)){const t=PTYPES[k==='0'?9:+k-1];if(t)playerBuild(t)}
   else if(SQKEYS.includes(k))playerSquad(SQKEYS.indexOf(k));
   else if(k==='u')openDesigner();
+  else if(MODK.some(m=>MODS[m].key===k&&[...sel].some(u=>hasM(u.t,m))))triggerAbility(MODK.find(m=>MODS[m].key===k&&[...sel].some(u=>hasM(u.t,m))));
   else if(k==='e')selectAll();
   else if(k==='h')retreat();
   else if(k==='v')toggleMap();
   else if(k==='m')toggleAim();
   else if(k==='g')playerFortify();
   else if(k==='r')toggleTech();
-  else if(k==='escape'){if(aiming)toggleAim(false);else if(infoC>=0||!$('techp').classList.contains('hidden')){openInfo(-1);toggleTech(false)}else sel.clear()}
+  else if(k==='escape'){if(abAim)setAbAim(null);else if(aiming)toggleAim(false);else if(infoC>=0||!$('techp').classList.contains('hidden')){openInfo(-1);toggleTech(false)}else sel.clear()}
   else if(k==='p')togglePause();
   else if(k==='f')focusHome();
   else if(k==='='||k==='+')zoomAt(VW/2,VH/2,1.25);
@@ -1761,6 +1960,7 @@ function selectAll(){sel.clear();for(const u of units)if(u.f===P)sel.add(u)}
 function togglePause(){paused=!paused;$('bPause').textContent=paused?'▶':'⏸';$('bPause').classList.toggle('on',paused)}
 function focusHome(){const f=F[P];const c=C[selCountry>=0&&C[selCountry].owner===P?selCountry:f.owned[0]];if(c)flyTo(c.cap.x,c.cap.y,Math.max(cam.z,3.2))}
 function flyTo(x,y,z){cam.z=z;clampCam();cam.x=x-VW/2/cam.z;cam.y=y-VH/2/cam.z;clampCam()}
+$('abil').onclick=e=>{const b=e.target.closest('[data-k]');if(b&&!b.disabled)triggerAbility(b.dataset.k)};
 $('bDz').onclick=()=>openDesigner();$('bDzM').onclick=()=>openDesigner();
 $('bMis').onclick=()=>toggleAim();$('bTech').onclick=()=>toggleTech();$('cpX').onclick=()=>openInfo(-1);
 $('cpFac').onclick=()=>{if(buildFactory(P,infoC))addLog(`🏭 Factory built in ${C[infoC].name} (level ${C[infoC].fac})`,'good',2000);updatePanels()};
@@ -1791,7 +1991,7 @@ document.querySelectorAll('#diff button').forEach(b=>b.onclick=()=>{diff=+b.data
   document.querySelectorAll('#diff button').forEach(x=>x.classList.toggle('on',x===b))});
 
 // ─── workshop UI ───
-let dzTab='unit',dzSel=0,qzSel=0,dzWasPaused=false,dzDrag=-1;
+let dzTab='unit',dzSel=0,qzSel=0,dzWasPaused=false,dzDrag=-1,modHover='';
 const mirror=h=>h.concat(h.slice(1,-1).reverse().map(([x,y])=>[x,-y]));
 const PRESETS=[['●','Round',{pts:16,spike:0,len:1,taper:0,twist:0}],['■','Block',{pts:4,spike:0,len:1,taper:0,twist:1}],
   ['▲','Wedge',{pts:3,spike:0,len:1,taper:0,twist:0}],['◆','Diamond',{pts:4,spike:0,len:1.35,taper:0,twist:0}],
@@ -1850,6 +2050,10 @@ function initDesigner(){
         dd=(a[0]+dx*t-px)**2+(a[1]+dy*t-py)**2;if(dd<bd){bd=dd;bi=i}});
       if(d.poly.length<24)d.poly.splice(bi+1,0,[+clamp(px,-1.6,1.6).toFixed(3),+clamp(py,-1.6,1.6).toFixed(3)])}
     d.shape.custom=true;commitDesigns();renderDesigner()};
+  $('dMods').onclick=e=>{const b=e.target.closest('[data-m]'),d=designs[dzSel];if(!b||!d||b.disabled)return;const k=b.dataset.m,i=d.mods.indexOf(k);
+    if(i>=0)d.mods.splice(i,1);else if(d.mods.length<MODMAX)d.mods.push(k);commitDesigns();renderDesigner()};
+  $('dMods').onmouseover=e=>{const b=e.target.closest('[data-m]');const k=b?b.dataset.m:'';if(k!==modHover){modHover=k;renderModInfo()}};
+  $('dMods').onmouseleave=()=>{modHover='';renderModInfo()};
   // squads
   $('qSlots').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='qNew')newSquad();else{qzSel=+b.dataset.i;renderDesigner()}};
   $('qForms').innerHTML=Object.entries(FORMS).map(([k,n])=>`<button data-f="${k}">${n}</button>`).join('');
@@ -1886,8 +2090,20 @@ function renderUnitTab(){
   $('dMU').innerHTML=TYPES.map(b=>{const r=duel(d.id,b),cls=r>=1.15?'w':r<=.87?'l':'e',
     txt=MOD[d.id][b]===0?'can\'t hit it':r>=50?'untouchable':r>=1.15?`wins ×${r.toFixed(1)}`:r<=.87?`loses ×${(1/r).toFixed(1)}`:'even';
     return `<div class="${cls}">${svgShape(UT[b].sh,'#9fb3d1')}<span><b>${txt}</b>vs ${UT[b].n}</span></div>`}).join('');
+  renderMods(d);
   $('dNote').textContent=locked?`You have ${d.n} units in the field: stat and shape changes refit them right away, but the chassis is locked.`:'';
   drawUnitCv();
+}
+function renderMods(d){
+  const core=UT[d.id].core;$('dModN').textContent=`${d.mods.length}/${MODMAX} fitted`;
+  $('dMods').innerHTML=MODCATS.map(cat=>`<div class="mc"><span>${cat.toUpperCase()}</span>`+MODK.filter(k=>MODS[k].cat===cat).map(k=>{const M=MODS[k],on=d.mods.includes(k),fit=modFits(d.base,k);
+    return `<button class="mod${on?' on':''}${M.act?' act':''}" data-m="${k}" ${!fit||(!on&&d.mods.length>=MODMAX)?'disabled':''} title="${esc(M.d)}${fit?'':' — doesn\'t fit the '+UT[d.base].n.toLowerCase()+' chassis'}">${M.i} ${M.n}<span class="c">+${modCost(k,core)}</span></button>`}).join('')+'</div>').join('');
+  renderModInfo();
+}
+function renderModInfo(){
+  const d=designs[dzSel];if(!d)return;const show1=k=>{const M=MODS[k],fit=modFits(d.base,k);
+    return `<div>${M.i} <b style="font-size:13px;color:var(--ink)">${M.n}</b> <span style="color:#ffe08a">+${modCost(k,UT[d.id].core)}💰</span>${M.act?` · <span style="color:#ff9f6a">ability, key ${M.key.toUpperCase()}</span>`:''}${fit?'':` · <span style="color:#ffb4b4">${M.only?'fits: '+M.only.map(t=>UT[t].n).join(', '):'only on chassis that burn fuel'}</span>`}<br>${M.d}</div>`};
+  $('dModInfo').innerHTML=modHover?show1(modHover):d.mods.length?d.mods.map(show1).join('<div style="height:6px"></div>'):'No modules yet. Hover one to read what it does, click to fit it. Try ☢ Atomic bomb on a fighter chassis.';
 }
 function drawUnitCv(){
   const cv2=$('dCv'),g=cv2.getContext('2d'),w=cv2.width,h=cv2.height,d=designs[dzSel];g.clearRect(0,0,w,h);if(!d)return;
@@ -1946,7 +2162,7 @@ function drawSquadCv(){
 
 // ─── flow ───
 function show(id,on){$(id).classList.toggle('hidden',!on)}
-function toMenu(){state='menu';updateContinue();toggleMap(false);show('groups',0);show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','powers','peace','selinfo','cpanel','techp'].forEach(i=>show(i,0));infoC=-1;toggleAim(false)}
+function toMenu(){state='menu';updateContinue();toggleMap(false);show('groups',0);show('menu',1);show('pickhint',0);show('pickbar',0);show('end',0);['top','board','build','ctl','powers','peace','selinfo','cpanel','techp','abil'].forEach(i=>show(i,0));document.body.classList.remove('hasAb');infoC=-1;toggleAim(false);setAbAim(null)}
 $('bChoose').onclick=()=>{state='pick';pickC=-1;show('menu',0);show('pickhint',1);cam.z=fitZoom();clampCam()};
 function choosePick(ci){
   pickC=ci;const c=C[ci];
@@ -1957,7 +2173,7 @@ function choosePick(ci){
 }
 $('bLead').onclick=()=>{if(pickC>=0)startGame(pickC)};
 function resetWorld(){
-  units=[];fx=[];markers=[];missiles=[];raids=[];sel.clear();time=0;checkT=0;nextUid=1;keepPlaying=false;
+  units=[];fx=[];markers=[];missiles=[];raids=[];clouds=[];abAim=null;sel.clear();time=0;checkT=0;nextUid=1;keepPlaying=false;
   rebelT=25;aiming=false;document.body.classList.remove('aiming');supDirty=true;visT=0;
   if(occ){occ.fill(-1);for(const c of C){c.occN=0;c.occChanged=false}if(occImg)occImg.data.fill(0);occDirty=true}supOccT=0;
   stats={built:0,lost:0,kills:0,peak:1,taken:0,missiles:0,vets:0};weary=0;infamy=0;econHold=0;groups={};
@@ -1983,7 +2199,7 @@ function endGame(won,how){
   state='end';dropSave(); // "Keep playing" saves again
   $('endTitle').innerHTML=won?'<span style="color:var(--me)">Victory</span>':'Defeat';
   $('endText').textContent=won?(how==='econ'?`Economic victory — ${F[P].name} earns ${Math.round(worldShare()*100)}% of the world's income. The world works for you now.`:`${F[P].name} controls ${F[P].owned.length} countries. The world is yours.`):`${F[P].name} has been wiped off the map.`;
-  $('endStats').innerHTML=[['War lasted',`${Math.floor(time)} days`],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Wars declared on you',stats.declared||0],['Missiles fired',stats.missiles],['Best veteran',stats.vets?'★'.repeat(stats.vets):'—'],['Share of world income',Math.round(worldShare()*100)+'%'],['Peak infamy',Math.round(stats.infPeak||0)]]
+  $('endStats').innerHTML=[['War lasted',`${Math.floor(time)} days`],['Most countries held',stats.peak],['Countries conquered',stats.taken],['Units built',stats.built],['Enemy units destroyed',stats.kills],['Units lost',stats.lost],['Wars declared on you',stats.declared||0],['Missiles fired',stats.missiles],['Atomic bombs dropped',stats.nukes||0],['Best veteran',stats.vets?'★'.repeat(stats.vets):'—'],['Share of world income',Math.round(worldShare()*100)+'%'],['Peak infamy',Math.round(stats.infPeak||0)]]
     .map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
   show('bKeep',won);show('end',1);toggleAim(false);
 }
@@ -1992,7 +2208,7 @@ $('bKeep').onclick=()=>{keepPlaying=true;state='play';show('end',0);saveGame(tru
 
 // ─── save / continue: the whole war goes into localStorage, autosaved every 20s ───
 const SAVE_KEY='sq_save_v1',CKEYS=['owner','fort','fac','integ','dock','garMax','gar','alertT','tcd','threat','lastHit','capBy','capProg'];
-const UKEYS=['id','f','t','x','y','hp','mhp','cd','ang','xp','rank','lastFight','train','trainMax','order','sq','sqi','sqf','sqn'];
+const UKEYS=['id','f','t','x','y','hp','mhp','cd','ang','xp','rank','lastFight','train','trainMax','order','sq','sqi','sqf','sqn','ab','shd','bar','stun','slow','boost'];
 let saveT=20;
 function occRLE(){const out=[];let v=occ[0],n=0;for(let i=0;i<occ.length;i++){if(occ[i]===v)n++;else{out.push(v,n);v=occ[i];n=1}}out.push(v,n);return out}
 function snapshot(){
@@ -2002,7 +2218,7 @@ function snapshot(){
     C:C.map(c=>CKEYS.map(k=>c[k])),
     F:F.map(f=>{const o={...f};delete o.rgb;return o}),
     U:units.filter(u=>u.hp>0).map(u=>UKEYS.map(k=>u[k])),
-    occ:occRLE(),missiles,raids};
+    occ:occRLE(),missiles,raids,clouds};
 }
 function saveGame(quiet){
   if(state!=='play'&&state!=='end'||P<0||!F[P].alive)return false;
@@ -2023,7 +2239,7 @@ function loadGame(s){
   groups={};for(const [k,ids] of Object.entries(g.groups||{})){const a=ids.map(i=>byId.get(i)).filter(Boolean);if(a.length)groups[k]=a}
   for(let i=0,p=0;i<s.occ.length;i+=2){const v=s.occ[i],n=s.occ[i+1];if(v>=0)for(let k=p;k<p+n;k++)if(grid[k]>=0)setOcc(k,v);p+=n}
   for(const c of C)c.occChanged=false;
-  missiles=s.missiles||[];raids=s.raids||[];
+  missiles=s.missiles||[];raids=s.raids||[];clouds=s.clouds||[];
   for(const f of F)recalc(f);
   recount();rebuildBuildBar();
   supDirty=true;visT=0;checkT=1;saveT=20;infoC=-1;paused=false;state='play';
@@ -2427,12 +2643,62 @@ function runSmoke(){
   let fine=true;for(let i=0;i<30*10;i++){step(STEP);if(units.some(u=>!isFinite(u.x)))fine=false}ok(fine,'a war with designed units keeps running');
   dropSave();
   }
+  {// modules: weapons, abilities, gear
+  aiDocs=false;applyDesigns([]);squads=[];resetWorld();seed=99;startGame(fr);warAll();C[fr].oil=6;F[P].gold=1e5;playerPeace=0;
+  const sh={pts:4,spike:0,len:1,taper:0,twist:0},md=(id,base,mods)=>({id,n:'M'+id,base,lv:{hp:3,dmg:3,rof:3,range:3,speed:3},shape:sh,poly:makePoly(sh),size:1,spin:true,mods});
+  applyDesigns([md('c0','air',['nuke','stealth','shield','armor','carpet']),md('c1','tank',['emp','boom','reactor','loot']),md('c2','art',['aa','warp','mpod','nuke']),md('c3','inf',['medic','barracks','amphib','cryo'])]);
+  ok(designs[0].mods.length===MODMAX,`no more than ${MODMAX} modules fit`);
+  ok(!designs[2].mods.includes('nuke')&&designs[2].mods.length===3,'atomic bombs only fit aircraft');
+  ok(UT.c0.cost>UT.air.cost+220&&UT.c0.upk>UT.air.upk,`modules raise the price (atomic bomber ${UT.c0.cost} vs fighter ${UT.air.cost})`);
+  ok(UT.c1.fuel===0&&UT.c3.amphib&&MOD.c2.air>0&&MOD.art.air===0,'reactor needs no fuel, amphibious crosses water, AA missiles let artillery hit aircraft');
+  const at=(t,fi,x,y)=>{const u=spawn(fi,t,x,y);u.x=x;u.y=y;u.train=0;rehash();return u};
+  // atomic bomb
+  const tc=C[de],ex=tc.cap.x,ey=tc.cap.y,foes=[0,1,2,3,4].map(i=>at('tank',de,ex+i*4-8,ey+3)),far=at('inf',de,ex+120,ey);
+  const bomber=at('c0',P,ex-30,ey),mine=at('inf',P,ex+5,ey-3),inf0=infamy,g0=tc.gar;
+  ok(useAbility(bomber,'nuke',ex,ey)&&bomber.order.drop==='nuke','an atomic bomber takes a bombing run order');
+  for(let i=0;i<30*6&&bomber.order&&bomber.order.drop;i++){bomber.order.cap=-1;step(STEP)}
+  ok(foes.every(u=>u.hp<=0)&&mine.hp<=0,'the bomb wipes out everything in the blast — your own troops too');
+  ok(far.hp>0&&tc.gar===0&&g0>0,'the capital is flattened; troops outside the blast live');
+  ok(infamy>inf0+25&&clouds.some(c=>c.fall)&&!abilityReady(bomber,'nuke'),'the world is horrified, fallout lingers, and the bomb needs 120 days to reload');
+  ok(bomber.order&&!bomber.order.drop,'the bomber flies home after the drop');
+  {const v=at('inf',de,ex+2,ey+2),h0=v.hp;for(let i=0;i<30;i++)step(STEP);ok(v.hp<h0,'fallout poisons troops that walk into it')}
+  clouds=[];
+  // EMP + self-destruct + loot
+  const bx=C[fr].cap.x+40,by=C[fr].cap.y,emp=at('c1',P,bx,by),e1=at('tank',de,bx+12,by),e2=at('inf',de,bx+8,by+4);
+  ok(useAbility(emp,'emp',bx,by)&&e1.stun>time&&e2.stun>time,'EMP freezes nearby enemies');
+  {const x0=e1.x,cd0=e1.cd;e1.order={x:x0+50,y:e1.y,cap:-1,move:true};for(let i=0;i<30;i++)step(STEP);ok(e1.x===x0,'frozen units can\'t move')}
+  const gold0=F[P].gold;emp.x=bx;e2.hp=1;fire(emp,e2);ok(e2.hp<=0&&F[P].gold>gold0+3,'plunder pays gold for kills');
+  e1.hp=e1.mhp;const eh=e1.hp;emp.hp=1;hurt(emp,999,de);ok(emp.blown&&e1.hp<eh,'self-destruct goes off when the unit dies');
+  // shield, armor, stealth
+  const sb=at('c0',P,bx,by+60);sb.shd=sb.mhp*.5;const hp1=sb.hp;hurt(sb,20,de);ok(sb.hp===hp1&&sb.shd<sb.mhp*.5,'the energy shield soaks up hits first');
+  sb.shd=0;hurt(sb,20,de);ok(Math.abs(hp1-sb.hp-15)<1e-9,'reactive armor cuts damage by 25%');
+  const spotter=at('sam',de,sb.x+20,sb.y);ok(!findEnemy(spotter,40),'stealth units can\'t be targeted from 20 away');
+  spotter.x=sb.x+10;ok(findEnemy(spotter,40)===sb,'…but can from up close');
+  // warp, missile pod, AA artillery
+  const wz=at('c2',P,C[fr].cap.x,C[fr].cap.y),wx0=wz.x;ok(useAbility(wz,'warp',wz.x+200,wz.y)&&Math.abs(wz.x-wx0-70)<.01,'warp drive jumps 70 toward the click');
+  const nm=missiles.length;ok(useAbility(wz,'mpod',wz.x+150,wz.y)&&missiles.length===nm+1&&!useAbility(wz,'mpod',wz.x+150,wz.y),'missile pod fires once, then reloads');
+  wz.x=C[fr].cap.x-50;wz.y=C[fr].cap.y-40;const plane=at('air',de,wz.x+10,wz.y);{const fe=findEnemy(wz,UT.c2.range);ok(fe===plane,'AA artillery targets aircraft'+(fe===plane?'':` got ${fe&&fe.t} d=${fe&&Math.hypot(fe.x-wz.x,fe.y-wz.y)} mod=${MOD.c2.air}`))}
+  // medic, barracks, cryo, overdrive
+  for(const u of units)if(u.f===P)u.hp=0;step(STEP);
+  const med=at('c3',P,C[fr].cap.x+20,C[fr].cap.y+20),pat=at('inf',P,med.x+5,med.y);pat.hp=pat.mhp*.5;pat.lastFight=time;med.lastFight=time;
+  const a0=F[P].army;med.bar=.05;const ph=pat.hp;for(let i=0;i<30;i++){pat.lastFight=time;step(STEP)}
+  ok(pat.hp>ph,'field medic heals units around it');ok(F[P].army>a0,'mobile barracks trains free infantry');
+  const vic=at('tank',de,med.x+8,med.y);fire(med,vic);ok(vic.slow>time,'cryo rounds slow the target');
+  for(let i=0;i<30;i++)step(STEP);
+  ok(F.every(f=>!f.alive||f.army===units.filter(u=>u.f===f.id).length)&&F[P].mech===units.filter(u=>u.f===P&&UT[u.t].fuel).length,'army and fuel counters still match with modules');
+  // save keeps modules and reloads
+  {const ee=at('c1',P,C[fr].cap.x,C[fr].cap.y);useAbility(ee,'emp',ee.x,ee.y)}
+  const svm=JSON.parse(JSON.stringify(snapshot()));resetWorld();
+  {const L=loadGame(svm);ok(L&&designs[0].mods.includes('nuke')&&units.some(u=>u.ab&&Object.values(u.ab).some(v=>v>time)),'modules and reload timers survive a save'+` ${L} ${designs.map(d=>d.mods)} ${units.filter(u=>u.ab).length}`)}
+  let ok2=true;for(let i=0;i<30*5;i++){step(STEP);if(units.some(u=>!isFinite(u.x)||!isFinite(u.hp)))ok2=false}ok(ok2,'a war full of modules keeps running');
+  dropSave();applyDesigns([]);
+  }
   document.title=`SMOKE ${fail?'FAIL':'PASS'} ${pass}/${pass+fail}`;
   const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=document.title+'\n'+out.join('\n');document.body.appendChild(pre);
 }
 
 boot();
-if(/debug/.test(location.hash))window.__SQ={startGame,get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P},toggleMap,calcVis,retreat,inSupply,askWar,declareWar};
+if(/debug/.test(location.hash))window.__SQ={startGame,useAbility,nukeAt,updateAbil,get time(){return time},get sel(){return sel},updateHUD,render,flyTo,selectAll,command,get cam(){return cam},get C(){return C},get F(){return F},get units(){return units},step,build,fortify,buildFactory,research,signPact,annex,annexCheck,openInfo,toggleTech,get P(){return P},toggleMap,calcVis,retreat,inSupply,askWar,declareWar};
 })();
 </script>
 <script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
