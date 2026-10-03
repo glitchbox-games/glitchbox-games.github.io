@@ -502,11 +502,13 @@ const MODS={
   aura   :{i:'📢',n:'Command aura',cat:'Support',cost:'25%',d:'Friendly units within 25 deal +15% damage.'},
   radar  :{i:'📡',n:'Radar',cat:'Support',cost:12,d:'Sees twice as far through the fog.'},
   loot   :{i:'💰',n:'Plunder',cat:'Support',cost:15,d:'Every kill pays you gold worth 40% of the victim\'s price.'},
+  titan  :{i:'👑',n:'Titan core',cat:'Special',cost:'titan',d:'Turns it into a titan: a giant war machine that beats every other unit — any type, even a whole pile of them bought with the same gold. Shrugs off half of all damage, hits aircraft and ships, and its shockwave shreds whole groups. Costs a fortune (about 900), takes 60 days to build, and you can only have one at a time.'},
   barracks:{i:'🏕',n:'Mobile barracks',cat:'Support',cost:60,d:'Trains a free infantry beside it every 30 days while it\'s in supply and you have army room (they still cost upkeep).'},
 };
-const MODK=Object.keys(MODS), MODCATS=['Weapons','Defence','Mobility','Support'];
+const MODK=Object.keys(MODS), MODCATS=['Special','Weapons','Defence','Mobility','Support'];
+const TITAN={cost:900,hp:3000,dmg:42,rof:1.2,range:56,splash:16,speed:.65,size:1.9}; // the titan's own base, before stat levels
 function modFits(base,k){const M=MODS[k];return(!M.only||M.only.includes(base))&&(!M.fuel||!!UT[base].fuel)}
-function modCost(k,price){const c=MODS[k].cost;return typeof c==='string'?Math.round(price*parseFloat(c)/100):c}
+function modCost(k,price){const c=MODS[k].cost;return c==='titan'?Math.max(0,TITAN.cost-price):typeof c==='string'?Math.round(price*parseFloat(c)/100):c}
 const hasM=(t,k)=>!!(UT[t]&&UT[t].mods&&UT[t].mods[k]);
 let designs=[], squads=[], PTYPES=TYPES.slice(), nextSq=1, AURA_ON=false, clouds=[];
 const bt=t=>UT[t]&&UT[t].base||t; // the base unit a type is built on
@@ -517,24 +519,27 @@ function makePoly(sh){ // corners, spikes (every other corner pulled in), length
   return normPoly(out);
 }
 function designStats(d){
-  const B=UT[d.base],m={};for(const k of STATS)m[k]=LV[k][d.lv[k]-1];
+  const ti=(d.mods||[]).includes('titan'),B0=UT[d.base],m={};for(const k of STATS)m[k]=LV[k][d.lv[k]-1];
+  const B=ti?{...B0,cost:TITAN.cost,hp:TITAN.hp,dmg:TITAN.dmg,rof:TITAN.rof,range:TITAN.range,splash:TITAN.splash,speed:B0.speed*TITAN.speed,size:B0.size*TITAN.size}:B0;
   const core=Math.max(5,Math.round(B.cost*Math.sqrt(m.hp*m.dmg*m.rof)*(1+.6*(m.range-1))*(1+.4*(m.speed-1))));
-  const mods={};let extra=0,fight=0;for(const k of d.mods||[])if(MODS[k]&&modFits(d.base,k)){mods[k]=1;extra+=modCost(k,core);if(MODS[k].cat==='Defence'||MODS[k].cat==='Weapons'&&!MODS[k].act)fight+=modCost(k,core)}
+  const mods={};let extra=0,fight=0;for(const k of d.mods||[])if(MODS[k]&&modFits(d.base,k)){mods[k]=1;if(k==='titan')continue;extra+=modCost(k,core);if(MODS[k].cat==='Defence'||MODS[k].cat==='Weapons'&&!MODS[k].act)fight+=modCost(k,core)}
   const cost=core+extra;
-  return{n:d.n||'Unit',base:d.base,sh:{poly:d.poly,spin:d.spin},cost,core,fcost:core+fight,upk:core*.003+extra*.0008,hp:B.hp*m.hp,dmg:B.dmg*m.dmg,rof:B.rof*m.rof,
+  return{n:d.n||'Unit',base:d.base,sh:{poly:d.poly,spin:d.spin},cost,core,fcost:core+fight,upk:core*(ti?.0012:.003)+extra*.0008,hp:B.hp*m.hp,dmg:B.dmg*m.dmg,rof:B.rof*m.rof,
     range:B.range*m.range*(mods.scope?1.35:1)*(mods.flame?.65:1),speed:B.speed*m.speed,size:B.size*d.size,fuel:mods.reactor?0:B.fuel,air:B.air,sea:B.sea,
     nocap:B.nocap,splash:B.splash,mods,amphib:!!mods.amphib,stealth:!!mods.stealth,
-    desc:`Your design on the ${B.n.toLowerCase()} chassis.`+(Object.keys(mods).length?' '+Object.keys(mods).map(k=>MODS[k].i+' '+MODS[k].n).join(', '):'')};
+    titan:ti,desc:`${ti?'👑 A titan':'Your design'} on the ${B.n.toLowerCase()} chassis.`+(Object.keys(mods).length?' '+Object.keys(mods).map(k=>MODS[k].i+' '+MODS[k].n).join(', '):'')};
 }
 function validDesign(d){return d&&DSLOTS.includes(d.id)&&TYPES.includes(d.base)&&d.lv&&STATS.every(k=>d.lv[k]>=1&&d.lv[k]<=5)&&Array.isArray(d.poly)&&d.poly.length>=3}
 function applyDesigns(list){ // registers the designs as real unit types; units already in the field are refitted
   designs=(list||[]).filter(validDesign).filter((d,i,a)=>a.findIndex(o=>o.id===d.id)===i).sort((a,b)=>a.id<b.id?-1:1);
   for(const d of designs){d.mods=(d.mods||[]).filter(k=>MODS[k]&&modFits(d.base,k)).filter((k,i,a)=>a.indexOf(k)===i).slice(0,MODMAX);
     UT[d.id]=designStats(d);GMOD[d.id]=GMOD[d.base]*(hasM(d.id,'siege')?2:1);VIS[d.id]=VIS[d.base]*(hasM(d.id,'radar')?2:1);
-    TRAIN[d.id]=+(TRAIN[d.base]*Math.sqrt(UT[d.id].core/UT[d.base].cost)).toFixed(1)}
+    TRAIN[d.id]=UT[d.id].titan?60:+(TRAIN[d.base]*Math.sqrt(UT[d.id].core/UT[d.base].cost)).toFixed(1)}
   PTYPES=TYPES.concat(designs.map(d=>d.id));
   for(const a of PTYPES)for(const b of PTYPES){let v=MOD[bt(a)][bt(b)];
-    if(hasM(a,'aa')&&UT[b].air)v=Math.max(v,.5)*2;if(hasM(a,'torp')&&UT[b].sea)v*=2;if(hasM(a,'flame')&&bt(b)==='inf')v*=1.8;(MOD[a]=MOD[a]||{})[b]=v}
+    if(hasM(a,'aa')&&UT[b].air)v=Math.max(v,.5)*2;if(hasM(a,'torp')&&UT[b].sea)v*=2;if(hasM(a,'flame')&&bt(b)==='inf')v*=1.8;
+    if(UT[a].titan&&!UT[b].titan)v=Math.max(v,1.2);if(UT[b].titan&&!UT[a].titan)v=Math.min(v,.5); // titans hit everything hard and shrug off half of every hit
+    (MOD[a]=MOD[a]||{})[b]=v}
   AURA_ON=designs.some(d=>d.mods.includes('aura'));
   for(const q of squads)q.slots=q.slots.filter(t=>PTYPES.includes(t));
   if(units.length){
@@ -562,11 +567,17 @@ function formOff(form,i,n,ang){
 }
 function duel(a,b){ // equal gold, head to head (Lanchester square law, with a nudge for range): >1 means a wins
   // abilities you trigger (bombs, warp…) don't count here: only the gear that fights in a straight-up battle
-  const A=UT[a],B=UT[b],sp=T=>(T.splash?1.3:1)*(T.mods&&T.mods.poison?1.25:1)*(T.mods&&T.mods.cryo?1.1:1),
+  const A=UT[a],B=UT[b],sp=T=>(T.titan?5:T.splash?1.3:1)*(T.mods&&T.mods.poison?1.25:1)*(T.mods&&T.mods.cryo?1.1:1),
     hp=T=>T.hp/(T.mods&&T.mods.armor?.75:1)*(T.mods&&T.mods.shield?1.5:1)*(T.mods&&T.mods.repair?1.15:1)*(T.mods&&T.mods.stealth?1.3:1),c=T=>T.fcost||T.cost;
   const sa=hp(A)*A.dmg*A.rof*sp(A)*MOD[a][b]/(c(A)*c(A))*Math.pow(A.range/B.range,.3);
   const sb=hp(B)*B.dmg*B.rof*sp(B)*MOD[b][a]/(c(B)*c(B))*Math.pow(B.range/A.range,.3);
   return sa<=0&&sb<=0?1:sb<=0?99:sa/sb;
+}
+function hasTitan(fi){return units.some(u=>u.f===fi&&u.hp>0&&UT[u.t].titan)}
+function oneOnOne(a,b){ // one of each, no gold involved: >1 means a wins
+  const A=UT[a],B=UT[b],h=T=>T.hp/(T.mods&&T.mods.armor?.75:1)*(T.mods&&T.mods.shield?1.5:1);
+  const da=A.dmg*A.rof*MOD[a][b],db=B.dmg*B.rof*MOD[b][a];
+  return da<=0&&db<=0?1:db<=0?99:da<=0?0:(h(A)/db)/(h(B)/da)*Math.pow(A.range/B.range,.3);
 }
 function squadCost(fi,q){return q.slots.reduce((s,t)=>s+(fi>=0?costOf(fi,t):UT[t].cost),0)}
 function squadWhyNot(fi,q,ci){
@@ -577,6 +588,7 @@ function squadWhyNot(fi,q,ci){
   const n=q.slots.length,fu=q.slots.filter(t=>UT[t].fuel).length;
   if(f.army+n>armyCap(f))return `Army cap — ${q.n} needs ${n} free places (${armyCap(f)-f.army} left)`;
   if(fu&&f.mech+fu>fuelCap(f))return `Not enough fuel ⛽ — ${q.n} needs ${fu}, you have ${Math.max(0,fuelCap(f)-f.mech)} spare`;
+  const nt=q.slots.filter(t=>UT[t].titan).length;if(nt>1||nt&&hasTitan(fi))return `Only one titan 👑 at a time — ${nt>1?q.n+' has '+nt:'you already have one'}`;
   if(q.slots.some(t=>UT[t].sea)&&!c.dock)return `${q.n} has warships — ${c.name} needs a dock ⚓`;
   if(f.gold<squadCost(fi,q))return `Not enough gold for ${q.n} (${squadCost(fi,q)})`;
   return '';
@@ -913,6 +925,7 @@ function build(fi,t,ci){
   if(T.sea&&!C[ci].dock)return null;
   if(C[ci].integ<.5)return null;
   if(T.fuel&&f.mech>=fuelCap(f))return null;
+  if(T.titan&&hasTitan(fi))return null;
   f.gold-=costOf(fi,t);const at=T.sea?C[ci].port:C[ci].cap,u=spawn(fi,t,at.x,at.y);
   u.train=u.trainMax=TRAIN[t]*(1-.15*C[ci].fac); // recruits drill at the capital before they can move or fight
   if(T.sea){u.x=at.x;u.y=at.y}
@@ -1555,7 +1568,8 @@ function render(){
   for(let pass=0;pass<2;pass++)for(const u of units){
     const T=UT[u.t];if(!!T.air!==!!pass||u.vis===false)continue;
     const [sx,sy]=w2s(u.x,u.y);if(sx<-15||sx>VW+15||sy<-15||sy>VH+15)continue;
-    const s=clamp(T.size*cam.z*.55,2.6,11);
+    const s=clamp(T.size*cam.z*.55,T.titan?5:2.6,T.titan?22:11);
+    if(T.titan){const g=ctx.createRadialGradient(sx,sy,s*.5,sx,sy,s*2.2);g.addColorStop(0,'rgba(255,215,90,.35)');g.addColorStop(1,'rgba(255,215,90,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,s*2.2,0,6.283);ctx.fill()}
     if(!T.air&&!T.sea&&landAt(u.x,u.y)<0){ctx.strokeStyle='rgba(160,210,255,.45)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+3,0,6.283);ctx.stroke()}
     if(T.air){ctx.fillStyle='rgba(0,0,0,.25)';shapePath(ctx,T.sh,sx+3,sy+4,s,u.ang);ctx.fill()}
     if(u.train>0){ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sx,sy,s+3,-1.571,-1.571+6.283*(1-u.train/u.trainMax));ctx.stroke();ctx.globalAlpha=.45}
@@ -1569,6 +1583,7 @@ function render(){
     ctx.lineWidth=sel.has(u)?2.2:1.3;ctx.strokeStyle=sel.has(u)?'#fff':'#060a12';ctx.stroke();
     if(sel.has(u)){ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(sx,sy,s+4,0,6.283);ctx.stroke()}
     if(u.f===P&&!u.sup){ctx.strokeStyle='rgba(255,150,60,.9)';ctx.lineWidth=1.2;ctx.setLineDash([2,2]);ctx.beginPath();ctx.arc(sx,sy,s+2.5,0,6.283);ctx.stroke();ctx.setLineDash([])}
+    if(T.titan){ctx.font=`${Math.max(10,s*.9)|0}px system-ui`;ctx.textAlign='center';ctx.fillText('👑',sx,sy-s-4)}
     if(u.rank&&s>=3.5){ctx.fillStyle='#ffd24a';for(let k=0;k<u.rank;k++){ctx.beginPath();ctx.arc(sx-(u.rank-1)*2.2+k*4.4,sy+s+3.5,1.5,0,6.283);ctx.fill()}}
     if(u.hp<u.mhp&&s>=4){const w=s*2.2;ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(sx-w/2,sy-s-5,w,2);ctx.fillStyle='#8fe3a0';ctx.fillRect(sx-w/2,sy-s-5,w*u.hp/u.mhp,2)}
   }
@@ -1681,6 +1696,7 @@ function playerBuild(t){
   if(selCountry<0||C[selCountry].owner!==P)selCountry=F[P].owned[0];
   const u=build(P,t,selCountry);
   if(!u){const f=F[P];addLog(f.army>=armyCap(f)?'Army cap reached — conquer more land to grow it':
+    UT[t].titan&&hasTitan(P)?'👑 You can only have one titan at a time':
     UT[t].fuel&&f.mech>=fuelCap(f)?`Out of fuel ⛽ ${f.mech}/${fuelCap(f)} — conquer oil countries 🛢 to field more tanks, fighters and warships`:
     C[selCountry].integ<.5?`${C[selCountry].name} is still integrating (${Math.round(C[selCountry].integ*100)}%) — build in a settled province`:
     UT[t].sea&&!C[selCountry].dock?(C[selCountry].coast?`${C[selCountry].name} has no dock — click it and build one ⚓ to launch warships`:`${C[selCountry].name} is landlocked — warships need a coastal country with a dock`):`Not enough gold for ${UT[t].n}`,'bad',1800);}
@@ -1781,7 +1797,7 @@ function updateHUD(){
   $('bWhere').textContent=selCountry>=0?C[selCountry].name:'—';
   for(const t of PTYPES)buildCost[t].textContent=costOf(P,t);
   squads.forEach((q,i)=>{const b=sqBtns[i];if(!b)return;const why=selCountry>=0?squadWhyNot(P,q,selCountry):'—';b.disabled=!!why;b.title=why||`Build ${q.n}: ${q.slots.length} units in ${FORMS[q.form]} formation`;b.querySelector('.c').textContent=squadCost(P,q)});
-  for(const t of PTYPES)buildBtns[t].disabled=(selCountry>=0&&C[selCountry].integ<.5)||f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].dock)||(UT[t].fuel&&f.mech>=fuelCap(f));
+  for(const t of PTYPES)buildBtns[t].disabled=(UT[t].titan&&hasTitan(P))||(selCountry>=0&&C[selCountry].integ<.5)||f.gold<costOf(P,t)||f.army>=armyCap(f)||(UT[t].sea&&selCountry>=0&&!C[selCountry].dock)||(UT[t].fuel&&f.mech>=fuelCap(f));
   const sc=selCountry>=0?C[selCountry]:null;
   $('misC').textContent=MIS.cost;
   $('bMis').disabled=time<playerPeace||f.gold<MIS.cost;if($('bMis').disabled&&aiming)toggleAim(false);
@@ -2089,7 +2105,8 @@ function renderUnitTab(){
   $('dSum').innerHTML=`<b>${T.cost} 💰</b> &nbsp;(${B.n} costs ${B.cost}) · upkeep ${(T.upk*60).toFixed(1)}/min · trains in ${TRAIN[d.id]} days · DPS ${fmt1(T.dmg*T.rof)}<br>${tr.join(' · ')}`;
   $('dMU').innerHTML=TYPES.map(b=>{const r=duel(d.id,b),cls=r>=1.15?'w':r<=.87?'l':'e',
     txt=MOD[d.id][b]===0?'can\'t hit it':r>=50?'untouchable':r>=1.15?`wins ×${r.toFixed(1)}`:r<=.87?`loses ×${(1/r).toFixed(1)}`:'even';
-    return `<div class="${cls}">${svgShape(UT[b].sh,'#9fb3d1')}<span><b>${txt}</b>vs ${UT[b].n}</span></div>`}).join('');
+    const o=oneOnOne(d.id,b),ot=o>=1.15?'<span style="color:#9ff0b8">wins</span>':o<=.87?'<span style="color:#ffb4b4">loses</span>':'even';
+    return `<div class="${cls}">${svgShape(UT[b].sh,'#9fb3d1')}<span><b>${txt}</b>vs ${UT[b].n} · 1-on-1 ${ot}</span></div>`}).join('');
   renderMods(d);
   $('dNote').textContent=locked?`You have ${d.n} units in the field: stat and shape changes refit them right away, but the chassis is locked.`:'';
   drawUnitCv();
@@ -2097,12 +2114,12 @@ function renderUnitTab(){
 function renderMods(d){
   const core=UT[d.id].core;$('dModN').textContent=`${d.mods.length}/${MODMAX} fitted`;
   $('dMods').innerHTML=MODCATS.map(cat=>`<div class="mc"><span>${cat.toUpperCase()}</span>`+MODK.filter(k=>MODS[k].cat===cat).map(k=>{const M=MODS[k],on=d.mods.includes(k),fit=modFits(d.base,k);
-    return `<button class="mod${on?' on':''}${M.act?' act':''}" data-m="${k}" ${!fit||(!on&&d.mods.length>=MODMAX)?'disabled':''} title="${esc(M.d)}${fit?'':' — doesn\'t fit the '+UT[d.base].n.toLowerCase()+' chassis'}">${M.i} ${M.n}<span class="c">+${modCost(k,core)}</span></button>`}).join('')+'</div>').join('');
+    return `<button class="mod${on?' on':''}${M.act?' act':''}" data-m="${k}" ${!fit||(!on&&d.mods.length>=MODMAX)?'disabled':''} title="${esc(M.d)}${fit?'':' — doesn\'t fit the '+UT[d.base].n.toLowerCase()+' chassis'}">${M.i} ${M.n}<span class="c">${k==='titan'?'≈'+TITAN.cost:'+'+modCost(k,core)}</span></button>`}).join('')+'</div>').join('');
   renderModInfo();
 }
 function renderModInfo(){
   const d=designs[dzSel];if(!d)return;const show1=k=>{const M=MODS[k],fit=modFits(d.base,k);
-    return `<div>${M.i} <b style="font-size:13px;color:var(--ink)">${M.n}</b> <span style="color:#ffe08a">+${modCost(k,UT[d.id].core)}💰</span>${M.act?` · <span style="color:#ff9f6a">ability, key ${M.key.toUpperCase()}</span>`:''}${fit?'':` · <span style="color:#ffb4b4">${M.only?'fits: '+M.only.map(t=>UT[t].n).join(', '):'only on chassis that burn fuel'}</span>`}<br>${M.d}</div>`};
+    return `<div>${M.i} <b style="font-size:13px;color:var(--ink)">${M.n}</b> <span style="color:#ffe08a">${k==='titan'?'unit costs ≈'+TITAN.cost:'+'+modCost(k,UT[d.id].core)}💰</span>${M.act?` · <span style="color:#ff9f6a">ability, key ${M.key.toUpperCase()}</span>`:''}${fit?'':` · <span style="color:#ffb4b4">${M.only?'fits: '+M.only.map(t=>UT[t].n).join(', '):'only on chassis that burn fuel'}</span>`}<br>${M.d}</div>`};
   $('dModInfo').innerHTML=modHover?show1(modHover):d.mods.length?d.mods.map(show1).join('<div style="height:6px"></div>'):'No modules yet. Hover one to read what it does, click to fit it. Try ☢ Atomic bomb on a fighter chassis.';
 }
 function drawUnitCv(){
@@ -2692,6 +2709,26 @@ function runSmoke(){
   {const L=loadGame(svm);ok(L&&designs[0].mods.includes('nuke')&&units.some(u=>u.ab&&Object.values(u.ab).some(v=>v>time)),'modules and reload timers survive a save'+` ${L} ${designs.map(d=>d.mods)} ${units.filter(u=>u.ab).length}`)}
   let ok2=true;for(let i=0;i<30*5;i++){step(STEP);if(units.some(u=>!isFinite(u.x)||!isFinite(u.hp)))ok2=false}ok(ok2,'a war full of modules keeps running');
   dropSave();applyDesigns([]);
+  }
+  {// the titan: beats every unit type, even the same gold's worth of them, in real battles
+  const sh={pts:6,spike:0,len:1,taper:0,twist:0},tt=base=>({id:'c0',n:'Titan',base,lv:{hp:3,dmg:3,rof:3,range:3,speed:3},shape:sh,poly:makePoly(sh),size:1,spin:true,mods:['titan']});
+  const fight=(base,foe)=>{aiDocs=false;applyDesigns([tt(base)]);squads=[];resetWorld();seed=1234;startGame(fr);warAll();playerPeace=0;
+    for(const u of units)u.hp=0;step(STEP);
+    const sa=C[find('Algeria')],x=sa.cap.x,y=sa.cap.y+120,ti=spawn(P,'c0',x,y);ti.x=x;ti.y=y;ti.train=0;
+    const n=Math.round(UT.c0.cost/UT[foe].cost),es=[];
+    for(let i=0;i<n;i++){const a=i*2.4,r=4*Math.sqrt(i),e=spawn(de,foe,x+70+Math.cos(a)*r,y+Math.sin(a)*r);e.x=x+70+Math.cos(a)*r;e.y=y+Math.sin(a)*r;e.train=0;e.order={x,y,cap:-1};es.push(e)}
+    for(let i=0;i<30*120&&ti.hp>0&&es.some(e=>e.hp>0);i++){for(const e of es)if(e.hp>0&&!e.order)e.order={x:ti.x,y:ti.y,cap:-1};step(STEP)}
+    return{won:ti.hp>0&&es.every(e=>e.hp<=0),left:Math.round(ti.hp/ti.mhp*100),n,dead:es.filter(e=>e.hp<=0).length}};
+  applyDesigns([tt('tank')]);
+  ok(UT.c0.cost>=850&&TRAIN.c0===60&&UT.c0.titan,`a titan costs ${UT.c0.cost} and takes 60 days to build`);
+  ok(TYPES.every(b=>duel('c0',b)>1.15&&oneOnOne('c0',b)>1.15),'the designer shows it winning every match-up, 1-on-1 and at equal gold');
+  for(const foe of ['inf','tank','art','air','sam']){const r=fight('tank',foe);
+    ok(r.won,`titan vs ${r.n} ${UT[foe].n.toLowerCase()} (same gold): ${r.won?'wins':'loses'} with ${r.left}% health left (${r.dead}/${r.n} destroyed)`)}
+  {const r=fight('air','sam');ok(r.won,`a flying titan even beats ${r.n} flak (${r.left}% left)`)}
+  applyDesigns([tt('tank')]);resetWorld();seed=5;startGame(fr);F[P].gold=1e5;C[fr].oil=9;
+  ok(build(P,'c0',fr)&&!build(P,'c0',fr),'only one titan at a time');
+  ok(!!squadWhyNot(P,{n:'T2',slots:['c0'],form:'line'},fr),'a squad can\'t sneak in a second titan');
+  applyDesigns([]);
   }
   document.title=`SMOKE ${fail?'FAIL':'PASS'} ${pass}/${pass+fail}`;
   const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=document.title+'\n'+out.join('\n');document.body.appendChild(pre);
