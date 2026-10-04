@@ -144,6 +144,11 @@ const TRAPS={
  pit:  {n:'Pit Trap',cost:55,hidden:true, dmg:55,stun:2.2,cat:'trap',unlock:6,d:'Hidden. The first to step in falls hard. Springs once per raid.'},
  flame:{n:'Flame Vent',cost:70,hidden:false,dmg:26,cd:2.6,r:1.3,cat:'fire',unlock:10,d:'Erupts when intruders come near, burning everything around it.'},
  fear: {n:'Ward of Dread',cost:85,hidden:false,r:1.7,cd:7,flee:2.6,cat:'fear',unlock:16,d:'Terrifies intruders, sending them running back toward your traps.'},
+ cage: {n:'Drop Cage',cost:35,hidden:true, cd:10,hold:4,cat:'trap',unlock:3,d:'Hidden. Drops an iron cage on the first raider in, pinning them for 4 seconds.'},
+ door: {n:'Iron Door',cost:80,hidden:false,shut:18,hp:140,cat:'door',unlock:4,d:'Slams shut once enough raiders have walked through (click it with this tool to set 1–6), sealing them in with your monsters. The rest must bash it down.'},
+ bell: {n:'Alarm Bell',cost:60,hidden:false,r:2.5,cd:25,rage:10,cat:'trap',unlock:6,d:'Rings when raiders come near. Every monster within 7 tiles goes berserk: faster, harder-hitting, and hunts farther.'},
+ trapdoor:{n:'Trap Door',cost:120,hidden:true,dmg:40,cd:15,cat:'trap',unlock:8,d:'Hidden. Whoever steps on it drops into the oubliette and is gone. Re-arms after 15 seconds. Heroes catch the edge.'},
+ cavein:{n:'Cave-in',cost:110,hidden:true,dmg:70,r:1.6,need:3,cat:'trap',unlock:13,d:'Hidden. Brings the ceiling down once 3 or more raiders bunch up beneath it. Once per raid.'},
 };
 // ── monsters: guard a home tile, chase within a leash, respawn after every raid ──
 const MONS={
@@ -189,6 +194,8 @@ const ITEMS={
  wards:{n:'Warding Charms',d:'magic damage −30%'},
  courage:{n:'Battle Hymns',d:'half the party ignores fear'},
  lanterns:{n:'Hooded Lanterns',d:'the gloom drains half as much'},
+ crowbars:{n:'Crowbars',d:'iron doors go down twice as fast'},
+ ropes:{n:'Climbing Ropes',d:'trap-door victims climb back out, hurt'},
 };
 
 /* ═══════════════════════════ STATE ═══════════════════════════ */
@@ -202,15 +209,15 @@ function newGame(){
  for(let y=5;y<=7;y++) for(let x=17;x<=19;x++) map[idx(x,y)]=FLOOR;
  map[GATE_I]=GATE; map[HEART_I]=HEART;
  G={ v:1, day:1, gold:200, souls:0, heartMax:300, heartHp:300, map, traps:{}, mons:{},
-  unlocked:{spike:1,arrow:1,goblin:1,skel:1}, rites:{}, seed:(Math.random()*1e9)|0,
-  guild:{ danger:new Array(COLS*ROWS).fill(0), known:{}, cause:{trap:0,ranged:0,fire:0,melee:0,magic:0,fear:0,gloom:0}, killedBy:{}, items:{}, pitDeaths:0, fearRuns:0, lessons:['The Adventurers\' Guild has heard of a new dungeon. They know nothing about it — yet.'], witnesses:0 },
+  unlocked:{spike:1,arrow:1,goblin:1,skel:1}, rites:{}, doorN:{}, seed:(Math.random()*1e9)|0,
+  guild:{ danger:new Array(COLS*ROWS).fill(0), known:{}, cause:{trap:0,ranged:0,fire:0,melee:0,magic:0,fear:0,gloom:0}, killedBy:{}, items:{}, pitDeaths:0, fearRuns:0, seals:0, lessons:['The Adventurers\' Guild has heard of a new dungeon. They know nothing about it — yet.'], witnesses:0 },
   stats:{kills:0,escaped:0,raids:0,heroKills:0,goldEarned:0}, won:false, over:false };
  G.nextParty=makeParty(G.day);
  return G;
 }
 
 /* ═══════════════════════════ GRID / PATHING ═══════════════════════════ */
-const walk=(i)=>{ const t=G.map[i]; return t===FLOOR||t===GATE; };
+const walk=(i)=>{ const t=G.map[i]; return (t===FLOOR||t===GATE)&&!(G.phase==='raid'&&R&&R.shut[i]); };
 function nbrs(i){ const x=tx(i),y=ty(i),o=[]; if(x>0)o.push(i-1); if(x<COLS-1)o.push(i+1); if(y>0)o.push(i-COLS); if(y<ROWS-1)o.push(i+COLS); return o; }
 // Dijkstra over 4-neighbour tiles. cost(i) is the price of stepping onto i. Goal may be unwalkable (the Heart).
 function findPath(from,goal,cost){
@@ -249,11 +256,12 @@ function canBuild(tool,i){
  return 'Unknown tool.';
 }
 function build(tool,i){
+ if(tool==='door'&&G.traps[i]==='door'){ G.doorN[i]=((G.doorN[i]||3)%6)+1; sfx('place'); fxText(tx(i)+.5,ty(i)+.3,'closes after '+G.doorN[i],'#ffd9b0'); return null; }
  const why=canBuild(tool,i); if(why) return why;
  if(tool==='dig'){ G.gold-=DIG_COST; G.map[i]=FLOOR; sfx('dig'); fxBurst((tx(i)+.5),(ty(i)+.5),'#6a5a60',10); }
  else if(tool==='fill'){ G.gold-=FILL_COST; G.map[i]=ROCK; sfx('dig'); }
- else if(tool==='sell'){ const k=G.traps[i]||G.mons[i]; const def=TRAPS[k]||MONS[k]; G.gold+=Math.floor(def.cost*.7); delete G.traps[i]; delete G.mons[i]; sfx('coin'); }
- else if(TRAPS[tool]){ G.gold-=TRAPS[tool].cost; G.traps[i]=tool; sfx('place'); }
+ else if(tool==='sell'){ const k=G.traps[i]||G.mons[i]; const def=TRAPS[k]||MONS[k]; G.gold+=Math.floor(def.cost*.7); delete G.traps[i]; delete G.mons[i]; delete G.doorN[i]; sfx('coin'); }
+ else if(TRAPS[tool]){ G.gold-=TRAPS[tool].cost; G.traps[i]=tool; if(tool==='door') G.doorN[i]=3; sfx('place'); }
  else if(MONS[tool]){ G.gold-=MONS[tool].cost; G.mons[i]=tool; sfx('place'); }
  mapDirty=true; previewDirty=true; ui();
  return null;
@@ -293,7 +301,9 @@ function guildLearn(){
  g.witnesses=witnesses.length;
  for(let i=0;i<g.danger.length;i++) g.danger[i]*=.55;
  // the dead are always found: bodies mark the tiles they died on, and wounds reveal the cause
- for(const d of R.deaths){ g.danger[d.tile]+=2.2; for(const n of nbrs(d.tile)) g.danger[n]+=.6; }
+ if(R.falls) lessons.push({t:`${R.falls} raider${R.falls>1?'s':''} vanished without a trace. The guild has no body to learn from.`,good:1});
+ if(R.sealed) lessons.push({t:`Iron doors sealed the party ${R.sealed} time${R.sealed>1?'s':''}.`+(g.seals>=3&&!g.items.crowbars?' The guild is asking about crowbars.':'')});
+ for(const d of R.deaths){ if(d.by==='trapdoor') continue; g.danger[d.tile]+=2.2; for(const n of nbrs(d.tile)) g.danger[n]+=.6; }
  for(const k in g.cause) g.cause[k]*=.6;
  for(const k in R.cause) g.cause[k]+=R.cause[k];
  g.seen=1;
@@ -320,6 +330,8 @@ function guildLearn(){
  on('wards',s.magic>.28,s.magic<.1);
  on('courage',g.fearRuns>=8,false);
  on('lanterns',(s.gloom||0)>.3,(s.gloom||0)<.12);
+ on('crowbars',g.seals>=4,false);
+ on('ropes',(g.killedBy.trapdoor||0)>=4,false);
  for(const k in it) if(!before[k]) lessons.push({t:'The guild is issuing <b>'+ITEMS[k].n+'</b> — '+ITEMS[k].d+'.'});
  for(const k in before) if(!it[k]) lessons.push({t:'The guild stopped packing '+ITEMS[k].n+'.',good:1});
  g.lessons=lessons;
@@ -341,10 +353,10 @@ function startRaid(){
  R={ t:0, advs:[], mons:[], projs:[], spawnQ:G.nextParty.slice(), spawnT:.5, known:Object.assign({},knownTrapsValid()), knowV:0,
    dmgMap:new Array(COLS*ROWS).fill(0), deaths:[], cause:{trap:0,ranged:0,fire:0,melee:0,magic:0,fear:0,gloom:0}, killedBy:{},
    trapState:{}, heartDmg:0, gold:0, souls:0, ended:false, fleeing:false, total:G.nextParty.length, raidDanger:new Array(COLS*ROWS).fill(0) };
- R.hpS=hpS; R.dmS=dmS; R.trapS=1+.06*(day-1);
+ R.hpS=hpS; R.dmS=dmS; R.trapS=1+.06*(day-1); R.shut={}; R.falls=0; R.sealed=0;
  // rogues only dismantle what the guild already mapped, or hidden plates they sniff out themselves
  R.disarmable=Object.assign({},R.known);
- for(const i in G.traps) R.trapState[i]={cd:0,sprung:false,fire:0,aim:0};
+ for(const i in G.traps) R.trapState[i]={cd:0,sprung:false,fire:0,aim:0,seen:new Set(),count:0,need:G.doorN[i]||3};
  for(const i in G.mons){ const k=G.mons[i], d=MONS[k], m=unitFrom('mon',d,tx(+i)+.5,ty(+i)+.5); m.type=k; m.home=+i; m.hp=m.max=Math.round(d.hp*monMul()*(1+.05*(G.day-1)));   /* the dungeon grows with its age */ m.dmg=d.dmg*monMul(); m.state='home'; R.mons.push(m); }
  G.phase='raid'; sfx('horn'); banner('The gates open',2.2);
 }
@@ -363,11 +375,11 @@ function advCost(a){
  const hasRogue=R.advs.some(o=>o.cls==='rogue'&&o.hp>0&&o.state!=='escaped');
  return i=>{
   let c=1+Math.min(5,G.guild.danger[i]*1.1)+R.raidDanger[i]*2.5;
-  if(R.known[i]) c+=hasRogue?1.2:9;
+  if(R.known[i]) c+=R.known[i]==='door'?3:R.known[i]==='bell'?1.5:hasRogue?1.2:9;
   return c;
  };
 }
-function repath(u,goal,cost){ const p=findPath(u.tile,goal,cost); u.path=p; u.pi=0; }
+function repath(u,goal,cost){ const p=findPath(u.tile,goal,cost); u.path=p||false; u.pi=0; }
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 function los(x0,y0,x1,y1){
  const n=Math.ceil(Math.hypot(x1-x0,y1-y0)*3);
@@ -415,7 +427,7 @@ function die(u,src){
  }
 }
 function enterTile(u,i){
- u.tile=i;
+ u.prev=u.tile; u.tile=i;
  if(u.kind!=='adv') return;
  // the gloom: every step deeper in the dark costs a little life
  if(i!==GATE_I){ const g=u.max*GLOOM*(u.isHero?.5:1)*(G.guild.items.lanterns?.5:1); u.hp-=g; R.cause.gloom+=g; R.dmgMap[i]+=g*.3; if(!HEADLESS&&Math.random()<.5) parts.push({x:u.x,y:u.y-.2,vx:(Math.random()-.5)*.4,vy:-.5,l:.8,c:'rgba(120,60,160,.8)',s:3,g:0});
@@ -426,6 +438,11 @@ function enterTile(u,i){
  if(k==='spike'&&st.cd<=0){ st.cd=T.cd; st.fire=.35; reveal(i); for(const a of R.advs) if(alive(a)&&a.tile===i) damage(a,T.dmg*trapDmgMul()*R.trapS,{kind:'trap',type:'spike',cat:'trap'}); sfx('spike'); }
  if(k==='pit'&&!st.sprung){ st.sprung=true; reveal(i); damage(u,T.dmg*trapDmgMul()*R.trapS,{kind:'trap',type:'pit',cat:'trap'}); if(alive(u)) u.stun=T.stun; sfx('pit'); }
  if(k==='slime') reveal(i);
+ if(k==='door'&&!st.shut&&!st.broken&&!st.seen.has(u)){ st.seen.add(u); st.count++; if(st.count>=st.need){ st.pend=true; st.lastIn=u; } }
+ if(k==='cage'&&st.cd<=0){ st.cd=T.cd; st.hold=T.hold; st.victim=u; reveal(i); u.stun=u.isHero?T.hold/2:T.hold; R.cause.trap+=8; sfx('cage'); }
+ if(k==='trapdoor'&&st.cd<=0){ st.cd=T.cd; st.fire=1; reveal(i); sfx('trapdoor');
+  if(u.isHero||G.guild.items.ropes){ damage(u,T.dmg*trapDmgMul()*R.trapS,{kind:'trap',type:'trapdoor',cat:'trap'}); if(alive(u)){ u.stun=2.5; fxText(u.x,u.y-.8,u.isHero?'catches the edge!':'climbs out','#fff'); } }
+  else { R.cause.trap+=u.hp; u.fell=1; falls.push({x:u.x,y:u.y,t:0,col:CLS[u.cls].col}); R.falls++; die(u,{kind:'trap',type:'trapdoor',cat:'trap'}); fxText(u.x,u.y-.8,'into the oubliette','#c8a0ff',1); } }
 }
 function reveal(i){ if(!R.known[i]&&G.traps[i]){ R.known[i]=G.traps[i]; R.knowV++; fxText(tx(i)+.5,ty(i)+.2,'!','#ffe14a',1); } }
 function advTarget(a){ return a.state==='flee'?GATE_I:HEART_I; }
@@ -445,6 +462,13 @@ function stepRaid(dt){
   if(k==='fear'&&st.cd<=0){ const hit=advs.filter(a=>alive(a)&&!a.brave&&a.state!=='flee'&&Math.hypot(a.x-cxp,a.y-cyp)<T.r); if(hit.length){ st.cd=T.cd; st.fire=1; reveal(+i);
     for(const a of hit){ a.fleeT=T.flee; a.path=null; R.cause.fear+=4; G.guild.fearRuns++; fxText(a.x,a.y-.6,'!!','#c08aff'); } sfx('fear'); } }
   if(k==='slime'){ for(const a of advs) if(alive(a)&&a.tile===+i){ a.slowT=.3; damage(a,T.dps*trapDmgMul()*R.trapS*dt,{kind:'trap',type:'slime',cat:'trap'}); } }
+  if(k==='cage'&&st.hold>0) st.hold-=dt;
+  if(k==='door') stepDoor(+i,st,T,dt);
+  if(k==='bell'&&st.cd<=0&&advs.some(a=>alive(a)&&Math.hypot(a.x-cxp,a.y-cyp)<T.r)){ st.cd=T.cd; st.fire=2; reveal(+i); sfx('bell');
+   for(const m of mons) if(m.state!=='dead'&&Math.hypot(m.x-cxp,m.y-cyp)<7){ m.rage=T.rage; fxText(m.x,m.y-.7,'!','#ff4a4a'); } }
+  if(k==='cavein'&&!st.sprung){ const under=advs.filter(a=>alive(a)&&Math.hypot(a.x-cxp,a.y-cyp)<T.r); if(under.length>=T.need){ st.sprung=true; st.fire=1.2; reveal(+i); heartShake=.6; sfx('crash');
+    for(const a of under){ damage(a,T.dmg*trapDmgMul()*R.trapS,{kind:'trap',type:'cavein',cat:'trap'}); if(alive(a)) a.stun=1.2; }
+    if(!HEADLESS) for(let q=0;q<40;q++){ const an=Math.random()*6.28, v=Math.random()*2.5; parts.push({x:cxp+(Math.random()-.5)*2.4,y:cyp-1.2-Math.random(),vx:Math.cos(an)*v*.3,vy:2+Math.random()*3,l:.6+Math.random()*.4,c:['#6a5a60','#4a3c44','#8a7a70'][q%3],s:4+Math.random()*5,g:6}); } } }
  }
  // ── adventurers ──
  for(const a of advs){
@@ -453,7 +477,7 @@ function stepRaid(dt){
   if(a.stun>0){ a.stun-=dt; continue; }
   // rogues spot hidden traps
   const det=a.detect||(G.guild.items.poles?1.5:0);
-  if(det){ for(const i in G.traps){ if(R.known[i]||R.trapState[i].dead) continue; const d=Math.hypot(tx(+i)+.5-a.x,ty(+i)+.5-a.y); if(d<det&&(a.detect||G.traps[i]==='pit')){ reveal(+i); if(a.detect) R.disarmable[i]=G.traps[i]; } } }
+  if(det){ for(const i in G.traps){ if(R.known[i]||R.trapState[i].dead) continue; const d=Math.hypot(tx(+i)+.5-a.x,ty(+i)+.5-a.y); if(d<det&&(a.detect||G.traps[i]==='pit'||G.traps[i]==='trapdoor')){ reveal(+i); if(a.detect) R.disarmable[i]=G.traps[i]; } } }
   // visible traps are seen from a few tiles away
   for(const i in G.traps){ if(R.known[i]||TRAPS[G.traps[i]].hidden||R.trapState[i].dead) continue; const cxp=tx(+i)+.5, cyp=ty(+i)+.5; if(Math.hypot(cxp-a.x,cyp-a.y)<3&&los(a.x,a.y,cxp,cyp)) reveal(+i); }
   // heal
@@ -466,26 +490,31 @@ function stepRaid(dt){
   if(foe&&a.state!=='flee'){ a.face=Math.atan2(foe.y-a.y,foe.x-a.x); if(a.cdT<=0){ a.cdT=a.cd; attack(a,foe); } continue; }
   if(foe&&a.state==='flee'&&fd<.8&&a.cdT<=0){ a.cdT=a.cd; attack(a,foe); }
   // rogue disarms known traps in reach
-  if(a.cls==='rogue'&&a.state!=='flee'&&(a.kits=a.kits??(a.isHero?4:2))>0){ let tgt=null; for(const i in R.disarmable){ if(!G.traps[i]||R.trapState[i].dead) continue; const d=Math.hypot(tx(+i)+.5-a.x,ty(+i)+.5-a.y); if(d<1.15){tgt=+i;break;} }
+  if(a.cls==='rogue'&&a.state!=='flee'&&(a.kits=a.kits??(a.isHero?4:2))>0){ let tgt=null; for(const i in R.disarmable){ if(!G.traps[i]||R.trapState[i].dead||G.traps[i]==='door') continue; const d=Math.hypot(tx(+i)+.5-a.x,ty(+i)+.5-a.y); if(d<1.15){tgt=+i;break;} }
    if(tgt!=null){ a.disT+=dt; a.disarming=tgt; if(a.disT>=(a.disarm||1.8)){ disarm(tgt,a); a.kits--; a.disT=0; a.disarming=null; } continue; } else { a.disT=0; a.disarming=null; } }
   // carve a shard out of the Heart, then run for the gate with it
   if(a.state!=='flee'&&Math.hypot(HX+.5-a.x,HY+.5-a.y)<1.15){ a.face=Math.atan2(HY+.5-a.y,HX+.5-a.x); a.carve=(a.carve||0)+dt;
    if(a.cdT<=0){ a.cdT=a.cd; a.shard=(a.shard||0)+hitHeart(a.dmg*(a.proj?.6:1)); a.lunge=.15; }
    if(a.carve>=(a.isHero?6:CARVE_T)){ a.state='flee'; a.path=null; fxText(a.x,a.y-.8,'shard stolen!','#ff6a7a',1); banner('A raider runs with a piece of your Heart!',1.6); }
    continue; }
+  if(a.bashDoor!=null){ const d=a.bashDoor;
+   if(!R.shut[d]){ a.bashDoor=null; a.path=null; }
+   else if(Math.hypot(tx(d)+.5-a.x,ty(d)+.5-a.y)<1.15){ a.face=Math.atan2(ty(d)+.5-a.y,tx(d)+.5-a.x); if(a.cdT<=0){ a.cdT=a.cd; a.lunge=.15; bashDoor(d,a.dmg*(a.proj?.5:1)); } continue; }
+   else { moveTo(a,d,dt,advCost(a)); continue; } }
   const goal=advTarget(a);
   if(a.state==='flee'&&a.tile===GATE_I){ a.state='escaped'; G.stats.escaped++; fxText(a.x,a.y-.5,'escaped','#aaa'); continue; }
   if(a.knowV!==R.knowV){ a.knowV=R.knowV; a.path=null; }
   moveTo(a,goal,dt,advCost(a));
+  if(a.path===false) pickBash(a);
  }
  // ── monsters ──
  for(const m of mons){
   if(m.state==='dead') continue;
-  m.flash=Math.max(0,m.flash-dt); m.cdT-=dt; m.slowT-=dt;
+  m.flash=Math.max(0,m.flash-dt); m.cdT-=dt*(m.rage>0?1.4:1); m.slowT-=dt; if(m.rage>0) m.rage-=dt;
   if(m.state==='down'){ m.riseT-=dt; if(m.riseT<=0){ m.state='home'; m.hp=m.max*.5; fxBurst(m.x,m.y,'#e8e2d0',10); } continue; }
   const hx=tx(m.home)+.5, hy=ty(m.home)+.5;
   let foe=null, fd=Infinity;
-  for(const a of advs) if(alive(a)){ const d=dist(a,m), dh=Math.hypot(a.x-hx,a.y-hy); if(d<m.aggro+(m.state==='chase'?1.5:0)&&dh<m.aggro+2.5&&d<fd&&los(m.x,m.y,a.x,a.y)){fd=d;foe=a;} }
+  for(const a of advs) if(alive(a)){ const d=dist(a,m), dh=Math.hypot(a.x-hx,a.y-hy); const rg=m.rage>0?3:0; if(d<m.aggro+rg+(m.state==='chase'?1.5:0)&&dh<m.aggro+2.5+rg&&d<fd&&los(m.x,m.y,a.x,a.y)){fd=d;foe=a;} }
   if(foe){
    m.state='chase'; m.face=Math.atan2(foe.y-m.y,foe.x-m.x);
    if(fd<=m.range+.1&&(m.range<1.5||los(m.x,m.y,foe.x,foe.y))){ if(m.cdT<=0){ m.cdT=m.cd; attack(m,foe); } }
@@ -521,7 +550,27 @@ function attack(u,t){
  const d=MONS[u.type], src={kind:'mon',type:u.type,cat:d.cat,drainer:d.drain?u:null};
  if(d.breath){ for(const a of R.advs) if(alive(a)){ const dd=dist(a,u), ang=Math.abs(angDiff(Math.atan2(a.y-u.y,a.x-u.x),u.face)); if(dd<d.range+.4&&ang<.7) damage(a,u.dmg*R.dmS,src); } fxBreath(u); sfx('fire'); return; }
  if(d.proj){ R.projs.push({x:u.x,y:u.y,tgt:t,spd:7,dmg:u.dmg*R.dmS,kind:'bolt',splash:d.splash,src,from:'mon'}); sfx('bolt'); return; }
- damage(t,u.dmg*R.dmS,src); if(d.slowHit) t.slowT=1.2; sfx('hit');
+ damage(t,u.dmg*R.dmS*(u.rage>0?1.5:1),src); if(d.slowHit) t.slowT=1.2; sfx('hit');
+}
+// iron doors: count raiders through, then slam once the doorway is clear; raiders on the wrong side bash it
+function stepDoor(i,st,T,dt){
+ const cx0=tx(i)+.5, cy0=ty(i)+.5;
+ if(st.pend&&!st.shut){
+  // slam on the heels of the last one counted; anyone else in the doorway is shoved back the way they came
+  const last=st.lastIn;
+  if(!last||!alive(last)||last.tile!==i){
+   for(const u of R.advs.concat(R.mons)) if((u.kind==='adv'?alive(u):u.state!=='dead')&&u.tile===i){ const back=(u.prev!=null&&u.prev!==i&&walk(u.prev))?u.prev:nbrs(i).find(walk); if(back!=null){ u.x=tx(back)+.5; u.y=ty(back)+.5; u.tile=back; u.path=null; } }
+   st.pend=false; st.shut=true; st.t=T.shut; st.hp=st.max=T.hp*R.trapS; R.shut[i]=1; R.knowV++; R.sealed++; G.guild.seals++; reveal(i); sfx('door'); heartShake=.25; banner('An iron door slams shut!',1.6); fxBurst(cx0,cy0,'#aaa0a0',14); }
+ }
+ if(st.shut){ st.t-=dt; if(st.t<=0) openDoor(i,st,false); }
+}
+function openDoor(i,st,broken){ st.shut=false; delete R.shut[i]; R.knowV++; st.count=0; st.seen=new Set(R.advs.filter(a=>a.tile===i)); if(broken){ st.broken=true; fxBurst(tx(i)+.5,ty(i)+.5,'#8a8080',22); sfx('crash'); fxText(tx(i)+.5,ty(i)+.2,'smashed!','#fff',1); } else sfx('dooropen'); mapDirty=true; }
+function bashDoor(i,d){ const st=R.trapState[i]; if(!st||!st.shut) return; st.hp-=d*(G.guild.items.crowbars?2:1); st.flash=.12; sfx('bash'); fxBurst(tx(i)+.5,ty(i)+.5,'#c8c0c0',3); if(st.hp<=0) openDoor(i,st,true); }
+// a raider with no way through picks the nearest shut door to batter
+function pickBash(a){
+ let best=null, bl=Infinity;
+ for(const d in R.shut){ const p=findPath(a.tile,+d,advCost(a)); if(p&&p.length<bl){ bl=p.length; best=+d; } }
+ a.bashDoor=best;
 }
 const angDiff=(a,b)=>{ let d=a-b; while(d>Math.PI)d-=6.2832; while(d<-Math.PI)d+=6.2832; return d; };
 function disarm(i,a){ const k=G.traps[i]; R.trapState[i].dead=true; delete G.traps[i]; delete R.known[i]; delete R.disarmable[i]; R.knowV++; fxText(tx(i)+.5,ty(i)+.4,'disarmed','#9fe0ff',1); fxBurst(tx(i)+.5,ty(i)+.5,'#9fe0ff',10); sfx('disarm'); R.disarmed=(R.disarmed||0)+1; R.disarmedList=(R.disarmedList||[]).concat(TRAPS[k].n); mapDirty=true; }
@@ -529,13 +578,16 @@ function disarm(i,a){ const k=G.traps[i]; R.trapState[i].dead=true; delete G.tra
 function hitHeart(d){ d=Math.min(d,G.heartHp); G.heartHp-=d; R.heartDmg+=d; heartShake=.3; sfx('heart'); fxBurst(HX+.5,HY+.5,'#ff2a4a',6); return d; }
 function moveTo(u,goal,dt,cost,chase,home){
  u.repath-=dt;
+ if(u.path===false&&u.repath>0&&u.goal===goal) return;
+ if(u.path&&u.pi<u.path.length&&u.path[u.pi]!==goal&&R.shut[u.path[u.pi]]) u.path=null;
  if(!u.path||u.pi>=u.path.length||u.repath<=0||(u.goal!==goal)){ u.goal=goal; u.repath=u.kind==='adv'?1.6:.45; if(u.tile===goal&&chase){ u.path=[]; } else repath(u,goal,cost); }
  let tx0,ty0;
- if(u.path&&u.pi<u.path.length){ const n=u.path[u.pi]; if(n===HEART_I){ tx0=HX+.5; ty0=HY+.5; } else { tx0=tx(n)+.5; ty0=ty(n)+.5; } }
+ if(u.path===false) return;
+ if(u.path&&u.pi<u.path.length){ const n=u.path[u.pi]; if(R.shut[n]) return; if(n===HEART_I){ tx0=HX+.5; ty0=HY+.5; } else { tx0=tx(n)+.5; ty0=ty(n)+.5; } }
  else if(chase){ tx0=chase.x; ty0=chase.y; } else if(home){ tx0=tx(u.home)+.5; ty0=ty(u.home)+.5; } else return;
  const dx=tx0-u.x, dy=ty0-u.y, d=Math.hypot(dx,dy);
  // the badly wounded limp — a fast monster near the gate can still catch a runner
- let sp=u.spd*(u.slowT>0?.5:1)*dt*(u.kind==='adv'&&u.hp<u.max*.3?.8:1);
+ let sp=u.spd*(u.slowT>0?.5:1)*dt*(u.kind==='adv'&&u.hp<u.max*.3?.8:1)*(u.rage>0?1.4:1);
  if(d<1e-4){ if(u.path) u.pi++; return; }
  u.face=Math.atan2(dy,dx); u.walk+=dt*u.spd*7;
  if(d<=sp){ u.x=tx0; u.y=ty0; if(u.path) u.pi++; }
@@ -556,7 +608,7 @@ function separate(dt){
   nudge(a,-px*p*sg,-py*p*sg); nudge(b,px*p*sg,py*p*sg);
  }
 }
-function nudge(u,dx,dy){ const nx=u.x+dx, ny=u.y+dy; const t=G.map[idx(nx|0,ny|0)]; if(t===FLOOR||t===GATE){ const fx=nx-(nx|0), fy=ny-(ny|0); if(fx>.18&&fx<.82&&fy>.18&&fy<.82){ u.x=nx; u.y=ny; } } }
+function nudge(u,dx,dy){ const nx=u.x+dx, ny=u.y+dy; if(walk(idx(nx|0,ny|0))){ const fx=nx-(nx|0), fy=ny-(ny|0); if(fx>.18&&fx<.82&&fy>.18&&fy<.82){ u.x=nx; u.y=ny; } } }
 function endRaid(){
  if(R.ended) return; R.ended=true;
  for(const a of R.advs) if(alive(a)){ a.state='escaped'; }
@@ -579,7 +631,7 @@ function endRaid(){
 }
 
 /* ═══════════════════════════ FX (render-only state) ═══════════════════════════ */
-let parts=[], texts=[], heartShake=0, shardFly=[];
+let parts=[], texts=[], heartShake=0, shardFly=[], falls=[];
 function fxBurst(x,y,col,n){ if(HEADLESS) return; for(let k=0;k<n;k++){ const a=Math.random()*6.28, v=.5+Math.random()*2.2; parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.6,l:.5+Math.random()*.5,c:col,s:2+Math.random()*2,g:3}); } }
 function fxFire(x,y,r,col){ if(HEADLESS) return; for(let k=0;k<26*r;k++){ const a=Math.random()*6.28, v=Math.random()*r*2.4; parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.5,l:.35+Math.random()*.4,c:col||(['#ffdc5a','#ff8a2a','#ff4a1a'][k%3]),s:3+Math.random()*4,g:-1.5,glow:1}); } lights.push({x,y,r:r*3,l:.5,c:col?'154,90,255':'255,140,60'}); }
 function fxBreath(u){ if(HEADLESS) return; for(let k=0;k<60;k++){ const a=u.face+(Math.random()-.5)*1.3, v=2+Math.random()*4; parts.push({x:u.x,y:u.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5+Math.random()*.3,c:['#ffdc5a','#ff8a2a','#ff4a1a'][k%3],s:4+Math.random()*5,g:-.5,glow:1}); } lights.push({x:u.x+Math.cos(u.face)*1.5,y:u.y+Math.sin(u.face)*1.5,r:4,l:.6,c:'255,140,60'}); }
@@ -663,8 +715,10 @@ function render(dt){
  if(R&&G.phase!=='build'){ for(const m of R.mons) if(m.state!=='dead') units.push(m); for(const a of R.advs) if(a.state!=='escaped'&&(a.state!=='dead')) units.push(a); }
  else for(const i in G.mons) units.push({kind:'mon',type:G.mons[i],x:tx(+i)+.5,y:ty(+i)+.5,hp:1,max:1,face:0,walk:animT*.6+ +i,flash:0,state:'home',ghost:1});
  units.sort((a,b)=>a.y-b.y);
- if(R&&G.phase!=='build') for(const a of R.advs) if(a.state==='dead') drawCorpse(c,a);
+ if(R&&G.phase!=='build') for(const a of R.advs) if(a.state==='dead'&&!a.fell) drawCorpse(c,a);
  for(const u of units) drawUnit(c,u);
+ // a shut door is a wall: it stands in front of whoever is pressed against it
+ if(R&&G.phase!=='build') for(const i in R.shut) drawDoor(c,+i,R.trapState[i]);
  // projectiles
  if(R) for(const p of R.projs) drawProj(c,p);
  // particles
@@ -676,6 +730,8 @@ function render(dt){
  if(building) drawHover(c);
  for(const f of shardFly){ f.t+=dt*1.3; const k=Math.min(1,f.t), x=f.x+(HX+.5-f.x)*k, y=f.y+(HY+.5-f.y)*k-Math.sin(k*3.14)*2; c.fillStyle='#ff4a6a'; c.shadowColor='#ff4a6a'; c.shadowBlur=12; c.beginPath(); c.arc(x*TS,y*TS,5,0,6.28); c.fill(); c.shadowBlur=0; }
  shardFly=shardFly.filter(f=>f.t<1);
+ for(const f of falls){ f.t+=dt*1.4; const k=1-Math.min(1,f.t); c.save(); c.globalAlpha=k; c.translate(f.x*TS,f.y*TS); c.rotate(f.t*4); c.scale(k,k); c.fillStyle=f.col; c.fillRect(-6,-6,12,13); c.fillStyle='#f0c8a0'; c.beginPath(); c.arc(0,-10,5,0,6.28); c.fill(); c.restore(); }
+ falls=falls.filter(f=>f.t<1);
  // floating text
  c.textAlign='center'; c.textBaseline='middle';
  for(const t of texts){ t.y-=dt*(t.big?.6:.9); t.l-=dt; c.globalAlpha=Math.max(0,Math.min(1,t.l*2)); c.font=`800 ${t.big?18:14}px 'Alegreya Sans',sans-serif`; c.fillStyle='#000'; c.fillText(t.t,t.x*TS+1,t.y*TS+1); c.fillStyle=t.c; c.fillText(t.t,t.x*TS,t.y*TS); }
@@ -692,7 +748,7 @@ function drawLight(c,dt){
  hole(GX+.8,GY+.5,2.2,.7);
  if(R&&G.phase!=='build'){ for(const a of R.advs) if(alive(a)) hole(a.x,a.y,2.3,.85); }
  for(const l of lights){ l.l-=dt; if(l.l>0) hole(l.x,l.y,l.r,Math.min(1,l.l*2)); }
- for(const i in G.traps) if(G.traps[i]==='flame'||G.traps[i]==='fear') hole(tx(+i)+.5,ty(+i)+.5,1.1,.4);
+ for(const i in G.traps) if(G.traps[i]==='flame'||G.traps[i]==='fear'||G.traps[i]==='door'||G.traps[i]==='bell') hole(tx(+i)+.5,ty(+i)+.5,1.1,.4);
  c.drawImage(lightCv,0,0);
  // warm glows on top
  c.globalCompositeOperation='lighter';
@@ -735,9 +791,36 @@ function drawTrap(c,i,k){
  else if(k==='slime'){ const w=Math.sin(animT*2+i)*1.5; c.fillStyle='rgba(90,210,90,.55)'; c.beginPath(); c.ellipse(cx0,cy0+2,17+w,12-w*.5,0,0,6.28); c.fill(); c.fillStyle='rgba(190,255,170,.5)'; c.beginPath(); c.ellipse(cx0-6,cy0-2,4,2,0,0,6.28); c.fill(); for(let b=0;b<3;b++){ const ph=(animT*.7+b*.33+i*.1)%1; c.strokeStyle=`rgba(200,255,180,${1-ph})`; c.beginPath(); c.arc(cx0-8+b*8,cy0+2,ph*3,0,6.28); c.stroke(); } }
  else if(k==='fear'){ c.translate(cx0,cy0); c.rotate(animT*.3); c.strokeStyle=`rgba(180,110,255,${.5+.3*Math.sin(animT*3)+fire*.5})`; c.lineWidth=2; c.beginPath(); for(let p=0;p<5;p++){ const a=p*2.513-1.57; c[p?'lineTo':'moveTo'](Math.cos(a)*15,Math.sin(a)*15); } c.closePath(); c.stroke(); c.beginPath(); c.arc(0,0,17,0,6.28); c.stroke();
   if(fire>0){ c.strokeStyle=`rgba(180,110,255,${fire})`; c.beginPath(); c.arc(0,0,TRAPS.fear.r*TS*(1-fire*.5),0,6.28); c.stroke(); } }
+ else if(k==='cage'){ if(st&&st.hold>0){ const v=st.victim; const vx=v?v.x*TS-X:TS/2, vy=v?v.y*TS-Y:TS/2; c.translate(X+vx,Y+vy); c.strokeStyle='#8a8a94'; c.lineWidth=2; c.strokeRect(-12,-24,24,34); for(let b=-8;b<=8;b+=4){ c.beginPath(); c.moveTo(b,-24); c.lineTo(b,10); c.stroke(); } c.fillStyle='#5a5a64'; c.fillRect(-14,-27,28,4); c.strokeStyle='#5a5a64'; c.beginPath(); c.moveTo(0,-27); c.lineTo(0,-48); c.stroke(); }
+  else { c.strokeStyle='rgba(20,14,16,.45)'; c.lineWidth=1; c.beginPath(); c.arc(cx0,cy0,13,0,6.28); c.stroke(); for(let a=0;a<8;a++){ const an=a*.785; c.fillStyle='rgba(20,14,16,.5)'; c.fillRect(cx0+Math.cos(an)*13-1,cy0+Math.sin(an)*13-1,2,2); } } }
+ else if(k==='trapdoor'){ const open=st&&st.cd>0;
+  if(open){ c.fillStyle='#000'; c.fillRect(X+8,Y+8,TS-16,TS-16); const g=c.createLinearGradient(0,Y+8,0,Y+TS-8); g.addColorStop(0,'rgba(60,30,80,.5)'); g.addColorStop(1,'rgba(0,0,0,0)'); c.fillStyle=g; c.fillRect(X+8,Y+8,TS-16,TS-16); c.fillStyle='#5a3e28'; c.fillRect(X+6,Y+2,TS-12,6); }
+  else { c.fillStyle='#4a3424'; c.fillRect(X+8,Y+8,TS-16,TS-16); c.strokeStyle='#2a1c12'; c.lineWidth=1.5; for(let p=1;p<4;p++){ c.beginPath(); c.moveTo(X+8,Y+8+p*8); c.lineTo(X+TS-8,Y+8+p*8); c.stroke(); } c.strokeRect(X+8.5,Y+8.5,TS-17,TS-17); c.fillStyle='#7a7a80'; c.fillRect(X+10,Y+12,5,3); c.fillRect(X+10,Y+TS-15,5,3); c.beginPath(); c.arc(X+TS-13,Y+TS/2,2.5,0,6.28); c.fill(); } }
+ else if(k==='bell'){ const ring=fire>0, sw=ring?Math.sin(animT*30)*.35:Math.sin(animT*1.2+i)*.05; c.fillStyle='#3a2a20'; c.fillRect(cx0-12,cy0-16,24,4); c.fillRect(cx0-12,cy0-16,3,26); c.fillRect(cx0+9,cy0-16,3,26);
+  c.translate(cx0,cy0-12); c.rotate(sw); c.fillStyle='#c89a3a'; c.beginPath(); c.moveTo(-7,14); c.quadraticCurveTo(-7,0,0,0); c.quadraticCurveTo(7,0,7,14); c.closePath(); c.fill(); c.fillStyle='#8a6420'; c.fillRect(-8,13,16,3); c.fillStyle='#4a3420'; c.beginPath(); c.arc(0,17,2,0,6.28); c.fill();
+  if(ring){ c.rotate(-sw); for(let w=0;w<3;w++){ const ph=((animT*2+w/3)%1); c.strokeStyle=`rgba(255,220,140,${(1-ph)*.6})`; c.lineWidth=2; c.beginPath(); c.arc(0,8,10+ph*40,0,6.28); c.stroke(); } } }
+ else if(k==='cavein'){ if(st&&st.sprung){ for(let r=0;r<9;r++){ const h=hash(i,r+200), h2=hash(i,r+300); c.fillStyle=['#5a4a52','#4a3c44','#6a5a60'][r%3]; c.beginPath(); c.ellipse(X+6+h*36,Y+8+h2*32,5+h*5,4+h2*4,h*3,0,6.28); c.fill(); } }
+  else { c.strokeStyle='rgba(0,0,0,.28)'; c.lineWidth=1; c.beginPath(); c.moveTo(X+10,Y+12); c.lineTo(X+20,Y+20); c.lineTo(X+17,Y+30); c.moveTo(X+20,Y+20); c.lineTo(X+33,Y+17); c.stroke(); for(let q=0;q<3;q++){ const ph=((animT*.5+q*.33+i*.1)%1); c.fillStyle=`rgba(120,100,100,${(1-ph)*.6})`; c.fillRect(X+14+q*9,Y+6+ph*30,2,2); } } }
+ else if(k==='door') drawDoor(c,i,st);
  c.restore();
  if(known&&(G.phase==='build'||showIntel)){ c.font='14px sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle='rgba(0,0,0,.7)'; c.beginPath(); c.arc(X+TS-9,Y+9,9,0,6.28); c.fill(); c.fillText('👁️',X+TS-9,Y+10); }
  if(st&&st.dead){ /* disarmed: drawn as removed */ }
+}
+function drawDoor(c,i,st){
+ const X=tx(i)*TS, Y=ty(i)*TS, horiz=walk(i-1)||walk(i+1)||G.map[i-1]===GATE, shut=st&&st.shut, need=st?st.need:(G.doorN[i]||3);
+ c.save(); c.translate(X+TS/2,Y+TS/2); if(!horiz) c.rotate(Math.PI/2);
+ c.fillStyle='#6a5a62'; c.fillRect(-8,-TS/2,16,9); c.fillRect(-8,TS/2-9,16,9); c.fillStyle='#3a2e36'; c.fillRect(-8,-TS/2+7,16,2); c.fillRect(-8,TS/2-9,16,2);
+ if(shut){ const sh=st.flash>0?(st.flash-=1/60,(Math.random()-.5)*3):0; c.translate(sh,0);
+  c.shadowColor='rgba(255,90,90,.7)'; c.shadowBlur=10; const g=c.createLinearGradient(-7,0,7,0); g.addColorStop(0,'#4a4a54'); g.addColorStop(.5,'#9a9aa8'); g.addColorStop(1,'#3a3a44'); c.fillStyle=g; c.fillRect(-7,-TS/2+7,14,TS-14); c.shadowBlur=0;
+  c.fillStyle='#c8c8d0'; for(let r=-16;r<=16;r+=8){ c.beginPath(); c.arc(0,r,1.5,0,6.28); c.fill(); }
+  c.strokeStyle='#2a2a30'; c.lineWidth=1; c.strokeRect(-7,-TS/2+7,14,TS-14); c.fillStyle='#2a2a30'; c.fillRect(-7,-2,14,4); }
+ else if(!(st&&st.broken)){ c.fillStyle='#7a7a88'; c.strokeStyle='#2a2a30'; c.lineWidth=1; c.save(); c.translate(0,-TS/2+8); c.rotate(-1.3); c.fillRect(-3,0,6,TS/2-9); c.strokeRect(-3,0,6,TS/2-9); c.restore(); c.save(); c.translate(0,TS/2-8); c.rotate(1.3+Math.PI); c.fillRect(-3,0,6,TS/2-9); c.strokeRect(-3,0,6,TS/2-9); c.restore(); }
+ else { c.fillStyle='#5a5a64'; c.fillRect(-9,-4,6,3); c.fillRect(3,6,7,3); }
+ c.restore();
+ if(!(st&&st.broken)){ const n=st?Math.max(0,need-st.count):need, txt=shut?Math.ceil(st.t)+'s':n+'';
+  c.fillStyle=shut?'rgba(160,30,40,.9)':'rgba(20,14,20,.85)'; c.beginPath(); c.arc(X+TS-9,Y+TS-9,8.5,0,6.28); c.fill(); c.strokeStyle=shut?'#ff8a8a':'#c8c0c8'; c.lineWidth=1; c.stroke();
+  c.fillStyle='#fff'; c.font="800 10px 'Alegreya Sans',sans-serif"; c.textAlign='center'; c.textBaseline='middle'; c.fillText(txt,X+TS-9,Y+TS-8.5); }
+ if(shut&&st.hp<st.max){ c.fillStyle='rgba(0,0,0,.7)'; c.fillRect(X+8,Y+2,TS-16,4); c.fillStyle='#c8c8d0'; c.fillRect(X+8,Y+2,(TS-16)*st.hp/st.max,4); }
 }
 function drawCorpse(c,a){ const X=a.x*TS, Y=a.y*TS; c.fillStyle='rgba(90,0,14,.5)'; c.beginPath(); c.ellipse(X,Y+6,12,6,0,0,6.28); c.fill(); c.fillStyle=CLS[a.cls]?CLS[a.cls].col:'#888'; c.globalAlpha=.6; c.fillRect(X-9,Y+2,18,6); c.globalAlpha=1; }
 function drawProj(c,p){ const X=p.x*TS, Y=p.y*TS; c.save(); c.translate(X,Y); c.rotate(p.ang||0);
@@ -749,6 +832,7 @@ function drawUnit(c,u){
  c.save(); c.translate(X+fx*lunge,Y+fy*lunge+(u.kind==='adv'?bob*.6:0));
  if(u.state==='down'){ c.fillStyle='#d8d0c0'; for(let k=0;k<6;k++) c.fillRect(-10+k*4,4+(k%2)*3,4,2); c.restore(); return; }
  if(u.ghost) c.globalAlpha=.92;
+ if(u.rage>0){ c.save(); c.globalCompositeOperation='lighter'; const rg=c.createRadialGradient(0,0,2,0,0,20); rg.addColorStop(0,'rgba(255,40,40,.45)'); rg.addColorStop(1,'rgba(255,40,40,0)'); c.fillStyle=rg; c.beginPath(); c.arc(0,0,20+Math.sin(animT*12)*2,0,6.28); c.fill(); c.restore(); }
  c.fillStyle='rgba(0,0,0,.4)'; const big=u.type==='dragon'?2:u.type==='orc'?1.35:u.isHero?1.2:1; c.beginPath(); c.ellipse(0,13*big,11*big,4*big,0,0,6.28); c.fill();
  const flip=fx<-.1?-1:1; c.scale(flip,1);
  if(u.kind==='adv') drawAdv(c,u); else drawMon(c,u);
@@ -800,7 +884,7 @@ function drawPreview(c){
  if(!preview) return; c.save(); c.strokeStyle='rgba(255,90,70,.55)'; c.lineWidth=3; c.setLineDash([6,8]); c.lineDashOffset=-animT*30; c.beginPath(); c.moveTo((GX+.5)*TS,(GY+.5)*TS);
  for(const i of preview){ c.lineTo((tx(i)+.5)*TS,(ty(i)+.5)*TS); } c.stroke(); c.restore(); }
 function predictPath(){ const fake={tile:GATE_I}; const hasRogue=G.nextParty.includes('rogue')||(G.nextParty.includes('hero')&&HEROES[G.day]&&HEROES[G.day].base==='rogue'); const kn=knownTrapsValid();
- return findPath(GATE_I,HEART_I,i=>1+Math.min(5,G.guild.danger[i]*1.1)+(kn[i]?(hasRogue?1.2:9):0)); }
+ return findPath(GATE_I,HEART_I,i=>1+Math.min(5,G.guild.danger[i]*1.1)+(kn[i]?(kn[i]==='door'?3:kn[i]==='bell'?1.5:hasRogue?1.2:9):0)); }
 let hover=null, tool='spike';
 function drawHover(c){
  if(hover==null) return; const X=tx(hover)*TS, Y=ty(hover)*TS, why=TOOLS[tool]&&TOOLS[tool].act?canBuild(tool,hover):null;
@@ -836,6 +920,13 @@ function sfx(k){
   case 'disarm': tn(1400,.06,'square',.05); tn(900,.1,'square',.05,null,.07); break;
   case 'heart': tn(70,.25,'sine',.35,40); tn(55,.3,'sine',.3,35,.14); break;
   case 'horn': tn(147,1.2,'sawtooth',.08,140); tn(220,1.2,'sawtooth',.05,210); break;
+  case 'door': nz(.35,140,.9,.5); tn(70,.5,'square',.12,40); tn(260,.3,'sawtooth',.05,120,.05); break;
+  case 'dooropen': nz(.6,500,.25,2); tn(180,.6,'sawtooth',.04,320); break;
+  case 'bash': nz(.08,350,.5,1.5); tn(120,.1,'square',.06,80); break;
+  case 'bell': [0,.35,.7].forEach(d=>{ tn(880,1.2,'sine',.12,null,d); tn(1320,.9,'sine',.05,null,d); tn(2200,.4,'triangle',.03,null,d); }); break;
+  case 'crash': nz(.9,120,1,.4); nz(.5,900,.4,.8); tn(60,.8,'sine',.3,30); break;
+  case 'trapdoor': tn(300,.2,'square',.06,140); nz(.5,600,.3,.6); tn(500,.7,'sine',.08,90,.15); break;
+  case 'cage': tn(700,.3,'square',.07,500); tn(1100,.25,'square',.05,800,.04); nz(.15,2500,.3,3); break;
   case 'win': [0,4,7,12].forEach((n,j)=>tn(262*2**(n/12),.6,'triangle',.08,null,j*.12)); break;
  }
 }
@@ -851,7 +942,7 @@ const TOOLS={
 };
 for(const k in TRAPS) TOOLS[k]={n:TRAPS[k].n,act:1,trap:1,d:TRAPS[k].d,cost:TRAPS[k].cost};
 for(const k in MONS) TOOLS[k]={n:MONS[k].n,act:1,mon:1,d:MONS[k].d,cost:MONS[k].cost};
-const KEYS={dig:'Q',fill:'W',sell:'E',spike:'1',arrow:'2',slime:'3',pit:'4',flame:'5',fear:'6',goblin:'7',skel:'8',ooze:'',orc:'9',mage:'0'};
+const KEYS={dig:'Q',fill:'W',sell:'E',spike:'1',arrow:'2',slime:'3',pit:'4',flame:'5',fear:'6',cage:'Y',door:'R',bell:'U',trapdoor:'T',cavein:'O',goblin:'7',skel:'8',ooze:'',orc:'9',mage:'0'};
 function iconCanvas(k,size){
  const c=document.createElement('canvas'); c.width=c.height=size*2; const x=c.getContext('2d'); x.scale(size*2/48,size*2/48); x.translate(24,26);
  if(MONS[k]){ drawMon(x,{type:k,walk:0,x:0}); }
@@ -926,7 +1017,7 @@ function tipTile(ev){
  const tp=$('tip'); if(hover==null||G.phase==='raid'){ tp.style.display='none'; return; }
  const k=G.traps[hover]||G.mons[hover]; if(!k){ tp.style.display='none'; return; }
  const isT=!!G.traps[hover], d=isT?TRAPS[k]:MONS[k], known=isT&&G.guild.known[hover]===k;
- tp.innerHTML=`<h4>${d.n}</h4><div>${d.d}</div>${isT?(known?'<div class="q" style="color:#ff9a8a">👁️ The guild knows this trap is here.</div>':'<div class="q">The guild does not know about this one.</div>'):''}<div class="q">Right-click to sell for ${Math.floor(d.cost*.7)}g</div>`;
+ tp.innerHTML=`<h4>${d.n}</h4><div>${d.d}</div>${k==='door'?`<div class="c">Slams after ${G.doorN[hover]||3} raider${(G.doorN[hover]||3)>1?'s':''} pass. Pick the Iron Door tool and click it to change.</div>`:''}${isT?(known?'<div class="q" style="color:#ff9a8a">👁️ The guild knows this trap is here.</div>':'<div class="q">The guild does not know about this one.</div>'):''}<div class="q">Right-click to sell for ${Math.floor(d.cost*.7)}g</div>`;
  tp.style.display='block'; tp.style.left=Math.min(innerWidth-300,ev.clientX+16)+'px'; tp.style.top=(ev.clientY+12)+'px';
 }
 $('bar').addEventListener('click',ev=>{ const b=ev.target.closest('.tool'); if(!b) return; initAudio(); const k=b.dataset.t;
@@ -995,8 +1086,9 @@ function help(){
  <p>Each night a party from the <b>Adventurers' Guild</b> marches in from the gate on the left and heads for your <b>Heart</b> on the right. Whoever reaches it hacks off a <b>shard</b> and runs for the gate — catch the carrier and the shard flies home. If the Heart is carved to nothing, you lose. Survive <b>30 nights</b>.</p>
  <p>🛠️ <b>By day</b> you dig tunnels, hide traps and post monsters. Raiders always follow a route to the Heart — the <span style="color:#ff6a5a">red dashes</span> show the one they plan to take. Walls can't fully block them; make the road long and cruel instead: the <b>gloom</b> drains 1% of a raider's life for every tile they walk, there and back.</p>
  <p>👁️ <b>The guild learns.</b> Anyone who escapes reports which traps they saw and where it hurt. Next time they route around known traps, send Rogues to disarm them, and bring gear against whatever killed them most — fire cloaks, holy water, tower shields. <b>Leave no witnesses</b> and they learn only where the bodies lie.</p>
+ <p>🚪 <b>Iron Doors</b> slam shut once a set number of raiders walk through — splitting the party, trapping the front group with your monsters while the rest batter at the door. <b>Trap Doors</b> drop a raider into the oubliette for good. Also: drop cages, alarm bells that send monsters berserk, and cave-ins that fall when three raiders bunch up.</p>
  <p>💀 Kills give gold and <b>souls</b>. Spend souls in <b>Dark Rites</b> to unlock slimes, pits, flame vents, dark mages, wraiths and a dragon — and to strengthen the Heart.</p>
- <p style="font-size:13px;color:var(--muted)">Keys: Q dig · W wall · E sell · 1–6 traps · 7–0 monsters · right-click sells · Space opens the gates / pauses · I shows guild intel.</p>
+ <p style="font-size:13px;color:var(--muted)">Keys: Q dig · W wall · E sell · 1–6 traps · R door · T trap door · Y cage · U bell · O cave-in · 7–0 monsters · right-click sells · Space opens the gates / pauses · I shows guild intel.</p>
  <button class="btn" onclick="closeModal()">Into the dark</button>`);
 }
 
@@ -1008,7 +1100,7 @@ function loadSave(){ try{ const d=JSON.parse(localStorage.getItem(SKEY)); if(d&&
 function clearSave(){ try{ localStorage.removeItem(SKEY); }catch(e){} }
 function best(){ try{ return +localStorage.getItem(SKEY+'-best')||0; }catch(e){ return 0; } }
 function setBest(d){ try{ if(d>best()) localStorage.setItem(SKEY+'-best',d); }catch(e){} }
-function restore(d){ G=d; G.phase='build'; R=null; mapDirty=true; previewDirty=true; buildBar(); ui(); }
+function restore(d){ G=d; G.doorN=G.doorN||{}; G.guild.seals=G.guild.seals||0; G.phase='build'; R=null; mapDirty=true; previewDirty=true; buildBar(); ui(); }
 if(window.GBSave) GBSave.register({ save:()=>G&&!G.over&&(G.day>1||Object.keys(G.traps).length)?snap():null, load:d=>{ restore(d); save(); }, autosave:0 });
 
 /* ═══════════════════════════ LOOP ═══════════════════════════ */
@@ -1030,7 +1122,7 @@ let uiT=0;
 window.addEventListener('resize',resize);
 (function boot(){
  const d=(!SMOKE&&!HEADLESS)?loadSave():null;
- if(d){ G=d; G.phase='build'; } else { newGame(); G.phase='build'; }
+ if(d){ G=d; G.phase='build'; G.doorN=G.doorN||{}; G.guild.seals=G.guild.seals||0; } else { newGame(); G.phase='build'; }
  resize(); buildBar(); ui();
  if(!d&&!SMOKE&&!HEADLESS) help();
  requestAnimationFrame(frame);
@@ -1102,9 +1194,35 @@ if(SMOKE) setTimeout(()=>{
   newGame(); G.souls=100; ok(rite('heart')&&G.heartMax===360,'heart rite'); ok(rite('lair')&&monCap()===7,'lair rite');
   // save roundtrip
   newGame(); G.gold=777; build('spike',idx(4,GY)); const s=snap(); newGame(); restore(JSON.parse(JSON.stringify(s))); ok(G.gold===757&&G.traps[idx(4,GY)]==='spike','save roundtrip');
+  // iron door: counts raiders through, slams, the rest bash it, raid still finishes
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.door=1; ok(build('door',idx(8,GY))===null&&G.doorN[idx(8,GY)]===3,'place door (default 3)');
+  build('door',idx(8,GY)); ok(G.doorN[idx(8,GY)]===4,'click door again → 4'); G.doorN[idx(8,GY)]=3;
+  G.nextParty=['warrior','warrior','warrior','warrior','warrior']; startRaid(); const dI=idx(8,GY); let shutAt=-1, bashed=false, past=0;
+  for(let k=0;k<30*120&&!R.ended;k++){ stepRaid(1/30); if(R.shut[dI]&&shutAt<0){ shutAt=k; past=R.advs.filter(a=>a.x>8.5).length; } if(R.advs.some(a=>a.bashDoor===dI)) bashed=true; }
+  ok(shutAt>=0,'door slammed'); ok(past===3,'exactly 3 raiders sealed past it ('+past+')'); ok(bashed,'raiders behind bashed the door'); ok(R.ended,'raid with a door still ends');
+  ok(G.guild.seals>=1,'guild counted the seal');
+  // walls of a shut door: nobody walks through it
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.door=1; build('door',idx(8,GY)); G.nextParty=['warrior']; startRaid(); R.shut[idx(8,GY)]=1; R.trapState[idx(8,GY)].shut=true; R.trapState[idx(8,GY)].t=999; R.trapState[idx(8,GY)].hp=R.trapState[idx(8,GY)].max=1e9;
+  for(let k=0;k<30*20;k++) stepRaid(1/30); ok(R.advs[0].x<8.1,'shut door blocks ('+R.advs[0].x.toFixed(2)+')'); ok(R.advs[0].bashDoor===idx(8,GY),'blocked raider bashes'); R.ended=true;
+  // trap door: a raider vanishes, a hero hangs on
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.trapdoor=1; build('trapdoor',idx(6,GY)); G.nextParty=['warrior']; startRaid(); for(let k=0;k<30*10;k++) stepRaid(1/30);
+  ok(R.advs[0].state==='dead'&&R.advs[0].fell,'trap door swallowed the raider'); ok(R.deaths[0].by==='trapdoor','counted as a kill');
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.trapdoor=1; build('trapdoor',idx(6,GY)); G.day=5; G.nextParty=['hero']; startRaid(); for(let k=0;k<30*6;k++) stepRaid(1/30);
+  ok(alive(R.advs[0])&&R.advs[0].hp<R.advs[0].max,'hero catches the edge'); R.ended=true;
+  // cage pins
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.cage=1; build('cage',idx(5,GY)); G.nextParty=['warrior']; startRaid(); let caged=false; for(let k=0;k<30*8;k++){ stepRaid(1/30); if(R.advs[0]&&R.advs[0].stun>2) caged=true; } ok(caged,'cage pins the raider'); R.ended=true;
+  // bell enrages nearby monsters
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.bell=1; build('bell',idx(6,GY)); buildMon('goblin',idx(9,GY)); G.nextParty=['warrior']; startRaid(); let raged=false; for(let k=0;k<30*8;k++){ stepRaid(1/30); if(R.mons[0].rage>0) raged=true; } ok(raged,'alarm bell enrages monsters'); R.ended=true;
+  // cave-in needs three
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.cavein=1; build('cavein',idx(10,GY)); G.nextParty=[]; startRaid(); R.spawnQ=[];
+  spawnAdv('warrior'); spawnAdv('warrior'); for(const a of R.advs){ a.x=10.5; a.y=6.5; a.tile=idx(10,GY); a.stun=99; } stepRaid(1/30); ok(!R.trapState[idx(10,GY)].sprung,'cave-in holds for two');
+  spawnAdv('warrior'); const a3=R.advs[2]; a3.x=10.2; a3.y=6.5; a3.tile=idx(10,GY); a3.stun=99; const h0=a3.hp; stepRaid(1/30); ok(R.trapState[idx(10,GY)].sprung&&a3.hp<h0,'cave-in falls on three'); R.ended=true;
+  // a door the guild has seen is avoided when there's another way
+  newGame(); G.phase='build'; G.gold=1e4; G.unlocked.door=1; for(let x=3;x<=12;x++) build('dig',idx(x,5)); build('door',idx(8,GY)); G.nextParty=['warrior'];
+  ok(predictPath().includes(idx(8,GY)),'unknown door: straight on'); G.guild.known[idx(8,GY)]='door'; ok(!predictPath().includes(idx(8,GY)),'known door: go round');
   // render a raid frame in every state without throwing
-  newGame(); G.phase='build'; G.gold=1e5; Object.assign(G.unlocked,{slime:1,pit:1,flame:1,fear:1,ooze:1,orc:1,mage:1,wraith:1,dragon:1}); G.rites.lair=6;
-  const tr=['spike','arrow','slime','pit','flame','fear']; tr.forEach((k,j)=>build(k,idx(3+j,GY))); ['goblin','skel','orc','mage','wraith','dragon'].forEach((k,j)=>buildMon(k,idx(10+j,GY))); buildMon('ooze',idx(16,GY));
+  newGame(); G.phase='build'; G.gold=1e5; Object.assign(G.unlocked,{slime:1,pit:1,flame:1,fear:1,ooze:1,orc:1,mage:1,wraith:1,dragon:1,cage:1,door:1,bell:1,trapdoor:1,cavein:1}); G.rites.lair=6;
+  const tr=['spike','arrow','slime','pit','flame','fear']; tr.forEach((k,j)=>build(k,idx(3+j,GY))); ['cage','bell','cavein','door'].forEach((k,j)=>build(k,idx(5+j*2,5))||build('dig',idx(5+j*2,5))||build(k,idx(5+j*2,5))); ['goblin','skel','orc','mage','wraith','dragon'].forEach((k,j)=>buildMon(k,idx(10+j,GY))); buildMon('ooze',idx(16,GY));
   render(.016); G.nextParty=['hero','knight','rogue','archer','cleric','mage','warrior']; G.day=30; startRaid(); for(let k=0;k<300;k++){ stepRaid(1/30); if(k%10===0) render(.033); } ok(true,'render all units/traps');
   while(!R.ended) stepRaid(1/30);
   ok(true,'big raid completes');
