@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Rhyme Bomb',         file:'rhyme-bomb.html',             emoji:'💣',color:['#0c0614','#24100a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Rhyme with the word or the bomb blows up in your hands — 2 to 8 players'},
   {name:'Be the Dungeon',     file:'be-the-dungeon.html',         emoji:'🕳️',color:['#0a0508','#1e0a12'],category:'strategy',   tags:['new','hot'],blurb:'You are the dungeon. The adventurers learn from every raid'},
   {name:'Idle Universe',      file:'idle-universe.html',          emoji:'🌌',color:['#04030c','#140b2c'],category:'simulation', tags:['new','hot'],blurb:'One tap, one particle. Grow it into stars, life and minds, then crunch it all'},
   {name:'Shape Conquest',     file:'shape-conquest.html',         emoji:'🌍',color:['#0d1624','#152238'],category:'strategy',   tags:['new','hot'],blurb:'Pick any country, build an army of shapes, invade the world'},
@@ -126,6 +127,22 @@ const DRAW={
   c.beginPath();c.moveTo(172,104);c.lineTo(212,128);c.moveTo(128,112);c.lineTo(218,138);c.stroke();
   c.fillStyle='rgba(255,170,80,.35)';c.beginPath();c.arc(222,138,10,0,6.283);c.fill();
   c.fillStyle='#f0bf3a';c.font='bold 15px system-ui,sans-serif';c.fillText('SHAPE CONQUEST',12,24);
+},
+
+'rhyme-bomb':(c)=>{
+  _GV(c,0,0,320,200,'#0c0614','#1a0b16','#24100a');
+  // the word, with rhymes floating off it
+  c.textAlign='center';c.fillStyle='#ffe600';c.font='bold 44px monospace';c.fillText('CAT',196,92);
+  c.font='bold 15px system-ui,sans-serif';
+  [['hat',122,40,'#00f5ff'],['splat',270,44,'#ff0080'],['acrobat',262,128,'#00ff88'],['bat',150,136,'#ff8a00']].forEach(([w,x,y,col])=>{c.fillStyle=col;c.fillText(w,x,y);});
+  // the bomb and its lit fuse
+  c.fillStyle='#1b1b24';c.beginPath();c.arc(62,118,34,0,6.283);c.fill();
+  c.fillStyle='rgba(255,255,255,0.18)';c.beginPath();c.arc(50,104,10,0,6.283);c.fill();
+  c.fillStyle='#3a3a48';c.fillRect(70,76,16,12);
+  c.strokeStyle='#c9a36b';c.lineWidth=3;c.beginPath();c.moveTo(80,78);c.quadraticCurveTo(96,58,112,64);c.stroke();
+  c.fillStyle='#ffe600';c.beginPath();c.arc(114,63,6,0,6.283);c.fill();
+  c.fillStyle='#ff8a00';c.beginPath();c.arc(114,63,3,0,6.283);c.fill();
+  c.textAlign='left';c.fillStyle='#ff8a00';c.font='bold 15px system-ui,sans-serif';c.fillText('RHYME BOMB',12,186);
 },
 
 'scrawl':(c)=>{
