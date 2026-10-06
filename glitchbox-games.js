@@ -3,6 +3,8 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
+  {name:'Most Likely To',     file:'most-likely-to.html',         emoji:'🫵',color:['#120c06','#22101c'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Who\'s most likely to…? Everyone votes, the winner gets crowned. 3 to 16 players'},
   {name:'Rhyme Bomb',         file:'rhyme-bomb.html',             emoji:'💣',color:['#0c0614','#24100a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Rhyme with the word or the bomb blows up in your hands — 2 to 8 players'},
   {name:'Be the Dungeon',     file:'be-the-dungeon.html',         emoji:'🕳️',color:['#0a0508','#1e0a12'],category:'strategy',   tags:['new','hot'],blurb:'You are the dungeon. The adventurers learn from every raid'},
   {name:'Idle Universe',      file:'idle-universe.html',          emoji:'🌌',color:['#04030c','#140b2c'],category:'simulation', tags:['new','hot'],blurb:'One tap, one particle. Grow it into stars, life and minds, then crunch it all'},
@@ -127,6 +129,40 @@ const DRAW={
   c.beginPath();c.moveTo(172,104);c.lineTo(212,128);c.moveTo(128,112);c.lineTo(218,138);c.stroke();
   c.fillStyle='rgba(255,170,80,.35)';c.beginPath();c.arc(222,138,10,0,6.283);c.fill();
   c.fillStyle='#f0bf3a';c.font='bold 15px system-ui,sans-serif';c.fillText('SHAPE CONQUEST',12,24);
+},
+
+'imposter':(c)=>{
+  _GV(c,0,0,320,200,'#0e0610','#170812','#200a14');
+  // a circle of cards: four show the word, one shows the imposter
+  const card=(x,y,r,face,imp)=>{c.save();c.translate(x,y);c.rotate(r);
+    c.fillStyle='rgba(0,0,0,.4)';c.fillRect(-25,-33,54,70);
+    c.fillStyle=imp?'#2a0a14':'#16112c';c.fillRect(-28,-36,54,70);
+    c.strokeStyle=imp?'#ff3355':'rgba(0,245,255,.6)';c.lineWidth=2;c.strokeRect(-28,-36,54,70);
+    c.textAlign='center';c.fillStyle=imp?'#ff3355':'#00f5ff';c.font=imp?'26px sans-serif':'bold 11px monospace';
+    c.fillText(face,-1,imp?8:4);c.restore();};
+  card(56,96,-0.28,'PIZZA',0);card(116,78,-0.1,'PIZZA',0);card(178,74,0.06,'?',1);card(240,82,0.2,'PIZZA',0);
+  // the suspicious eyes
+  c.fillStyle='#f4e8d8';c.beginPath();c.ellipse(166,150,10,6,0,0,6.283);c.ellipse(192,150,10,6,0,0,6.283);c.fill();
+  _C(c,170,151,3.2,'#111');_C(c,196,151,3.2,'#111');
+  c.textAlign='left';c.fillStyle='#ff3355';c.font='bold 15px system-ui,sans-serif';c.fillText('IMPOSTER',12,186);
+  c.fillStyle='rgba(255,255,255,.55)';c.font='bold 11px system-ui,sans-serif';c.fillText('one of you is faking it',100,186);
+},
+
+'most-likely-to':(c)=>{
+  _GV(c,0,0,320,200,'#120c06','#1a0e12','#22101c');
+  c.textAlign='center';c.fillStyle='#ff4fa3';c.font='bold 11px system-ui,sans-serif';c.fillText('WHO\'S MOST LIKELY TO…',160,26);
+  c.fillStyle='#fff5e8';c.font='bold 15px monospace';c.fillText('cry at a sad film?',160,48);
+  // vote bars
+  [['#ffc93c',150,'MUM'],['#00f5ff',96,'DAD'],['#00ff88',52,'NAN']].forEach(([col,w,n],i)=>{
+    c.fillStyle='rgba(255,255,255,.06)';c.fillRect(92,68+i*26,170,18);
+    c.fillStyle=col;c.fillRect(92,68+i*26,w,18);
+    c.textAlign='right';c.fillStyle='#fff5e8';c.font='bold 12px system-ui,sans-serif';c.fillText(n,84,81+i*26);});
+  // a gold crown over the winner, and a big one bottom-right
+  const crown=(x,y,k)=>{c.fillStyle='#ffc93c';c.beginPath();c.moveTo(x-12*k,y+8*k);c.lineTo(x-12*k,y-6*k);c.lineTo(x-6*k,y+1*k);c.lineTo(x,y-10*k);
+    c.lineTo(x+6*k,y+1*k);c.lineTo(x+12*k,y-6*k);c.lineTo(x+12*k,y+8*k);c.closePath();c.fill();
+    _C(c,x,y-10*k,2*k,'#ff4fa3');_C(c,x-12*k,y-6*k,1.6*k,'#00f5ff');_C(c,x+12*k,y-6*k,1.6*k,'#00f5ff');};
+  crown(258,76,0.8);crown(276,158,1.7);
+  c.textAlign='left';c.fillStyle='#ffc93c';c.font='bold 15px system-ui,sans-serif';c.fillText('MOST LIKELY TO',12,188);
 },
 
 'rhyme-bomb':(c)=>{

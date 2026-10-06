@@ -12,7 +12,7 @@ const SESSION_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const CODE_LEN = 6;
 const ROOM_LEN = 4;              // game-room codes are shorter — typed by hand mid-session
-const ROOM_MAX_PLAYERS = 8;      // party games seat up to eight; 1v1 games ask for 2
+const ROOM_MAX_PLAYERS = 16;     // party games seat up to sixteen; 1v1 games ask for 2
 const INVITE_TTL = 10 * 60 * 1000; // a game invite goes stale after 10 minutes
 const ONLINE_WINDOW = 90 * 1000;   // "online" = seen within 90s (hub polls every ~20s)
 const SAVE_MAX_BYTES = 512 * 1024; // per game-save cap — a colony snapshot is a few KB
@@ -767,7 +767,7 @@ export class Room extends DurableObject {
 
   // How many players this room holds. Two-player games never send `max`, so the
   // default keeps their "that game is full" behaviour exactly as it was; party
-  // games (3-8 players) declare a bigger room when the host creates it.
+  // games (3-16 players) declare a bigger room when the host creates it.
   async roomMax() {
     if (this._max) return this._max;
     const v = await this.ctx.storage.get("max");
