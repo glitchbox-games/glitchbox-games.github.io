@@ -780,8 +780,12 @@ export class Room extends DurableObject {
     try { m = JSON.parse(raw); } catch { return; }
 
     if (m.t === "create") {
+      // A host coming back after a dropped connection replaces its old, half-dead socket.
+      if (m.resume) {
+        for (const s of this.hosts()) if (s !== ws) { try { s.close(1000, "replaced"); } catch (e) { /* already gone */ } }
+      }
       // A second host on the same code means a code collision — bounce the newcomer.
-      if (this.hosts().length > 1) {
+      else if (this.hosts().length > 1) {
         this.send(ws, { t: "error", msg: "That code is already in use — try again." });
         return;
       }

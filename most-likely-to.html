@@ -86,7 +86,7 @@
   #roomlbl{ font-size:12px; color:var(--muted); font-weight:700; letter-spacing:1px; white-space:nowrap; }
   #progress{ height:3px; background:linear-gradient(90deg,var(--gold),var(--pink)); width:0; transition:width .5s; }
   #main{ flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; align-items:center; padding:20px 16px 90px; }
-  #stage, #qhead{ width:100%; max-width:680px; text-align:center; }
+  #stage, #qhead{ position:relative; width:100%; max-width:680px; text-align:center; }
   #stage h3{ font-family:'Press Start 2P',monospace; font-size:clamp(13px,3.4vw,18px); line-height:1.6; margin:4px 0 10px; }
   .sub{ font-size:17px; font-weight:600; line-height:1.45; color:#e6dccd; }
   .big{ font-family:'Press Start 2P',monospace; font-size:clamp(20px,6vw,38px); line-height:1.35; word-break:break-word; }
@@ -121,8 +121,12 @@
   .bar .bv{ position:absolute; left:8px; top:50%; transform:translateY(-50%); font-family:'Press Start 2P',monospace; font-size:12px; color:#000; mix-blend-mode:normal; }
   .bar.win .bn::before{ content:'👑 '; }
   @keyframes grow{ to{ width:var(--w); } }
-  .crown{ font-size:56px; opacity:0; animation:drop .6s ease-out 1.4s forwards; }
-  @keyframes drop{ from{ opacity:0; transform:translateY(-40px) rotate(-20deg); } to{ opacity:1; transform:none; } }
+  .podrow{ display:flex; justify-content:center; gap:22px; margin-top:16px; }
+  .crownwrap{ position:relative; padding-top:34px; }
+  .winav{ font-size:clamp(60px,17vw,92px); line-height:1; opacity:0; animation:popin .45s cubic-bezier(.3,1.6,.5,1) 1.1s forwards; }
+  .crown{ position:absolute; left:50%; top:0; font-size:44px; margin-left:-22px; opacity:0; animation:drop .55s cubic-bezier(.4,0,.6,1.4) var(--d) forwards; }
+  @keyframes popin{ from{ opacity:0; transform:scale(.3); } to{ opacity:1; transform:none; } }
+  @keyframes drop{ 0%{ opacity:0; transform:translateY(-140px) rotate(-30deg); } 70%{ opacity:1; transform:translateY(6px) rotate(8deg); } 100%{ opacity:1; transform:translateY(0) rotate(-8deg); } }
   .winline{ opacity:0; animation:fadein .5s ease-out 1.6s forwards; }
   .winname{ font-family:'Press Start 2P',monospace; font-size:clamp(20px,6vw,36px); line-height:1.4; color:var(--c); text-shadow:0 0 22px var(--c); word-break:break-word; }
   .later{ opacity:0; animation:fadein .5s ease-out 2.1s forwards; }
@@ -168,6 +172,43 @@
     .tally{ grid-template-columns:1fr; }
     .bar .bn{ width:84px; font-size:14px; }
   }
+  body::before{ content:''; position:fixed; inset:-25%; z-index:0; pointer-events:none;
+    background:radial-gradient(circle at 18% 30%,rgba(255,201,60,.10),transparent 28%),radial-gradient(circle at 80% 70%,rgba(255,79,163,.10),transparent 28%),
+               radial-gradient(circle at 55% 10%,rgba(0,245,255,.06),transparent 24%);
+    animation:drift 20s ease-in-out infinite alternate; }
+  @keyframes drift{ to{ transform:translate(5%,-4%) rotate(10deg); } }
+  .btn, .tile, .trow button{ transition:transform .08s, background .15s, box-shadow .15s; }
+  .btn:active:not(:disabled), .tile:active:not(:disabled), .trow button:active{ transform:scale(.95); }
+  .namerow{ gap:8px; }
+  .avbtn{ flex:none !important; width:50px; font-size:27px; line-height:1; background:#0d0916; border:1px solid var(--line); border-radius:10px; padding:0; }
+  .avbtn:active{ transform:scale(.9) rotate(-8deg); }
+  .lrow .avbtn{ width:38px; height:34px; font-size:20px; }
+  .lav{ font-size:20px; }
+  .tile .tav{ display:block; font-size:32px; line-height:1.1; margin-bottom:6px; transition:transform .2s; }
+  .tile.sel .tav{ transform:scale(1.22) rotate(-8deg); }
+  .bigav{ font-size:64px; line-height:1; margin:8px 0 2px; animation:bob 1.6s ease-in-out infinite; }
+  @keyframes bob{ 50%{ transform:translateY(-6px) rotate(4deg); } }
+  .aav{ font-size:24px; margin-right:8px; vertical-align:-3px; }
+  .bigtimer{ font-family:'Press Start 2P',monospace; font-size:20px; color:var(--gold); margin:10px 0 0; }
+  .bigtimer.low{ color:var(--red); animation:tpulse .5s infinite alternate; }
+  @keyframes tpulse{ to{ transform:scale(1.15); } }
+  #conn{ position:fixed; left:50%; top:10px; transform:translateX(-50%); z-index:70; background:#3a1a06; border:1px solid var(--gold); color:#ffe9b8;
+    padding:7px 16px; font-weight:700; font-size:14px; border-radius:20px; box-shadow:0 4px 20px rgba(0,0,0,.5); white-space:nowrap; }
+  #rx{ position:fixed; right:12px; bottom:70px; z-index:6; display:flex; align-items:center; gap:6px; }
+  #rx button{ width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.16); background:rgba(20,15,31,.92); font-size:22px; line-height:1; padding:0;
+    box-shadow:0 4px 14px rgba(0,0,0,.4); }
+  #rxpal{ display:flex; gap:4px; padding:4px; border-radius:26px; background:rgba(20,15,31,.95); border:1px solid rgba(255,255,255,.12); animation:palin .15s ease-out; }
+  #rxpal.hidden{ display:none; }
+  #rxpal button{ width:38px; height:38px; font-size:20px; border:none; background:transparent; box-shadow:none; }
+  @keyframes palin{ from{ transform:scaleX(.3); opacity:0; } }
+  #rx button:active{ transform:scale(.85); }
+  .floaty{ position:fixed; z-index:65; pointer-events:none; font-size:40px; text-align:center; animation:floatup 2.6s ease-out forwards; }
+  .floaty small{ display:block; font-size:12px; font-weight:700; color:#fff; background:rgba(0,0,0,.6); padding:1px 7px; border-radius:8px; white-space:nowrap; }
+  @keyframes floatup{ 0%{ transform:translateY(0) scale(.5); opacity:0; } 12%{ opacity:1; transform:translateY(-30px) scale(1.2); } 100%{ transform:translateY(-55vh) scale(1) rotate(12deg); opacity:0; } }
+  @media (max-width:500px){
+    #scores{ gap:4px; padding:6px 8px 8px 58px; }
+    .sc{ font-size:12px; padding:2px 6px; }
+  }
   #smokeout{ position:fixed; inset:0; z-index:999; background:#000; color:#0f0; font:12px/1.5 monospace; padding:12px; overflow:auto; white-space:pre-wrap; }
 </style>
 </head>
@@ -180,7 +221,7 @@
     <h1>MOST<br>LIKELY TO</h1>
     <div class="tag">who's most likely to… · vote · crown them</div>
     <label class="lbl">Your name</label>
-    <input class="in" id="myname" maxlength="14" placeholder="Your name" autocomplete="off"/>
+    <div class="row namerow"><button class="avbtn" id="myav" type="button" title="Tap to change your animal">🐶</button><input class="in" id="myname" maxlength="14" placeholder="Your name" autocomplete="off"/></div>
     <button class="btn pri" onclick="hostRoom()">Create a room (everyone on their phone)</button>
     <label class="lbl">Or join a room</label>
     <div class="row">
@@ -236,6 +277,8 @@
           <select id="set-rounds"><option value="5">5 (quick)</option><option value="10">10</option><option value="15" selected>15</option><option value="20">20</option><option value="30">30</option></select></div>
         <div class="set" id="set-style-row"><label for="set-style">Voting</label>
           <select id="set-style"><option value="point" selected>Point on three, then count</option><option value="pass">Secret: pass the phone</option></select></div>
+        <div class="set" id="set-timer-row"><label for="set-timer">Vote timer</label>
+          <select id="set-timer"><option value="0" selected>Off</option><option value="15">15 seconds</option><option value="30">30 seconds</option><option value="45">45 seconds</option></select></div>
         <div class="set" id="set-show-row"><label for="set-show">Show who voted for who</label>
           <select id="set-show"><option value="1" selected>Yes (funnier)</option><option value="0">No, keep it secret</option></select></div>
         <div class="set"><label for="set-self">Vote for yourself</label>
@@ -268,6 +311,8 @@
   <div id="scores"></div>
 </div>
 <canvas id="confetti" class="hidden"></canvas>
+<div id="conn" class="hidden"></div>
+<div id="rx" class="hidden"><div id="rxpal" class="hidden"></div><button id="rxbtn" data-act="rxt" title="React">😀</button></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script>
@@ -277,7 +322,7 @@ const $ = id => document.getElementById(id);
 const SMOKE = location.hash.indexOf('smoke') !== -1;
 const DEBUG = location.hash.indexOf('debug') !== -1;
 const MAX_PLAYERS = 16, MIN_PLAYERS = 3;
-const REVEAL_DELAY = 800, HOST_TIMEOUT = 12000, GUEST_TIMEOUT = 10000;
+const REVEAL_DELAY = 800, HOST_GIVEUP = 180000, GUEST_TIMEOUT = 10000;
 let SKEW = 0;
 const now = () => Date.now() + SKEW;
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -425,6 +470,74 @@ become a famous painter
 host their own podcast
 go back to school at 60
 swim with dolphins` },
+  { id:'grown', name:'Grown-ups', e:'☕', q:`complain about the price of a coffee
+have 47 tabs open on their phone
+say "back in my day"
+own a label maker
+check the weather app five times a day
+have strong opinions about bin day
+reload someone else's dishwasher
+get excited about a new kettle
+be asleep by 10pm on a Saturday
+read every review before buying anything
+go to IKEA for one thing and leave with forty
+still have the box for every gadget
+get way too competitive at a pub quiz
+make a spreadsheet for a holiday
+forget their password ten times a day
+take an hour to say goodbye at the door
+keep a drawer full of random cables
+talk back to the TV during the news
+lose their glasses while wearing them
+get up early on a day off "to make the most of it"
+own more mugs than cupboard space
+always have a plaster in their bag
+say "we should do this more often"
+spend a week choosing a paint colour
+know every neighbour's car` },
+  { id:'travel', name:'Holidays', e:'✈️', q:`pack the night before
+pack three weeks early
+forget their passport
+get sunburnt on the first day
+make friends with all the hotel staff
+get up at dawn to put a towel on a sunbed
+overpack by three suitcases
+get lost without a map
+speak English louder so the locals understand
+eat the same meal every single day
+come home with a silly hat
+take 500 photos of one sunset
+end up on the wrong train
+nearly miss their flight
+bring home a really strange souvenir
+read a whole book by the pool
+plan every minute of the trip
+lose their sunglasses on day one
+haggle at every market stall
+go on every rollercoaster twice
+send postcards that arrive after they get home
+fall asleep on the beach and wake up red
+order something they can't pronounce` },
+  { id:'work', name:'Work & school', e:'💼', q:`be the teacher's pet
+hand their homework in late
+end up running the company
+fall asleep in a meeting
+hit reply-all by mistake
+bring cake in for everyone
+be the class clown
+forget their PE kit
+know all the office gossip
+leave everything to the very last minute
+win employee of the month
+get the giggles in assembly
+correct the teacher
+have the messiest desk
+be late every single day
+volunteer for absolutely everything
+win the egg and spoon race
+pretend to be busy when the boss walks past
+come up with the best excuse for being late
+start a fun run for charity` },
   { id:'bday', name:'Birthday', e:'🎂', q:`eat the biggest slice of {B}'s birthday cake
 forget {B}'s birthday next year
 give {B} the best present
@@ -503,7 +616,8 @@ function setHTML(el, html){ if(el.__h !== html){ el.__h = html; el.innerHTML = h
 // ══════════════ NET ══════════════
 const CODE_A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 function rcode(n){ let s = ''; const r = new Uint8Array(n); crypto.getRandomValues(r); for(const b of r) s += CODE_A[b % CODE_A.length]; return s; }
-const MY_CID = rcode(6);
+// Kept per browser tab, so a phone that reloads or reconnects is still the same player.
+const MY_CID = (() => { try { let c = sessionStorage.getItem('mlt.cid'); if(!c || SMOKE){ c = rcode(6); sessionStorage.setItem('mlt.cid', c); } return c; } catch(e){ return rcode(6); } })();
 function wsURL(room, role){
   const base = window.GLITCHBOX_WS && !/PLACEHOLDER/i.test(window.GLITCHBOX_WS)
     ? window.GLITCHBOX_WS : (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws';
@@ -511,28 +625,50 @@ function wsURL(room, role){
 }
 let MODE = 'off';   // off | host | guest | local
 const net = {
-  ws:null, code:'', online:false,
+  ws:null, code:'', role:'', online:false, want:false, tries:0, timer:0, onOpen:null, heard:0, openedAt:0,
   connect(room, role, onOpen){
-    this.close(); this.code = room; this.online = true;
-    homeStatus('Connecting…');
+    this.close(); this.code = room; this.role = role; this.onOpen = onOpen; this.want = true; this.tries = 0;
+    homeStatus('Connecting…'); this.open();
+  },
+  open(){
+    clearTimeout(this.timer);
+    if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; }
     let ws;
-    try { ws = new WebSocket(wsURL(room, role)); }
-    catch(e){ homeStatus('Couldn’t reach the game server.', true); this.online = false; return; }
-    this.ws = ws;
-    ws.onopen = () => onOpen && onOpen();
-    ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch(e){ return; } handleNet(m); };
-    ws.onerror = () => homeStatus('Couldn’t reach the game server. Check your connection.', true);
-    ws.onclose = () => { if(!this.online) return; this.online = false; dropToHome('Lost the connection to the game server.'); };
+    try { ws = new WebSocket(wsURL(this.code, this.role)); } catch(e){ this.lost(); return; }
+    this.ws = ws; this.openedAt = this.heard = Date.now();
+    ws.onopen = () => { this.online = true; this.heard = Date.now(); this.onOpen && this.onOpen(); };
+    ws.onmessage = ev => { this.heard = Date.now(); let m; try { m = JSON.parse(ev.data); } catch(e){ return; } handleNet(m); };
+    ws.onclose = () => { if(this.ws !== ws) return; this.ws = null; this.online = false; this.lost(); };
+  },
+  // Phones drop the connection whenever the screen locks or you switch apps, so
+  // once you're in a game it keeps quietly reconnecting instead of throwing you out.
+  lost(){
+    if(!this.want) return;
+    if(G.phase === 'off'){ this.want = false; MODE = 'off'; homeStatus('Couldn’t reach the game server. Check your connection.', true); return; }
+    this.tries++;
+    if(this.tries > 45){ dropToHome('Lost the connection to the game server.'); return; }
+    setConn('📡 Reconnecting…');
+    clearTimeout(this.timer); this.timer = setTimeout(() => this.open(), Math.min(4000, 300 * this.tries));
+  },
+  retry(){ if(!this.want) return; if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; } this.online = false; this.lost(); },
+  nudge(){ if(this.want && !this.online){ clearTimeout(this.timer); this.open(); } },
+  // A socket can look open after a phone wakes up but carry nothing. The host speaks every
+  // 2s and guests every 2s, so a long silence means it's dead: throw it away and reconnect.
+  stale(limit){
+    if(!this.want || !this.ws) return false;            // a reconnect is already on its way
+    if(this.ws.readyState === 0) return Date.now() - this.openedAt > 8000;
+    return this.ws.readyState !== 1 || Date.now() - this.heard > limit;
   },
   send(o){ if(this.online && this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); },
-  close(){ this.online = false; if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; } },
+  close(){ this.want = false; this.online = false; clearTimeout(this.timer); if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; } },
 };
+function setConn(t){ const e = $('conn'); if(!e) return; e.textContent = t || ''; e.classList.toggle('hidden', !t); }
 
 // ══════════════ SHARED STATE ══════════════
-const DEFAULT_SET = { rounds:15, style:'point', show:1, self:1, write:1, packs:['classic','family','silly','bday'], custom:'', bday:'' };
+const DEFAULT_SET = { rounds:15, timer:0, style:'point', show:1, self:1, write:1, packs:['classic','family','silly','bday'], custom:'', bday:'' };
 const G = { phase:'off', players:[], host:'', settings:JSON.parse(JSON.stringify(DEFAULT_SET)),
-            qn:0, total:0, prompt:'', own:0, voted:[], wdone:[], res:null, hist:[], vi:0, vShow:0 };
-const HS = { deck:[], votes:{}, tally:{}, written:[], seen:{}, revealAt:0, lastPush:0 };
+            qn:0, total:0, prompt:'', own:0, voted:[], wdone:[], res:null, hist:[], vi:0, vShow:0, deadline:0, qtime:0 };
+const HS = { deck:[], votes:{}, tally:{}, written:[], seen:{}, revealAt:0, lastPush:0, asked:[] };
 let lastHostMsg = 0;
 const P = cid => G.players.find(p => p.cid === cid);
 const isHostSide = () => MODE === 'host' || MODE === 'local';
@@ -540,23 +676,27 @@ const isHostSide = () => MODE === 'host' || MODE === 'local';
 const countMode = () => MODE === 'local' && G.settings.style === 'point';
 
 function packState(){
-  return { t:'st', ph:G.phase, pl:G.players.map(p => [p.cid, p.name, p.ci, p.score, p.crowns]), h:G.host, set:G.settings,
+  return { t:'st', ph:G.phase, pl:G.players.map(p => [p.cid, p.name, p.ci, p.score, p.crowns, p.av, p.away ? 1 : 0]), h:G.host, set:G.settings, dl:G.deadline ? Math.max(0, G.deadline - now()) : 0, dt:G.qtime,
            qn:G.qn, tot:G.total, pr:G.prompt, own:G.own, vd:G.voted, wd:G.wdone, res:G.res, hist:G.phase === 'over' ? G.hist : [] };
 }
 function hostOut(o){ if(MODE === 'host') net.send(o); clientHandle(o); }
-function pushState(){ HS.lastPush = now(); hostOut(packState()); }
+function pushState(){ HS.lastPush = now(); hostOut(packState()); saveSession(); }
 function nextColor(){ for(let i=0;i<COLORS.length;i++) if(!G.players.some(p => p.ci === i)) return i; return G.players.length % COLORS.length; }
-function newPlayer(cid, name){ return { cid, name:String(name || 'Player').slice(0,14), ci:nextColor(), score:0, crowns:0 }; }
+function newPlayer(cid, name, av){ return { cid, name:String(name || 'Player').slice(0,14), ci:nextColor(), score:0, crowns:0, av:av == null || isNaN(av) ? freeAvatar() : Math.abs(av | 0) % AVATARS.length, away:false }; }
 
-function hostAddPlayer(cid, name){
+function hostAddPlayer(cid, name, av){
   HS.seen[cid] = now();
   const p = P(cid);
-  if(p){ p.name = String(name || p.name).slice(0,14); pushState(); return; }
+  // Someone coming back (reconnected or refreshed) keeps their seat, crowns and points.
+  if(p){ if(G.phase === 'lobby') p.name = uniqueName(name || p.name, cid); if(av != null && !G.players.some(q => q !== p && q.av === Math.abs(av | 0) % AVATARS.length)) p.av = Math.abs(av | 0) % AVATARS.length; p.away = false; pushState(); return; }
   if(G.players.length >= MAX_PLAYERS){ net.send({ t:'full', to:cid }); return; }
-  G.players.push(newPlayer(cid, name));
+  G.players.push(newPlayer(cid, uniqueName(name, cid), uniqueAv(av)));
   if(G.phase !== 'lobby') hostOut({ t:'tst', m:String(name || 'Someone').slice(0,14) + ' joined the game!' });
   pushState();
 }
+// A phone went quiet (screen locked, app switched). Keep their seat; stop waiting on them.
+function onAway(cid){ if(G.phase === 'q') checkVotes(); else if(G.phase === 'write') checkWritten(); }
+function hostResumed(){}
 function hostRemove(cid, why){
   const p = P(cid);
   if(!p || (MODE === 'host' && cid === MY_CID)) return;
@@ -578,18 +718,18 @@ function cleanSettings(s){
   const n = (v, lo, hi, d) => { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); };
   const ids = PACKS.map(p => p.id);
   const packs = Array.isArray(s.packs) ? s.packs.filter(p => ids.includes(p)) : DEFAULT_SET.packs.slice();
-  return { rounds:n(s.rounds,3,60,15), style:s.style === 'pass' ? 'pass' : 'point', show:s.show == 0 ? 0 : 1, self:s.self == 0 ? 0 : 1,
+  return { rounds:n(s.rounds,3,60,15), timer:[0,15,30,45].includes(+s.timer) ? +s.timer : 0, style:s.style === 'pass' ? 'pass' : 'point', show:s.show == 0 ? 0 : 1, self:s.self == 0 ? 0 : 1,
            write:n(s.write,0,3,1), packs, custom:String(s.custom || '').slice(0,3000), bday:String(s.bday || '').trim().slice(0,20) };
 }
 function hostSettings(s){ G.settings = cleanSettings(s); pushState(); }
 function readSettings(){
   if(!isHostSide()) return;
   const packs = [...document.querySelectorAll('#packs .cat.on')].map(b => b.dataset.id);
-  hostSettings({ rounds:$('set-rounds').value, style:$('set-style').value, show:$('set-show').value, self:$('set-self').value,
+  hostSettings({ rounds:$('set-rounds').value, timer:$('set-timer').value, style:$('set-style').value, show:$('set-show').value, self:$('set-self').value,
                  write:$('set-write').value, packs, custom:$('set-custom').value, bday:$('set-bday').value });
   try { localStorage.setItem('mlt.set', JSON.stringify(G.settings)); } catch(e){}
 }
-['set-rounds','set-style','set-show','set-self','set-write'].forEach(id => $(id).addEventListener('change', readSettings));
+['set-rounds','set-timer','set-style','set-show','set-self','set-write'].forEach(id => $(id).addEventListener('change', readSettings));
 let typeT = 0;
 ['set-custom','set-bday'].forEach(id => $(id).addEventListener('input', () => { clearTimeout(typeT); typeT = setTimeout(readSettings, 350); }));
 $('packs').addEventListener('click', e => {
@@ -618,7 +758,9 @@ function buildDeck(dry){
   PACKS.filter(k => G.settings.packs.includes(k.id)).forEach(k => k.list.forEach(p => { if(!seen.has(p.toLowerCase())){ seen.add(p.toLowerCase()); pool.push({ p, own:0 }); } }));
   const want = G.settings.rounds;
   const ownPart = shuffle(own).slice(0, want);
-  const deck = shuffle(ownPart.concat(shuffle(pool).slice(0, Math.max(0, want - ownPart.length))));
+  const asked = new Set(HS.asked);
+  const fresh = shuffle(pool.filter(c => !asked.has(c.p))), stale = shuffle(pool.filter(c => asked.has(c.p)));
+  const deck = shuffle(ownPart.concat(fresh.concat(stale).slice(0, Math.max(0, want - ownPart.length))));
   if(dry) return deck.length > 0 || G.settings.write > 0 && MODE === 'host';
   HS.deck = deck;
   return deck.length > 0;
@@ -630,7 +772,7 @@ function hostWrite(cid, list){
   if(!checkWritten()) pushState();
 }
 function checkWritten(){
-  if(G.phase === 'write' && G.players.every(p => G.wdone.includes(p.cid))){ beginQuestions(); return true; }
+  if(G.phase === 'write' && G.players.every(p => G.wdone.includes(p.cid) || p.away)){ beginQuestions(); return true; }
   return false;
 }
 function beginQuestions(){
@@ -643,6 +785,8 @@ function nextQ(){
   const card = HS.deck[G.qn];
   G.qn++; G.prompt = fillB(card.p); G.own = card.own;
   HS.votes = {}; HS.tally = {}; HS.revealAt = 0; G.voted = []; G.res = null; G.vi = 0; G.vShow = 0;
+  HS.asked.push(card.p);
+  G.qtime = MODE === 'host' ? G.settings.timer : 0; G.deadline = G.qtime ? now() + G.qtime * 1000 : 0;
   G.phase = 'q';
   pushState();
 }
@@ -654,13 +798,13 @@ function hostVote(voter, target){
   if(!checkVotes()) pushState();
 }
 function checkVotes(){
-  if(G.phase === 'q' && !HS.revealAt && G.players.length && G.players.every(p => HS.votes[p.cid])){
+  if(G.phase === 'q' && !HS.revealAt && Object.keys(HS.votes).length && G.players.every(p => HS.votes[p.cid] || p.away)){
     HS.revealAt = now() + (MODE === 'local' ? 0 : REVEAL_DELAY); pushState(); return true;
   }
   return false;
 }
 function reveal(){
-  HS.revealAt = 0;
+  HS.revealAt = 0; G.deadline = 0;
   const counts = {};
   if(countMode()){ for(const c in HS.tally) if(P(c) && HS.tally[c] > 0) counts[c] = HS.tally[c]; }
   else for(const v in HS.votes){ const t = HS.votes[v]; if(P(t)) counts[t] = (counts[t] || 0) + 1; }
@@ -683,8 +827,15 @@ function hostTick(){
   if(!isHostSide()) return;
   const t = now();
   if(G.phase === 'q' && HS.revealAt && t >= HS.revealAt) reveal();
+  else if(G.phase === 'q' && G.deadline && t >= G.deadline && !HS.revealAt) reveal();
   if(MODE === 'host'){
-    for(const p of G.players.slice()) if(p.cid !== MY_CID && t - (HS.seen[p.cid] || t) > GUEST_TIMEOUT) hostRemove(p.cid, 'timeout');
+    for(const p of G.players.slice()){
+      if(p.cid === MY_CID) continue;
+      const quiet = t - (HS.seen[p.cid] || t);
+      // A locked phone keeps its seat and score; the game just stops waiting for it.
+      if(quiet > GUEST_TIMEOUT && !p.away){ p.away = true; onAway(p.cid); pushState(); }
+      if(p.away && G.phase === 'lobby' && quiet > 45000) hostRemove(p.cid, 'timeout');
+    }
     if(t - HS.lastPush > 2000) pushState();
   }
 }
@@ -693,28 +844,38 @@ function hostTick(){
 function handleNet(m){
   switch(m.t){
     case 'created':
-      homeStatus('');
+      homeStatus(''); setConn(''); net.tries = 0;
+      if(MODE === 'host' && G.phase !== 'off' && G.host === MY_CID && G.players.length){
+        // Back after a dropped connection (or a page refresh): carry on where we were.
+        G.players.forEach(p => { HS.seen[p.cid] = now(); });
+        pushState(); drawQR(); hostResumed();
+        return;
+      }
       G.phase = 'lobby'; G.host = MY_CID; HS.seen = {};
-      G.players = [newPlayer(MY_CID, myName())];
+      G.players = [newPlayer(MY_CID, myName(), MY_AV)];
       pushState(); loadLobbyFriends(); drawQR();
       return;
     case 'joined':
-      homeStatus('Joined — waiting for the host…');
-      lastHostMsg = now();
-      net.send({ t:'hi', cid:MY_CID, name:myName() });
+      homeStatus('Joined — waiting for the host…'); setConn(''); net.tries = 0;
+      lastHostMsg = now(); saveSession();
+      net.send(hiMsg());
       return;
     case 'start':
-      if(MODE === 'guest') net.send({ t:'hi', cid:MY_CID, name:myName() });
+      if(MODE === 'guest') net.send(hiMsg());
       return;
     case 'error':
+      // Mid-game this usually means the host's phone is reconnecting: keep trying.
+      if(G.phase !== 'off' && net.want){ net.retry(); return; }
+      clearSession();
       homeStatus(m.msg || 'That didn’t work.', true);
       net.close(); MODE = 'off'; G.phase = 'off'; show('screen-home');
       return;
     case 'left': return;
   }
   if(MODE === 'host'){
-    if(m.cid && P(m.cid)) HS.seen[m.cid] = now();
-    if(m.t === 'hi') hostAddPlayer(m.cid, m.name);
+    if(m.cid && P(m.cid)){ HS.seen[m.cid] = now(); if(P(m.cid).away && m.t !== 'bye'){ P(m.cid).away = false; pushState(); } }
+    if(m.t === 'rx'){ floatRx(m); return; }
+    if(m.t === 'hi') hostAddPlayer(m.cid, m.name, m.av);
     else if(m.t === 'hb'){ if(!P(m.cid)) net.send({ t:'who', to:m.cid }); }
     else if(m.t === 'v') hostVote(m.cid, m.v);
     else if(m.t === 'w') hostWrite(m.cid, m.list);
@@ -731,15 +892,16 @@ function clientHandle(m){
       G.phase = m.ph; G.host = m.h; G.qn = m.qn; G.total = m.tot; G.prompt = m.pr; G.own = m.own;
       G.voted = m.vd || []; G.wdone = m.wd || []; G.res = m.res;
       if(MODE === 'guest'){ G.settings = m.set || G.settings; G.hist = m.hist || []; }
-      G.players = m.pl.map(r => ({ cid:r[0], name:r[1], ci:r[2], score:r[3], crowns:r[4] }));
-      if(MODE === 'guest' && !P(MY_CID) && G.phase !== 'off') net.send({ t:'hi', cid:MY_CID, name:myName() });
+      G.players = m.pl.map(r => ({ cid:r[0], name:r[1], ci:r[2], score:r[3], crowns:r[4], av:r[5] | 0, away:!!r[6] }));
+      G.deadline = m.dl ? now() + m.dl : 0; G.qtime = m.dt || 0;
+      if(MODE === 'guest' && !P(MY_CID) && G.phase !== 'off') net.send(hiMsg());
       render();
       return;
     }
     case 'tst': toast(m.m); return;
     case 'full': dropToHome('That room is full.'); return;
     case 'kick': dropToHome('The host removed you from the room.'); return;
-    case 'who': net.send({ t:'hi', cid:MY_CID, name:myName() }); return;
+    case 'who': net.send(hiMsg()); return;
   }
 }
 function act(type, data){
@@ -754,7 +916,7 @@ function act(type, data){
 let UI = {}, lastKey = '';
 function nameOf(cid){ const p = P(cid); return p ? p.name : '?'; }
 function colOf(cid){ const p = P(cid); return p ? COLORS[p.ci] : '#888'; }
-function chip(cid){ return '<span class="who" style="--c:' + colOf(cid) + '">' + esc(nameOf(cid)) + '</span>'; }
+function chip(cid){ return '<span class="who" style="--c:' + colOf(cid) + '">' + avOf(cid) + ' ' + esc(nameOf(cid)) + '</span>'; }
 function qHead(){
   return '<div class="q-pre">Who’s most likely to…</div><div class="q-text">' + esc(G.prompt) + '?</div>' +
     (G.own ? '<div class="q-own">✍ written by someone here</div>' : '');
@@ -767,8 +929,9 @@ function render(){
   if(k !== lastKey){
     lastKey = k; UI = {}; $('main').scrollTop = 0;
     if(G.phase === 'q') Sound.q();
-    if(G.phase === 'reveal'){ Sound.drum(); if(G.res && G.res.win.length) Sound.crown(); }
-    if(G.phase === 'over'){ Sound.win(); confetti(); } else hideConfetti();
+    hideConfetti();
+    if(G.phase === 'reveal'){ Sound.drum(); if(G.res && G.res.win.length){ Sound.crown(); setTimeout(() => { if(G.phase === 'reveal') confetti(70, 3000); }, 1600); } }
+    if(G.phase === 'over'){ Sound.win(); confetti(); }
   }
   $('roundlbl').textContent = G.phase === 'over' ? 'The awards' : G.phase === 'write' ? 'Writing questions' : 'Question ' + G.qn + ' of ' + G.total;
   $('roomlbl').textContent = MODE === 'local' ? 'ONE SCREEN' : 'ROOM ' + net.code;
@@ -778,17 +941,17 @@ function render(){
   // The write form holds typed text, so it's only built once per visit.
   if(G.phase === 'write' && UI.built && !G.wdone.includes(MY_CID)){ updateWriteWait(); }
   else { setHTML($('stage'), fn ? fn() : ''); if(G.phase === 'write') UI.built = 1; }
-  setHTML($('scores'), G.players.map(p => '<span class="sc' + (p.cid === MY_CID && MODE !== 'local' ? ' me' : '') + '" style="--c:' + COLORS[p.ci] + '">' + esc(p.name) +
+  setHTML($('scores'), G.players.map(p => '<span class="sc' + (p.cid === MY_CID && MODE !== 'local' ? ' me' : '') + '" style="--c:' + COLORS[p.ci] + '">' + AVATARS[p.av] + ' ' + esc(p.name) + (p.away ? ' 💤' : '') +
     '<b>' + (p.crowns ? '👑' + p.crowns + ' ' : '') + (countMode() ? '' : '🧠' + p.score) + '</b></span>').join(''));
   $('scores').classList.toggle('hidden', G.phase === 'over' || G.phase === 'write');
   fitScores();
 }
 // Keep the score strip from covering the bottom of the page, however many rows it wraps to.
-function fitScores(){ const sc = $('scores'); $('main').style.paddingBottom = (sc.classList.contains('hidden') ? 24 : sc.offsetHeight + 24) + 'px'; }
+function fitScores(){ const sc = $('scores'), h = sc.classList.contains('hidden') ? 0 : sc.offsetHeight; $('main').style.paddingBottom = (h + 24) + 'px'; $('rx').style.bottom = (h + 10) + 'px'; paintRx(); }
 addEventListener('resize', () => { if(G.phase !== 'off' && G.phase !== 'lobby') fitScores(); });
 function stWrite(){
   const n = G.settings.write;
-  const waiting = G.players.filter(p => !G.wdone.includes(p.cid)).map(p => esc(p.name));
+  const waiting = G.players.filter(p => !G.wdone.includes(p.cid) && !p.away).map(p => esc(p.name));
   if(G.wdone.includes(MY_CID)) return '<h3>Thanks! ✍</h3><div class="sub">Your question' + (n > 1 ? 's are' : ' is') + ' in the pile. Nobody will know it was you.</div>' +
     '<div class="waitnote" id="wwait">Waiting for ' + waiting.join(', ') + '…</div>' + hostSkipWrite();
   let rows = '';
@@ -805,22 +968,23 @@ function stQ(){
   if(MODE === 'local' && G.settings.style === 'point') return stQPoint();
   if(MODE === 'local') return stQPass();
   const mine = UI.vote;
-  const done = G.voted.length, n = G.players.length;
-  const waiting = G.players.filter(p => !G.voted.includes(p.cid)).map(p => esc(p.name));
+  const awake = G.players.filter(p => !p.away);
+  const done = G.voted.length, n = awake.length;
+  const waiting = awake.filter(p => !G.voted.includes(p.cid)).map(p => esc(p.name));
   if(!P(MY_CID)) return '';
-  return tilesHTML(MY_CID, mine) +
+  return (G.deadline ? '<div class="bigtimer" id="tleft"></div>' : '') + tilesHTML(MY_CID, mine) +
     '<div class="waitnote">' + (done >= n ? 'All votes are in… 🥁' : done + '/' + n + ' voted' + (waiting.length <= 4 ? ' · waiting for ' + waiting.join(', ') : '')) + '</div>' +
     (MODE === 'host' && done && done < n ? '<button class="btn small" data-act="force">Reveal now</button>' : '');
 }
 function tilesHTML(voter, sel){
   return '<div class="tiles">' + G.players.filter(p => canPick(voter, p.cid)).map(p =>
-    '<button class="tile' + (sel === p.cid ? ' sel' : '') + '" style="--c:' + COLORS[p.ci] + '" data-act="vote" data-v="' + esc(p.cid) + '">' + esc(p.name) +
+    '<button class="tile' + (sel === p.cid ? ' sel' : '') + '" style="--c:' + COLORS[p.ci] + '" data-act="vote" data-v="' + esc(p.cid) + '"><span class="tav">' + AVATARS[p.av] + '</span>' + esc(p.name) + (p.away ? ' 💤' : '') +
     (p.cid === voter ? ' <span style="color:var(--muted);font-size:13px">(me)</span>' : '') + '</button>').join('') + '</div>';
 }
 function stQPass(){
   const p = G.players[G.vi];
   if(!p) return '';
-  if(!G.vShow) return '<div class="sub" style="margin-top:18px">Pass the phone to</div><div class="big" style="color:' + COLORS[p.ci] + '">' + esc(p.name) + '</div>' +
+  if(!G.vShow) return '<div class="sub" style="margin-top:18px">Pass the phone to</div><div class="bigav">' + AVATARS[p.av] + '</div><div class="big" style="color:' + COLORS[p.ci] + '">' + esc(p.name) + '</div>' +
     '<div class="note">Secret vote ' + (G.vi + 1) + ' of ' + G.players.length + '</div><button class="btn pri" data-act="pshow">I’m ' + esc(p.name) + ', let me vote</button>';
   return '<div class="sub" style="margin-top:8px">' + chip(p.cid) + ', who’s your pick? 🤫</div>' + tilesHTML(p.cid, '');
 }
@@ -832,22 +996,26 @@ function stQPoint(){
   }
   const total = Object.values(HS.tally).reduce((a, b) => a + b, 0);
   return '<div class="sub" style="margin-top:8px">Count the fingers! How many pointed at each person?</div>' +
-    '<div class="tally">' + G.players.map(p => '<div class="trow" style="--c:' + COLORS[p.ci] + '"><span class="tn">' + esc(p.name) + '</span>' +
+    '<div class="tally">' + G.players.map(p => '<div class="trow" style="--c:' + COLORS[p.ci] + '"><span class="tn">' + AVATARS[p.av] + ' ' + esc(p.name) + '</span>' +
       '<button data-act="tminus" data-v="' + esc(p.cid) + '">−</button><span class="tc">' + (HS.tally[p.cid] || 0) + '</span>' +
       '<button class="plus" data-act="tplus" data-v="' + esc(p.cid) + '">+</button></div>').join('') + '</div>' +
     '<button class="btn pri" data-act="treveal"' + (total ? '' : ' disabled') + '>Crown them! 👑</button>';
+}
+// The crown drops out of the sky and lands on the winner's head.
+function crowned(win){
+  return '<div class="podrow">' + win.slice(0, 4).map((c, i) => '<div class="crownwrap" style="--d:' + (1.3 + i * .15) + 's"><div class="crown">👑</div><div class="winav">' + avOf(c) + '</div></div>').join('') + '</div>';
 }
 function stReveal(){
   const R = G.res; if(!R) return '';
   const max = R.counts.length ? R.counts[0][1] : 0;
   const bars = R.counts.length ? '<div class="bars">' + R.counts.map((c, i) =>
-    '<div class="bar' + (R.win.includes(c[0]) ? ' win' : '') + '" style="--c:' + colOf(c[0]) + '"><span class="bn">' + esc(nameOf(c[0])) + '</span>' +
+    '<div class="bar' + (R.win.includes(c[0]) ? ' win' : '') + '" style="--c:' + colOf(c[0]) + '"><span class="bn">' + avOf(c[0]) + ' ' + esc(nameOf(c[0])) + '</span>' +
     '<span class="bt"><span class="bf" style="--w:' + Math.round(100 * c[1] / max) + '%;--d:' + (0.15 * i) + 's"></span><span class="bv">' + c[1] + '</span></span></div>').join('') + '</div>' : '';
   let line;
   if(!R.win.length) line = '<div class="winline"><div class="sub">Nobody voted! 🤷</div></div>';
-  else if(R.win.length === 1) line = '<div class="crown">👑</div><div class="winline"><div class="winname" style="--c:' + colOf(R.win[0]) + '">' + esc(nameOf(R.win[0]).toUpperCase()) + '</div>' +
+  else if(R.win.length === 1) line = crowned(R.win) + '<div class="winline"><div class="winname" style="--c:' + colOf(R.win[0]) + '">' + esc(nameOf(R.win[0]).toUpperCase()) + '</div>' +
     '<div class="sub" style="margin-top:6px">is most likely to ' + esc(R.p) + '!</div></div>';
-  else line = '<div class="crown">👑</div><div class="winline"><div class="winname" style="--c:var(--gold)">' + R.win.map(c => '<span style="color:' + colOf(c) + '">' + esc(nameOf(c).toUpperCase()) + '</span>').join(' &amp; ') + '</div>' +
+  else line = crowned(R.win) + '<div class="winline"><div class="winname" style="--c:var(--gold)">' + R.win.map(c => '<span style="color:' + colOf(c) + '">' + esc(nameOf(c).toUpperCase()) + '</span>').join(' &amp; ') + '</div>' +
     '<div class="sub" style="margin-top:6px">are tied for most likely to ' + esc(R.p) + '!</div></div>';
   const votes = R.votes.length ? '<div class="votes">' + R.votes.map(v => '<span class="vchip">' + chip(v[0]) + ' → ' + chip(v[1]) + '</span>').join('') + '</div>' : '';
   const pts = R.pts.length ? '<div class="pts">🧠 ' + R.pts.map(p => '<span class="pt">' + chip(p[0]) + ' +1</span>').join('') + '</div>' : '';
@@ -862,7 +1030,7 @@ function stOver(){
   const ps = G.players.slice();
   const crownsOf = cid => G.hist.filter(h => h.w.includes(cid)).map(h => h.p);
   const mostCrowns = Math.max(0, ...ps.map(p => p.crowns));
-  const crowned = mostCrowns ? ps.filter(p => p.crowns === mostCrowns) : [];
+  const kings = mostCrowns ? ps.filter(p => p.crowns === mostCrowns) : [];
   const bestMind = countMode() ? 0 : Math.max(0, ...ps.map(p => p.score));
   const minds = bestMind ? ps.filter(p => p.score === bestMind) : [];
   const bd = G.settings.bday;
@@ -870,12 +1038,12 @@ function stOver(){
   return '<div style="font-size:56px">🏆</div><h3>THE AWARDS</h3>' +
     (bd ? '<div class="bday">🎂 Happy birthday, ' + esc(bd) + '! 🎉</div>' : '') +
     '<div class="headline">' +
-      (crowned.length ? '<div class="hl">👑 Most crowns: <b>' + crowned.map(p => esc(p.name)).join(' &amp; ') + '</b> (' + mostCrowns + ')</div>' : '') +
-      (minds.length ? '<div class="hl">🧠 Mind reader: <b>' + minds.map(p => esc(p.name)).join(' &amp; ') + '</b> (' + bestMind + ' right)</div>' : '') +
+      (kings.length ? '<div class="hl">👑 Most crowns: <b>' + kings.map(p => AVATARS[p.av] + ' ' + esc(p.name)).join(' &amp; ') + '</b> (' + mostCrowns + ')</div>' : '') +
+      (minds.length ? '<div class="hl">🧠 Mind reader: <b>' + minds.map(p => AVATARS[p.av] + ' ' + esc(p.name)).join(' &amp; ') + '</b> (' + bestMind + ' right)</div>' : '') +
     '</div>' +
     '<div class="awards">' + sorted.map(p => {
       const list = crownsOf(p.cid);
-      return '<div class="award" style="--c:' + COLORS[p.ci] + '"><div class="an">' + esc(p.name) + '</div>' +
+      return '<div class="award" style="--c:' + COLORS[p.ci] + '"><div class="an"><span class="aav">' + AVATARS[p.av] + '</span>' + esc(p.name) + '</div>' +
         '<div class="as">' + list.length + ' crown' + (list.length === 1 ? '' : 's') + (countMode() ? '' : ' · 🧠 ' + p.score) + '</div>' +
         (list.length ? '<div class="as" style="margin-bottom:2px">Most likely to…</div><ul>' + list.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>'
                      : '<div class="none">A total mystery. Nobody could pin them down!</div>') + '</div>';
@@ -894,13 +1062,14 @@ function renderLobby(){
   const list = $('lobby-list');
   if(local){
     if(!list.contains(document.activeElement) || list.children.length !== G.players.length){
-      list.innerHTML = G.players.map((p, i) => '<div class="lrow" style="border-color:' + COLORS[p.ci] + '"><input data-i="' + i + '" maxlength="14" value="' + esc(p.name) + '"/>' +
+      list.innerHTML = G.players.map((p, i) => '<div class="lrow" style="border-color:' + COLORS[p.ci] + '"><button class="avbtn" data-avi="' + i + '" title="Tap to change">' + AVATARS[p.av] + '</button><input data-i="' + i + '" maxlength="14" value="' + esc(p.name) + '"/>' +
         (G.players.length > MIN_PLAYERS ? '<button class="kick" data-rm="' + i + '">✕</button>' : '') + '</div>').join('');
       list.querySelectorAll('input').forEach(inp => inp.oninput = () => { const p = G.players[+inp.dataset.i]; if(p) p.name = inp.value.slice(0,14); });
       list.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { G.players.splice(+b.dataset.rm, 1); render(); });
+      list.querySelectorAll('[data-avi]').forEach(b => b.onclick = () => { const p = G.players[+b.dataset.avi]; if(!p) return; p.av = (p.av + 1) % AVATARS.length; b.textContent = AVATARS[p.av]; });
     }
   } else {
-    list.innerHTML = G.players.map(p => '<div class="lrow" style="border-color:' + COLORS[p.ci] + '"><span class="nm">' + esc(p.name) + '</span>' +
+    list.innerHTML = G.players.map(p => '<div class="lrow" style="border-color:' + COLORS[p.ci] + '"><span class="lav">' + AVATARS[p.av] + '</span><span class="nm">' + esc(p.name) + (p.away ? ' 💤' : '') + '</span>' +
       (p.cid === G.host ? '<span class="badge">host</span>' : '') + (p.cid === MY_CID ? '<span class="badge">you</span>' : '') +
       (host && p.cid !== MY_CID ? '<button class="kick" data-kick="' + esc(p.cid) + '">kick</button>' : '') + '</div>').join('');
     list.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => { net.send({ t:'kick', to:b.dataset.kick }); hostRemove(b.dataset.kick, 'kick'); });
@@ -909,13 +1078,15 @@ function renderLobby(){
   $('set-style-row').classList.toggle('hidden', !local);
   $('set-show-row').classList.toggle('hidden', local && s.style === 'point');
   $('set-write-row').classList.toggle('hidden', local);
+  $('set-timer-row').classList.toggle('hidden', local);
+  $('set-timer').value = String(s.timer);
   $('set-rounds').value = String(s.rounds); $('set-style').value = s.style; $('set-show').value = String(s.show);
   $('set-self').value = String(s.self); $('set-write').value = String(s.write);
   if(document.activeElement !== $('set-custom')) $('set-custom').value = s.custom;
   if(document.activeElement !== $('set-bday')) $('set-bday').value = s.bday;
   setHTML($('packs'), PACKS.map(k => '<button class="cat' + (s.packs.includes(k.id) ? ' on' : '') + '" data-id="' + k.id + '"' + (host ? '' : ' disabled') + '>' +
     k.e + ' ' + esc(k.name) + ' <span style="opacity:.6">' + k.list.length + '</span></button>').join(''));
-  ['set-rounds','set-style','set-show','set-self','set-write','set-custom','set-bday'].forEach(id => { $(id).disabled = !host; });
+  ['set-rounds','set-timer','set-style','set-show','set-self','set-write','set-custom','set-bday'].forEach(id => { $(id).disabled = !host; });
   $('lobby-start').classList.toggle('hidden', !host);
   $('lobby-start').disabled = G.players.length < MIN_PLAYERS;
   $('lobby-start').textContent = G.players.length < MIN_PLAYERS ? 'Need ' + MIN_PLAYERS + '+ players' : 'Start';
@@ -928,6 +1099,8 @@ document.addEventListener('click', e => {
   if(!b || b.disabled) return;
   const a = b.dataset.act, v = b.dataset.v;
   Sound.wake();
+  if(a === 'rx'){ sendRx(+v); return; }
+  if(a === 'rxt'){ UIRX.open = !UIRX.open; paintRx(); return; }
   switch(a){
     case 'vote':
       if(G.phase !== 'q') return;
@@ -965,22 +1138,32 @@ function localCountdown(){
   };
   setTimeout(step, 800);
 }
-function frame(){ requestAnimationFrame(frame); if(isHostSide()) hostTick(); }
+let lastSec = -1;
+function frame(){
+  requestAnimationFrame(frame);
+  if(isHostSide()) hostTick();
+  const el = $('tleft');
+  if(!el || !G.deadline) return;
+  const left = Math.max(0, Math.ceil((G.deadline - now()) / 1000));
+  el.textContent = '⏱ ' + left + 's';
+  el.classList.toggle('low', left <= 5);
+  if(left !== lastSec){ lastSec = left; if(left <= 3 && left > 0 && !UI.vote) Sound.tick(); }
+}
 
 // ══════════════ CONFETTI ══════════════
 let confT = 0;
-function confetti(){
+function confetti(n, ms){
   if(SMOKE) return;
   const cv = $('confetti'), c = cv.getContext('2d');
   cv.classList.remove('hidden'); cv.width = innerWidth; cv.height = innerHeight;
-  const bits = Array.from({ length:180 }, () => ({ x:Math.random() * cv.width, y:-20 - Math.random() * cv.height, vx:(Math.random() - .5) * 2,
+  const bits = Array.from({ length:n || 180 }, () => ({ x:Math.random() * cv.width, y:-20 - Math.random() * cv.height, vx:(Math.random() - .5) * 2,
     vy:2 + Math.random() * 3, r:Math.random() * 6.28, vr:(Math.random() - .5) * .3, col:COLORS[(Math.random() * COLORS.length) | 0], w:6 + Math.random() * 6 }));
   const t0 = performance.now();
   cancelAnimationFrame(confT);
   const draw = (t) => {
     c.clearRect(0, 0, cv.width, cv.height);
     for(const b of bits){ b.x += b.vx; b.y += b.vy; b.r += b.vr; c.save(); c.translate(b.x, b.y); c.rotate(b.r); c.fillStyle = b.col; c.fillRect(-b.w/2, -3, b.w, 6); c.restore(); }
-    if(t - t0 < 7000) confT = requestAnimationFrame(draw); else hideConfetti();
+    if(t - t0 < (ms || 7000)) confT = requestAnimationFrame(draw); else hideConfetti();
   };
   confT = requestAnimationFrame(draw);
 }
@@ -993,13 +1176,13 @@ function loadSettings(){
   try { const s = JSON.parse(localStorage.getItem('mlt.set') || 'null'); if(s) G.settings = cleanSettings(Object.assign({}, DEFAULT_SET, s)); } catch(e){}
 }
 function hostRoom(){
-  Sound.wake(); rememberName();
+  Sound.wake(); keepAwake(); rememberName();
   MODE = 'host'; loadSettings();
   const room = rcode(4);
-  net.connect(room, 'host', () => net.send({ t:'create', code:room, max:MAX_PLAYERS }));
+  net.connect(room, 'host', () => hostCreate(room));
 }
 function joinRoom(code){
-  Sound.wake();
+  Sound.wake(); keepAwake();
   const room = String(code || $('joincode').value || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
   if(room.length !== 4){ homeStatus('Room codes are four characters.', true); return; }
   rememberName();
@@ -1007,13 +1190,13 @@ function joinRoom(code){
   net.connect(room, 'guest', () => net.send({ t:'join', code:room }));
 }
 function localSetup(){
-  Sound.wake(); rememberName();
+  Sound.wake(); keepAwake(); rememberName();
   net.close(); MODE = 'local'; loadSettings();
   G.phase = 'lobby'; G.host = MY_CID; G.players = [];
   let saved = [];
   try { saved = JSON.parse(localStorage.getItem('mlt.local') || '[]'); } catch(e){}
-  const names = saved.length >= MIN_PLAYERS ? saved : [myName(), 'Player 2', 'Player 3'];
-  names.slice(0, MAX_PLAYERS).forEach((n, i) => G.players.push(newPlayer('L' + i, n)));
+  const list = saved.length >= MIN_PLAYERS ? saved : [{ n:myName(), a:MY_AV }, 'Player 2', 'Player 3'];
+  list.slice(0, MAX_PLAYERS).forEach((x, i) => G.players.push(typeof x === 'string' ? newPlayer('L' + i, x) : newPlayer('L' + i, x.n, x.a)));
   render();
 }
 function localAdd(){
@@ -1027,14 +1210,16 @@ function hostStart(){
   Sound.wake();
   if(MODE === 'local'){
     G.players.forEach((p, i) => { p.name = (p.name || '').trim() || 'Player ' + (i + 1); });
-    try { localStorage.setItem('mlt.local', JSON.stringify(G.players.map(p => p.name))); } catch(e){}
+    G.players.forEach(p => { p.name = uniqueName(p.name, p.cid); });
+    try { localStorage.setItem('mlt.local', JSON.stringify(G.players.map(p => ({ n:p.name, a:p.av })))); } catch(e){}
   }
   readSettings();
   if(G.players.length < MIN_PLAYERS){ toast('You need at least ' + MIN_PLAYERS + ' players.'); return; }
   hostStartGame();
 }
-function leaveRoom(){ if(MODE === 'guest') net.send({ t:'bye', cid:MY_CID }); dropToHome(''); }
+function leaveRoom(){ if(MODE === 'guest') net.send({ t:'bye', cid:MY_CID }); clearSession(); dropToHome(''); }
 function dropToHome(msg){
+  clearSession(); setConn(''); $('rx').classList.add('hidden');
   net.close(); MODE = 'off'; G.phase = 'off'; G.players = []; lastHostMsg = 0; lastKey = ''; UI = {};
   hideConfetti(); show('screen-home'); homeStatus(msg || '', !!msg);
 }
@@ -1053,11 +1238,90 @@ function drawQR(){
   catch(e){ box.classList.add('hidden'); }
 }
 setInterval(() => {
-  if(MODE !== 'guest' || !net.online) return;
-  net.send({ t:'hb', cid:MY_CID });
-  if(lastHostMsg && now() - lastHostMsg > HOST_TIMEOUT) dropToHome('The host left the game.');
+  if(MODE === 'host' && G.phase !== 'off' && G.players.some(p => p.cid !== MY_CID && !p.away) && net.stale(7000)) net.retry();
+  if(MODE !== 'guest') return;
+  if(G.phase !== 'off' && net.stale(6500)){ net.retry(); return; }
+  if(net.online) net.send({ t:'hb', cid:MY_CID });
+  if(!lastHostMsg || G.phase === 'off') return;
+  const quiet = now() - lastHostMsg;
+  if(quiet > HOST_GIVEUP) dropToHome('The host’s game has ended.');
+  else if(net.online) setConn(quiet > 7000 ? '📡 Waiting for the host’s phone to come back…' : '');
 }, 2000);
 setInterval(() => { if(isHostSide() && !SMOKE) hostTick(); }, 250);
+
+// ── staying connected at a party ──
+const SKEY = 'mlt.session';
+let saveT = 0;
+function saveSession(){
+  if(SMOKE) return;
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { try {
+    if(MODE === 'host' || MODE === 'local') sessionStorage.setItem(SKEY, JSON.stringify({ at:Date.now(), mode:MODE, code:net.code, G, HS:Object.assign({}, HS, { seen:{} }) }));
+    else if(MODE === 'guest' && net.code) sessionStorage.setItem(SKEY, JSON.stringify({ at:Date.now(), mode:'guest', code:net.code }));
+  } catch(e){} }, 150);
+}
+function clearSession(){ clearTimeout(saveT); try { sessionStorage.removeItem(SKEY); } catch(e){} }
+// A refreshed tab picks the game back up: the host restores the whole game, a guest rejoins.
+function resumeSession(){
+  let s = null; try { s = JSON.parse(sessionStorage.getItem(SKEY) || 'null'); } catch(e){}
+  if(!s || Date.now() - s.at > 3 * 3600e3 || !s.mode) return false;
+  if(s.mode === 'guest'){ joinRoom(s.code); return true; }
+  if(!s.G || !s.G.phase || s.G.phase === 'off') return false;
+  Object.assign(G, s.G); Object.assign(HS, s.HS || {}, { seen:{} });
+  if(s.mode === 'local'){ MODE = 'local'; render(); return true; }
+  MODE = 'host';
+  net.connect(s.code, 'host', () => hostCreate(s.code));
+  return true;
+}
+// `resume` asks the relay to replace our old (possibly half-dead) host socket.
+function hostCreate(code){ net.send({ t:'create', code, max:MAX_PLAYERS, resume:G.phase !== 'off' ? 1 : 0 }); }
+// Keep phones from going to sleep mid-game (where the browser allows it).
+let wakeLock = null;
+async function keepAwake(){
+  try { if(!wakeLock && navigator.wakeLock && document.visibilityState === 'visible'){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch(e){}
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState !== 'visible' || MODE === 'off') return;
+  keepAwake();
+  if(net.stale(3000)) net.retry(); else net.nudge();
+  if(MODE === 'guest' && net.online) net.send({ t:'hb', cid:MY_CID });
+});
+// ── avatars ──
+const AVATARS = ['🐶','🐱','🦊','🐼','🐨','🐯','🦁','🐸','🐵','🐧','🦉','🐙','🦄','🐝','🐢','🦖','🐰','🐻','🐮','🐷','🐔','🦋','🐳','🦒','🐲','🦀','🐞','🦩','🦔','🐌'];
+let MY_AV = 0;
+try { const v = localStorage.getItem('gb.avatar'); MY_AV = v == null ? (Math.random() * AVATARS.length) | 0 : (+v || 0) % AVATARS.length; localStorage.setItem('gb.avatar', MY_AV); } catch(e){ MY_AV = (Math.random() * AVATARS.length) | 0; }
+function hiMsg(){ return { t:'hi', cid:MY_CID, name:myName(), av:MY_AV }; }
+function freeAvatar(){ const used = new Set(G.players.map(p => p.av)); const free = AVATARS.map((_, i) => i).filter(i => !used.has(i)); return free.length ? free[(Math.random() * free.length) | 0] : (Math.random() * AVATARS.length) | 0; }
+// Everyone gets their own animal: if yours is taken, the host picks you a free one.
+function uniqueAv(av){ if(av == null || isNaN(av)) return freeAvatar(); av = Math.abs(av | 0) % AVATARS.length; return G.players.some(p => p.av === av) ? freeAvatar() : av; }
+function avOf(cid){ const p = P(cid); return p ? AVATARS[p.av] || '' : ''; }
+// Two people called "Mum" would be confusing: the second becomes "Mum 2".
+function uniqueName(name, cid){
+  name = String(name || 'Player').trim().slice(0,14) || 'Player';
+  let n = name, k = 2;
+  while(G.players.some(p => p.cid !== cid && p.name.toLowerCase() === n.toLowerCase())) n = name.slice(0,11) + ' ' + k++;
+  return n;
+}
+// ── emoji reactions: tap one and it floats up on everybody's screen ──
+const RX = ['😂','😱','🤔','👀','🔥','❤️','🎂','👏'];
+let lastRx = 0;
+function sendRx(i){ if(now() - lastRx < 500) return; lastRx = now(); const m = { t:'rx', cid:MY_CID, e:i | 0 }; net.send(m); floatRx(m); }
+function floatRx(m){
+  const e = RX[m.e]; if(!e || SMOKE) return;
+  const p = P(m.cid), d = document.createElement('div');
+  d.className = 'floaty'; d.style.left = (6 + Math.random() * 78) + 'vw'; d.style.bottom = '100px';
+  d.innerHTML = e + (p ? '<small>' + esc(p.name) + '</small>' : '');
+  document.body.appendChild(d); setTimeout(() => d.remove(), 2700);
+}
+function paintRx(){
+  const on = (MODE === 'host' || MODE === 'guest') && G.phase !== 'lobby' && G.phase !== 'off';
+  $('rx').classList.toggle('hidden', !on);
+  $('rxpal').classList.toggle('hidden', !UIRX.open);
+}
+const UIRX = { open:false };
+$('rxpal').innerHTML = RX.map((e, i) => '<button data-act="rx" data-v="' + i + '">' + e + '</button>').join('');
+$('myav').textContent = AVATARS[MY_AV];
+$('myav').addEventListener('click', () => { MY_AV = (MY_AV + 1) % AVATARS.length; $('myav').textContent = AVATARS[MY_AV]; try { localStorage.setItem('gb.avatar', MY_AV); } catch(e){} });
 
 async function hubApi(path, body){
   const base = window.GLITCHBOX_API;
@@ -1090,7 +1354,7 @@ function autoRoom(){
   if(room.length !== 4) return false;
   if(h.get('host') === '1'){
     MODE = 'host'; rememberName(); loadSettings();
-    net.connect(room, 'host', () => net.send({ t:'create', code:room, max:MAX_PLAYERS }));
+    net.connect(room, 'host', () => hostCreate(room));
   } else joinRoom(room);
   return true;
 }
@@ -1104,7 +1368,7 @@ if(!$('myname').value){
 $('joincode').addEventListener('keydown', e => { if(e.key === 'Enter') joinRoom(); });
 requestAnimationFrame(frame);
 if(DEBUG) window.__ML = { G, HS, net, MY_CID, act, render, hostStartGame, hostTick, get MODE(){ return MODE; } };
-if(!SMOKE) autoRoom();
+if(!SMOKE && !resumeSession()) autoRoom();
 
 // ══════════════ SMOKE TEST ══════════════
 if(SMOKE) setTimeout(async () => {
@@ -1128,7 +1392,7 @@ if(SMOKE) setTimeout(async () => {
   hostSettings(Object.assign({}, G.settings, { rounds:3, style:'point', packs:['bday'], bday:'Mum', custom:'' }));
   hostStartGame();
   ok('starts on question 1 of 3', G.phase === 'q' && G.qn === 1 && G.total === 3);
-  ok('birthday questions use the name', !/\{B\}/.test(G.prompt) && HS.deck.every(c => PACKS[4].list.includes(c.p)));
+  ok('birthday questions use the name', !/\{B\}/.test(G.prompt) && HS.deck.every(c => PACKS.find(k => k.id === 'bday').list.includes(c.p)));
   ok('the question shows', stage().indexOf(G.prompt) >= 0);
   UI.counted = 1; render();
   ok('the tally has a row per player', document.querySelectorAll('.trow').length === 4);
@@ -1225,6 +1489,34 @@ if(SMOKE) setTimeout(async () => {
   $('stage').__h = ''; render();
   click('[data-act="finish"]');
   ok('finish early goes to the awards', G.phase === 'over' && document.querySelectorAll('.award').length === 3);
+  dropToHome('');
+
+  // ── phones that fall asleep, people who come back, timers, no repeats ──
+  MODE = 'host'; net.code = 'TEST'; loadSettings();
+  handleNet({ t:'created' });
+  handleNet({ t:'hi', cid:'H1', name:'Nan', av:2 }); handleNet({ t:'hi', cid:'H2', name:'nan', av:5 }); handleNet({ t:'hi', cid:'H3', name:'Zoe' });
+  ok('a second “Nan” becomes “nan 2”', P('H2').name === 'nan 2' && P('H1').av === 2);
+  hostSettings(Object.assign({}, G.settings, { rounds:5, write:0, timer:15, packs:['grown','travel','work'], custom:'' }));
+  hostStartGame();
+  ok('the new packs make a game', G.phase === 'q' && G.total === 5);
+  ok('the vote timer runs', G.deadline > now() && G.qtime === 15);
+  act('v', { v:'H1' }); handleNet({ t:'v', cid:'H1', v:'H2' }); handleNet({ t:'v', cid:'H2', v:'H1' });
+  SKEW += GUEST_TIMEOUT + 500; [MY_CID, 'H1', 'H2'].forEach(c => { HS.seen[c] = now(); }); hostTick();
+  ok('a sleeping phone is marked away, not removed', P('H3') && P('H3').away);
+  SKEW += REVEAL_DELAY + 50; fresh(); hostTick();
+  ok('…and the vote doesn’t wait for it', G.phase === 'reveal' && G.res.win[0] === 'H1');
+  handleNet({ t:'hb', cid:'H3' });
+  ok('it wakes up when the phone does', !P('H3').away);
+  hostNext(); SKEW += 16000; fresh(); hostTick();
+  ok('when the vote timer runs out it reveals anyway', G.phase === 'reveal');
+  handleNet({ t:'hi', cid:'H1', name:'Nan', av:2 });
+  ok('a reconnecting player keeps their crowns', P('H1').crowns === 1 && G.players.length === 4);
+  const qn = G.qn; handleNet({ t:'created' });
+  ok('the host reconnecting carries on the same game', G.phase === 'reveal' && G.qn === qn);
+  const asked1 = HS.asked.slice();
+  hostStartGame();
+  ok('a new game asks new questions first', !HS.deck.some(c => asked1.includes(c.p)));
+  ok('every pack has 20+ questions (incl. new ones)', PACKS.length === 8 && PACKS.every(k => k.list.length >= 20));
   dropToHome('');
 
   const pre = document.createElement('pre');
