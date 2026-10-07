@@ -306,9 +306,11 @@ function jsonGet(k,f){ try{ const v=JSON.parse(localStorage.getItem(k)); return 
 function jsonSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function tokens(){ const n=parseInt(localStorage.getItem(TOK.bal),10); return isNaN(n)?0:n; }
 function ownedList(){ const v=jsonGet(TOK.own,[]); return Array.isArray(v)?v:[]; }
-function isLocked(g){ return !!g.price && ownedList().indexOf(g.file)===-1; }
+// Guests play the free games only — tokens, specials and favorites need a sign-in.
+function isGuest(){ try{ const u=JSON.parse(localStorage.getItem('glitchbox_user')||'null'); return !(u&&u.email); }catch(e){ return true; } }
+function isLocked(g){ return !!g.price && (isGuest() || ownedList().indexOf(g.file)===-1); }
 function favList(){ const v=jsonGet(FAV_KEY,[]); return Array.isArray(v)?v:[]; }
-function isFav(file){ return favList().indexOf(file)!==-1; }
+function isFav(file){ return !isGuest() && favList().indexOf(file)!==-1; }
 
 // An unknown or still-locked game has no business being framed here.
 if(!game){ location.replace('index.html'); }
@@ -437,6 +439,7 @@ function paintFav(){
 }
 function toggleFav(){
   if(!game) return;
+  if(isGuest()){ location.href='index.html#signin'; return; }
   const l = favList(), i = l.indexOf(game.file);
   if(i===-1) l.push(game.file); else l.splice(i,1);
   jsonSet(FAV_KEY,l); paintFav();
@@ -447,6 +450,7 @@ paintFav();
 // Same rules as the hub: the payout is queued and shown the next time you land
 // on the arcade, so it never covers up the game.
 function rewardPlay(g){
+  if(isGuest()) return;
   const seen=jsonGet(TOK.seen,[]), ts=jsonGet(TOK.ts,{}), now=Date.now();
   const pay=(amt,why)=>{
     try{ localStorage.setItem(TOK.bal,String(Math.max(0,tokens()+amt))); }catch(e){}

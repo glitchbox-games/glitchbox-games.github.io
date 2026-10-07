@@ -67,7 +67,12 @@
     try { var v = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); return v instanceof Array ? v : []; }
     catch (_) { return []; }
   }
-  function isFav() { return favList().indexOf(GAME_FILE) !== -1; }
+  // Favorites are an account perk — guests get the button, but it sends them to sign in.
+  function isGuest() {
+    try { var u = JSON.parse(localStorage.getItem('glitchbox_user') || 'null'); return !(u && u.email); }
+    catch (_) { return true; }
+  }
+  function isFav() { return !isGuest() && favList().indexOf(GAME_FILE) !== -1; }
   function toggleFav() {
     var l = favList(), i = l.indexOf(GAME_FILE);
     if (i === -1) l.push(GAME_FILE); else l.splice(i, 1);
@@ -196,6 +201,7 @@
     });
     favBtn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
+      if (isGuest()) { location.href = 'index.html#signin'; return; }
       toggleFav(); paintFav();          // stays open: favoriting is not quitting
     });
     wrap.querySelector('.go').addEventListener('click', function (e) {

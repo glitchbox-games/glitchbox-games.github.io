@@ -929,7 +929,7 @@ function favList(){
   try{ const v=JSON.parse(localStorage.getItem(FAV_KEY)||'[]'); return Array.isArray(v)?v:[]; }
   catch(e){ return []; }
 }
-function isFav(file){ return favList().indexOf(file)!==-1; }
+function isFav(file){ return !isGuest() && favList().indexOf(file)!==-1; }
 function toggleFav(file){
   const l=favList(), i=l.indexOf(file);
   if(i===-1) l.push(file); else l.splice(i,1);
@@ -984,7 +984,18 @@ function tokens(){ const n=parseInt(localStorage.getItem(TOK.bal),10); return is
 function setTokens(n){ try{ localStorage.setItem(TOK.bal,String(Math.max(0,n|0))); }catch(e){} paintTokens(); }
 function ownedList(){ const v=jsonGet(TOK.own,[]); return Array.isArray(v)?v:[]; }
 function isOwned(file){ return ownedList().indexOf(file)!==-1; }
-function isLocked(g){ return !!g.price && !isOwned(g.file); }
+function isLocked(g){ return !!g.price && (isGuest() || !isOwned(g.file)); }
+
+// ── guest limits ── Guests can browse and play every free game, but the account
+// perks — tokens, the daily reward, special games, favorites — need a sign-in.
+// guestWall() explains why, opens the sign-in box, and returns true when it blocked.
+function isGuest(){ return !currentUser; }
+function guestWall(what){
+  if(!isGuest()) return false;
+  tokenToast('🔒','Sign in to '+what);
+  closeShop(); openAuth('login');
+  return true;
+}
 
 // Grant tokens. `defer` queues the toast instead of showing it — used when the
 // browser is already navigating into a game and a toast would never be seen.
@@ -1045,6 +1056,7 @@ function dailyInfo(){
            amt: DAILY_BASE + Math.min(Math.max(next,1)-1,DAILY_MAX_STREAK-1)*DAILY_STEP };
 }
 function claimDaily(){
+  if(guestWall('claim the daily reward')) return;
   const d=dailyInfo(); if(!d.ready) return;
   try{ localStorage.setItem(TOK.daily,todayKey()); localStorage.setItem(TOK.streak,String(d.streak)); }catch(e){}
   grant(d.amt, d.streak>1 ? ('Daily reward · '+d.streak+'-day streak') : 'Daily reward');
@@ -1053,7 +1065,7 @@ function claimDaily(){
 // Red pip on the token chip whenever today's reward is still sitting there.
 function paintDaily(){
   const chip=document.getElementById('token-chip'); if(!chip) return;
-  chip.classList.toggle('ready', dailyInfo().ready);
+  chip.classList.toggle('ready', !isGuest() && dailyInfo().ready);
   chip.title = dailyInfo().ready ? 'Daily reward ready — click to claim' : 'Arcade tokens — click for the shop';
 }
 
@@ -1204,6 +1216,7 @@ function applyGifts(list){
 
 // Called as a game tile is clicked, immediately before navigation.
 function rewardPlay(file,name){
+  if(isGuest()) return;               // guests don't earn tokens
   const seen=jsonGet(TOK.seen,[]);
   const ts=jsonGet(TOK.ts,{}), now=Date.now();
   if(seen.indexOf(file)===-1){
@@ -1222,6 +1235,7 @@ function rewardPlay(file,name){
 function buyGame(file){
   const g=GAMES.find(x=>x.file===file);
   if(!g||!g.price||isOwned(file)) return false;
+  if(guestWall('unlock special games')) return false;
   if(tokens()<g.price){
     tokenToast('NEED '+(g.price-tokens()),'Not enough tokens for '+g.name);
     return false;
@@ -1244,6 +1258,12 @@ const EARN_RULES=[
 ];
 function renderDaily(){
   const box=document.getElementById('shop-daily'); if(!box) return;
+  if(isGuest()){
+    box.innerHTML='<div class="daily-panel"><div class="dp-left"><div class="dp-title">GUEST MODE</div>'+
+      '<div class="dp-sub">Sign in to earn tokens, claim daily rewards and unlock special games.</div></div>'+
+      '<button class="shop-btn buy" onclick="closeShop();openAuth(\'login\')">Sign in</button></div>';
+    return;
+  }
   const d=dailyInfo();
   const pips=Array.from({length:DAILY_MAX_STREAK},(_,i)=>
     '<span class="pip'+(i < (d.ready?d.streak-1:d.streak) ?' on':'')+'"></span>').join('');
@@ -1290,8 +1310,10 @@ function renderShop(focusFile){
   const specials=GAMES.filter(g=>g.price);
   specials.sort((a,b)=>(isOwned(a.file)-isOwned(b.file))||(a.price-b.price));
   box.innerHTML=specials.map(g=>{
-    const own=isOwned(g.file), afford=tokens()>=g.price;
-    const btn = own
+    const own=!isGuest()&&isOwned(g.file), afford=tokens()>=g.price;
+    const btn = isGuest()
+      ? '<button class="shop-btn buy" onclick="buyGame(\''+esc(g.file)+'\')">🔒 Sign in</button>'
+      : own
       ? '<a class="shop-btn play" href="'+esc(gameURL(g.file))+'">▶ Play</a>'
       : '<button class="shop-btn buy" '+(afford?'':'disabled ')+'onclick="buyGame(\''+esc(g.file)+'\')">🪙 '+g.price+'</button>';
     return '<div class="shop-item'+(own?' owned':'')+(focusFile===g.file?' flash':'')+'" data-file="'+esc(g.file)+'">'+
@@ -1331,6 +1353,7 @@ addEventListener('storage',e=>{
 let activeCategory='all',activeSort='all';
 
 function filterCategory(cat){
+  if(cat==='favorites' && guestWall('save favorites')) return;
   activeCategory=cat;
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav-'+cat);if(el)el.classList.add('active');
@@ -1370,7 +1393,7 @@ function renderGames(){
     a.href=locked?'#':gameURL(g.file);        // locked tiles open the shop, not the game
     const badges=g.tags.map(t=>`<span class="game-tag ${t}">${t==='hot'?'▲ HOT':t==='new'?'★ NEW':t==='mp'?'⬡ MULTI':t}</span>`).join('')
       +(g.price?`<span class="game-tag special">${locked?'🔒 '+g.price:'✦ OWNED'}</span>`:'');
-    const veil=locked?`<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 ${g.price}</div><div class="lv-hint">Unlock</div></div>`:'';
+    const veil=locked?`<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 ${g.price}</div><div class="lv-hint">${isGuest()?'Sign in':'Unlock'}</div></div>`:'';
     const on=isFav(g.file);
     // a <span>, not a <button>: the card itself is an <a> and nesting a button
     // inside a link is invalid HTML
@@ -1388,6 +1411,7 @@ function renderGames(){
       // stop the card's <a> from launching the game, and stop the grid's
       // delegated click handler from counting this as a play
       ev.preventDefault(); ev.stopPropagation();
+      if(guestWall('save favorites')) return;
       const now=toggleFav(g.file);
       star.classList.toggle('on',now);
       star.textContent=now?'★':'☆';
@@ -1416,6 +1440,7 @@ claimStartup();captureRef();paintPlayMode();updateCounts();renderGames();
 // picker needs to know whether you're signed in before it decides where to send you.
 if(location.hash==='#shop')  addEventListener('load',()=>setTimeout(openShop,0));
 if(location.hash==='#icons') addEventListener('load',()=>setTimeout(openIconPicker,0));
+if(location.hash==='#signin') addEventListener('load',()=>setTimeout(()=>{ if(isGuest()){ tokenToast('🔒','Sign in to save favorites'); openAuth('login'); } },0));
 
 // ══════════════════ GOOGLE SIGN-IN / REGISTRATION ══════════════════
 // 👉 Paste your OAuth Client ID here (from Google Cloud Console → Credentials).
@@ -1434,7 +1459,7 @@ function decodeJwt(token){
 // drift apart. The fallback keeps this file working if that script fails to load.
 const API_BASE = window.GLITCHBOX_API || 'https://glitchbox-api.PLACEHOLDER.workers.dev';
 
-let currentUser = null;
+var currentUser = null;   // var, not let: isGuest() runs in the first render, before this line
 let lastState = { profile:null, friends:[], incoming:[], outgoing:[], blocked:[], invitesIn:[], invitesOut:[] };
 
 // Games you can pull a friend into. These talk to the Worker's room relay, so they
@@ -2106,7 +2131,24 @@ if(location.hash==='#tokencheck'){
     const snap={}; keys.forEach(k=>snap[k]=localStorage.getItem(k));
     const out=[]; let fails=0;
     const ok=(name,cond)=>{ out.push((cond?'PASS  ':'FAIL  ')+name); if(!cond)fails++; };
-    const wipe=()=>keys.forEach(k=>localStorage.removeItem(k));
+    const wipe=()=>keys.concat([FAV_KEY]).forEach(k=>localStorage.removeItem(k));
+    const realUser=currentUser, favSnap=localStorage.getItem(FAV_KEY);
+
+    // guest limits first: no tokens, no daily, no specials, no favorites
+    currentUser=null; wipe(); setTokens(0);
+    const paidG=GAMES.find(g=>g.price);
+    rewardPlay('nothing.html','Nothing');
+    ok('guest earns nothing for playing', tokens()===0);
+    claimDaily();
+    ok('guest cannot claim the daily', tokens()===0 && dailyInfo().ready);
+    setTokens(paidG.price);
+    ok('guest cannot buy a special game', buyGame(paidG.file)===false && tokens()===paidG.price);
+    jsonSet(TOK.own,[paidG.file]);
+    ok('special games stay locked for guests', isLocked(paidG));
+    localStorage.setItem(FAV_KEY,JSON.stringify(['nothing.html']));
+    ok('guests have no favorites', !isFav('nothing.html'));
+    closeAuth();
+    currentUser={ sub:'tokencheck', name:'Test', email:'test@example.com' };   // the wallet tests run signed in
 
     wipe(); setTokens(200);
     const paid=GAMES.find(g=>g.price);
@@ -2196,6 +2238,8 @@ if(location.hash==='#tokencheck'){
     ok('paid icon unlocks and debits', iconOwned(paidIcon) && tokens()===0);
 
     keys.forEach(k=>{ if(snap[k]===null) localStorage.removeItem(k); else localStorage.setItem(k,snap[k]); });
+    if(favSnap===null) localStorage.removeItem(FAV_KEY); else localStorage.setItem(FAV_KEY,favSnap);
+    currentUser=realUser;
     paintTokens(); paintDaily(); updateCounts(); renderGames();
     const pre=document.createElement('pre');
     pre.id='tokencheck-out';
