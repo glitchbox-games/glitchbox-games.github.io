@@ -35,21 +35,64 @@
   // (for everyone but the owner). Self-test hashes stay offline.
   var BAN_API = window.GLITCHBOX_API || 'https://glitchbox-api.levtheduck.workers.dev';
   var PING_GAME = (location.pathname.split('/').pop() || '');
+  // A guest has no account, so this random device id is what lets the owner see,
+  // kick and ban them. Same key and format as index.html's guestId().
+  function guestId() {
+    try {
+      var g = localStorage.getItem('glitchbox.gid') || '';
+      if (!/^g[a-z0-9]{8,24}$/.test(g)) {
+        g = 'g' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        localStorage.setItem('glitchbox.gid', g);
+      }
+      return g;
+    } catch (_) { return ''; }
+  }
+  // Back to the hub with a reason, which the hub shows on arrival.
+  function bounce(why) {
+    try { localStorage.setItem('glitchbox.kicked', why || ''); } catch (_) {}
+    location.replace('index.html');
+  }
+  // An owner message, shown over the game without pausing it.
+  function popup(text) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2147483647;max-width:min(440px,90vw);' +
+      'background:#0a0d18;border:1px solid #ff0080;box-shadow:0 0 24px rgba(255,0,128,.4);color:#e8eefc;padding:12px 16px;' +
+      'font:600 14px/1.4 system-ui,sans-serif;cursor:pointer';
+    d.innerHTML = '<div style="color:#ff0080;font-size:11px;letter-spacing:2px;margin-bottom:4px">📨 MESSAGE FROM THE OWNER</div>';
+    d.appendChild(document.createTextNode(text));
+    d.title = 'Click to dismiss';
+    d.onclick = function () { d.remove(); };
+    (document.fullscreenElement || document.body || document.documentElement).appendChild(d);
+    setTimeout(function () { d.remove(); }, 15000);
+  }
+  var reloadSeen = null;   // the owner's "reload everyone" stamp as of our first ping
   function banCheck() {
     var s = '';
     try { s = localStorage.getItem('glitchbox_session') || ''; } catch (_) {}
     if (document.hidden || !window.fetch || /smoke|check|debug|menuquit/.test(location.hash)) return;
-    fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME),
+    fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME) + (s ? '' : '&gid=' + guestId()),
           s ? { headers: { Authorization: 'Bearer ' + s } } : {}).then(function (r) {
       return r.json().then(function (d) {
         if (r.status === 403) {
           var m = /^banned:([\s\S]*)$/.exec((d && d.error) || '');
           if (!m) return;
-          try { localStorage.setItem('glitchbox.banned', m[1]); localStorage.removeItem('glitchbox_session'); } catch (_) {}
+          try {
+            localStorage.setItem('glitchbox.banned', m[1]); localStorage.removeItem('glitchbox_session');
+            // A guest/network ban is lifted by the next clean guest ping, not by /api/me.
+            if (!s) localStorage.setItem('glitchbox.bannedBy', 'guest');
+          } catch (_) {}
           location.replace('index.html');
-        } else if (d && d.maintenance && !d.isOwner) {
-          location.replace('index.html');       // the hub shows the closed sign
+          return;
         }
+        if (!d) return;
+        (d.messages || []).forEach(popup);
+        if (d.isOwner) return;
+        if (d.kick != null) bounce(d.kick ? 'Kicked by the owner: ' + d.kick : 'The owner kicked you out of this game.');
+        else if (d.maintenance) location.replace('index.html');       // the hub shows the closed sign
+        else if ((d.disabled || []).indexOf(PING_GAME) !== -1) bounce('The owner switched this game off for now.');
+        else if (d.guestsLocked && !s) bounce('Guest play is switched off — sign in to keep playing.');
+        else if (reloadSeen === null) reloadSeen = d.reload || 0;
+        else if ((d.reload || 0) > reloadSeen) location.reload();
       });
     }).catch(function () {});
   }

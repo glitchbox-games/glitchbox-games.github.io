@@ -123,6 +123,30 @@
     return null;
   }
 
+  // One guest from a loose query: their name ("Guest 1A2B" or one you gave them),
+  // the last 4 of their id, or the whole id. Same never-guess rule as pickPlayer.
+  async function pickGuest(q) {
+    if (!q) { bad('name a guest — e.g. 1A2B, "Guest 1A2B", or a name you gave them'); return null; }
+    const list = (await call('/api/admin/guests')).guests || [];
+    const lq = String(q).toLowerCase().replace(/^guest\s+/, '');
+    const hits = list.filter(g => g.gid.toLowerCase() === lq || g.gid.slice(-4).toLowerCase() === lq ||
+      (g.name || '').toLowerCase() === String(q).toLowerCase() || (g.name || '').toLowerCase().indexOf(lq) !== -1);
+    if (!hits.length) { bad('no guest matches "' + q + '" — try  guests'); return null; }
+    if (hits.length > 1) {
+      warn(hits.length + ' guests match "' + q + '" — be more specific:');
+      hits.slice(0, 12).forEach(g => say('   ' + pad(g.name, 18) + ' ' + pad(g.ip || '?', 18) + ' seen ' + ago(g.last_seen)));
+      return null;
+    }
+    return hits[0];
+  }
+  // "u:<sub>" for a player, "g:<gid>" for a guest — players first, then guests.
+  async function pickAnyone(q) {
+    if (!/^guest\b/i.test(q) && ((await call('/api/admin/players?q=' + encodeURIComponent(q))).players || []).length) {
+      const p = await pickPlayer(q); return p ? { target:'u:' + p.sub, name:p.name } : null;
+    }
+    const g = await pickGuest(q); return g ? { target:'g:' + g.gid, name:g.name } : null;
+  }
+
   // Typo help. A prefix filter alone misses the common case — one wrong letter
   // in the middle — so this ranks by edit distance and keeps the closest few.
   function editDistance(a, b) {
@@ -425,6 +449,107 @@
       say('  dismiss <id> to clear one');
     }},
 
+    guests: { usage:'guests', about:'guests seen in the last 30 days', owner:true, async run() {
+      const r = await call('/api/admin/guests'), list = r.guests || [];
+      head('// ' + list.length + ' guest' + (list.length === 1 ? '' : 's') + (r.guestsLocked ? '   🚫 guest play is OFF' : ''));
+      list.slice(0, 40).forEach(g => say('  ' + (g.banned ? '⛔ ' : g.online ? '● ' : '  ') + pad(g.name, 18) + pad(g.ip || '?', 18) +
+        (g.online ? (g.playing ? '▶ ' + g.playing.replace('.html', '') : 'in the hub') : 'seen ' + ago(g.last_seen)) +
+        (g.sameAsYou ? '  (your network)' : ''), g.banned ? 'warn' : ''));
+      if ((r.ipBans || []).length) { head('// NETWORK BANS'); r.ipBans.forEach(b => say('  🌐 ' + pad(b.ip, 18) + (b.reason || ''))); }
+    }},
+
+    kick: { usage:'kick <player|guest|everyone> [reason]', about:'send someone back to the hub (not a ban)', owner:true, async run(a) {
+      if (!a[0]) { bad('usage: kick <player|guest|everyone> [reason]'); return; }
+      const reason = a.slice(1).join(' ');
+      if (/^(everyone|all|\*)$/i.test(a[0])) {
+        askConfirm('Kick everyone who is online?', async () => {
+          const r = await call('/api/admin/kick', { method:'POST', body:{ target:'*', reason } });
+          ok('👢 kicked ' + r.kicked);
+        });
+        return;
+      }
+      const who = await pickAnyone(a[0]);
+      if (!who) return;
+      await call('/api/admin/kick', { method:'POST', body:{ target:who.target, reason } });
+      ok('👢 kicked ' + who.name + ' — lands within a few seconds');
+    }},
+
+    popup: { usage:'popup <player|guest|everyone> <message>', about:'pop a message up right now, even mid-game', owner:true, async run(a) {
+      const text = a.slice(1).join(' ').trim();
+      if (!text) { bad('usage: popup <player|guest|everyone> <message>'); return; }
+      const all = /^(everyone|all|\*)$/i.test(a[0]);
+      const who = all ? { target:'*', name:'everyone online' } : await pickAnyone(a[0]);
+      if (!who) return;
+      const r = await call('/api/admin/popup', { method:'POST', body:{ target:who.target, text } });
+      ok('✉ sent to ' + (all ? r.sent + ' online' : who.name));
+    }},
+
+    gban: { usage:'gban <guest> [net] [reason]', about:'ban a guest (add  net  to ban their network too)', owner:true, async run(a) {
+      const g = await pickGuest(a[0]);
+      if (!g) return;
+      const net = (a[1] || '').toLowerCase() === 'net';
+      const reason = a.slice(net ? 2 : 1).join(' ');
+      if (net && g.sameAsYou) { bad(g.name + ' is on your own network — ban the device only'); return; }
+      await call('/api/admin/guest-ban', { method:'POST', body:{ gid:g.gid, banned:true, reason, ip:net } });
+      ok('banned ' + g.name + (net ? ' + network ' + g.ip : '') + (reason ? ' — "' + reason + '"' : ''));
+    }},
+
+    gunban: { usage:'gunban <guest>', about:'lift a guest ban', owner:true, async run(a) {
+      const g = await pickGuest(a.join(' '));
+      if (!g) return;
+      await call('/api/admin/guest-ban', { method:'POST', body:{ gid:g.gid, banned:false } });
+      ok('unbanned ' + g.name);
+    }},
+
+    ipban: { usage:'ipban <ip> [reason] | ipban off <ip>', about:'ban or unban a whole network', owner:true, async run(a) {
+      if ((a[0] || '').toLowerCase() === 'off') {
+        if (!a[1]) { bad('ipban off <ip>'); return; }
+        await call('/api/admin/ip-ban', { method:'POST', body:{ ip:a[1], banned:false } });
+        ok('🌐 ' + a[1] + ' unbanned'); return;
+      }
+      if (!a[0]) { bad('usage: ipban <ip> [reason]'); return; }
+      const reason = a.slice(1).join(' ');
+      askConfirm('Ban the network ' + a[0] + '? Everyone on it is locked out (except you).', async () => {
+        await call('/api/admin/ip-ban', { method:'POST', body:{ ip:a[0], banned:true, reason } });
+        ok('🌐 ' + a[0] + ' banned');
+      });
+    }},
+
+    guestplay: { usage:'guestplay on|off', about:'let people play without signing in, or not', owner:true, async run(a) {
+      const w = (a[0] || '').toLowerCase();
+      if (w !== 'on' && w !== 'off') {
+        const r = await call('/api/admin/guests');
+        say('guest play is ' + (r.guestsLocked ? 'OFF' : 'ON')); return;
+      }
+      await call('/api/admin/guests-lock', { method:'POST', body:{ on: w === 'off' } });
+      ok(w === 'off' ? '🚫 guest play is off — guests must sign in' : '✅ guests can play again');
+    }},
+
+    gameoff: { usage:'gameoff <game>', about:'switch a game off for everyone but you', owner:true, async run(a) {
+      const g = findGame(a.join(' '));
+      if (!g) { bad('no game matches "' + a.join(' ') + '"'); return; }
+      const cur = (await call('/api/admin/overview')).disabled || [];
+      await call('/api/admin/games', { method:'POST', body:{ disabled: cur.concat([g.file]) } });
+      ok('⏸ ' + g.name + ' is switched off');
+    }},
+
+    gameon: { usage:'gameon <game|all>', about:'switch a game back on', owner:true, async run(a) {
+      const q = a.join(' ');
+      const cur = (await call('/api/admin/overview')).disabled || [];
+      if (/^all$/i.test(q)) { await call('/api/admin/games', { method:'POST', body:{ disabled: [] } }); ok('every game is on'); return; }
+      const g = findGame(q);
+      if (!g) { bad('no game matches "' + q + '"'); return; }
+      await call('/api/admin/games', { method:'POST', body:{ disabled: cur.filter(x => x !== g.file) } });
+      ok('▶ ' + g.name + ' is back on');
+    }},
+
+    reloadall: { usage:'reloadall', about:'make every open page reload (push an update)', owner:true, async run() {
+      askConfirm('Reload every open GLITCHBOX page? Anyone mid-game loses unsaved progress.', async () => {
+        await call('/api/admin/reload-all', { method:'POST', body:{} });
+        ok('↻ every open page reloads within a few seconds');
+      });
+    }},
+
     dismiss: { usage:'dismiss <id>', about:'clear one report', owner:true, async run(a) {
       if (!a[0]) { bad('which report? try  reports'); return; }
       await call('/api/admin/dismiss-report', { method:'POST', body:{ id:a[0] } });
@@ -667,6 +792,11 @@
       }
       if (path === '/api/admin/overview') return { counts:{ players:2, online:1 }, recent:[], topGames:[] };
       if (path === '/api/admin/reports')  return { reports:[{ id:7, reason:'cheating', created:Date.now(), reporter:'Dave', reported:'Davina', reported_sub:'s2' }] };
+      if (path === '/api/admin/guests') return { guestsLocked:false, guests:[
+        { gid:'gxxxx1a2b', name:'Guest 1A2B', ip:'1.2.3.4', online:true, last_seen:Date.now() },
+        { gid:'gyyyy9z9z', name:'Sam', ip:'9.9.9.9', online:true, last_seen:Date.now(), sameAsYou:true } ], ipBans:[] };
+      if (path === '/api/admin/kick') return { ok:true, kicked: opts.body.target === '*' ? 4 : 1 };
+      if (path === '/api/admin/popup') return { ok:true, sent: opts.body.target === '*' ? 4 : 1 };
       return { ok:true };
     };
 
@@ -768,6 +898,50 @@
     await run('confirm');
     const g3 = seen.find(s => s.path === '/api/admin/gift');
     t('and then goes to everyone', g3 && g3.body.sub === '*' && g3.body.tokens === 100);
+
+    // ── guests, kicks and switches ──
+    seen.length = 0;
+    await run('kick dave@x.com lagging');
+    const k1 = seen.find(s => s.path === '/api/admin/kick');
+    t('kick targets a player', k1 && k1.body.target === 'u:s1' && k1.body.reason === 'lagging');
+    seen.length = 0;
+    await run('kick 1A2B');
+    const k2 = seen.find(s => s.path === '/api/admin/kick');
+    t('kick finds a guest by their 4 letters', k2 && k2.body.target === 'g:gxxxx1a2b');
+    seen.length = 0;
+    await run('kick everyone');
+    t('kick everyone asks first', said(/Kick everyone/) && !seen.some(s => s.path === '/api/admin/kick'));
+    await run('confirm');
+    t('then kicks *', seen.some(s => s.path === '/api/admin/kick' && s.body.target === '*'));
+    seen.length = 0;
+    await run('popup sam "dinner time"');
+    t('popup reaches a named guest', seen.some(s => s.path === '/api/admin/popup' && s.body.target === 'g:gyyyy9z9z' && s.body.text === 'dinner time'));
+    seen.length = 0;
+    await run('gban 1A2B net spam');
+    const gb = seen.find(s => s.path === '/api/admin/guest-ban');
+    t('gban net bans device and network', gb && gb.body.gid === 'gxxxx1a2b' && gb.body.ip === true && gb.body.reason === 'spam');
+    seen.length = 0;
+    await run('gban sam net');
+    t('gban refuses your own network', said(/your own network/) && !seen.some(s => s.path === '/api/admin/guest-ban'));
+    await run('gunban 1A2B');
+    t('gunban lifts it', seen.some(s => s.path === '/api/admin/guest-ban' && s.body.banned === false));
+    seen.length = 0;
+    await run('ipban 5.6.7.8 raid'); await run('confirm');
+    t('ipban asks, then bans', seen.some(s => s.path === '/api/admin/ip-ban' && s.body.ip === '5.6.7.8' && s.body.banned === true));
+    await run('ipban off 5.6.7.8');
+    t('ipban off unbans', seen.some(s => s.path === '/api/admin/ip-ban' && s.body.banned === false));
+    seen.length = 0;
+    await run('guestplay off');
+    t('guestplay off locks guests out', seen.some(s => s.path === '/api/admin/guests-lock' && s.body.on === true));
+    seen.length = 0;
+    await run('gameoff gridlock');
+    t('gameoff switches a game off', seen.some(s => s.path === '/api/admin/games' && s.body.disabled.indexOf('gridlock.html') !== -1));
+    seen.length = 0;
+    await run('gameon all');
+    t('gameon all clears the list', seen.some(s => s.path === '/api/admin/games' && s.body.disabled.length === 0));
+    seen.length = 0;
+    await run('reloadall'); await run('confirm');
+    t('reloadall asks, then posts', seen.some(s => s.path === '/api/admin/reload-all'));
 
     // ── owner broadcast commands ──
     seen.length = 0;

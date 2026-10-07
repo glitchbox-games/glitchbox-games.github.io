@@ -16,6 +16,11 @@ const ROOM_MAX_PLAYERS = 16;     // party games seat up to sixteen; 1v1 games as
 const INVITE_TTL = 10 * 60 * 1000; // a game invite goes stale after 10 minutes
 const ONLINE_WINDOW = 90 * 1000;   // "online" = seen within 90s (hub polls every ~20s)
 const SAVE_MAX_BYTES = 512 * 1024; // per game-save cap — a colony snapshot is a few KB
+const GUEST_KEEP = 30 * 86400000;  // guests unseen for a month drop out of the list
+// A guest's device id, minted in their browser (glitchbox-menu.js / index.html).
+const GID_RE = /^g[a-z0-9]{8,24}$/;
+const GAME_RE = /^[a-z0-9-]{1,60}\.html$/i;
+function guestName(gid) { return "Guest " + String(gid).slice(-4).toUpperCase(); }
 
 // ── small helpers ──
 function corsHeaders(origin) {
@@ -130,6 +135,19 @@ export class Hub extends DurableObject {
       this.sql.exec(`CREATE TABLE IF NOT EXISTS admin_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER, action TEXT, target TEXT, detail TEXT)`);
       this.sql.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_code ON users(code)");
+      // Guests have no account, so they're tracked by a random device id their browser
+      // keeps. `ip` is the last address they pinged from — what an IP ban matches.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS guests (
+        gid TEXT PRIMARY KEY, label TEXT, ip TEXT, ua TEXT, created INTEGER, last_seen INTEGER,
+        playing TEXT, playing_at INTEGER, banned INTEGER, ban_reason TEXT, ban_until INTEGER)`);
+      // Network bans: catch a guest who simply clears their browser to get a new id.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS ip_bans (
+        ip TEXT PRIMARY KEY, reason TEXT, until INTEGER, created INTEGER, label TEXT)`);
+      // One-shot deliveries picked up by the next ping: kicks and pop-up messages.
+      // `who` is "u:<sub>" or "g:<gid>".
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS pending (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, kind TEXT, text TEXT, created INTEGER)`);
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN last_ip TEXT"); } catch (e) { /* already there */ }
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
       if (!row) {
@@ -203,6 +221,41 @@ export class Hub extends DurableObject {
     return a && a.text && (!a.until || a.until > Date.now()) ? a : null;
   }
   maintenance() { const m = this.metaJson("maintenance"); return m && m.on ? m : null; }
+  // Games the owner switched off, "every open page reload" stamp, guest lock-out.
+  disabledGames() { const d = this.metaJson("disabled"); return Array.isArray(d) ? d : []; }
+  reloadStamp() { return Number(this.metaGet("reload")) || 0; }
+  guestsLocked() { return this.metaGet("guestsLocked") === "1"; }
+  switches() {
+    return { announce: this.announcement(), maintenance: this.maintenance(), disabled: this.disabledGames(),
+             reload: this.reloadStamp(), guestsLocked: this.guestsLocked() };
+  }
+
+  // The 403 for a banned network, or null. Same "banned:<until>:<reason>" shape as an
+  // account ban so every client already knows how to show it.
+  ipBan(ip) {
+    if (!ip) return null;
+    const b = this.sql.exec("SELECT ip, reason, until FROM ip_bans WHERE ip = ?", ip).toArray()[0];
+    if (!b) return null;
+    if (b.until && b.until <= Date.now()) { this.sql.exec("DELETE FROM ip_bans WHERE ip = ?", ip); return null; }
+    return "banned:" + (b.until || "") + ":" + (b.reason || "");
+  }
+  guestOf(gid) { return this.sql.exec("SELECT * FROM guests WHERE gid = ?", gid).toArray()[0] || null; }
+  guestBan(g) {
+    if (!g || !g.banned) return null;
+    if (g.ban_until && g.ban_until <= Date.now()) {
+      this.sql.exec("UPDATE guests SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE gid = ?", g.gid);
+      return null;
+    }
+    return "banned:" + (g.ban_until || "") + ":" + (g.ban_reason || "");
+  }
+  // Hand over (and forget) whatever kicks and messages are waiting for `who`.
+  takePending(who) {
+    const rows = this.sql.exec("SELECT id, kind, text FROM pending WHERE who = ? ORDER BY id", who).toArray();
+    if (rows.length) this.sql.exec("DELETE FROM pending WHERE who = ?", who);
+    const kick = rows.filter(r => r.kind === "kick").pop();
+    return { kick: kick ? (kick.text || "") : null,
+             messages: rows.filter(r => r.kind === "msg").map(r => r.text) };
+  }
 
   // ── owner / admin ──
   // The owner is one account, recorded once in `meta` and never inferred from the
@@ -231,8 +284,7 @@ export class Hub extends DurableObject {
   // reach the Durable Object?" answerable without an owner session, which is the
   // one question a locked-out owner cannot otherwise ask.
   health() {
-    return { ok: true, service: "glitchbox-api", ownerPinned: !!ownerPin(this.env),
-             announce: this.announcement(), maintenance: this.maintenance() };
+    return { ok: true, service: "glitchbox-api", ownerPinned: !!ownerPin(this.env), ...this.switches() };
   }
 
   // Diagnostic companion to isOwnerSub: same two conditions, reported separately.
@@ -327,7 +379,7 @@ export class Hub extends DurableObject {
   }
 
   // ── endpoints ──
-  async login(idToken) {
+  async login(idToken, ip) {
     const r = await fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(idToken || ""));
     if (!r.ok) throw new HttpError(401, "invalid Google token");
     const info = await r.json();
@@ -338,6 +390,10 @@ export class Hub extends DurableObject {
     // Signing in again must not hand a banned account a fresh session.
     const ban = this.activeBan(existing);
     if (ban) throw new HttpError(403, ban);
+    // A banned network can't sign in its way out — except the owner, who is never locked out.
+    const pinned = ownerPin(this.env) && String(info.email || "").toLowerCase() === ownerPin(this.env);
+    const nb = !pinned && this.ipBan(ip);
+    if (nb) throw new HttpError(403, nb);
     // A chosen arcade icon outranks the Google photo — otherwise every sign-in would
     // quietly reset the player's avatar back to their Google account picture.
     const picture = isIcon(existing && existing.picture) ? existing.picture : (info.picture || "");
@@ -348,6 +404,7 @@ export class Hub extends DurableObject {
          picture=excluded.picture, last_seen=excluded.last_seen`,
       info.sub, info.email || "", info.name || info.email || "Player",
       picture, now, now);
+    if (ip) this.sql.exec("UPDATE users SET last_ip = ? WHERE sub = ?", ip, info.sub);
     if (!existing) this.sql.exec("UPDATE users SET created = ? WHERE sub = ?", now, info.sub);
     this.sql.exec("UPDATE users SET email_verified = ? WHERE sub = ?",
       String(info.email_verified) === "false" ? 0 : 1, info.sub);
@@ -364,10 +421,12 @@ export class Hub extends DurableObject {
     return { sessionToken: session, profile, created: profile.created, isNew: !existing };
   }
 
-  async state(token) {
+  async state(token, ip) {
     const me = await this.verifySession(token);
     const now = Date.now();
+    if (!this.isOwnerSub(me)) { const nb = this.ipBan(ip); if (nb) throw new HttpError(403, nb); }
     this.sql.exec("UPDATE users SET last_seen = ?, playing = '', playing_at = ? WHERE sub = ?", now, now, me);
+    if (ip) this.sql.exec("UPDATE users SET last_ip = ? WHERE sub = ?", ip, me);
     if (!this.userOf(me).code) this.ensureCode(me);
     // Sweep stale invites so nobody is offered a room that has long since emptied.
     this.sql.exec("DELETE FROM invites WHERE created < ?", now - INVITE_TTL);
@@ -396,7 +455,7 @@ export class Hub extends DurableObject {
       "SELECT id, tokens, games, icons, note, created FROM gifts WHERE sub = ? ORDER BY id", me).toArray()
       .map(g => ({ ...g, games: JSON.parse(g.games || "[]"), icons: JSON.parse(g.icons || "[]") }));
     return { profile, friends, incoming, outgoing, blocked, invitesIn, invitesOut, gifts,
-             announce: this.announcement(), maintenance: this.maintenance(),
+             ...this.switches(), ...this.takePending("u:" + me),
              // `ownerPinned` lets the console explain *why* a non-owner can't claim.
              // The address itself is never sent — knowing it isn't the client's business.
              isOwner: this.isOwnerSub(me), ownerPinned: !!ownerPin(this.env),
@@ -409,15 +468,32 @@ export class Hub extends DurableObject {
   // Cheap "am I still allowed in?" for game pages, which don't poll /api/me. A banned
   // session fails inside verifySession with 403 "banned:<reason>".
   // Works signed out too, so a guest's game page still learns about maintenance.
-  async ping(token, game) {
-    const out = { ok: true, maintenance: this.maintenance(), announce: this.announcement() };
-    if (!token) return out;
-    const me = await this.verifySession(token);
-    const g = /^[a-z0-9-]{1,60}\.html$/i.test(String(game || "")) ? String(game) : "";
+  // Guests ping with their device id (`gid`), which is how the owner can see, kick
+  // and ban them. Kicks and pop-up messages ride back on the answer.
+  async ping(token, game, gid, ip, ua) {
+    const out = { ok: true, ...this.switches() };
+    const g = GAME_RE.test(String(game || "")) ? String(game) : "";
     const now = Date.now();
-    this.sql.exec("UPDATE users SET last_seen = ?, playing = ?, playing_at = ? WHERE sub = ?", now, g, now, me);
-    out.isOwner = this.isOwnerSub(me);
-    return out;
+    if (token) {
+      const me = await this.verifySession(token);
+      out.isOwner = this.isOwnerSub(me);
+      if (!out.isOwner) { const nb = this.ipBan(ip); if (nb) throw new HttpError(403, nb); }
+      this.sql.exec("UPDATE users SET last_seen = ?, playing = ?, playing_at = ?, last_ip = COALESCE(?, last_ip) WHERE sub = ?",
+        now, g, now, ip || null, me);
+      return { ...out, ...this.takePending("u:" + me) };
+    }
+    const nb = this.ipBan(ip);
+    if (nb) throw new HttpError(403, nb);
+    if (!GID_RE.test(String(gid || ""))) return out;
+    this.sql.exec(
+      `INSERT INTO guests (gid, ip, ua, created, last_seen, playing, playing_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(gid) DO UPDATE SET ip = excluded.ip, ua = excluded.ua, last_seen = excluded.last_seen,
+         playing = excluded.playing, playing_at = excluded.playing_at`,
+      gid, ip || "", String(ua || "").slice(0, 160), now, now, g, now);
+    const ban = this.guestBan(this.guestOf(gid));
+    if (ban) throw new HttpError(403, ban);
+    out.guest = guestName(gid);
+    return { ...out, ...this.takePending("g:" + gid) };
   }
 
   // The hub banked these gifts; drop them so no other device banks them again.
@@ -459,6 +535,9 @@ export class Hub extends DurableObject {
         invites:     n("SELECT COUNT(*) AS n FROM invites"),
         reports:     n("SELECT COUNT(*) AS n FROM reports"),
         saves:       n("SELECT COUNT(*) AS n FROM saves"),
+        guestsOnline: n("SELECT COUNT(*) AS n FROM guests WHERE last_seen > ?", now - ONLINE_WINDOW),
+        guestsToday: n("SELECT COUNT(*) AS n FROM guests WHERE last_seen > ?", now - 86400000),
+        ipBans:      n("SELECT COUNT(*) AS n FROM ip_bans"),
       },
       topGames: this.sql.exec(
         "SELECT game, COUNT(*) AS players FROM saves GROUP BY game ORDER BY players DESC LIMIT 10").toArray(),
@@ -469,8 +548,11 @@ export class Hub extends DurableObject {
         `SELECT sub, name, picture, last_seen, CASE WHEN playing_at > ? THEN playing ELSE '' END AS playing
          FROM users WHERE last_seen > ? ORDER BY last_seen DESC LIMIT 50`,
         now - ONLINE_WINDOW, now - ONLINE_WINDOW).toArray(),
-      announce: this.announcement(),
-      maintenance: this.maintenance(),
+      liveGuests: this.sql.exec(
+        `SELECT gid, label, last_seen, CASE WHEN playing_at > ? THEN playing ELSE '' END AS playing
+         FROM guests WHERE last_seen > ? AND (banned IS NULL OR banned = 0) ORDER BY last_seen DESC LIMIT 50`,
+        now - ONLINE_WINDOW, now - ONLINE_WINDOW).toArray().map(x => ({ ...x, name: x.label || guestName(x.gid) })),
+      ...this.switches(),
     };
   }
 
@@ -588,6 +670,151 @@ export class Hub extends DurableObject {
     this.metaSet("maintenance", JSON.stringify(m));
     this.log(on ? "maintenance-on" : "maintenance-off", "", m ? m.text : "");
     return { ok: true, maintenance: m };
+  }
+
+  // ── guests ──
+  async adminGuests(token) {
+    const me = await this.requireOwner(token);
+    const now = Date.now();
+    this.sql.exec("DELETE FROM guests WHERE last_seen < ? AND (banned IS NULL OR banned = 0)", now - GUEST_KEEP);
+    this.sql.exec("DELETE FROM ip_bans WHERE until AND until <= ?", now);
+    const myIp = (this.sql.exec("SELECT last_ip FROM users WHERE sub = ?", me).toArray()[0] || {}).last_ip || "";
+    // Who else is behind the same address — a guest sharing a network with a player
+    // is often that player, signed out.
+    const byIp = {};
+    for (const u of this.sql.exec("SELECT name, last_ip FROM users WHERE last_ip IS NOT NULL AND last_ip != ''").toArray())
+      (byIp[u.last_ip] = byIp[u.last_ip] || []).push(u.name);
+    const banned = new Set(this.sql.exec("SELECT ip FROM ip_bans").toArray().map(r => r.ip));
+    const guests = this.sql.exec(
+      `SELECT gid, label, ip, ua, created, last_seen, banned, ban_reason, ban_until,
+              CASE WHEN playing_at > ? THEN playing ELSE NULL END AS playing
+       FROM guests ORDER BY last_seen DESC LIMIT 200`, now - ONLINE_WINDOW).toArray()
+      .map(g => ({ ...g, name: g.label || guestName(g.gid), online: g.last_seen > now - ONLINE_WINDOW,
+                   sameAsYou: !!myIp && g.ip === myIp, ipBanned: banned.has(g.ip), alsoOnIp: byIp[g.ip] || [] }));
+    return { guests, myIp, ipBans: this.sql.exec("SELECT ip, reason, until, created, label FROM ip_bans ORDER BY created DESC").toArray(),
+             guestsLocked: this.guestsLocked() };
+  }
+
+  // Ban a guest's device; `ip` also bans the network they're on. The owner's own
+  // network is refused — that would ban everyone at your house but you.
+  async adminGuestBan(token, gid, banned, reason, hours, alsoIp) {
+    const me = await this.requireOwner(token);
+    const g = this.guestOf(String(gid || ""));
+    if (!g) throw new HttpError(404, "no such guest");
+    const h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    const why = banned ? String(reason || "").slice(0, 200) : null;
+    const until = banned && h ? Date.now() + h * 3600000 : null;
+    const name = g.label || guestName(g.gid);
+    if (banned && alsoIp && g.ip) {
+      const mine = (this.sql.exec("SELECT last_ip FROM users WHERE sub = ?", me).toArray()[0] || {}).last_ip;
+      if (mine && mine === g.ip) throw new HttpError(400, "that guest is on your own network — ban the device only");
+    }
+    this.sql.exec("UPDATE guests SET banned = ?, ban_reason = ?, ban_until = ? WHERE gid = ?", banned ? 1 : null, why, until, g.gid);
+    if (banned && alsoIp && g.ip)
+      this.sql.exec(`INSERT INTO ip_bans (ip, reason, until, created, label) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(ip) DO UPDATE SET reason = excluded.reason, until = excluded.until, created = excluded.created, label = excluded.label`,
+        g.ip, why, until, Date.now(), name);
+    // Unbanning the device also lifts a network ban that came with it.
+    if (!banned && g.ip) this.sql.exec("DELETE FROM ip_bans WHERE ip = ? AND label = ?", g.ip, name);
+    this.log(banned ? "ban-guest" : "unban-guest", "", name + (banned ? (alsoIp ? " + network" : "") +
+      (h ? " for " + h + "h" : " permanent") + (why ? " — " + why : "") : ""));
+    return { ok: true };
+  }
+
+  async adminIpBan(token, ip, banned, reason, hours) {
+    const me = await this.requireOwner(token);
+    const addr = String(ip || "").trim().slice(0, 64);
+    if (!/^[0-9a-f.:]{3,64}$/i.test(addr)) throw new HttpError(400, "that isn't an IP address");
+    if (banned) {
+      const mine = (this.sql.exec("SELECT last_ip FROM users WHERE sub = ?", me).toArray()[0] || {}).last_ip;
+      if (mine && mine === addr) throw new HttpError(400, "that's your own network");
+      const h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+      this.sql.exec(`INSERT INTO ip_bans (ip, reason, until, created, label) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(ip) DO UPDATE SET reason = excluded.reason, until = excluded.until, created = excluded.created`,
+        addr, String(reason || "").slice(0, 200), h ? Date.now() + h * 3600000 : null, Date.now(), "");
+    } else this.sql.exec("DELETE FROM ip_bans WHERE ip = ?", addr);
+    this.log(banned ? "ban-ip" : "unban-ip", "", addr + (banned && reason ? " — " + reason : ""));
+    return { ok: true };
+  }
+
+  async adminGuestLabel(token, gid, label) {
+    await this.requireOwner(token);
+    const l = String(label || "").trim().slice(0, 40);
+    this.sql.exec("UPDATE guests SET label = ? WHERE gid = ?", l || null, String(gid || ""));
+    return { ok: true };
+  }
+
+  // Kick: boot someone back to the hub with a message. Not a ban — they can come
+  // straight back. target "u:<sub>", "g:<gid>", or "*" for everyone online but you.
+  async adminKick(token, target, reason) {
+    const me = await this.requireOwner(token);
+    const why = String(reason || "").trim().slice(0, 160);
+    const now = Date.now();
+    let whos;
+    if (target === "*") {
+      whos = this.sql.exec("SELECT sub FROM users WHERE last_seen > ? AND sub != ?", now - ONLINE_WINDOW, me).toArray().map(r => "u:" + r.sub)
+        .concat(this.sql.exec("SELECT gid FROM guests WHERE last_seen > ?", now - ONLINE_WINDOW).toArray().map(r => "g:" + r.gid));
+    } else {
+      const t = String(target || "");
+      if (t === "u:" + me) throw new HttpError(400, "you can't kick yourself");
+      if (!(/^u:/.test(t) && this.userOf(t.slice(2))) && !(/^g:/.test(t) && this.guestOf(t.slice(2))))
+        throw new HttpError(404, "nobody by that id");
+      whos = [t];
+    }
+    for (const w of whos) this.sql.exec("INSERT INTO pending (who, kind, text, created) VALUES (?, 'kick', ?, ?)", w, why, now);
+    this.sql.exec("DELETE FROM pending WHERE created < ?", now - 86400000);
+    const label = target === "*" ? "everyone online" : this.whoName(target);
+    this.log("kick", "", label + (why ? " — " + why : ""));
+    return { ok: true, kicked: whos.length };
+  }
+
+  // A pop-up on someone's screen right now — works mid-game and for guests.
+  async adminPopup(token, target, text) {
+    const me = await this.requireOwner(token);
+    const t = String(text || "").trim().slice(0, 200);
+    if (!t) throw new HttpError(400, "type a message first");
+    const now = Date.now();
+    let whos;
+    if (target === "*") {
+      whos = this.sql.exec("SELECT sub FROM users WHERE last_seen > ? AND sub != ?", now - ONLINE_WINDOW, me).toArray().map(r => "u:" + r.sub)
+        .concat(this.sql.exec("SELECT gid FROM guests WHERE last_seen > ? AND (banned IS NULL OR banned = 0)", now - ONLINE_WINDOW).toArray().map(r => "g:" + r.gid));
+    } else whos = [String(target || "")];
+    for (const w of whos) this.sql.exec("INSERT INTO pending (who, kind, text, created) VALUES (?, 'msg', ?, ?)", w, t, now);
+    this.log("popup", "", (target === "*" ? "everyone online" : this.whoName(target)) + ' "' + t + '"');
+    return { ok: true, sent: whos.length };
+  }
+  whoName(t) {
+    t = String(t || "");
+    if (t.indexOf("u:") === 0) { const u = this.userOf(t.slice(2)); return u ? u.name : t; }
+    if (t.indexOf("g:") === 0) { const g = this.guestOf(t.slice(2)); return g ? (g.label || guestName(g.gid)) : t; }
+    return t;
+  }
+
+  // Every open hub and game reloads on its next ping — for pushing an update out.
+  async adminReloadAll(token) {
+    await this.requireOwner(token);
+    this.metaSet("reload", String(Date.now()));
+    this.log("reload-all", "", "");
+    return { ok: true };
+  }
+
+  // Switch individual games off (and back on). Off games can't be opened by anyone
+  // but the owner, and players already in one are sent back to the hub.
+  async adminGames(token, disabled) {
+    await this.requireOwner(token);
+    const list = [...new Set((Array.isArray(disabled) ? disabled : []).map(String).filter(x => GAME_RE.test(x)))].slice(0, 200);
+    const before = this.disabledGames();
+    this.metaSet("disabled", JSON.stringify(list));
+    const off = list.filter(x => !before.includes(x)), on = before.filter(x => !list.includes(x));
+    this.log("games", "", [off.length ? "off: " + off.join(", ") : "", on.length ? "on: " + on.join(", ") : ""].filter(Boolean).join(" · "));
+    return { ok: true, disabled: list };
+  }
+
+  async adminGuestsLock(token, on) {
+    await this.requireOwner(token);
+    this.metaSet("guestsLocked", on ? "1" : "0");
+    this.log(on ? "guests-off" : "guests-on", "", "");
+    return { ok: true, guestsLocked: !!on };
   }
 
   async adminLog(token) {
@@ -843,16 +1070,18 @@ export default {
 
     const stub = env.HUB.getByName("global");
     const auth = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+    const ip = request.headers.get("CF-Connecting-IP") || "";
 
     try {
       if (path === "/" || path === "/api/health") return json(await stub.health(), 200, origin);
 
       if (path === "/api/login" && request.method === "POST") {
         const body = await request.json().catch(() => ({}));
-        return json(await stub.login(body.idToken), 200, origin);
+        return json(await stub.login(body.idToken, ip), 200, origin);
       }
-      if (path === "/api/me") return json(await stub.state(auth), 200, origin);
-      if (path === "/api/ping") return json(await stub.ping(auth, url.searchParams.get("game")), 200, origin);
+      if (path === "/api/me") return json(await stub.state(auth, ip), 200, origin);
+      if (path === "/api/ping") return json(await stub.ping(auth, url.searchParams.get("game"),
+        url.searchParams.get("gid"), ip, request.headers.get("User-Agent")), 200, origin);
 
       // Game saves — the cloud half of glitchbox-save.js.
       if (path === "/api/load") {
@@ -868,6 +1097,7 @@ export default {
       }
       if (path === "/api/admin/reports") return json(await stub.adminReports(auth), 200, origin);
       if (path === "/api/admin/log") return json(await stub.adminLog(auth), 200, origin);
+      if (path === "/api/admin/guests") return json(await stub.adminGuests(auth), 200, origin);
 
       if (request.method === "POST") {
         const body = await request.json().catch(() => ({}));
@@ -879,6 +1109,14 @@ export default {
         if (path === "/api/admin/delete") return json(await stub.adminDeletePlayer(auth, body.sub), 200, origin);
         if (path === "/api/admin/gift")   return json(await stub.adminGift(auth, body.sub, body.tokens, body.games, body.icons, body.note), 200, origin);
         if (path === "/api/gifts/claim")  return json(await stub.claimGifts(auth, body.ids), 200, origin);
+        if (path === "/api/admin/guest-ban")   return json(await stub.adminGuestBan(auth, body.gid, body.banned, body.reason, body.hours, body.ip), 200, origin);
+        if (path === "/api/admin/guest-label") return json(await stub.adminGuestLabel(auth, body.gid, body.label), 200, origin);
+        if (path === "/api/admin/ip-ban")      return json(await stub.adminIpBan(auth, body.ip, body.banned, body.reason, body.hours), 200, origin);
+        if (path === "/api/admin/kick")        return json(await stub.adminKick(auth, body.target, body.reason), 200, origin);
+        if (path === "/api/admin/popup")       return json(await stub.adminPopup(auth, body.target, body.text), 200, origin);
+        if (path === "/api/admin/reload-all")  return json(await stub.adminReloadAll(auth), 200, origin);
+        if (path === "/api/admin/games")       return json(await stub.adminGames(auth, body.disabled), 200, origin);
+        if (path === "/api/admin/guests-lock") return json(await stub.adminGuestsLock(auth, body.on), 200, origin);
         if (path === "/api/admin/dismiss-report") return json(await stub.adminDismissReport(auth, body.id), 200, origin);
         if (path === "/api/add-by-code") return json(await stub.addByCode(auth, body.code), 200, origin);
         if (path === "/api/accept")   return json(await stub.accept(auth, body.sub), 200, origin);

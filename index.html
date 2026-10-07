@@ -666,7 +666,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
     <div class="auth-btn-wrap">
       <div id="g-signin-btn"></div>
     </div>
-    <button onclick="closeAuth()" style="margin-top:14px;background:transparent;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;">Browse as guest →</button>
+    <button id="auth-guest-btn" onclick="closeAuth()" style="margin-top:14px;background:transparent;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;">Browse as guest →</button>
     <div class="auth-setup" id="auth-setup">
       <b>⚙ Setup needed:</b> to enable real Google login, create a free OAuth Client ID:<br>
       1. Go to <code>console.cloud.google.com</code> → APIs &amp; Services → Credentials<br>
@@ -684,6 +684,15 @@ body.sb-pinned { padding-left:var(--rail-open); }
     <div class="ban-reason" id="maint-text"></div>
     <div class="auth-desc">GLITCHBOX is closed for a bit while the owner works on it. This page opens by itself when it's back.</div>
     <button class="ban-btn" onclick="openAuth('login')">Owner? Sign in</button>
+  </div>
+</div>
+<div class="ban-screen maint-screen" id="kick-screen">
+  <div class="auth-card">
+    <div class="auth-logo-icon" style="border-color:#ffc800">👢</div>
+    <div class="ban-title">KICKED</div>
+    <div class="ban-reason" id="kick-text"></div>
+    <div class="auth-desc">You're back in the arcade. You can keep playing.</div>
+    <button class="ban-btn" onclick="document.getElementById('kick-screen').classList.remove('show')">OK</button>
   </div>
 </div>
 <div class="ban-screen" id="ban-screen">
@@ -992,7 +1001,7 @@ function isLocked(g){ return !!g.price && (isGuest() || !isOwned(g.file)); }
 function isGuest(){ return !currentUser; }
 function guestWall(what){
   if(!isGuest()) return false;
-  tokenToast('🔒','Sign in to '+what);
+  noticeToast('🔒 SIGN IN','Sign in to '+what);
   closeShop(); openAuth('login');
   return true;
 }
@@ -1029,17 +1038,18 @@ function tokenToast(amt,why,spend){
 }
 
 // A message from the owner: same toast shelf, no coin, and it stays long enough to read.
-function ownerMessage(text){
+function ownerMessage(text){ noticeToast('📨 MESSAGE','From the owner: '+text, 12000); }
+function noticeToast(title,text,ms){
   const wrap=document.getElementById('token-toasts'); if(!wrap) return;
   const t=document.createElement('div');
   t.className='token-toast';
-  t.innerHTML='<div class="tt-amt">📨 MESSAGE</div><div class="tt-why">From the owner: '+esc(text)+'</div>';
+  t.innerHTML='<div class="tt-amt">'+esc(title)+'</div><div class="tt-why">'+esc(text)+'</div>';
   t.style.cursor='pointer'; t.title='Click to dismiss';
   const bye=()=>{ t.style.transition='opacity .4s,transform .4s'; t.style.opacity='0'; t.style.transform='translateX(18px)';
     setTimeout(()=>t.remove(),420); };
   t.onclick=bye;
   wrap.appendChild(t);
-  setTimeout(bye, 12000);
+  setTimeout(bye, ms||4500);
 }
 
 // ── earning ──
@@ -1387,13 +1397,15 @@ function renderGames(){
   }
   noRes.classList.remove('show');
   games.forEach(g=>{
-    const locked=isLocked(g);
+    const off=isOff(g.file);
+    const locked=isLocked(g)||off;
     const a=document.createElement('a');
     a.className='game-card'+(locked?' locked':'');
     a.href=locked?'#':gameURL(g.file);        // locked tiles open the shop, not the game
     const badges=g.tags.map(t=>`<span class="game-tag ${t}">${t==='hot'?'▲ HOT':t==='new'?'★ NEW':t==='mp'?'⬡ MULTI':t}</span>`).join('')
       +(g.price?`<span class="game-tag special">${locked?'🔒 '+g.price:'✦ OWNED'}</span>`:'');
-    const veil=locked?`<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 ${g.price}</div><div class="lv-hint">${isGuest()?'Sign in':'Unlock'}</div></div>`:'';
+    const veil=off?`<div class="lock-veil"><div class="lv-icon">⏸</div><div class="lv-price">OFF</div><div class="lv-hint">Switched off</div></div>`
+      :locked?`<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 ${g.price}</div><div class="lv-hint">${isGuest()?'Sign in':'Unlock'}</div></div>`:'';
     const on=isFav(g.file);
     // a <span>, not a <button>: the card itself is an <a> and nesting a button
     // inside a link is invalid HTML
@@ -1401,7 +1413,9 @@ function renderGames(){
     a.innerHTML=`<div class="game-thumb"><canvas class="thumb-canvas" width="320" height="200"></canvas><div class="game-thumb-scan"></div><div class="game-thumb-overlay"><div class="play-btn">▶</div></div>${veil}${fav}</div><div class="game-info"><div class="game-name">${g.name}</div><div class="game-meta"><span class="game-tag cat">${g.category.toUpperCase()}</span>${badges}</div></div>`;
     if(locked) a.addEventListener('click',ev=>{
       if(ev.target.closest('.fav-btn')) return;
-      ev.preventDefault(); openShop(g.file);
+      ev.preventDefault();
+      if(off) noticeToast('⏸ SWITCHED OFF', g.name+' is switched off for now — try again later.');
+      else openShop(g.file);
     });
     grid.appendChild(a);
     const canvas=a.querySelector('.thumb-canvas'),ctx=canvas.getContext('2d');
@@ -1440,7 +1454,7 @@ claimStartup();captureRef();paintPlayMode();updateCounts();renderGames();
 // picker needs to know whether you're signed in before it decides where to send you.
 if(location.hash==='#shop')  addEventListener('load',()=>setTimeout(openShop,0));
 if(location.hash==='#icons') addEventListener('load',()=>setTimeout(openIconPicker,0));
-if(location.hash==='#signin') addEventListener('load',()=>setTimeout(()=>{ if(isGuest()){ tokenToast('🔒','Sign in to save favorites'); openAuth('login'); } },0));
+if(location.hash==='#signin') addEventListener('load',()=>setTimeout(()=>{ if(isGuest()){ noticeToast('🔒 SIGN IN','Sign in to save favorites'); openAuth('login'); } },0));
 
 // ══════════════════ GOOGLE SIGN-IN / REGISTRATION ══════════════════
 // 👉 Paste your OAuth Client ID here (from Google Cloud Console → Credentials).
@@ -1460,7 +1474,7 @@ function decodeJwt(token){
 const API_BASE = window.GLITCHBOX_API || 'https://glitchbox-api.PLACEHOLDER.workers.dev';
 
 var currentUser = null;   // var, not let: isGuest() runs in the first render, before this line
-let lastState = { profile:null, friends:[], incoming:[], outgoing:[], blocked:[], invitesIn:[], invitesOut:[] };
+var lastState = { profile:null, friends:[], incoming:[], outgoing:[], blocked:[], invitesIn:[], invitesOut:[] };
 
 // Games you can pull a friend into. These talk to the Worker's room relay, so they
 // work from GitHub Pages with no server to run. Add a game here once it speaks the
@@ -1536,7 +1550,7 @@ function showBan(raw){
   closeAuth();
 }
 function clearBan(){
-  try { localStorage.removeItem(BAN_KEY); } catch(e){}
+  try { localStorage.removeItem(BAN_KEY); localStorage.removeItem('glitchbox.bannedBy'); } catch(e){}
   document.getElementById('ban-screen').classList.remove('show');
 }
 // ── arcade-wide switches ── announcement banner + maintenance mode. They come from
@@ -1562,13 +1576,76 @@ function dismissAnnounce(){
   if(arcadeAnnounce) try { localStorage.setItem(ANNOUNCE_SEEN, String(arcadeAnnounce.id)); } catch(e){}
   applyArcade(arcadeAnnounce, arcadeMaint);
 }
+// ── guests ── a guest has no account, so a random id kept in this browser is what
+// the owner console sees, kicks and bans. glitchbox-menu.js mints the same key.
+function guestId(){
+  try {
+    let g = localStorage.getItem('glitchbox.gid') || '';
+    if(!/^g[a-z0-9]{8,24}$/.test(g)){
+      g = 'g' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+      localStorage.setItem('glitchbox.gid', g);
+    }
+    return g;
+  } catch(e){ return ''; }
+}
+// Owner switches that ride on every ping and /api/me: games switched off, guest
+// play off, and the "reload everyone" stamp.
+// var, not let: renderGames() runs (and calls isOff) before this line is reached.
+var arcadeDisabled = [], guestsLockedNow = false, reloadSeen = null;
+function isOff(file){ return (arcadeDisabled||[]).indexOf(file)!==-1 && !(typeof lastState!=='undefined' && lastState && lastState.isOwner); }
+function applySwitches(h){
+  if(!h) return;
+  const dis = Array.isArray(h.disabled) ? h.disabled : [];
+  if(dis.join() !== arcadeDisabled.join()){ arcadeDisabled = dis; renderGames(); }
+  guestsLockedNow = !!h.guestsLocked;
+  const gb = document.getElementById('auth-guest-btn');
+  if(gb) gb.style.display = guestsLockedNow ? 'none' : '';
+  if(guestsLockedNow && isGuest()){
+    document.body.classList.add('locked');
+    document.getElementById('auth-sub').textContent = '// GUEST PLAY IS OFF — SIGN IN';
+    document.getElementById('auth-overlay').classList.remove('hidden');
+  } else if(document.body.classList.contains('locked') && !document.getElementById('maint-screen').classList.contains('show')){
+    document.body.classList.remove('locked');
+  }
+  if(reloadSeen === null) reloadSeen = h.reload || 0;
+  else if((h.reload||0) > reloadSeen && !(lastState && lastState.isOwner)) location.reload();
+}
+// Kicks and pop-up messages the owner queued for this player or guest.
+function applyPending(h){
+  if(!h) return;
+  (h.messages||[]).forEach(ownerMessage);
+  if(h.kick != null && !(lastState && lastState.isOwner)) showKick(h.kick ? 'Kicked by the owner: '+h.kick : 'The owner kicked you.');
+}
+function showKick(text){
+  document.getElementById('kick-text').textContent = text;
+  document.getElementById('kick-screen').classList.add('show');
+}
+// A game page bounced us here with a reason (kicked, game switched off, …).
+try {
+  const k = localStorage.getItem('glitchbox.kicked');
+  if(k !== null){ localStorage.removeItem('glitchbox.kicked'); addEventListener('load',()=>showKick(k)); }
+} catch(e){}
+
+// Guests and signed-in players both ping, so the owner sees guests live too.
 async function pollArcade(){
   if(!BACKEND_READY) return;
+  const s = getSession();
   try {
-    const r = await fetch(API_BASE + '/api/health');
-    const h = await r.json();
+    const r = await fetch(API_BASE + '/api/ping?game=' + (s ? '' : '&gid=' + guestId()),
+      s ? { headers:{ Authorization:'Bearer '+s } } : {});
+    const h = await r.json().catch(()=>({}));
+    if(r.status === 403){
+      const m = /^banned:([\s\S]*)$/.exec(h.error||'');
+      if(m){ if(!s) try { localStorage.setItem('glitchbox.bannedBy','guest'); } catch(e){} showBan(m[1]); }
+      return;
+    }
+    if(!h.ok) return;
+    // a guest/network ban that has since been lifted
+    let by = null; try { by = localStorage.getItem('glitchbox.bannedBy'); } catch(e){}
+    if(!s && by === 'guest'){ try { localStorage.removeItem('glitchbox.bannedBy'); } catch(e){} clearBan(); }
     // applyArcade reads lastState.isOwner, so the owner never gets the closed sign.
-    if(h && h.ok) applyArcade(h.announce, h.maintenance);
+    applyArcade(h.announce, h.maintenance);
+    applySwitches(h); applyPending(h);
   } catch(e){}
 }
 
@@ -1607,6 +1684,7 @@ async function refreshState(){
     lastState = await api('/api/me');
     clearBan();
     applyArcade(lastState.announce, lastState.maintenance);
+    applySwitches(lastState); applyPending(lastState);
     applyGifts(lastState.gifts);
     // The server is the source of truth for your icon, so a pick made on your phone
     // shows up here too.
@@ -2095,14 +2173,17 @@ function openAuth(mode){
   if(sub) sub.textContent = mode==='signup' ? '// CREATE ACCOUNT' : mode==='login' ? '// LOG IN' : '// ENTER THE GLITCH';
   document.getElementById('auth-overlay').classList.remove('hidden');
 }
-function closeAuth(){ document.getElementById('auth-overlay').classList.add('hidden'); }
+function closeAuth(){
+  if(typeof guestsLockedNow !== 'undefined' && guestsLockedNow && isGuest()) return;   // guest play is off
+  document.getElementById('auth-overlay').classList.add('hidden');
+}
 
 function initGoogleAuth(){
   // Catalog is always open — never lock the body or force the overlay.
   document.body.classList.remove('locked');
   document.getElementById('auth-overlay').classList.add('hidden');
   try { const b = localStorage.getItem(BAN_KEY); if(b !== null) showBan(b); } catch(e){}
-  pollArcade(); setInterval(() => { if(!document.hidden) pollArcade(); }, 30000);
+  pollArcade(); setInterval(() => { if(!document.hidden) pollArcade(); }, 12000);
 
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem('glitchbox_user')||'null'); } catch(e){}
