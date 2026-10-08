@@ -321,9 +321,13 @@ function tosAgreed(){
          .some(v=>v && v.localeCompare(TOS_VERSION,undefined,{numeric:true})>=0); }catch(e){ return false; }
 }
 // An unknown or still-locked game has no business being framed here.
+// Being sent away means *only* that: the game must not start loading behind the
+// redirect, and a locked game must never pay out its first-play tokens.
+let leaving = true;
 if(!game){ location.replace('index.html'); }
 else if(!tosAgreed()){ location.replace('index.html#terms:'+encodeURIComponent('play.html'+location.search+location.hash)); }
 else if(isLocked(game)){ location.replace('index.html#shop'); }
+else leaving = false;
 
 // ══════════════════ THE GAME WINDOW ══════════════════
 const frame = document.getElementById('game-frame');
@@ -344,8 +348,10 @@ if(game){
   document.getElementById('game-badges').innerHTML  = game.tags.map(t =>
     '<span class="game-tag '+t+'">'+(t==='hot'?'▲ HOT':t==='new'?'★ NEW':t==='mp'?'⬡ MULTI':t)+'</span>').join(' ');
   document.getElementById('game-blurb').textContent = game.blurb || '';
-  document.getElementById('raw-link').href = src;
-  frame.src = fresh();
+  const raw = document.getElementById('raw-link');
+  raw.href = src;
+  raw.addEventListener('click', () => { raw.href = fresh(); });   // the newest build, not a cached one
+  if(!leaving) frame.src = fresh();
 }
 
 // The quit buttons inside the games point at index.html. Inside a frame that would
@@ -377,9 +383,9 @@ function goFullscreen(){
   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
   if(req){
     Promise.resolve(req.call(el)).then(() => { try{ frame.contentWindow.focus(); }catch(e){} })
-      .catch(() => { window.open(src,'_self'); });   // blocked? fall back to the plain page
+      .catch(() => { window.open(fresh(),'_self'); });   // blocked? fall back to the plain page
   } else {
-    window.open(src,'_self');
+    window.open(fresh(),'_self');
   }
 }
 document.addEventListener('fullscreenchange', () => {
@@ -486,12 +492,16 @@ function rewardPlay(g){
   }
 }
 document.getElementById('token-balance').textContent = tokens();
-if(game) rewardPlay(game);
+if(game && !leaving) rewardPlay(game);
 
 // ══════════════════ RECOMMENDATIONS ══════════════════
 function gameURL(file){
-  return playMode()==='full' ? file : 'play.html?g='+encodeURIComponent(file);
+  return playMode()==='full' ? file+'?v='+Date.now() : 'play.html?g='+encodeURIComponent(file);
 }
+// Games the owner switched off (from the public health check), so they aren't offered here.
+let offList = [];
+fetch((window.GLITCHBOX_API||'https://glitchbox-api.levtheduck.workers.dev')+'/api/health')
+  .then(r=>r.json()).then(h=>{ if(Array.isArray(h.disabled) && h.disabled.length){ offList=h.disabled; renderGrids(); } }).catch(()=>{});
 // A tiny bit of ordering so the strip under the game isn't random: same category
 // first, then the hot ones, then everything else — favorites float up either way.
 function score(g){
@@ -501,16 +511,19 @@ function score(g){
   if(g.tags.includes('hot')) s+=12;
   if(g.tags.includes('new')) s+=8;
   if(isLocked(g)) s-=30;
+  if(offList.indexOf(g.file)!==-1) s-=60;
   return s;
 }
 function card(g){
-  const locked=isLocked(g);
+  const off=offList.indexOf(g.file)!==-1, locked=isLocked(g)||off;
   const a=document.createElement('a');
   a.className='game-card'+(locked?' locked':'');
-  a.href=locked?'index.html#shop':gameURL(g.file);
+  a.href=off?'#':locked?(isGuest()?'index.html#signin':'index.html#shop'):gameURL(g.file);
+  if(off) a.addEventListener('click',e=>e.preventDefault());
   const badges=g.tags.map(t=>'<span class="game-tag '+t+'">'+(t==='hot'?'▲ HOT':t==='new'?'★ NEW':t==='mp'?'⬡ MULTI':t)+'</span>').join('')
     +(g.price?'<span class="game-tag special">'+(locked?'🔒 '+g.price:'✦ OWNED')+'</span>':'');
-  const lock=locked?'<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 '+g.price+'</div><div class="lv-hint">Unlock</div></div>':'';
+  const lock=off?'<div class="lock-veil"><div class="lv-icon">⏸</div><div class="lv-price">OFF</div><div class="lv-hint">Switched off</div></div>'
+    :locked?'<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 '+g.price+'</div><div class="lv-hint">'+(isGuest()?'Sign in':'Unlock')+'</div></div>':'';
   a.innerHTML='<div class="game-thumb"><canvas class="thumb-canvas" width="320" height="200"></canvas>'+
     '<div class="game-thumb-scan"></div><div class="game-thumb-overlay"><div class="play-btn">▶</div></div>'+lock+'</div>'+
     '<div class="game-info"><div class="game-name">'+g.name+'</div>'+

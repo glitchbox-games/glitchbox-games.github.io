@@ -212,6 +212,33 @@ function spark(x,y,o={}){
 }
 function ring(x,y,hue){ P.push({x,y,r:6,life:1,decay:.03,kind:'ring',hue,grow:o=>0}) }
 
+// Every particle used to be drawn with shadowBlur — one of the slowest canvas calls.
+// With ~1,400 sparks that froze the game on weaker machines (school Chromebooks).
+// Now each glowing star is painted ONCE per (colour, size) into a small cached
+// canvas, and particles just stamp that image: same look, a fraction of the cost.
+const STAR_CACHE=new Map();
+function starSprite(hue,light,r){
+  const H=Math.round(hue/6)*6, L=Math.round(light/6)*6, R=Math.max(1,Math.round(r*2)/2);
+  const key=H+'|'+L+'|'+R;
+  let sp=STAR_CACHE.get(key);
+  if(sp) return sp;
+  if(STAR_CACHE.size>900) STAR_CACHE.clear();
+  const pad=Math.ceil(R*3.2), size=pad*2;
+  const oc=document.createElement('canvas'); oc.width=oc.height=size;
+  const c=oc.getContext('2d'), col=`hsl(${H},100%,${L}%)`;
+  c.translate(pad,pad); c.fillStyle=col; c.shadowColor=col; c.shadowBlur=R*2.6;
+  c.beginPath();
+  for(let i=0;i<8;i++){ const a=i*Math.PI/4, rr=(i%2)?R*.2:R; i?c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):c.moveTo(Math.cos(a)*rr,Math.sin(a)*rr); }
+  c.closePath(); c.fill();
+  sp={c:oc,pad}; STAR_CACHE.set(key,sp);
+  return sp;
+}
+function stampStar(c,x,y,r,rot,hue,light,alpha){
+  const sp=starSprite(hue,light,r);
+  c.save(); c.translate(x,y); c.rotate(rot); c.globalAlpha=alpha;
+  c.drawImage(sp.c,-sp.pad,-sp.pad); c.restore();
+}
+
 function drawStar(c,x,y,r,rot,col,alpha){
   c.save();c.translate(x,y);c.rotate(rot);c.globalAlpha=alpha;
   c.fillStyle=col;c.shadowColor=col;c.shadowBlur=r*2.6;
@@ -489,8 +516,7 @@ function frame(now){
     p.x+=p.vx; p.y+=p.vy; p.rot+=p.spin;
     const a=p.life<.25 ? p.life/.25 : 1;
     const tw=.72+.28*Math.sin(p.rot*3.4);
-    drawStar(cx,p.x,p.y,p.r*(.35+p.life*.65)*tw,p.rot,
-      `hsl(${p.hue},100%,${66+p.life*24}%)`, a*.95);
+    stampStar(cx,p.x,p.y,p.r*(.35+p.life*.65)*tw,p.rot,p.hue,66+p.life*24,a*.95);
   }
   cx.globalAlpha=1;cx.shadowBlur=0;
   cx.globalCompositeOperation='source-over';
@@ -535,5 +561,6 @@ if(location.hash==='#smoke'){
   document.body.style.cursor='auto';
 }
 </script>
+<script src="glitchbox-menu.js" defer></script>
 </body>
 </html>

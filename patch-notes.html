@@ -48,6 +48,13 @@ s{color:var(--dimmer);text-decoration-color:var(--red)}
 #topbar .grow{flex:1}
 #logbtn{padding:3px 10px;border:1px solid var(--line2);border-radius:4px;color:var(--dim)}
 #logbtn:hover{color:var(--ink);border-color:var(--blue)}
+#logbtn{white-space:nowrap}
+/* phones: brand + two badges + the changelog button overflowed the right edge */
+@media (max-width:480px){
+  #topbar{gap:7px;padding:8px 10px;letter-spacing:.02em}
+  .brand{letter-spacing:.06em}
+  #stagebadge{max-width:96px;overflow:hidden;text-overflow:ellipsis}
+}
 #logbtn b{color:var(--amber)}
 
 .screen{flex:1;min-height:0;overflow:auto;display:none;flex-direction:column}

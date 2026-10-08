@@ -132,6 +132,9 @@
       ':host,*{box-sizing:border-box}' +
       '.wrap{position:fixed;' + vert + horz + 'pointer-events:auto;' +
         "font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;}" +
+      // On touch screens the MENU dot is always an ~85px labelled pill, so 48px in
+      // put this button on top of it ("MENU" and "SAVE" drawn over each other).
+      '@media (hover:none){.wrap{' + (right ? 'right' : 'left') + ':104px}}' +
       // Rests as a transparent ring like the menu dot so it never blanks out
       // a game's own corner HUD; expands to a labelled pill on hover/focus.
       '.btn{display:flex;align-items:center;gap:0;height:30px;width:auto;max-width:30px;padding:0;' +

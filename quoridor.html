@@ -26,7 +26,8 @@
   .clock.low{ color:var(--red); }
   .walls{ font-size:13px; color:#9fb2d0; }
   .walls b{ color:#eaf2ff; font-size:16px; }
-  canvas{ display:block; width:min(94vw,560px); height:auto; touch-action:none; border-radius:12px;
+  /* fit the height too: on a laptop screen the board pushed the title off the top */
+  canvas{ display:block; width:max(260px,min(94vw,560px,calc(100vh - 300px))); height:auto; touch-action:none; border-radius:12px;
     background:#0c1526; box-shadow:0 20px 60px rgba(0,0,0,.5); cursor:pointer; }
   .controls{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; justify-content:center; }
   button{ font:inherit; font-weight:800; font-size:15px; color:#dbe8ff; background:#15233f; border:1px solid var(--line);

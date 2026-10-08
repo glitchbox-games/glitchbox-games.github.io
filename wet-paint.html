@@ -2556,5 +2556,44 @@ function runSmoke(){
 
 boot();
 </script>
+<script>
+/* ---------- touch gamepad (phones/tablets) ----------
+   Wet Paint was keyboard-only: on a phone it sat on "PRESS ANY KEY" forever. These
+   buttons feed the same action layer the keyboard uses (held / buffered / dirStack). */
+(function () {
+  const touch = ('ontouchstart' in window) || matchMedia('(pointer:coarse)').matches;
+  const bootEl = document.getElementById('boot');
+  const wake = () => { if (!anyKeyYet) { anyKeyYet = true; bootEl.className = 'gone'; Audio_.start(); } };
+  bootEl.addEventListener('pointerdown', wake);
+  if (!touch) return;
+  bootEl.textContent = 'TAP TO START';
+  const css = document.createElement('style');
+  css.textContent = `
+    #pad{position:fixed;inset:auto 0 0 0;height:190px;z-index:4;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+    #pad button{position:absolute;pointer-events:auto;border:2px solid #5a5a5a;background:#1c1c1ccc;color:#cfcfcf;
+      font:700 13px monospace;letter-spacing:1px;border-radius:12px;touch-action:none}
+    #pad button.on{background:#4a4a4a;color:#fff}
+    #pad .d{width:58px;height:58px;font-size:20px}
+    #pad .up{left:70px;bottom:118px} #pad .dn{left:70px;bottom:10px} #pad .lf{left:12px;bottom:64px} #pad .rt{left:128px;bottom:64px}
+    #pad .a{right:18px;bottom:76px;width:70px;height:70px;border-radius:50%;font-size:18px}
+    #pad .b{right:98px;bottom:28px;width:62px;height:62px;border-radius:50%;font-size:16px}
+    #pad .st{right:14px;bottom:160px;width:76px;height:30px;font-size:11px;border-radius:8px}`;
+  document.head.appendChild(css);
+  const pad = document.createElement('div'); pad.id = 'pad';
+  [['up','d up','▲'],['down','d dn','▼'],['left','d lf','◀'],['right','d rt','▶'],['ok','a','A'],['no','b','B'],['pause','st','START']]
+    .forEach(([act, cls, label]) => {
+      const b = document.createElement('button'); b.className = cls; b.textContent = label;
+      const press = e => { e.preventDefault(); wake(); b.classList.add('on');
+        held[act] = true; pressed[act] = true; buffered[act] = BUFFER; if (/^(up|down|left|right)$/.test(act)) dirPush(act); };
+      const release = e => { if (e) e.preventDefault(); b.classList.remove('on');
+        held[act] = false; if (/^(up|down|left|right)$/.test(act)) dirPop(act); };
+      b.addEventListener('pointerdown', press); b.addEventListener('pointerup', release);
+      b.addEventListener('pointercancel', release); b.addEventListener('pointerleave', release);
+      pad.appendChild(b);
+    });
+  document.body.appendChild(pad);
+})();
+</script>
+<script src="glitchbox-menu.js" defer></script>
 </body>
 </html>

@@ -1004,9 +1004,14 @@ fallback:(c,g)=>{
 // thumbs/<gid>.png (from gen-thumbs.js) overlays the canvas art the moment it
 // loads; missing files cost one 404 and the hand-drawn art simply stays.
 const THUMB_IMGS = {};
+// Which games actually have a painted thumbs/<gid>.png. Asking for every game's file
+// meant ~43 failed downloads (404s) on every hub and play-page visit. Add a gid here
+// when gen-thumbs.js makes a new one.
+const THUMB_FILES = new Set(['gridlock']);
 function drawThumb(ctx, g){
   const gid = g.file.replace('.html','');
   (DRAW[gid] || DRAW.fallback)(ctx, g);
+  if (!THUMB_FILES.has(gid)) return;
   let img = THUMB_IMGS[gid];
   if (img === null) return;                    // known missing — canvas art it is
   if (!img){

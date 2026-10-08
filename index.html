@@ -697,6 +697,31 @@ body.sb-pinned { padding-left:var(--rail-open); }
 .sb-pin:hover { color:var(--cyan); border-color:var(--cyan); box-shadow:0 0 12px var(--glow-c); }
 .sb-pin.on { color:var(--cyan); border-color:var(--cyan); }
 @media (max-width:900px) { body, body.sb-pinned { padding-left:0; } }
+.gb-ask { position:fixed; inset:0; z-index:12500; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(2,4,10,.7); backdrop-filter:blur(4px); }
+.gb-ask.show { display:flex; animation:fadeIn .15s ease-out both; }
+.gb-ask-card { width:100%; max-width:380px; background:var(--panel); border:1px solid rgba(0,245,255,.3); padding:20px; animation:popIn .22s cubic-bezier(.2,.8,.25,1.15) both;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
+.gb-ask-title { font-weight:800; font-size:17px; color:#fff; margin-bottom:6px; }
+.gb-ask-text { color:#8b95a8; font-size:14px; line-height:1.45; margin-bottom:12px; }
+.gb-ask-in { width:100%; background:var(--bg3); border:1px solid rgba(0,245,255,.25); color:var(--text); padding:9px 11px; font:inherit; font-size:14px; outline:none; resize:vertical; margin-bottom:12px; }
+.gb-ask-in:focus { border-color:var(--cyan); }
+.gb-ask-row { display:flex; gap:8px; justify-content:flex-end; }
+.gb-ask-row button { border:1px solid rgba(0,245,255,.35); background:transparent; color:var(--cyan); padding:8px 16px; font:inherit; font-weight:800; font-size:13px; letter-spacing:.5px; text-transform:uppercase; cursor:pointer; }
+.gb-ask-row .gb-ask-yes { background:var(--cyan); color:#001014; }
+.gb-ask-row .gb-ask-yes.danger { background:#ff2f5f; border-color:#ff2f5f; color:#fff; }
+/* topbar reflow — it gained ☰ and 🎲 and used to crush the search box to an empty
+   sliver (and push the token chip off-screen) on tablets and small laptops */
+.topbar { flex-wrap:wrap; }
+.search-wrap { min-width:180px; }
+.mode-btn, .tag-btn { white-space:nowrap; }
+@media (max-width:1180px) { .dice-txt { display:none; } }
+@media (max-width:980px) {
+  .search-wrap { order:10; flex:1 1 100%; max-width:none; }   /* search gets its own full-width row */
+  .tag-filter { margin-left:0; }
+  .token-chip { margin-left:auto; }
+  #mb-text { display:none; }
+}
+@media (max-width:600px) { .search-wrap { order:10; } .topbar { gap:8px; row-gap:10px; } }
 /* a slow neon glow drifting behind everything — the arcade breathes a little */
 body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-events:none;
   background:radial-gradient(40% 35% at 20% 30%, rgba(0,245,255,.07), transparent 70%),
@@ -1712,7 +1737,7 @@ async function api(path, opts){
 
 function handleCredential(response){
   const data = decodeJwt(response.credential);
-  if(!data){ alert('Sign-in failed — could not read Google response.'); return; }
+  if(!data){ noticeToast('⚠️ SIGN-IN FAILED', 'Google’s answer couldn’t be read — try again.', 6000); return; }
   // Remember the real Google photo separately, so "use my photo" stays available after
   // you've picked an icon — and so signing in again doesn't silently undo your choice.
   if(data.picture) localStorage.setItem('glitchbox_gphoto', data.picture);
@@ -1805,7 +1830,7 @@ function applySwitches(h){
   if(!h) return;
   if('featured' in h) applyFeatured(h.featured);
   const dis = Array.isArray(h.disabled) ? h.disabled : [];
-  if(dis.join() !== arcadeDisabled.join()){ arcadeDisabled = dis; renderGames(); }
+  if(dis.join() !== arcadeDisabled.join()){ arcadeDisabled = dis; renderGames(); if(window.GBSocial) GBSocial.renderRecent(); }
   guestsLockedNow = !!h.guestsLocked;
   const gb = document.getElementById('auth-guest-btn');
   if(gb) gb.style.display = guestsLockedNow ? 'none' : '';
@@ -1973,6 +1998,7 @@ function applyUser(user){
   document.getElementById('sidebar-user').classList.add('show');
   const ga = document.getElementById('guest-auth'); if(ga) ga.style.display = 'none';
   renderAll();
+  if(window.GBSocial) GBSocial.renderRecent();   // locks change once we know who you are
   checkTos();
 }
 
@@ -2229,6 +2255,7 @@ function renderFriends(){
       '<button class="friend-btn play" onclick="openPicker(\''+f.sub+'\')" title="Invite to a multiplayer game">▶ Invite</button>'+
       '<button class="friend-btn ghost" onclick="unfriend(\''+f.sub+'\')">Unfriend</button>'+
       '<button class="friend-btn ghost" onclick="block(\''+f.sub+'\')" title="Block this player">Block</button>'+
+      '<button class="friend-btn ghost" onclick="report(\''+f.sub+'\')" title="Report to the owner (also blocks them)">⚑</button>'+
       '</div></div>';
   }).join('');
 }
@@ -2299,7 +2326,7 @@ async function sendInvite(game){
     const res = await api('/api/invite', { method:'POST', body:{ sub, game } });
     lastState = res; renderAll();
     openRoom(game, res.room, true);
-  } catch(e){ alert(e.message || 'Could not send that invite.'); }
+  } catch(e){ noticeToast('⚠️ INVITE FAILED', e.message || 'Could not send that invite.', 6000); }
 }
 
 async function joinInvite(sub, game){
@@ -2307,7 +2334,7 @@ async function joinInvite(sub, game){
     const res = await api('/api/invite-accept', { method:'POST', body:{ sub, game } });
     lastState = res; renderAll();
     openRoom(game, res.room, false);
-  } catch(e){ alert(e.message || 'Could not join that game.'); renderAll(); }
+  } catch(e){ noticeToast('⚠️ CAN’T JOIN', e.message || 'Could not join that game.', 6000); renderAll(); }
 }
 function declineInvite(sub, game){ act('/api/invite-decline', { sub, game }); }
 
@@ -2400,21 +2427,59 @@ function copyCode(){
   b.textContent = 'Copied!'; setTimeout(()=>{ b.textContent = t; }, 1200);
 }
 
+// ── in-page questions ── never the browser's confirm()/prompt(): Chrome can suppress
+// those, and a suppressed confirm reads as "Cancel" — Block and Report silently did nothing.
+// gbAsk({ title, text, input, yes, danger }) resolves to the typed text ('' when there's
+// no input box) or null when cancelled.
+function gbAsk(o){
+  return new Promise(resolve => {
+    let d = document.getElementById('gb-ask');
+    if(!d){
+      d = document.createElement('div'); d.id = 'gb-ask'; d.className = 'gb-ask';
+      d.innerHTML = '<div class="gb-ask-card"><div class="gb-ask-title"></div><div class="gb-ask-text"></div>'+
+        '<textarea class="gb-ask-in" maxlength="300" rows="2"></textarea><div class="gb-ask-row">'+
+        '<button class="gb-ask-no">Cancel</button><button class="gb-ask-yes"></button></div></div>';
+      document.body.appendChild(d);
+    }
+    const inp = d.querySelector('.gb-ask-in'), yes = d.querySelector('.gb-ask-yes');
+    d.querySelector('.gb-ask-title').textContent = o.title || '';
+    d.querySelector('.gb-ask-text').textContent = o.text || '';
+    inp.style.display = o.input != null ? '' : 'none'; inp.value = ''; inp.placeholder = o.input || '';
+    yes.textContent = o.yes || 'OK'; yes.classList.toggle('danger', !!o.danger);
+    const done = v => { d.classList.remove('show'); d.onclick = null; document.removeEventListener('keydown', key, true); resolve(v); };
+    const key = e => { if(e.key === 'Escape'){ e.stopPropagation(); done(null); } else if(e.key === 'Enter' && !e.shiftKey && o.input == null){ e.preventDefault(); done(''); } };
+    d.onclick = e => { if(e.target === d || e.target.classList.contains('gb-ask-no')) done(null); else if(e.target === yes) done(o.input != null ? inp.value.trim() : ''); };
+    document.addEventListener('keydown', key, true);
+    d.classList.add('show');
+    setTimeout(() => (o.input != null ? inp : yes).focus(), 30);
+  });
+}
 async function act(path, body){
-  try { lastState = await api(path, { method:'POST', body }); renderAll(); }
-  catch(e){ alert(e.message); }
+  try { lastState = await api(path, { method:'POST', body }); renderAll(); return true; }
+  catch(e){ noticeToast('⚠️ COULDN’T DO THAT', e.message || 'Something went wrong.', 6000); return false; }
+}
+function nameOf(sub){
+  const all = [].concat(lastState.friends||[], lastState.incoming||[], lastState.outgoing||[], lastState.blocked||[]);
+  const u = all.find(x => x.sub === sub); return u ? u.name : 'this player';
 }
 function acceptReq(sub){ act('/api/accept', { sub }); }
 function declineReq(sub){ act('/api/decline', { sub }); }
-function unfriend(sub){ act('/api/unfriend', { sub }); }
-function unblock(sub){ act('/api/unblock', { sub }); }
-function block(sub){
-  if(confirm('Block this player? They’ll be removed from your friends and can no longer contact you.')) act('/api/block', { sub });
+async function unfriend(sub){
+  const n = nameOf(sub);
+  if(await gbAsk({ title:'Unfriend ' + n + '?', text:'You can add each other again later with your friend codes.', yes:'Unfriend', danger:true }) === null) return;
+  if(await act('/api/unfriend', { sub })) noticeToast('👋 UNFRIENDED', n + ' is no longer your friend.');
 }
-function report(sub){
-  if(!confirm('Report this player? They’ll also be blocked.')) return;
-  const reason = prompt('What’s the problem? (optional)') || '';
-  act('/api/report', { sub, reason });
+function unblock(sub){ act('/api/unblock', { sub }); }
+async function block(sub){
+  const n = nameOf(sub);
+  if(await gbAsk({ title:'Block ' + n + '?', text:'They’ll be removed from your friends and can’t send you requests or invites.', yes:'Block', danger:true }) === null) return;
+  if(await act('/api/block', { sub })) noticeToast('🚫 BLOCKED', n + ' can’t contact you any more.');
+}
+async function report(sub){
+  const n = nameOf(sub);
+  const reason = await gbAsk({ title:'Report ' + n + '?', text:'The owner will see your report. They’ll also be blocked for you.', input:'What happened? (optional)', yes:'Report', danger:true });
+  if(reason === null) return;
+  if(await act('/api/report', { sub, reason })) noticeToast('⚑ REPORTED', 'Thanks — the owner will look at it.');
 }
 
 function updateProfileHeader(){

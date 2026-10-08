@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<meta name="glitchbox-input" content="keyboard">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Cheese Heist 3D</title>
@@ -807,7 +808,8 @@ document.getElementById('startBtn').addEventListener('click', () => {
   overlay.classList.add('hidden');
   audio.resume();
   audio.startAmbient();
-  renderer.domElement.requestPointerLock?.();
+  // a refused lock (right after Esc) rejects — keep it from becoming an uncaught error
+  try { const r = renderer.domElement.requestPointerLock?.(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
 });
 
 // ---------- account-backed save (GLITCHBOX) ----------

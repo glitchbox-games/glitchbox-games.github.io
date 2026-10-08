@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Build a Bridge</title>
-<script src="glitchbox-save.js"></script>
+<script src="glitchbox-save.js" data-pos="bottom-left"></script>
 <style>
 :root{
   --bg:#0d2a4a;
@@ -58,6 +58,16 @@ button.danger:hover:not(:disabled){background:var(--bad);color:#fff}
   font-size:10px;color:#cbd5e1;letter-spacing:2px;
   z-index:10;pointer-events:none;
   white-space:nowrap;
+}
+/* phones: the bar was wider than the screen — RESET and TEST (the button you need
+   to finish a level) were off the right edge, and the hint ran off both sides */
+@media (max-width:640px){
+  #topbar{flex-wrap:wrap;gap:8px 12px;padding:8px 10px;letter-spacing:1px}
+  #title{font-size:11px;letter-spacing:2px;flex:1 1 100%}
+  .spacer{display:none}
+  button{padding:7px 10px;letter-spacing:1px}
+  #test-btn{margin-left:auto}
+  #hint{width:calc(100vw - 100px);white-space:normal;text-align:center;letter-spacing:1px;left:auto;right:10px;transform:none}
 }
 #toast{
   position:absolute;top:60px;left:50%;transform:translateX(-50%);
@@ -998,6 +1008,6 @@ resize();
 loadLevel(1);
 requestAnimationFrame(loop);
 </script>
-<script src="glitchbox-menu.js" defer></script>
+<script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
 </body>
 </html>

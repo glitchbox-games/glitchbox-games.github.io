@@ -424,8 +424,10 @@ function runNext() {
 }
 
 // ── Keypress triggers instant drama ───────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') return;
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') hackStep(); });
+// On a phone there's no keyboard to mash — every tap "types" instead.
+document.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') hackStep(); });
+function hackStep() {
   const dramas = [
     ()=>addLine('[!] TRACE DETECTED — rerouting...', 'err'),
     ()=>addLine('[+] PASSWORD CRACKED: ' + randHex(10), 'ok'),
@@ -437,7 +439,7 @@ document.addEventListener('keydown', e => {
     ()=>addLine('[+] DATABASE DUMP: ' + Math.floor(Math.random()*1e6) + ' records', 'ok'),
   ];
   dramas[Math.floor(Math.random()*dramas.length)]();
-});
+}
 
 // ── Boot sequence ──────────────────────────────────────────────────────────────
 setTimeout(()=>addLine('SHADOW TERMINAL v4.2.1 — INITIALIZED', 'sys'), 200);

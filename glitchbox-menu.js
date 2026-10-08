@@ -390,6 +390,30 @@
     } catch (_) {}
   }
 
+  // ── keyboard-only games on phones ── a game that can't be played without a keyboard
+  // declares <meta name="glitchbox-input" content="keyboard">; on a touch-only device the
+  // player gets told so, instead of a game that silently ignores every tap.
+  try {
+    var needs = document.querySelector('meta[name="glitchbox-input"]');
+    var touchOnly = matchMedia('(pointer:coarse)').matches && !matchMedia('(any-pointer:fine)').matches;
+    if (needs && /keyboard/.test(needs.content) && touchOnly && !/smoke|check/.test(location.hash)) {
+      var showKb = function () {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;inset:0;z-index:2147483645;display:flex;align-items:center;justify-content:center;padding:20px;' +
+          'background:rgba(5,7,14,.94);color:#d0d8f0;font:500 15px/1.5 system-ui,sans-serif;text-align:center';
+        d.innerHTML = '<div style="max-width:420px"><div style="font-size:46px">⌨️</div>' +
+          '<div style="font:800 20px system-ui,sans-serif;color:#00f5ff;margin:8px 0 10px">THIS GAME NEEDS A KEYBOARD</div>' +
+          '<div>It\'s played with the keys, so it won\'t work on a phone or tablet on its own. Try it on a computer — or connect a keyboard.</div>' +
+          '<div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+          '<a href="index.html" style="padding:11px 20px;background:#00f5ff;color:#001014;font-weight:800;text-decoration:none">◀ BACK TO THE ARCADE</a>' +
+          '<button style="padding:11px 16px;background:transparent;border:1px solid #3a4a6a;color:#8b95a8;font:700 14px system-ui">Try anyway</button></div></div>';
+        d.querySelector('button').onclick = function () { d.remove(); };
+        document.body.appendChild(d);
+      };
+      if (document.body) showKb(); else document.addEventListener('DOMContentLoaded', showKb);
+    }
+  } catch (_) {}
+
   // ── 3D games on devices without WebGL ── some school Chromebooks and older PCs
   // have 3D graphics switched off, and three.js games then die on a blank screen.
   // Catch that one failure and explain it instead.

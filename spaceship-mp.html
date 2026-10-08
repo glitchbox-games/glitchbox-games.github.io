@@ -29,6 +29,9 @@
   .legend .row { display: flex; gap: 10px; }
   .copilot { position: fixed; bottom: 14px; left: 14px; max-width: 340px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; backdrop-filter: blur(6px); }
   .copilot h3 { margin: 0 0 6px; font-size: 13px; color: var(--accent); }
+  /* the welcome card was see-through, so the co-pilot panel behind it showed through */
+  #welcomeStatus { background: #0a0f1ef7; }
+  #roomCodeIn::placeholder { letter-spacing: normal; text-transform: none; }
   .copilot .line { font-size: 13px; min-height: 32px; color: var(--text); }
   .copilot .line.warn { color: #ffb86b; }
   .copilot .line.danger { color: var(--danger); }
@@ -52,7 +55,10 @@
     overflow: hidden;
     box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.15), 0 4px 14px rgba(0,0,0,0.4);
   }
-  .minimap canvas { display: block; width: 100%; height: 100%; }
+  /* the general `canvas {position:fixed; inset:0}` rule (for the game view) also caught
+     the radar: it escaped its round frame to the top-left corner, covering the HUD, and
+     left the minimap circle empty */
+  .minimap canvas { display: block; width: 100%; height: 100%; position: static; inset: auto; }
   /* Travel-scope settings modal */
   .travelModal { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); background: var(--panel); border: 1px solid var(--accent); border-radius: 12px; padding: 18px 22px; z-index: 9; display: none; min-width: 280px; max-width: 92vw; backdrop-filter: blur(8px); }
   .travelModal.show { display: block; }
@@ -130,6 +136,11 @@
     .copilot { bottom: 240px; }
     .minimap { bottom: 270px; }
   }
+  /* The arcade's quit + save buttons live in the top-left corner and were covering the
+     start of the HUD ("Se|ctor 1"). Desktop: start the HUD after them. Touch screens
+     (where they're wider labelled pills): drop the HUD just below them. */
+  .hud { left: 92px; }
+  @media (hover: none) { .hud { top: 46px; left: 8px; } }
   /* ⌚ Watch-size screens (~200px) — ultra-compact; auto-pilot is on by default */
   @media (max-width: 300px), (max-height: 300px) {
     .hud { top: 2px; left: 2px; gap: 3px; max-width: calc(100vw - 4px); }
@@ -321,7 +332,7 @@
     <div class="class-card" data-class="support"><div class="cls-icon">💚</div><div class="cls-name">Support</div><div class="cls-desc">Heals crew · ✦ Repair</div><div class="cls-stats">HP 110 · Heals allies · Spd ×1.05</div></div>
   </div>
   <div id="roomPick" style="display:none;margin:4px 0 10px">
-    <input id="roomCodeIn" placeholder="Room code — leave empty to host" maxlength="4" autocomplete="off" spellcheck="false"
+    <input id="roomCodeIn" placeholder="Room code (optional)" maxlength="4" autocomplete="off" spellcheck="false"
       style="text-transform:uppercase;letter-spacing:3px;text-align:center" />
     <div class="meta" style="margin-top:4px">Empty = start a new game and get a code to share · a code = join a friend</div>
   </div>
@@ -396,7 +407,8 @@ function resize() {
 window.addEventListener('resize', resize); resize();
 
 // Show QR code + LAN URL so friends can connect without internet
-fetch('/info').then(r => r.json()).then(info => {
+// Only the Node server (port 8098) has /info — on the arcade it was a 404 on every load.
+if (location.port === '8098') fetch('/info').then(r => r.json()).then(info => {
   if (!info.ips.length) return;
   const el = document.getElementById('lanInfo');
   if (info.qr) {

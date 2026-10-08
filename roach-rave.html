@@ -21,6 +21,15 @@
     color:#fff; background:linear-gradient(135deg,var(--neon),#7c2bff); box-shadow:0 0 16px #ff2bd680; }
   .bar button.ghost { background:#241636; color:var(--text); box-shadow:none; border:1px solid #3a2a55; font-weight:600; }
   .bar button:active { transform:translateY(1px); }
+  /* phones: the title + link box + four buttons didn't fit one row — the link box got
+     squashed to a sliver. Wrap: title and buttons on top, the link box full width below. */
+  @media (max-width:640px) {
+    .bar { flex-wrap:wrap; padding:8px 10px 10px; padding-left:44px; }
+    .bar h1 { font-size:15px; margin-right:auto; }
+    .bar input { order:5; flex:1 1 100%; min-width:0; }
+    .bar button { padding:8px 11px; }
+    .status { top:104px; }
+  }
   .status { position:fixed; top:60px; left:50%; transform:translateX(-50%); z-index:5; padding:8px 16px;
     background:var(--panel); border:1px solid #3a2a55; border-radius:999px; font-size:13px; color:var(--muted);
     max-width:90vw; text-align:center; display:none; }
@@ -249,10 +258,16 @@ function frame(now){
   // idle prompt when nothing is playing
   if (!playing && level < 0.005){
     ctx.fillStyle = 'rgba(243,233,255,0.85)'; ctx.textAlign='center';
-    ctx.font = '700 26px -apple-system,sans-serif';
-    ctx.fillText('paste a YouTube link and hit DANCE 🪳', W/2, H*0.4);
+    // shrink the prompt to fit narrow screens (it ran off both edges on phones)
+    let big = 26;
+    ctx.font = '700 ' + big + 'px -apple-system,sans-serif';
+    while (big > 12 && ctx.measureText('paste a YouTube link and hit DANCE 🪳').width > W - 28) {
+      big--; ctx.font = '700 ' + big + 'px -apple-system,sans-serif';
+    }
+    const py = Math.max(H*0.4, W <= 640 ? 170 : 110);   // never under the (taller, wrapped) phone bar
+    ctx.fillText('paste a YouTube link and hit DANCE 🪳', W/2, py);
     ctx.fillStyle = 'rgba(154,134,196,0.8)'; ctx.font = '15px -apple-system,sans-serif';
-    ctx.fillText('the roaches will dance to the music', W/2, H*0.4+30);
+    ctx.fillText('the roaches will dance to the music', W/2, py+30);
     ctx.textAlign='left';
   }
   requestAnimationFrame(frame);

@@ -173,7 +173,9 @@
     styles();
     const box = $('recent-row');
     if (!box) return;
-    const list = J('glitchbox.recent', []).filter(x => x && gameOf(x.file)).slice(0, 6);
+    // only games you can open right now — not locked specials, not switched-off ones
+    const list = J('glitchbox.recent', []).filter(x => { const g = x && gameOf(x.file);
+      return g && !(typeof isLocked === 'function' && isLocked(g)) && !(typeof isOff === 'function' && isOff(g.file)); }).slice(0, 6);
     if (!list.length) { box.innerHTML = ''; return; }
     box.innerHTML = '<div class="rr-wrap"><div class="section-header"><div class="section-title">CONTINUE PLAYING</div><div class="section-line"></div></div>' +
       '<div class="rr-list">' + list.map(x => {

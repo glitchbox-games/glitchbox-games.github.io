@@ -171,21 +171,27 @@ function createLoopback() {
 </script>
 `;
 
-let out = mp.replace('<script>', localServer + '<script>'); // inject before first (main) script
+// Every rewrite below must find its target — a silent no-op here once shipped a
+// "solo" build that still tried to go online. replaceOnce() fails the build instead.
+function replaceOnce(src, find, repl, what) {
+  const i = typeof find === 'string' ? src.indexOf(find) : src.search(find);
+  if (i < 0) { console.error('FAILED: could not find ' + what + ' in spaceship-mp.html'); process.exit(1); }
+  return src.replace(find, repl);
+}
+let out = replaceOnce(mp, '<script>', localServer + '<script>', 'the main <script>'); // inject before the main script
 
-// --- Rewire connect(): swap the WebSocket for the loopback, start the sim ---
-out = out.replace(
-`  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const host = location.host || ('localhost:8098');
-  ws = new WebSocket(\`\${proto}://\${host}/\`);
-  document.getElementById('connStatus').textContent = 'Connecting…';`,
+// Solo never goes online: no hostnet, no room-code box.
+out = replaceOnce(out, "const HOSTED = location.port !== '8098' && !!window.GBHostNet;",
+  "const HOSTED = false;   // solo build: the simulation runs in this page, no network", 'the HOSTED switch');
+
+// --- Rewire connect(): swap the socket for the loopback, start the sim ---
+out = replaceOnce(out, /  const wantCode = HOSTED[\s\S]*?document\.getElementById\('connStatus'\)\.textContent = 'Connecting…';/,
 `  const { clientSocket, serverWs } = createLoopback();
   ws = clientSocket;
-  document.getElementById('connStatus').textContent = 'Connecting…';`
-);
+  document.getElementById('connStatus').textContent = 'Connecting…';`, 'the socket setup in connect()');
 
 // At the end of connect()'s message listener, kick off the local connection.
-out = out.replace(
+out = replaceOnce(out, 
 `    } else if (msg.type === 'rtc') {
       handleSignal(msg.from, msg.payload);
     }
@@ -197,8 +203,7 @@ out = out.replace(
   });
   LocalServer.connect(serverWs);
   setTimeout(() => clientSocket._fireOpen(), 0);
-}`
-);
+}`, 'the end of the message listener');
 
 // --- Account-backed save button (solo only) ---
 // The co-op page deliberately gets none of this: a live room's world belongs to

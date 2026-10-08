@@ -379,7 +379,17 @@ window.addEventListener('resize', () => {
 
 const controls = new PointerLockControls(camera, document.body);
 const blocker = document.getElementById('blocker');
-blocker.addEventListener('click', () => controls.lock());
+// Chrome can refuse pointer lock (no fresh click, or within ~1s of pressing Esc).
+// Closing a dialogue used to try a lock, fail silently, and leave you with no mouse-look
+// AND no "click to resume" screen — stuck. If the lock doesn't land, show the blocker.
+function safeLock() {
+  // ask the browser directly so a refusal can be caught (controls.lock() swallows the
+  // promise); PointerLockControls still hears 'pointerlockchange' and fires 'lock'.
+  try { const r = document.body.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  setTimeout(() => { if (!controls.isLocked && !gameOver && !dialogueOpen) blocker.style.display = 'flex'; }, 400);
+}
+document.addEventListener('pointerlockerror', () => { if (!gameOver && !dialogueOpen) blocker.style.display = 'flex'; });
+blocker.addEventListener('click', () => safeLock());
 controls.addEventListener('lock', () => { blocker.style.display = 'none'; });
 controls.addEventListener('unlock', () => {
   if (!gameOver && !dialogueOpen) blocker.style.display = 'flex';
@@ -1308,7 +1318,7 @@ function openDialogueDirect(id) {
 function closeDialogue() {
   dialogueOpen = false;
   dlg.classList.remove('show');
-  controls.lock();
+  safeLock();
 }
 
 function applyEffects(eff) {

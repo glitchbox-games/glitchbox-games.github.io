@@ -1026,6 +1026,11 @@ export class Hub extends DurableObject {
     if (!banned) throw new HttpError(400, "you aren't banned right now");
     if (this.sql.exec("SELECT 1 FROM appeals WHERE who = ? AND status = 'open'", who).toArray()[0])
       throw new HttpError(409, "your appeal is already waiting for an answer");
+    // Guest ids are free to make, so on a banned network one open appeal per address
+    // — otherwise anyone there could flood the queue by inventing new ids.
+    // (Signed-in players are real Google accounts, so two of them on one network may both appeal.)
+    if (who[0] === "g" && ip && this.sql.exec("SELECT 1 FROM appeals WHERE ip = ? AND who LIKE 'g:%' AND status = 'open'", ip).toArray()[0])
+      throw new HttpError(409, "an appeal from your network is already waiting for an answer");
     const last = this.sql.exec("SELECT decided_at FROM appeals WHERE who = ? ORDER BY id DESC LIMIT 1", who).toArray()[0];
     if (last && last.decided_at && Date.now() - last.decided_at < 86400000)
       throw new HttpError(429, "you can appeal again a day after your last answer");

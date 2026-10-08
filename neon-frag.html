@@ -707,10 +707,18 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 
+// Chrome refuses pointer lock for about a second after Esc releases it (and in some
+// frames). That used to throw an uncaught error and silently eat the click.
+function lockPointer(){
+  try {
+    const r = view.requestPointerLock();
+    if(r && r.catch) r.catch(() => showTip('CLICK AGAIN TO AIM WITH THE MOUSE'));
+  } catch(e){ showTip('CLICK AGAIN TO AIM WITH THE MOUSE'); }
+}
 view.addEventListener('mousedown', () => {
   Audio_.on();
   if(state !== 'play') return;
-  if(!locked && view.requestPointerLock){ view.requestPointerLock(); return; }
+  if(!locked && view.requestPointerLock){ lockPointer(); return; }
   firing = true;
 });
 addEventListener('mouseup', () => { firing = false; });
@@ -883,7 +891,7 @@ function startMatch(seed){
   $('feed').innerHTML = '';
   showTip(mode === 'online' ? 'FIGHT — FIRST TO ' + FRAG_LIMIT : 'PRACTICE — FIRST TO ' + FRAG_LIMIT);
   Audio_.on();
-  if(!isTouch && view.requestPointerLock) view.requestPointerLock();
+  if(!isTouch && view.requestPointerLock) lockPointer();
 }
 function resetMatch(){ startMatch((Math.random()*1e9)|0); }
 function endMatch(){
