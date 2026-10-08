@@ -32,7 +32,7 @@
   // Nobody plays until they've agreed to the current terms — signed in or guest. The
   // hub shows them, then brings you straight back here (room code and all).
   // Keep TOS_VERSION in step with index.html.
-  var TOS_VERSION = '2026-10-07';
+  var TOS_VERSION = '2026-10-07.2';
   try {
     var tu = JSON.parse(localStorage.getItem('glitchbox_user') || 'null');
     var tk = 'glitchbox.tos.' + (tu && tu.sub ? tu.sub : 'guest');

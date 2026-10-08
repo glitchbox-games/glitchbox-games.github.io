@@ -725,7 +725,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
       <div class="tos-key">
         <p>To keep GLITCHBOX safe, the owner can see your activity <b>on GLITCHBOX</b> from the owner console, including:</p>
         <ul>
-          <li>whether you're online and which game you're playing right now</li>
+          <li>whether you're online, which game you're playing right now, and which games you've played over the last week (and for how long)</li>
           <li>your name, email address, picture and friend code</li>
           <li>your friends, reports made by or about you, and cloud saves</li>
           <li>the kind of device and browser you use, and your IP address (your internet connection)</li>
@@ -1728,7 +1728,7 @@ async function backendLogin(credential){
 // ── terms of service ── bump TOS_VERSION whenever the terms text changes and every
 // player is asked to agree again. Agreement is saved per account on the server (the
 // record of consent) and cached locally so the screen doesn't flash on every visit.
-const TOS_VERSION = '2026-10-07';
+const TOS_VERSION = '2026-10-07.2';
 // Guests agree once per browser, under the 'guest' key.
 function tosKey(){ return 'glitchbox.tos.' + (currentUser ? currentUser.sub : 'guest'); }
 let tosNext = null;   // where to go once a guest agrees (the game they tried to open)

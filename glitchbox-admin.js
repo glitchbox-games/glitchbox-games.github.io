@@ -31,6 +31,8 @@
   // never happens. `ask` is { text, yes, input?, run(value) }; `notice` shows the
   // last result or error at the top of the panel.
   let ask = null, notice = null, gameFilter = '';
+  // The 👁 View panel: { target:'u:<sub>'|'g:<gid>', name } while open; `watch` is its data.
+  let viewing = null, watch = null;
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
     c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -104,6 +106,17 @@
     .adm-av { width:30px; height:30px; flex-shrink:0; border:1px solid rgba(0,245,255,.4); background:#060911;
       display:flex; align-items:center; justify-content:center; color:#00f5ff; font-weight:800; overflow:hidden; }
     .adm-av img { width:100%; height:100%; object-fit:cover; }
+    .adm-av[data-act] { cursor:pointer; }
+    .adm-av[data-act]:hover { border-color:#00f5ff; box-shadow:0 0 10px rgba(0,245,255,.5); }
+    .adm-btn.view { background:#ff0080; color:#fff; }
+    .adm-btn.view:hover { box-shadow:0 0 12px rgba(255,0,128,.6); }
+    .adm-now { display:flex; align-items:center; gap:16px; padding:16px 18px; background:#0e1422; border:1px solid rgba(0,255,136,.35); margin-bottom:14px; }
+    .adm-now.off { border-color:rgba(139,149,168,.3); }
+    .adm-now .big { font-size:34px; line-height:1; }
+    .adm-now b { display:block; font-size:19px; color:#fff; }
+    .adm-tl { display:grid; grid-template-columns:auto auto 1fr; gap:6px 14px; align-items:center; font-size:13px; }
+    .adm-tl .t { color:#8b95a8; white-space:nowrap; }
+    .adm-tl .d { color:#8b95a8; font-size:11px; white-space:nowrap; }
     .adm-name { font-size:14px; font-weight:700; color:#fff; }
     .adm-meta { font-size:11px; color:#8b95a8; }
     .adm-grow { flex:1; min-width:0; overflow:hidden; }
@@ -151,7 +164,7 @@
     $('adm-x').addEventListener('click', close);
     $('adm-tabs').addEventListener('click', e => {
       const b = e.target.closest('.adm-tab');
-      if (b) { tab = b.dataset.tab; ask = null; notice = null; render(); }
+      if (b) { tab = b.dataset.tab; ask = null; notice = null; viewing = null; watch = null; render(); }
     });
     $('adm-body').addEventListener('click', onAction);
   }
@@ -174,7 +187,7 @@
     $('adm-tabs').innerHTML = TABS.map(t =>
       '<button class="adm-tab' + (tab === t.id ? ' on' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>').join('');
     const body = $('adm-body');
-    const view = tab === 'overview' ? viewOverview() : tab === 'players' ? viewPlayers() : tab === 'guests' ? viewGuests()
+    const view = viewing ? viewWatch() : tab === 'overview' ? viewOverview() : tab === 'players' ? viewPlayers() : tab === 'guests' ? viewGuests()
       : tab === 'reports' ? viewReports() : tab === 'arcade' ? viewArcade() : tab === 'log' ? viewLog()
       : tab === 'god' ? viewGod() : viewDev();
     body.innerHTML = askBar() + view;
@@ -225,15 +238,17 @@
       (live.length + liveG.length ? '<div class="adm-actions"><button class="adm-btn warn" data-act="popall">✉ Message everyone online</button>' +
         '<button class="adm-btn danger" data-act="kickall">👢 Kick everyone</button></div>' : '') +
       (live.length ? live.map(u =>
-        '<div class="adm-row"><div class="adm-av">' + avatar(u) + '</div><div class="adm-grow"><div class="adm-name">' + esc(u.name) +
+        '<div class="adm-row"><div class="adm-av" data-act="view" data-target="u:' + esc(u.sub) + '" data-name="' + esc(u.name) + '">' + avatar(u) + '</div><div class="adm-grow"><div class="adm-name">' + esc(u.name) +
         ' <span style="color:#00ff88">●</span></div><div class="adm-meta">' +
         (u.playing ? '▶ playing ' + esc(gameName(u.playing)) : 'in the hub') + ' · ' + ago(u.last_seen) + '</div></div>' +
+        viewBtn('u:' + u.sub, u.name) +
         '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(u.sub) + '" data-name="' + esc(u.name) + '">✉ Message</button>' +
         (u.sub === myId() ? '' : kickBtn('u:' + u.sub, u.name)) + '</div>').join('') +
         liveG.map(g =>
-        '<div class="adm-row" style="border-left-color:rgba(255,180,0,.5)"><div class="adm-av">👤</div><div class="adm-grow"><div class="adm-name">' + esc(g.name) +
+        '<div class="adm-row" style="border-left-color:rgba(255,180,0,.5)"><div class="adm-av" data-act="view" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">👤</div><div class="adm-grow"><div class="adm-name">' + esc(g.name) +
         ' <span class="adm-tag" style="background:rgba(255,180,0,.12);color:#ffb400;border-color:rgba(255,180,0,.3)">guest</span> <span style="color:#00ff88">●</span></div><div class="adm-meta">' +
         (g.playing ? '▶ playing ' + esc(gameName(g.playing)) : 'in the hub') + ' · ' + ago(g.last_seen) + '</div></div>' +
+        viewBtn('g:' + g.gid, g.name) +
         '<button class="adm-btn warn" data-act="pop" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">✉ Message</button>' +
         kickBtn('g:' + g.gid, g.name) + '</div>').join('')
         : '<div class="adm-empty">Nobody online right now.</div>') +
@@ -263,7 +278,7 @@
     return head + players.map(p => {
       const self = p.sub === me;
       return '<div class="adm-row' + (p.banned ? ' ban' : '') + '">' +
-        '<div class="adm-av">' + avatar(p) + '</div>' +
+        '<div class="adm-av" data-act="view" data-target="u:' + esc(p.sub) + '" data-name="' + esc(p.name) + '" title="View what ' + esc(p.name) + ' is doing">' + avatar(p) + '</div>' +
         '<div class="adm-grow"><div class="adm-name">' + esc(p.name) +
           (self ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">you</span>' : '') +
           (p.banned ? ' <span class="adm-tag">' + (p.ban_until ? 'banned until ' + when(p.ban_until) : 'banned') + '</span>' : '') +
@@ -275,6 +290,7 @@
           (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div>' +
         '<div class="adm-meta">' + (p.tos_at ? '📜 agreed to the terms (' + esc(p.tos_version) + ') ' + ago(p.tos_at)
           : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms yet</span>') + '</div></div>' +
+        viewBtn('u:' + p.sub, p.name) +
         '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' +
         (self ? '' : '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '">✉</button>') +
         (self || p.playing == null ? '' : kickBtn('u:' + p.sub, p.name)) +
@@ -358,6 +374,82 @@
   }
 
   function myId() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.sub : ''; }
+  function viewBtn(target, name) {
+    return '<button class="adm-btn view" data-act="view" data-target="' + esc(target) + '" data-name="' + esc(name) + '" title="See what ' + esc(name) + ' is doing">👁 View</button>';
+  }
+  function dur(ms) {
+    const m = Math.round(ms / 60000);
+    return m < 1 ? '<1m' : m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
+  }
+  function place(game) { return game === '~' ? '💤 went offline' : game ? '▶ ' + gameName(game) : '🏠 the hub'; }
+
+  function viewWatch() {
+    const back = '<div class="adm-actions"><button class="adm-btn warn" data-act="unview">◀ Back</button>' +
+      '<span class="adm-meta" style="align-self:center">updates by itself every few seconds</span></div>';
+    if (!watch) { loadWatch(); return back + '<div class="adm-empty">Loading ' + esc(viewing.name) + '…</div>'; }
+    const w = watch.who, acts = watch.activity || [], now = watch.now || Date.now();
+    const guest = w.kind === 'guest', target = viewing.target;
+    const latest = acts[0];
+    const since = latest && w.playing != null && (latest.game || '') === w.playing ? now - latest.at : 0;
+    const nowBox = w.online
+      ? '<div class="adm-now"><div class="big">' + (w.playing ? '🎮' : '🏠') + '</div><div><span class="adm-meta">RIGHT NOW</span>' +
+        '<b>' + esc(w.playing ? 'Playing ' + gameName(w.playing) : 'In the hub, picking a game') + '</b>' +
+        '<span class="adm-meta">' + (since ? 'for ' + dur(since) + ' · ' : '') + 'last check-in ' + ago(w.last_seen) + '</span></div></div>'
+      : '<div class="adm-now off"><div class="big">💤</div><div><span class="adm-meta">RIGHT NOW</span><b>Offline</b>' +
+        '<span class="adm-meta">last seen ' + ago(w.last_seen) + (w.last_seen ? ' (' + when(w.last_seen) + ')' : '') + '</span></div></div>';
+    const me = target === 'u:' + myId();
+    const actions = '<div class="adm-actions">' +
+      (guest ? (w.online ? '<button class="adm-btn warn" data-act="pop" data-target="' + esc(target) + '" data-name="' + esc(w.name) + '">✉ Message</button>' : '')
+             : '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(w.sub) + '" data-name="' + esc(w.name) + '">✉ Message</button>' +
+               '<button class="adm-btn" data-act="give" data-sub="' + esc(w.sub) + '" data-name="' + esc(w.name) + '">🎁 Give</button>') +
+      (w.online && !me ? kickBtn(target, w.name) : '') +
+      (me ? '' : guest
+        ? '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'gunban' : 'gban') + '" data-gid="' + esc(w.gid) +
+          '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : 'Ban') + '</button>'
+        : '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'unban' : 'ban') + '" data-sub="' + esc(w.sub) +
+          '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : 'Ban') + '</button>') + '</div>';
+    const row = (k, v) => v === '' || v == null ? '' : '<div class="adm-meta"><b style="color:#e8eefc;display:inline-block;min-width:88px">' + k + '</b> ' + v + '</div>';
+    const details = row('Device', esc(device(w.ua))) + row('IP', esc(w.ip || '?')) +
+      (guest ? row('First seen', ago(w.created)) :
+        row('Email', esc(w.email)) + row('Friend code', esc(w.code || '—')) + row('Joined', ago(w.created)) +
+        row('Friends', w.friends + ' · ' + w.saves + ' cloud saves · ' + w.reports + ' reports about them')) +
+      row('Terms', w.tos_version ? 'agreed (' + esc(w.tos_version) + ')' + (w.tos_at ? ' ' + ago(w.tos_at) : '') : '<span style="color:#ffb400">not agreed yet</span>') +
+      (w.banned ? row('Banned', (w.ban_until ? 'until ' + when(w.ban_until) : 'permanently') + (w.ban_reason ? ' — “' + esc(w.ban_reason) + '”' : '')) : '');
+    // Time in each game this week: each entry lasts until the next one, and the newest
+    // until now (or until they were last seen). "~" rows mark when they went offline.
+    const spent = {};
+    acts.forEach((a, i) => {
+      const end = i === 0 ? (w.online ? now : w.last_seen || a.at) : acts[i - 1].at;
+      const ms = end - a.at;
+      if (a.game && a.game !== '~') spent[a.game] = (spent[a.game] || 0) + Math.max(0, ms);
+    });
+    const top = Object.keys(spent).sort((a, b) => spent[b] - spent[a]).slice(0, 6);
+    return back +
+      '<div class="adm-row" style="margin-bottom:12px"><div class="adm-av" style="width:44px;height:44px;font-size:20px">' + (guest ? '👤' : avatar(w)) + '</div>' +
+        '<div class="adm-grow"><div class="adm-name" style="font-size:18px">' + esc(w.name) +
+        (guest ? ' <span class="adm-tag" style="background:rgba(255,180,0,.12);color:#ffb400;border-color:rgba(255,180,0,.3)">guest</span>' : '') +
+        (w.online ? ' <span style="color:#00ff88">● online</span>' : '') + (w.banned ? ' <span class="adm-tag">banned</span>' : '') + '</div>' +
+        '<div class="adm-meta">' + (guest ? 'playing without an account' : esc(w.email)) + '</div></div></div>' +
+      nowBox + actions +
+      '<div class="adm-h">// DETAILS</div>' + details +
+      (top.length ? '<div class="adm-h">// MOST PLAYED THIS WEEK</div>' + top.map(f =>
+        '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + esc(gameName(f)) + '</div></div><span class="adm-meta">about ' + dur(spent[f]) + '</span></div>').join('') : '') +
+      '<div class="adm-h">// WHAT THEY\'VE BEEN DOING · LAST 7 DAYS</div>' +
+      (acts.length ? '<div class="adm-tl">' + acts.map((a, i) => {
+        const end = i === 0 ? (w.online ? now : w.last_seen || a.at) : acts[i - 1].at;
+        const len = end - a.at;
+        return '<span class="t">' + when(a.at) + '</span><span>' + esc(place(a.game)) + '</span>' +
+          '<span class="d">' + (a.game === '~' ? '' : i === 0 && w.online ? 'now' : dur(len)) + '</span>';
+      }).join('') + '</div>'
+        : '<div class="adm-empty">Nothing recorded yet — activity shows up here from now on.</div>');
+  }
+  async function loadWatch() {
+    if (!viewing) return;
+    const t = viewing.target;
+    try { const r = await call('/api/admin/view?target=' + encodeURIComponent(t)); if (viewing && viewing.target === t) { watch = r; render(); } }
+    catch (e) { fail(e); }
+  }
+
   function kickBtn(target, name) {
     return '<button class="adm-btn warn" data-act="kick" data-target="' + esc(target) + '" data-name="' + esc(name) + '">👢 Kick</button>';
   }
@@ -392,7 +484,7 @@
       '<div class="adm-h">// GUESTS · ' + list.length + ' in the last 30 days · ' + online + ' online</div>' +
       (list.length ? list.map(g =>
         '<div class="adm-row' + (g.banned ? ' ban' : '') + '" style="' + (g.banned ? '' : 'border-left-color:rgba(255,180,0,.5)') + '">' +
-          '<div class="adm-av">👤</div>' +
+          '<div class="adm-av" data-act="view" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '" title="View what ' + esc(g.name) + ' is doing">👤</div>' +
           '<div class="adm-grow"><div class="adm-name">' + esc(g.name) +
             (g.online ? ' <span style="color:#00ff88" title="online">●</span> <span class="adm-meta">' +
               (g.playing ? '▶ ' + esc(gameName(g.playing)) : 'in the hub') + '</span>' : '') +
@@ -405,6 +497,7 @@
             : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms</span>') + '</div>' +
           (g.alsoOnIp && g.alsoOnIp.length ? '<div class="adm-meta">same network as: ' + esc(g.alsoOnIp.slice(0, 5).join(', ')) + '</div>' : '') +
           (g.ban_reason ? '<div class="adm-meta">“' + esc(g.ban_reason) + '”</div>' : '') + '</div>' +
+          viewBtn('g:' + g.gid, g.name) +
           '<button class="adm-btn warn" data-act="glabel" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" title="Give this guest a name you\'ll recognise">✏</button>' +
           (g.online && !g.banned ? '<button class="adm-btn warn" data-act="pop" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">✉</button>' +
             kickBtn('g:' + g.gid, g.name) : '') +
@@ -551,6 +644,8 @@
     };
     try {
       if (act === 'reload') { overview = null; players = null; reports = null; logRows = null; guests = null; render(); }
+      else if (act === 'view') { viewing = { target: el.dataset.target, name: el.dataset.name || 'them' }; watch = null; ask = null; notice = null; render(); $('adm-wrap').scrollTop = 0; }
+      else if (act === 'unview') { viewing = null; watch = null; notice = null; render(); }
       else if (act === 'kick' || act === 'kickall' || act === 'kickguests') {
         const all = act !== 'kick', name = all ? (act === 'kickguests' ? 'every online guest' : 'everyone online') : (el.dataset.name || 'them');
         askFor({ text:'Kick ' + name + '? They\'re sent back to the hub with your message. It isn\'t a ban — they can come straight back.',
@@ -590,7 +685,7 @@
       }
       else if (act === 'gunban') {
         await call('/api/admin/guest-ban', { method:'POST', body:{ gid: el.dataset.gid, banned:false } });
-        guests = null; logRows = null; notice = { text: (el.dataset.name || 'Guest') + ' is unbanned.' }; render();
+        guests = null; logRows = null; watch = null; notice = { text: (el.dataset.name || 'Guest') + ' is unbanned.' }; render();
       }
       else if (act === 'glabel') {
         askFor({ text:'Name this guest (only you see it):', input:'e.g. Sam\'s iPad', value: /^Guest /.test(el.dataset.name) ? '' : el.dataset.name,
@@ -685,7 +780,7 @@
         // Reachable from the Reports tab too, where the player list may never have loaded.
         const p = (players || []).find(x => x.sub === sub);
         const r = (reports || []).find(x => x.reported_sub === sub);
-        const name = (p && p.name) || (r && r.reported) || 'this player';
+        const name = (p && p.name) || (r && r.reported) || el.dataset.name || 'this player';
         askFor({ text:'Ban ' + name + '? They are kicked out within a few seconds, even mid-game.', input:'Reason (optional)',
                  choices:[['0','Permanently'],['1','for 1 hour'],['24','for 1 day'],['72','for 3 days'],['168','for 1 week']],
                  yes:'Ban ' + name, run: async (reason, hours) => {
@@ -699,14 +794,14 @@
         const a = ask, i = $('adm-ask-in'), sel = $('adm-ask-sel');
         if (!a) return;
         el.disabled = true;
-        try { await a.run(i ? i.value.trim() : '', sel ? sel.value : ''); ask = null; }
+        try { await a.run(i ? i.value.trim() : '', sel ? sel.value : ''); ask = null; if (viewing) watch = null; }
         catch (err) { ask = null; notice = { text: err.message || 'request failed', bad:true }; }
         render();
       }
       else if (act === 'unban') {
         await call('/api/admin/ban', { method:'POST', body:{ sub, banned:false } });
         const p = (players || []).find(x => x.sub === sub);
-        players = null; overview = null; notice = { text: ((p && p.name) || 'Player') + ' is unbanned.' };
+        players = null; overview = null; watch = null; notice = { text: ((p && p.name) || el.dataset.name || 'Player') + ' is unbanned.' };
         render();
       }
       else if (act === 'del') {
@@ -720,7 +815,8 @@
       }
       else if (act === 'give') {
         const p = (players || []).find(x => x.sub === sub);
-        giftTo = { sub, name: sub === '*' ? 'everyone' : ((p && p.name) || 'this player') };
+        giftTo = { sub, name: sub === '*' ? 'everyone' : ((p && p.name) || el.dataset.name || 'this player') };
+        if (viewing) { viewing = null; watch = null; tab = 'players'; }
         render();
       }
       else if (act === 'gtok') { $('adm-gtok').value = el.dataset.n; }
@@ -850,6 +946,13 @@
     if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) { e.preventDefault(); toggle(); }
   });
 
+  // Keep the View panel live while it's open (and not mid-question).
+  setInterval(() => {
+    if (!viewing || !watch || ask || document.hidden || !built || !$('adm-wrap').classList.contains('show')) return;
+    const top = $('adm-wrap').scrollTop;
+    loadWatch().then(() => { $('adm-wrap').scrollTop = top; });
+  }, 5000);
+
   window.glitchAdmin = { open, close, toggle };
 
   // ── #adminsmoke ── clicks every button in the console against a fake server.
@@ -887,6 +990,15 @@
       if (path === '/api/admin/reports') return { reports: db.reports };
       if (path === '/api/admin/gift') return { ok:true, players: opts.body.sub === '*' ? 2 : 1 };
       if (path === '/api/admin/guests') return Object.assign({ guestsLocked: arcade.guestsLocked }, gdb);
+      if (path.indexOf('/api/admin/view') === 0) {
+        const tg = decodeURIComponent(path.split('target=')[1] || '');
+        return tg.indexOf('g:') === 0
+          ? { now, who:{ kind:'guest', gid:'gaaaa1111', name:'Guest 1111', ip:'1.2.3.4', ua:'Mozilla/5.0 (iPhone) Safari/1', created:now, last_seen:now - 5e6, online:false, playing:null }, activity:[] }
+          : { now, who:{ kind:'player', sub:'s1', name:'Dave', email:'d@x.com', code:'AAAA', created:now, last_seen:now, online:true, playing:'gridlock.html',
+                ip:'1.2.3.4', ua:'Mozilla/5.0 (Windows) Chrome/1', friends:1, saves:2, reports:0, tos_version:'2026-10-07', tos_at:now },
+              activity:[{ game:'gridlock.html', at:now - 12 * 60000 }, { game:'', at:now - 15 * 60000 }, { game:'neon-putt.html', at:now - 40 * 60000 },
+                        { game:'~', at:now - 864e5 }, { game:'rhyme-bomb.html', at:now - 864e5 - 20 * 60000 }] };
+      }
       if (path === '/api/admin/kick') return { ok:true, kicked: opts.body.target === '*' ? 3 : 1 };
       if (path === '/api/admin/popup') return { ok:true, sent: opts.body.target === '*' ? 3 : 1 };
       if (path === '/api/admin/games') { arcade.disabled = opts.body.disabled; return { ok:true, disabled: arcade.disabled }; }
@@ -1030,6 +1142,27 @@
     tab = 'overview'; overview = null; render(); await wait(); await wait();
     await click('[data-act="popall"]'); await answer('brb'); await wait();
     t('message everyone posts *', post('/api/admin/popup').body.target === '*');
+
+    // ── 👁 View ──
+    tab = 'players'; players = null; render(); await wait(); await wait();
+    t('every player row has a View button', !!document.querySelector('#adm-body .adm-btn.view[data-target="u:s1"]'));
+    await click('.adm-btn.view[data-target="u:s1"]'); await wait();
+    t('View shows what they are doing right now', bodyHas(/RIGHT NOW/) && bodyHas(/Playing .*Gridlock/i) && bodyHas(/for 12m/));
+    t('with their details', bodyHas(/Windows · Chrome/) && bodyHas(/d@x\.com/) && bodyHas(/agreed \(2026-10-07\)/));
+    t('and a timeline of the last week', bodyHas(/LAST 7 DAYS/) && bodyHas(/the hub/) && bodyHas(/Neon Putt/i) && bodyHas(/25m/));
+    t('and what they play most', bodyHas(/MOST PLAYED/) && bodyHas(/about 25m/) && bodyHas(/about 20m/));
+    t('going offline ends a session', bodyHas(/went offline/) && !bodyHas(/about 2\d?h/));
+    sent.length = 0;
+    await click('[data-act="kick"][data-target="u:s1"]'); await answer('afk'); await wait(); await wait();
+    t('you can kick from the View panel', post('/api/admin/kick') && post('/api/admin/kick').body.target === 'u:s1' && bodyHas(/RIGHT NOW/));
+    await click('[data-act="unview"]');
+    t('Back returns to the list', bodyHas(/Eve/) && !bodyHas(/RIGHT NOW/));
+    await click('.adm-av[data-target="u:s1"]'); await wait();
+    t('clicking the player icon opens View too', bodyHas(/RIGHT NOW/));
+    tab = 'guests'; viewing = null; guests = null; render(); await wait(); await wait();
+    await click('.adm-btn.view[data-target="g:gaaaa1111"]'); await wait();
+    t('guests can be viewed', bodyHas(/Guest 1111/) && bodyHas(/Offline/) && bodyHas(/iPhone · Safari/) && bodyHas(/Nothing recorded yet/));
+    t('switching tabs leaves View', ($('adm-tabs').querySelector('[data-tab="players"]').click(), !bodyHas(/RIGHT NOW/)));
 
     // ── Guests tab ──
     tab = 'guests'; guests = null; render(); await wait(); await wait();

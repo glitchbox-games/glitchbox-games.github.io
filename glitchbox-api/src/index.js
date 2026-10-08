@@ -153,6 +153,12 @@ export class Hub extends DurableObject {
       try { this.sql.exec("ALTER TABLE users ADD COLUMN tos_at INTEGER"); } catch (e) { /* already there */ }
       // Guests agree to the terms too (once per browser); their ping reports the version.
       try { this.sql.exec("ALTER TABLE guests ADD COLUMN tos_version TEXT"); } catch (e) { /* already there */ }
+      // What each player has been doing: one row every time they move between games
+      // (or come online). Kept a week, for the owner console's View panel.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS activity (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, game TEXT, at INTEGER)`);
+      this.sql.exec("CREATE INDEX IF NOT EXISTS idx_activity_who ON activity(who, at)");
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN last_ua TEXT"); } catch (e) { /* already there */ }
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
       if (!row) {
@@ -430,7 +436,12 @@ export class Hub extends DurableObject {
     const me = await this.verifySession(token);
     const now = Date.now();
     if (!this.isOwnerSub(me)) { const nb = this.ipBan(ip); if (nb) throw new HttpError(403, nb); }
-    this.sql.exec("UPDATE users SET last_seen = ?, playing = '', playing_at = ? WHERE sub = ?", now, now, me);
+    const prev = this.sql.exec("SELECT playing, playing_at, last_seen FROM users WHERE sub = ?", me).toArray()[0];
+    if (this.hubOverridden(prev, "", now)) this.sql.exec("UPDATE users SET last_seen = ? WHERE sub = ?", now, me);
+    else {
+      this.track("u:" + me, prev, "", now);
+      this.sql.exec("UPDATE users SET last_seen = ?, playing = '', playing_at = ? WHERE sub = ?", now, now, me);
+    }
     if (ip) this.sql.exec("UPDATE users SET last_ip = ? WHERE sub = ?", ip, me);
     if (!this.userOf(me).code) this.ensureCode(me);
     // Sweep stale invites so nobody is offered a room that has long since emptied.
@@ -483,24 +494,49 @@ export class Hub extends DurableObject {
       const me = await this.verifySession(token);
       out.isOwner = this.isOwnerSub(me);
       if (!out.isOwner) { const nb = this.ipBan(ip); if (nb) throw new HttpError(403, nb); }
-      this.sql.exec("UPDATE users SET last_seen = ?, playing = ?, playing_at = ?, last_ip = COALESCE(?, last_ip) WHERE sub = ?",
-        now, g, now, ip || null, me);
+      const prev = this.sql.exec("SELECT playing, playing_at, last_seen FROM users WHERE sub = ?", me).toArray()[0];
+      const keep = this.hubOverridden(prev, g, now);
+      if (!keep) this.track("u:" + me, prev, g, now);
+      this.sql.exec("UPDATE users SET last_seen = ?, playing = ?, playing_at = ?, last_ip = COALESCE(?, last_ip), last_ua = COALESCE(?, last_ua) WHERE sub = ?",
+        now, keep ? prev.playing : g, keep ? prev.playing_at : now, ip || null, ua ? String(ua).slice(0, 160) : null, me);
       return { ...out, ...this.takePending("u:" + me) };
     }
     const nb = this.ipBan(ip);
     if (nb) throw new HttpError(403, nb);
     if (!GID_RE.test(String(gid || ""))) return out;
+    const gprev = this.guestOf(gid);
+    const gkeep = this.hubOverridden(gprev, g, now);
+    if (!gkeep) this.track("g:" + gid, gprev, g, now);
     this.sql.exec(
       `INSERT INTO guests (gid, ip, ua, created, last_seen, playing, playing_at) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(gid) DO UPDATE SET ip = excluded.ip, ua = excluded.ua, last_seen = excluded.last_seen,
          playing = excluded.playing, playing_at = excluded.playing_at`,
-      gid, ip || "", String(ua || "").slice(0, 160), now, now, g, now);
+      gid, ip || "", String(ua || "").slice(0, 160), now, now, gkeep ? gprev.playing : g, gkeep ? gprev.playing_at : now);
     if (/^[0-9a-z.-]{1,32}$/i.test(String(tos || "")))
       this.sql.exec("UPDATE guests SET tos_version = ? WHERE gid = ?", String(tos), gid);
     const ban = this.guestBan(this.guestOf(gid));
     if (ban) throw new HttpError(403, ban);
     out.guest = guestName(gid);
     return { ...out, ...this.takePending("g:" + gid) };
+  }
+
+  // Log a move to `game` ('' = the hub) when it differs from where they were, or when
+  // they're coming back after being offline. `prev` is their row before this ping.
+  // The hub pings too, so with the hub and a game open in two tabs a hub ping would
+  // flip them back to "in the hub" every few seconds. A game that pinged in the last
+  // 20s wins; once its tab closes (or hides — hidden tabs don't ping) the hub takes over.
+  hubOverridden(prev, game, now) {
+    return game === "" && !!prev && !!prev.playing && now - (prev.playing_at || 0) < 20000;
+  }
+  track(who, prev, game, now) {
+    const back = !prev || !prev.playing_at || now - prev.playing_at > ONLINE_WINDOW;
+    if (!back && (prev.playing || "") === game) return;
+    // Coming back after a gap: first mark when they went offline ("~"), so the last
+    // session has a real end instead of running on until today.
+    if (back && prev && prev.last_seen)
+      this.sql.exec("INSERT INTO activity (who, game, at) VALUES (?, '~', ?)", who, prev.last_seen);
+    this.sql.exec("INSERT INTO activity (who, game, at) VALUES (?, ?, ?)", who, game, now);
+    if (Math.random() < 0.02) this.sql.exec("DELETE FROM activity WHERE at < ?", now - 7 * 86400000);
   }
 
   // The player ticked "I agree" on the terms screen.
@@ -758,6 +794,33 @@ export class Hub extends DurableObject {
     const l = String(label || "").trim().slice(0, 40);
     this.sql.exec("UPDATE guests SET label = ? WHERE gid = ?", l || null, String(gid || ""));
     return { ok: true };
+  }
+
+  // Everything the console's View panel shows about one player or guest: where they
+  // are right now, their details, and the last week of moves between games.
+  async adminView(token, target) {
+    await this.requireOwner(token);
+    const t = String(target || ""), now = Date.now();
+    let who;
+    if (t.indexOf("u:") === 0) {
+      const u = this.sql.exec(
+        `SELECT sub, name, email, picture, code, created, last_seen, playing, playing_at, last_ip AS ip, last_ua AS ua,
+                banned, ban_reason, ban_until, tos_version, tos_at,
+                (SELECT COUNT(*) FROM friends f WHERE f.a = users.sub) AS friends,
+                (SELECT COUNT(*) FROM saves s WHERE s.sub = users.sub) AS saves,
+                (SELECT COUNT(*) FROM reports r WHERE r.reported = users.sub) AS reports
+         FROM users WHERE sub = ?`, t.slice(2)).toArray()[0];
+      if (!u) throw new HttpError(404, "no such player");
+      who = { kind: "player", ...u };
+    } else if (t.indexOf("g:") === 0) {
+      const g = this.guestOf(t.slice(2));
+      if (!g) throw new HttpError(404, "no such guest");
+      who = { kind: "guest", ...g, name: g.label || guestName(g.gid) };
+    } else throw new HttpError(400, "bad target");
+    who.online = !!who.last_seen && who.last_seen > now - ONLINE_WINDOW;
+    who.playing = who.online && who.playing_at > now - ONLINE_WINDOW ? (who.playing || "") : null;
+    const activity = this.sql.exec("SELECT game, at FROM activity WHERE who = ? ORDER BY at DESC LIMIT 60", t).toArray();
+    return { who, activity, now };
   }
 
   // Kick: boot someone back to the hub with a message. Not a ban — they can come
@@ -1114,6 +1177,7 @@ export default {
       if (path === "/api/admin/reports") return json(await stub.adminReports(auth), 200, origin);
       if (path === "/api/admin/log") return json(await stub.adminLog(auth), 200, origin);
       if (path === "/api/admin/guests") return json(await stub.adminGuests(auth), 200, origin);
+      if (path === "/api/admin/view") return json(await stub.adminView(auth, url.searchParams.get("target")), 200, origin);
 
       if (request.method === "POST") {
         const body = await request.json().catch(() => ({}));
