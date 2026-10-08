@@ -401,6 +401,8 @@
             (g.sameAsYou ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">your network</span>' : '') +
           '</div>' +
           '<div class="adm-meta">' + esc(device(g.ua)) + ' · IP ' + esc(g.ip || '?') + ' · first seen ' + ago(g.created) + ' · last seen ' + ago(g.last_seen) + '</div>' +
+          '<div class="adm-meta">' + (g.tos_version ? '📜 agreed to the terms (' + esc(g.tos_version) + ')'
+            : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms</span>') + '</div>' +
           (g.alsoOnIp && g.alsoOnIp.length ? '<div class="adm-meta">same network as: ' + esc(g.alsoOnIp.slice(0, 5).join(', ')) + '</div>' : '') +
           (g.ban_reason ? '<div class="adm-meta">“' + esc(g.ban_reason) + '”</div>' : '') + '</div>' +
           '<button class="adm-btn warn" data-act="glabel" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" title="Give this guest a name you\'ll recognise">✏</button>' +

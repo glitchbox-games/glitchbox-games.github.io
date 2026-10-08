@@ -29,13 +29,17 @@
   // Same key the hub writes when the server answers "banned".
   try { if (localStorage.getItem('glitchbox.banned') !== null) { location.replace('index.html'); return; } }
   catch (_) {}
-  // A signed-in player who hasn't agreed to the current terms goes back to the hub,
-  // which shows them. Keep TOS_VERSION in step with index.html.
+  // Nobody plays until they've agreed to the current terms — signed in or guest. The
+  // hub shows them, then brings you straight back here (room code and all).
+  // Keep TOS_VERSION in step with index.html.
   var TOS_VERSION = '2026-10-07';
   try {
     var tu = JSON.parse(localStorage.getItem('glitchbox_user') || 'null');
-    if (tu && tu.sub && localStorage.getItem('glitchbox.tos.' + tu.sub) !== TOS_VERSION &&
-        !/smoke|check|debug|menuquit/.test(location.hash)) { location.replace('index.html'); return; }
+    var tk = 'glitchbox.tos.' + (tu && tu.sub ? tu.sub : 'guest');
+    if (localStorage.getItem(tk) !== TOS_VERSION && !/smoke|check|debug|menuquit/.test(location.hash)) {
+      location.replace('index.html#terms:' + encodeURIComponent((location.pathname.split('/').pop() || '') + location.hash));
+      return;
+    }
   } catch (_) {}
   // The hub isn't open mid-game, so the game page asks the server itself — on load
   // (so a refresh catches a ban) and every few seconds after. The ping also tells
@@ -78,7 +82,8 @@
     var s = '';
     try { s = localStorage.getItem('glitchbox_session') || ''; } catch (_) {}
     if (document.hidden || !window.fetch || /smoke|check|debug|menuquit/.test(location.hash)) return;
-    fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME) + (s ? '' : '&gid=' + guestId()),
+    var tosv = ''; try { tosv = localStorage.getItem('glitchbox.tos.guest') || ''; } catch (_) {}
+    fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME) + (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tosv)),
           s ? { headers: { Authorization: 'Bearer ' + s } } : {}).then(function (r) {
       return r.json().then(function (d) {
         if (r.status === 403) {

@@ -151,6 +151,8 @@ export class Hub extends DurableObject {
       // Which version of the terms this player agreed to, and when — the record of consent.
       try { this.sql.exec("ALTER TABLE users ADD COLUMN tos_version TEXT"); } catch (e) { /* already there */ }
       try { this.sql.exec("ALTER TABLE users ADD COLUMN tos_at INTEGER"); } catch (e) { /* already there */ }
+      // Guests agree to the terms too (once per browser); their ping reports the version.
+      try { this.sql.exec("ALTER TABLE guests ADD COLUMN tos_version TEXT"); } catch (e) { /* already there */ }
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
       if (!row) {
@@ -473,7 +475,7 @@ export class Hub extends DurableObject {
   // Works signed out too, so a guest's game page still learns about maintenance.
   // Guests ping with their device id (`gid`), which is how the owner can see, kick
   // and ban them. Kicks and pop-up messages ride back on the answer.
-  async ping(token, game, gid, ip, ua) {
+  async ping(token, game, gid, ip, ua, tos) {
     const out = { ok: true, ...this.switches() };
     const g = GAME_RE.test(String(game || "")) ? String(game) : "";
     const now = Date.now();
@@ -493,6 +495,8 @@ export class Hub extends DurableObject {
        ON CONFLICT(gid) DO UPDATE SET ip = excluded.ip, ua = excluded.ua, last_seen = excluded.last_seen,
          playing = excluded.playing, playing_at = excluded.playing_at`,
       gid, ip || "", String(ua || "").slice(0, 160), now, now, g, now);
+    if (/^[0-9a-z.-]{1,32}$/i.test(String(tos || "")))
+      this.sql.exec("UPDATE guests SET tos_version = ? WHERE gid = ?", String(tos), gid);
     const ban = this.guestBan(this.guestOf(gid));
     if (ban) throw new HttpError(403, ban);
     out.guest = guestName(gid);
@@ -698,7 +702,7 @@ export class Hub extends DurableObject {
       (byIp[u.last_ip] = byIp[u.last_ip] || []).push(u.name);
     const banned = new Set(this.sql.exec("SELECT ip FROM ip_bans").toArray().map(r => r.ip));
     const guests = this.sql.exec(
-      `SELECT gid, label, ip, ua, created, last_seen, banned, ban_reason, ban_until,
+      `SELECT gid, label, ip, ua, created, last_seen, banned, ban_reason, ban_until, tos_version,
               CASE WHEN playing_at > ? THEN playing ELSE NULL END AS playing
        FROM guests ORDER BY last_seen DESC LIMIT 200`, now - ONLINE_WINDOW).toArray()
       .map(g => ({ ...g, name: g.label || guestName(g.gid), online: g.last_seen > now - ONLINE_WINDOW,
@@ -1093,7 +1097,7 @@ export default {
       }
       if (path === "/api/me") return json(await stub.state(auth, ip), 200, origin);
       if (path === "/api/ping") return json(await stub.ping(auth, url.searchParams.get("game"),
-        url.searchParams.get("gid"), ip, request.headers.get("User-Agent")), 200, origin);
+        url.searchParams.get("gid"), ip, request.headers.get("User-Agent"), url.searchParams.get("tos")), 200, origin);
 
       // Game saves — the cloud half of glitchbox-save.js.
       if (path === "/api/load") {

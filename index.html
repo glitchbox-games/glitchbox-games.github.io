@@ -1689,7 +1689,8 @@ async function pollArcade(){
   if(!BACKEND_READY) return;
   const s = getSession();
   try {
-    const r = await fetch(API_BASE + '/api/ping?game=' + (s ? '' : '&gid=' + guestId()),
+    let tv = ''; try { tv = localStorage.getItem('glitchbox.tos.guest') || ''; } catch(e){}
+    const r = await fetch(API_BASE + '/api/ping?game=' + (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tv)),
       s ? { headers:{ Authorization:'Bearer '+s } } : {});
     const h = await r.json().catch(()=>({}));
     if(r.status === 403){
@@ -1728,7 +1729,11 @@ async function backendLogin(credential){
 // player is asked to agree again. Agreement is saved per account on the server (the
 // record of consent) and cached locally so the screen doesn't flash on every visit.
 const TOS_VERSION = '2026-10-07';
-function tosKey(){ return 'glitchbox.tos.' + (currentUser ? currentUser.sub : ''); }
+// Guests agree once per browser, under the 'guest' key.
+function tosKey(){ return 'glitchbox.tos.' + (currentUser ? currentUser.sub : 'guest'); }
+let tosNext = null;   // where to go once a guest agrees (the game they tried to open)
+// Only same-site game pages — this comes from the URL hash, so never an open redirect.
+function safeGameHref(h){ return /^(play\.html\?g=[a-z0-9-]+\.html|[a-z0-9-]+\.html)([?#&][^\s]*)?$/i.test(h||'') && !/^index\.html/i.test(h) ? h : null; }
 function tosAgreedLocal(){ try { return localStorage.getItem(tosKey()) === TOS_VERSION; } catch(e){ return false; } }
 function checkTos(){
   if(!currentUser) return;
@@ -1745,6 +1750,7 @@ function showTos(readOnly){
   const chk = document.getElementById('tos-check');
   chk.checked = false; document.getElementById('tos-agree').disabled = true;
   ['tos-check-row','tos-agree','tos-decline'].forEach(id => document.getElementById(id).style.display = readOnly ? 'none' : '');
+  document.getElementById('tos-decline').textContent = isGuest() ? 'I don\'t agree' : 'I don\'t agree — sign me out';
   document.getElementById('tos-close').style.display = readOnly ? '' : 'none';
   document.getElementById('tos-body').scrollTop = 0;
   document.getElementById('tos-screen').classList.add('show');
@@ -1754,12 +1760,39 @@ async function acceptTos(){
   if(!document.getElementById('tos-check').checked) return;
   try { localStorage.setItem(tosKey(), TOS_VERSION); } catch(e){}
   document.getElementById('tos-screen').classList.remove('show');
+  if(isGuest()){ pollArcade(); const go = tosNext; tosNext = null; if(go) location.href = go; return; }
   if(getSession()){
     try { await api('/api/tos', { method:'POST', body:{ version:TOS_VERSION } });
           if(lastState.profile) lastState.profile.tos_version = TOS_VERSION; } catch(e){}
   }
+  const go = tosNext; tosNext = null; if(go) location.href = go;
 }
-function declineTos(){ document.getElementById('tos-screen').classList.remove('show'); glitchLogout(); }
+function declineTos(){
+  document.getElementById('tos-screen').classList.remove('show');
+  if(isGuest()){ tosNext = null; noticeToast('📜 TERMS','No problem — you can look around, but you need to agree to the terms to play.', 6000); return; }
+  glitchLogout();
+}
+// A guest who hasn't agreed gets the terms instead of the game, then goes on to it.
+// Capture phase, so it runs before the tile's own click handler and navigation.
+addEventListener('click', e => {
+  if(!isGuest() || tosAgreedLocal() || e.defaultPrevented) return;
+  const a = e.target.closest && e.target.closest('a[href]');
+  if(!a || a.target === '_blank') return;
+  const href = a.getAttribute('href') || '';
+  const file = fileFromHref(href);
+  if(!file || !GAMES.some(g => g.file === file)) return;
+  e.preventDefault(); e.stopPropagation();
+  tosNext = safeGameHref(href);
+  showTos(false);
+}, true);
+// A game page sent us here because the terms weren't agreed yet (#terms:<page>).
+if(/^#terms:/.test(location.hash)) addEventListener('load', () => setTimeout(() => {
+  let back = ''; try { back = decodeURIComponent(location.hash.slice(7)); } catch(e){}
+  try { history.replaceState(null, '', location.pathname); } catch(e){}
+  if(tosAgreedLocal()){ const go = safeGameHref(back); if(go) location.href = go; return; }
+  tosNext = safeGameHref(back);
+  showTos(false);
+}, 0));
 
 function applyUser(user){
   currentUser = user;
@@ -2352,7 +2385,29 @@ if(location.hash==='#tokencheck'){
     viewTos();
     ok('guests can read the terms without agreeing', document.getElementById('tos-close').style.display!=='none' && document.getElementById('tos-agree').style.display==='none');
     document.getElementById('tos-screen').classList.remove('show');
-    localStorage.removeItem('glitchbox.tos.tostest'); currentUser=tosUser; lastState.profile=tosSnap;
+    localStorage.removeItem('glitchbox.tos.tostest');
+
+    // guests: the terms stand between them and the game, once per browser
+    const guestTos=localStorage.getItem('glitchbox.tos.guest');
+    currentUser=null; localStorage.removeItem('glitchbox.tos.guest');
+    const tile=document.querySelector('#game-grid a.game-card:not(.locked)');
+    let navigated=false; const stopNav=ev=>{ if(!ev.defaultPrevented){ ev.preventDefault(); navigated=true; } };
+    addEventListener('click',stopNav);           // bubble phase: only reached if the gate let it through
+    tile.click();
+    ok('a guest who has not agreed gets the terms instead of the game', document.getElementById('tos-screen').classList.contains('show') && !navigated);
+    ok('and is sent on to that game afterwards', tosNext===safeGameHref(tile.getAttribute('href')) && !!tosNext);
+    ok('a guest can decline without being signed out', document.getElementById('tos-decline').textContent==="I don't agree");
+    declineTos();
+    ok('declining closes the terms and forgets the game', !document.getElementById('tos-screen').classList.contains('show') && tosNext===null);
+    localStorage.setItem('glitchbox.tos.guest',TOS_VERSION);
+    tile.click();
+    ok('a guest who agreed goes straight to the game', navigated && !document.getElementById('tos-screen').classList.contains('show'));
+    removeEventListener('click',stopNav);
+    ok('only game pages are allowed as the way back', !safeGameHref('https://evil.example/x.html') && !safeGameHref('//evil.example/a.html')
+      && !safeGameHref('index.html') && !safeGameHref('javascript:alert(1)') && safeGameHref('imposter.html#room=ABCD')==='imposter.html#room=ABCD'
+      && !!safeGameHref('play.html?g=gridlock.html'));
+    if(guestTos===null) localStorage.removeItem('glitchbox.tos.guest'); else localStorage.setItem('glitchbox.tos.guest',guestTos);
+    currentUser=tosUser; lastState.profile=tosSnap;
 
     wipe(); setTokens(200);
     const paid=GAMES.find(g=>g.price);
