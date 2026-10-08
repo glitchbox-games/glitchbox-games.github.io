@@ -544,6 +544,10 @@ export class Hub extends DurableObject {
     const me = await this.verifySession(token);
     const v = String(version || "").slice(0, 32);
     if (!/^[0-9a-z.-]{1,32}$/i.test(v)) throw new HttpError(400, "bad terms version");
+    // Never move backwards: an old cached page posting an older version mustn't undo
+    // a newer agreement (that is what kept re-asking people on every refresh).
+    const cur = (this.userOf(me) || {}).tos_version;
+    if (cur && String(cur).localeCompare(v, undefined, { numeric: true }) >= 0) return { ok: true, tos_version: cur };
     this.sql.exec("UPDATE users SET tos_version = ?, tos_at = ? WHERE sub = ?", v, Date.now(), me);
     return { ok: true, tos_version: v };
   }

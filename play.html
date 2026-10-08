@@ -315,8 +315,10 @@ function isFav(file){ return !isGuest() && favList().indexOf(file)!==-1; }
 // Same terms gate as the hub and glitchbox-menu.js — keep TOS_VERSION in step.
 const TOS_VERSION='2026-10-07.2';
 function tosAgreed(){
-  try{ const u=JSON.parse(localStorage.getItem('glitchbox_user')||'null');
-       return localStorage.getItem('glitchbox.tos.'+(u&&u.sub?u.sub:'guest'))===TOS_VERSION; }catch(e){ return false; }
+  // newest version ever agreed on this device; anything at or past ours counts
+  try{ const u=JSON.parse(localStorage.getItem('glitchbox_user')||'null'), id=u&&u.sub?u.sub:'guest';
+       return [localStorage.getItem('glitchbox.tos.'+id),localStorage.getItem('glitchbox.tosv.'+id)]
+         .some(v=>v && v.localeCompare(TOS_VERSION,undefined,{numeric:true})>=0); }catch(e){ return false; }
 }
 // An unknown or still-locked game has no business being framed here.
 if(!game){ location.replace('index.html'); }

@@ -35,8 +35,12 @@
   var TOS_VERSION = '2026-10-07.2';
   try {
     var tu = JSON.parse(localStorage.getItem('glitchbox_user') || 'null');
-    var tk = 'glitchbox.tos.' + (tu && tu.sub ? tu.sub : 'guest');
-    if (localStorage.getItem(tk) !== TOS_VERSION && !/smoke|check|debug|menuquit/.test(location.hash)) {
+    var tid = tu && tu.sub ? tu.sub : 'guest';
+    // Newest version ever agreed on this device; anything at or past ours counts.
+    var have = [localStorage.getItem('glitchbox.tos.' + tid), localStorage.getItem('glitchbox.tosv.' + tid)]
+      .filter(Boolean).sort(function (a, b) { return b.localeCompare(a, undefined, { numeric: true }); })[0] || '';
+    var agreed = !!have && have.localeCompare(TOS_VERSION, undefined, { numeric: true }) >= 0;
+    if (!agreed && !/smoke|check|debug|menuquit/.test(location.hash)) {
       location.replace('index.html#terms:' + encodeURIComponent((location.pathname.split('/').pop() || '') + location.hash));
       return;
     }
@@ -82,7 +86,7 @@
     var s = '';
     try { s = localStorage.getItem('glitchbox_session') || ''; } catch (_) {}
     if (document.hidden || !window.fetch || /smoke|check|debug|menuquit/.test(location.hash)) return;
-    var tosv = ''; try { tosv = localStorage.getItem('glitchbox.tos.guest') || ''; } catch (_) {}
+    var tosv = ''; try { tosv = localStorage.getItem('glitchbox.tosv.guest') || localStorage.getItem('glitchbox.tos.guest') || ''; } catch (_) {}
     fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME) + (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tosv)),
           s ? { headers: { Authorization: 'Bearer ' + s } } : {}).then(function (r) {
       return r.json().then(function (d) {

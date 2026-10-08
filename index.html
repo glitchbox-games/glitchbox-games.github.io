@@ -1689,7 +1689,7 @@ async function pollArcade(){
   if(!BACKEND_READY) return;
   const s = getSession();
   try {
-    let tv = ''; try { tv = localStorage.getItem('glitchbox.tos.guest') || ''; } catch(e){}
+    let tv = ''; try { tv = localStorage.getItem('glitchbox.tosv.guest') || localStorage.getItem('glitchbox.tos.guest') || ''; } catch(e){}
     const r = await fetch(API_BASE + '/api/ping?game=' + (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tv)),
       s ? { headers:{ Authorization:'Bearer '+s } } : {});
     const h = await r.json().catch(()=>({}));
@@ -1730,15 +1730,33 @@ async function backendLogin(credential){
 // record of consent) and cached locally so the screen doesn't flash on every visit.
 const TOS_VERSION = '2026-10-07.2';
 // Guests agree once per browser, under the 'guest' key.
-function tosKey(){ return 'glitchbox.tos.' + (currentUser ? currentUser.sub : 'guest'); }
+function tosId(){ return currentUser ? currentUser.sub : 'guest'; }
+function tosKey(){ return 'glitchbox.tos.' + tosId(); }
 let tosNext = null;   // where to go once a guest agrees (the game they tried to open)
 // Only same-site game pages — this comes from the URL hash, so never an open redirect.
 function safeGameHref(h){ return /^(play\.html\?g=[a-z0-9-]+\.html|[a-z0-9-]+\.html)([?#&][^\s]*)?$/i.test(h||'') && !/^index\.html/i.test(h) ? h : null; }
-function tosAgreedLocal(){ try { return localStorage.getItem(tosKey()) === TOS_VERSION; } catch(e){ return false; } }
+// Agreement only ever moves forward: a page needing an older (or the same) version
+// counts it as agreed. GitHub Pages lets browsers cache each file for 10 minutes, so
+// right after an update an old hub and new game pages can run side by side — with
+// strict equality they kept overwriting each other's version and asked on every
+// refresh. 'glitchbox.tosv.*' holds the newest version ever agreed (old cached pages
+// only know the 'glitchbox.tos.*' key, so they can't drag it backwards).
+function tosNewer(a,b){ return String(a||'').localeCompare(String(b||''), undefined, { numeric:true }) > 0 ? a : b; }
+function tosAtLeast(have){ return !!have && String(have).localeCompare(TOS_VERSION, undefined, { numeric:true }) >= 0; }
+function tosHave(){
+  try { const id = tosId(); return tosNewer(localStorage.getItem('glitchbox.tos.'+id), localStorage.getItem('glitchbox.tosv.'+id)) || ''; }
+  catch(e){ return ''; }
+}
+function tosRemember(v){
+  try { const id = tosId(), best = tosNewer(tosHave(), v);
+        localStorage.setItem('glitchbox.tosv.'+id, best); localStorage.setItem('glitchbox.tos.'+id, best); } catch(e){}
+}
+function tosAgreedLocal(){ return tosAtLeast(tosHave()); }
 function checkTos(){
   if(!currentUser) return;
   const srv = lastState && lastState.profile && lastState.profile.sub === currentUser.sub ? lastState.profile.tos_version : undefined;
-  if(srv === TOS_VERSION){ try { localStorage.setItem(tosKey(), TOS_VERSION); } catch(e){} return; }
+  // Signed in and the server has your agreement on record: never ask on this device.
+  if(tosAtLeast(srv)){ tosRemember(srv); return; }
   if(tosAgreedLocal()){
     // agreed on this device but the server never heard (offline, or a failed request)
     if(srv !== undefined && getSession()) api('/api/tos', { method:'POST', body:{ version:TOS_VERSION } }).catch(()=>{});
@@ -1758,7 +1776,7 @@ function showTos(readOnly){
 function viewTos(){ showTos(true); }
 async function acceptTos(){
   if(!document.getElementById('tos-check').checked) return;
-  try { localStorage.setItem(tosKey(), TOS_VERSION); } catch(e){}
+  tosRemember(TOS_VERSION);
   document.getElementById('tos-screen').classList.remove('show');
   if(isGuest()){ pollArcade(); const go = tosNext; tosNext = null; if(go) location.href = go; return; }
   if(getSession()){
@@ -2363,7 +2381,9 @@ if(location.hash==='#tokencheck'){
     // terms of service: shown until agreed, and agreeing is remembered
     const tosUser=currentUser; currentUser={ sub:'tostest' };
     const tosSnap=lastState.profile; lastState.profile=null;
-    try{ localStorage.removeItem('glitchbox.tos.tostest'); }catch(e){}
+    const tosClear=id=>{ localStorage.removeItem('glitchbox.tos.'+id); localStorage.removeItem('glitchbox.tosv.'+id); };
+    const guestTosv=localStorage.getItem('glitchbox.tosv.guest');
+    tosClear('tostest');
     checkTos();
     ok('terms show for a player who has not agreed', document.getElementById('tos-screen').classList.contains('show'));
     ok('agree is disabled until the box is ticked', document.getElementById('tos-agree').disabled);
@@ -2375,21 +2395,27 @@ if(location.hash==='#tokencheck'){
     ok('agreeing closes the terms', !document.getElementById('tos-screen').classList.contains('show'));
     checkTos();
     ok('and they are not asked again', !document.getElementById('tos-screen').classList.contains('show'));
-    localStorage.setItem('glitchbox.tos.tostest','2000-01-01');
+    tosClear('tostest'); localStorage.setItem('glitchbox.tos.tostest','2000-01-01');
     checkTos();
     ok('a new terms version asks again', document.getElementById('tos-screen').classList.contains('show'));
     document.getElementById('tos-screen').classList.remove('show');
-    lastState.profile={ sub:'tostest', tos_version:TOS_VERSION }; localStorage.removeItem('glitchbox.tos.tostest');
+    lastState.profile={ sub:'tostest', tos_version:TOS_VERSION }; tosClear('tostest');
     checkTos();
     ok('agreeing on another device counts', !document.getElementById('tos-screen').classList.contains('show') && tosAgreedLocal());
     viewTos();
     ok('guests can read the terms without agreeing', document.getElementById('tos-close').style.display!=='none' && document.getElementById('tos-agree').style.display==='none');
     document.getElementById('tos-screen').classList.remove('show');
-    localStorage.removeItem('glitchbox.tos.tostest');
+    // an old cached page writing an older version can't undo a newer agreement
+    tosRemember(TOS_VERSION); localStorage.setItem('glitchbox.tos.tostest','2026-10-07');
+    lastState.profile=null; checkTos();
+    ok('an older version written by a cached page does not ask again', !document.getElementById('tos-screen').classList.contains('show'));
+    lastState.profile={ sub:'tostest', tos_version:'9999-01-01' }; tosClear('tostest'); checkTos();
+    ok('a newer agreement on the server counts too', !document.getElementById('tos-screen').classList.contains('show') && tosAgreedLocal());
+    lastState.profile=null; tosClear('tostest');
 
     // guests: the terms stand between them and the game, once per browser
     const guestTos=localStorage.getItem('glitchbox.tos.guest');
-    currentUser=null; localStorage.removeItem('glitchbox.tos.guest');
+    currentUser=null; tosClear('guest');
     const tile=document.querySelector('#game-grid a.game-card:not(.locked)');
     let navigated=false; const stopNav=ev=>{ if(!ev.defaultPrevented){ ev.preventDefault(); navigated=true; } };
     addEventListener('click',stopNav);           // bubble phase: only reached if the gate let it through
@@ -2407,6 +2433,7 @@ if(location.hash==='#tokencheck'){
       && !safeGameHref('index.html') && !safeGameHref('javascript:alert(1)') && safeGameHref('imposter.html#room=ABCD')==='imposter.html#room=ABCD'
       && !!safeGameHref('play.html?g=gridlock.html'));
     if(guestTos===null) localStorage.removeItem('glitchbox.tos.guest'); else localStorage.setItem('glitchbox.tos.guest',guestTos);
+    if(guestTosv===null) localStorage.removeItem('glitchbox.tosv.guest'); else localStorage.setItem('glitchbox.tosv.guest',guestTosv);
     currentUser=tosUser; lastState.profile=tosSnap;
 
     wipe(); setTokens(200);
