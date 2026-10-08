@@ -305,16 +305,6 @@
     exit: { usage:'exit', about:'close the console', run() { close(); } },
 
     // ── server side ──
-    stats: { usage:'stats', about:'arcade totals at a glance', owner:true, async run() {
-      const o = await call('/api/admin/overview'), c = o.counts || {};
-      head('// ARCADE');
-      Object.keys(c).forEach(k => say('  ' + pad(k, 14) + c[k]));
-      if (o.recent && o.recent.length) {
-        head('// NEWEST');
-        o.recent.slice(0, 8).forEach(u => say('  ' + pad(u.name, 20) + 'joined ' + ago(u.created)));
-      }
-    }},
-
     players: { usage:'players [query]', about:'list or search players', owner:true, async run(a) {
       const q = a.join(' ');
       const list = (await call('/api/admin/players?q=' + encodeURIComponent(q))).players || [];
@@ -548,6 +538,56 @@
         await call('/api/admin/reload-all', { method:'POST', body:{} });
         ok('↻ every open page reloads within a few seconds');
       });
+    }},
+
+    appeals: { usage:'appeals', about:'ban appeals waiting for an answer', owner:true, async run() {
+      const list = (await call('/api/admin/appeals')).appeals || [];
+      const open = list.filter(x => x.status === 'open');
+      if (!open.length) { ok('no appeals waiting'); return; }
+      head('// ' + open.length + ' appeal' + (open.length === 1 ? '' : 's') + ' waiting');
+      open.forEach(x => { say('  #' + pad(x.id, 5) + pad(x.name, 20) + pad(x.kind, 8) + ago(x.created)); say('        "' + x.text + '"'); });
+      say('  appeal <id> yes|no [reply]');
+    }},
+
+    appeal: { usage:'appeal <id> yes|no [reply]', about:'answer a ban appeal (yes unbans them)', owner:true, async run(a) {
+      const w = (a[1] || '').toLowerCase();
+      if (!a[0] || (w !== 'yes' && w !== 'no')) { bad('usage: appeal <id> yes|no [reply]'); return; }
+      const r = await call('/api/admin/appeal-decide', { method:'POST', body:{ id: +a[0], accept: w === 'yes', reply: a.slice(2).join(' ') } });
+      ok(w === 'yes' ? '✅ appeal #' + a[0] + ' accepted — unbanned' + (r.note || '') : '⚖ appeal #' + a[0] + ' turned down');
+    }},
+
+    mod: { usage:'mod <player> [off]', about:'make a player a moderator (or stop)', owner:true, async run(a) {
+      const off = (a[a.length - 1] || '').toLowerCase() === 'off';
+      const p = await pickPlayer((off ? a.slice(0, -1) : a).join(' '));
+      if (!p) return;
+      await call('/api/admin/set-mod', { method:'POST', body:{ sub:p.sub, on:!off } });
+      ok(off ? p.name + ' is no longer a moderator' : '⭐ ' + p.name + ' is a moderator');
+    }},
+
+    feature: { usage:'feature <game|off>', about:'pick the big featured banner game', owner:true, async run(a) {
+      const q = a.join(' ');
+      if (!q || /^(off|default|none)$/i.test(q)) { await call('/api/admin/featured', { method:'POST', body:{ file:'' } }); ok('featured: Pixel War (default)'); return; }
+      const g = findGame(q);
+      if (!g) { bad('no game matches "' + q + '"'); return; }
+      await call('/api/admin/featured', { method:'POST', body:{ file:g.file } });
+      if (typeof applyFeatured === 'function') applyFeatured(g.file);
+      ok('🌟 featured: ' + g.name);
+    }},
+
+    stats: { usage:'stats', about:'arcade totals and the last 30 days', owner:true, async run() {
+      const o = await call('/api/admin/overview'), c = o.counts || {};
+      head('// ARCADE');
+      Object.keys(c).forEach(k => say('  ' + pad(k, 14) + c[k]));
+      try {
+        const st = await call('/api/admin/stats?tz=' + new Date().getTimezoneOffset());
+        head('// LAST 30 DAYS');
+        say('  players       ' + st.totals.players + '     guests ' + st.totals.guests + '     hours played ' + st.totals.hours);
+        st.games.slice(0, 5).forEach(g => say('  ' + pad(g.game.replace('.html', ''), 18) + g.minutes + ' min'));
+      } catch (e) { /* owner-only; older servers lack it */ }
+      if (o.recent && o.recent.length) {
+        head('// NEWEST');
+        o.recent.slice(0, 8).forEach(u => say('  ' + pad(u.name, 20) + 'joined ' + ago(u.created)));
+      }
     }},
 
     dismiss: { usage:'dismiss <id>', about:'clear one report', owner:true, async run(a) {
@@ -796,6 +836,8 @@
         { gid:'gxxxx1a2b', name:'Guest 1A2B', ip:'1.2.3.4', online:true, last_seen:Date.now() },
         { gid:'gyyyy9z9z', name:'Sam', ip:'9.9.9.9', online:true, last_seen:Date.now(), sameAsYou:true } ], ipBans:[] };
       if (path === '/api/admin/kick') return { ok:true, kicked: opts.body.target === '*' ? 4 : 1 };
+      if (path === '/api/admin/appeals') return { appeals:[{ id:5, name:'Eve', kind:'player', text:'sorry', created:Date.now(), status:'open' }] };
+      if (path === '/api/admin/appeal-decide') return { ok:true, note:'' };
       if (path === '/api/admin/popup') return { ok:true, sent: opts.body.target === '*' ? 4 : 1 };
       return { ok:true };
     };
@@ -942,6 +984,23 @@
     seen.length = 0;
     await run('reloadall'); await run('confirm');
     t('reloadall asks, then posts', seen.some(s => s.path === '/api/admin/reload-all'));
+
+    // ── appeals, mods, featured ──
+    seen.length = 0;
+    await run('appeals');
+    t('appeals lists the waiting ones', said(/#5 .*Eve/));
+    await run('appeal 5 yes be nice');
+    t('appeal yes unbans with a reply', seen.some(s => s.path === '/api/admin/appeal-decide' && s.body.id === 5 && s.body.accept === true && s.body.reply === 'be nice'));
+    await run('appeal 5 maybe');
+    t('appeal needs yes or no', said(/usage: appeal/));
+    seen.length = 0;
+    await run('mod dave@x.com');
+    t('mod makes a moderator', seen.some(s => s.path === '/api/admin/set-mod' && s.body.sub === 's1' && s.body.on === true));
+    await run('mod dave@x.com off');
+    t('mod … off removes it', seen.some(s => s.path === '/api/admin/set-mod' && s.body.on === false));
+    seen.length = 0;
+    await run('feature gridlock');
+    t('feature sets the banner game', seen.some(s => s.path === '/api/admin/featured' && s.body.file === 'gridlock.html'));
 
     // ── owner broadcast commands ──
     seen.length = 0;

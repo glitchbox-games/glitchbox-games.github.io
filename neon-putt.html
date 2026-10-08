@@ -498,6 +498,8 @@ function showFinal(){
   mode="fin";
   const tot = scores.reduce((a,b)=>a+b,0), d = tot - TOTAL_PAR;
   if(best===null || d<best){ best=d; localStorage.setItem("neonputt.best", String(d)); }
+  // 🏆 arcade leaderboard: total strokes for the full 18, lower wins (glitchbox-menu.js)
+  if(window.GLITCHBOX && GLITCHBOX.score && scores.filter(x=>x>0).length===LEVELS.length) GLITCHBOX.score(tot, { low:true });
   let rows="";
   for(let r=0;r<2;r++){
     let a="<tr><th>H</th>", b="<tr><td style='color:#4d7d99'>score</td>";

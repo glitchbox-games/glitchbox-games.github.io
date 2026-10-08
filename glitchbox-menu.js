@@ -32,7 +32,7 @@
   // Nobody plays until they've agreed to the current terms — signed in or guest. The
   // hub shows them, then brings you straight back here (room code and all).
   // Keep TOS_VERSION in step with index.html.
-  var TOS_VERSION = '2026-10-07.2';
+  var TOS_VERSION = '2026-10-07.3';
   try {
     var tu = JSON.parse(localStorage.getItem('glitchbox_user') || 'null');
     var tid = tu && tu.sub ? tu.sub : 'guest';
@@ -82,12 +82,54 @@
     setTimeout(function () { d.remove(); }, 15000);
   }
   var reloadSeen = null;   // the owner's "reload everyone" stamp as of our first ping
+
+  // Which multiplayer room this page is in, so friends can join from the hub. Every
+  // relay game connects to <api>/ws?room=CODE, so watching WebSocket URLs finds it with
+  // no change to any game; a #room=CODE link covers games that connected before this ran.
+  var roomNow = '';
+  try {
+    var RealWS = window.WebSocket;
+    if (RealWS && !RealWS.__gbWrapped) {
+      var Wrapped = function (url, protocols) {
+        var m = /[?&]room=([A-Za-z0-9]{3,8})/.exec(String(url || ''));
+        var ws = protocols === undefined ? new RealWS(url) : new RealWS(url, protocols);
+        if (m) {
+          roomNow = m[1].toUpperCase();
+          ws.addEventListener('close', function () { if (roomNow === m[1].toUpperCase()) roomNow = ''; });
+        }
+        return ws;
+      };
+      Wrapped.prototype = RealWS.prototype;
+      ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'].forEach(function (k) { Wrapped[k] = RealWS[k]; });
+      Wrapped.__gbWrapped = true;
+      window.WebSocket = Wrapped;
+    }
+  } catch (_) {}
+  function currentRoom() {
+    if (roomNow) return roomNow;
+    var m = /[#&]room=([A-Za-z0-9]{3,8})/.exec(location.hash);
+    return m ? m[1].toUpperCase() : '';
+  }
+
+  // Games report a score with GLITCHBOX.score(n) — or GLITCHBOX.score(n, { low:true })
+  // when lower is better (golf strokes, race times). Only counts for signed-in players;
+  // the server keeps each player's best and the 🏆 Leaderboards show the top ten.
+  window.GLITCHBOX = window.GLITCHBOX || {};
+  window.GLITCHBOX.score = function (n, opts) {
+    var s = ''; try { s = localStorage.getItem('glitchbox_session') || ''; } catch (_) {}
+    if (!s || !window.fetch || !isFinite(+n)) return Promise.resolve(null);
+    return fetch(BAN_API + '/api/score', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + s },
+      body: JSON.stringify({ game: PING_GAME, score: +n, low: !!(opts && opts.low) }) })
+      .then(function (r) { return r.json(); }).catch(function () { return null; });
+  };
   function banCheck() {
     var s = '';
     try { s = localStorage.getItem('glitchbox_session') || ''; } catch (_) {}
     if (document.hidden || !window.fetch || /smoke|check|debug|menuquit/.test(location.hash)) return;
     var tosv = ''; try { tosv = localStorage.getItem('glitchbox.tosv.guest') || localStorage.getItem('glitchbox.tos.guest') || ''; } catch (_) {}
-    fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME) + (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tosv)),
+    fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME) + (currentRoom() ? '&room=' + currentRoom() : '') +
+          (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tosv)),
           s ? { headers: { Authorization: 'Bearer ' + s } } : {}).then(function (r) {
       return r.json().then(function (d) {
         if (r.status === 403) {

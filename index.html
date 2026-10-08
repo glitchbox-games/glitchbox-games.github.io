@@ -11,6 +11,7 @@
 <!-- Game roster + thumbnail art, shared with play.html -->
 <script src="glitchbox-games.js"></script>
 <!-- Owner console (Ctrl+Shift+A). Deferred so it loads after the hub's own script. -->
+<script src="glitchbox-social.js" defer></script>
 <script src="glitchbox-admin.js" defer></script>
 <script src="glitchbox-cmd.js" defer></script>
 <style>
@@ -725,7 +726,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
       <div class="tos-key">
         <p>To keep GLITCHBOX safe, the owner can see your activity <b>on GLITCHBOX</b> from the owner console, including:</p>
         <ul>
-          <li>whether you're online, which game you're playing right now, and which games you've played over the last week (and for how long)</li>
+          <li>whether you're online, which game you're playing right now, and which games you've played recently (and for how long)</li>
           <li>your name, email address, picture and friend code</li>
           <li>your friends, reports made by or about you, and cloud saves</li>
           <li>the kind of device and browser you use, and your IP address (your internet connection)</li>
@@ -733,16 +734,28 @@ body.sb-pinned { padding-left:var(--rail-open); }
         <p>This is <b>only used for moderation</b>, like stopping cheating, bullying or spam. It is never sold or shared.
           It only covers what you do on GLITCHBOX, nothing else on your device or anywhere else online.</p>
       </div>
-      <h4>3. Moderation</h4>
+      <h4>3. What other players can see</h4>
+      <ul>
+        <li><b>Your friends</b> see whether you're online, which game you're playing (so they can join you),
+          and your profile: icon, badges, favourite games and play time. You can hide your activity from friends
+          in your profile.</li>
+        <li><b>Leaderboards</b> show your first name and last initial (e.g. "Dave S."), your icon, your play time
+          this week and your best scores — unless you hide your activity.</li>
+      </ul>
+      <h4>4. Moderation</h4>
       <p>The owner can message you, kick you back to the hub, switch games off, or ban your account, your device
         or your internet connection, for a while or for good, if you break these rules.</p>
-      <h4>4. Your account</h4>
+      <p>The owner can pick <b>moderators</b> — trusted players who can see the same activity (but never your
+        email address or IP address), message you, kick you, and ban you for up to a day.</p>
+      <p>If you're banned you can send an appeal, and the owner or a moderator will answer it.</p>
+      <h4>5. Your account and your data</h4>
       <p>You sign in with Google. GLITCHBOX keeps your name, email and picture so friends and saves work.
-        You can ask the owner to delete your account at any time, and everything about you is erased.</p>
-      <h4>5. Tokens and unlocks</h4>
+        <b>My Data</b> in the menu shows everything GLITCHBOX keeps about you, lets you download it, and lets you
+        delete your account — that erases everything about you. Guests can see and erase their data there too.</p>
+      <h4>6. Tokens and unlocks</h4>
       <p>Tokens, unlocked games and icons are just for fun. They aren't worth real money, can't be traded,
         and can be changed or reset.</p>
-      <h4>6. Changes</h4>
+      <h4>7. Changes</h4>
       <p>If these terms change, you'll be asked to agree again before you keep playing.</p>
       <p>If you're under 13, ask a parent or guardian to read this with you first.</p>
     </div>
@@ -759,6 +772,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
     <div class="ban-title">BANNED</div>
     <div class="ban-reason" id="ban-reason"></div>
     <div class="auth-desc" id="ban-desc">This account can't use GLITCHBOX any more.</div>
+    <div id="appeal-box"></div>
     <button class="ban-btn" onclick="checkBan()">Check again</button>
     <button class="ban-btn" onclick="openAuth('login')">Use a different Google account</button>
   </div>
@@ -783,6 +797,12 @@ body.sb-pinned { padding-left:var(--rail-open); }
     <a class="nav-item"        id="nav-multiplayer" href="#" onclick="filterCategory('multiplayer');return false;"><span class="nav-icon">◎</span><span class="nav-text">Multiplayer</span><span class="nav-count" id="cnt-multiplayer">0</span></a>
     <a class="nav-item"        id="nav-other"       href="#" onclick="filterCategory('other');return false;"><span class="nav-icon">◇</span><span class="nav-text">Other</span><span class="nav-count" id="cnt-other">0</span></a>
     <a class="nav-item special" id="nav-special"    href="#" onclick="filterCategory('special');return false;"><span class="nav-icon">🔒</span><span class="nav-text">Special</span><span class="nav-count" id="cnt-special">0</span></a>
+  </div>
+  <div class="sidebar-section" style="padding-top:6px;">
+    <div class="sidebar-label">COMMUNITY</div>
+    <a class="nav-item" href="#" onclick="GBSocial.openBoards();return false;"><span class="nav-icon">🏆</span><span class="nav-text">Leaderboards</span></a>
+    <a class="nav-item" href="#" onclick="GBSocial.openMyData();return false;"><span class="nav-icon">🔐</span><span class="nav-text">My Data</span></a>
+    <a class="nav-item" href="#" onclick="viewTos();return false;"><span class="nav-icon">📜</span><span class="nav-text">Terms</span></a>
   </div>
   <div class="sidebar-section" style="padding-top:6px;">
     <div class="sidebar-label">TOKENS</div>
@@ -817,6 +837,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
       <div class="stat-tile"><div class="stat-num" id="stat-played">0</div><div class="stat-label">Games Played</div></div>
       <div class="stat-tile"><div class="stat-num" id="stat-since">—</div><div class="stat-label">Member Since</div></div>
     </div>
+    <div id="social-own"></div>
     <div class="profile-section-title">// YOUR ICON <span id="icon-name"></span></div>
     <div class="icon-hint">Pick who you are. Your friends see it too. Locked icons cost tokens — tap one to buy it.</div>
     <div class="icon-bal" id="icon-bal"></div>
@@ -868,6 +889,8 @@ body.sb-pinned { padding-left:var(--rail-open); }
     <div class="shop-body">
       <div class="shop-sect">// DAILY REWARD</div>
       <div id="shop-daily"></div>
+      <div class="shop-sect">// DAILY CHALLENGES</div>
+      <div id="shop-challenges"></div>
       <div class="shop-sect">// SPECIAL GAMES</div>
       <div id="shop-items"></div>
       <div class="shop-sect">// PROFILE ICONS</div>
@@ -934,10 +957,11 @@ body.sb-pinned { padding-left:var(--rail-open); }
       <div class="featured-play">▶</div>
       <div class="featured-info">
         <div class="featured-tag">// FEATURED GAME</div>
-        <h2>PIXEL WAR</h2>
-        <p>War Thunder-style vehicle combat — pilot tanks, planes, ships and AA guns against AI. Armor pen, module damage, B-2 bombers.</p>
+        <h2 id="featured-name">PIXEL WAR</h2>
+        <p id="featured-blurb">War Thunder-style vehicle combat — pilot tanks, planes, ships and AA guns against AI. Armor pen, module damage, B-2 bombers.</p>
       </div>
     </a>
+    <div id="recent-row"></div>
     <div class="section">
       <div class="section-header">
         <div class="section-title" id="section-label">ALL GAMES</div>
@@ -984,7 +1008,20 @@ function paintPlayMode(){
                   :'Games open in a window with recommendations — click for fullscreen';
   }
   const feat=document.getElementById('featured-link');
-  if(feat) feat.href=gameURL('pixel-war.html');
+  if(feat) feat.href=gameURL(featuredFile||'pixel-war.html');
+}
+
+// The owner picks the featured game from the console (meta.featured); Pixel War otherwise.
+var featuredFile = 'pixel-war.html';
+function applyFeatured(file){
+  const g = file && GAMES.find(x => x.file === file);
+  const want = g ? g.file : 'pixel-war.html';
+  if(want === featuredFile) return;
+  featuredFile = want;
+  const n = document.getElementById('featured-name'), b = document.getElementById('featured-blurb');
+  if(g){ n.textContent = (g.emoji ? g.emoji + ' ' : '') + g.name.toUpperCase(); b.textContent = g.blurb || ('A ' + g.category + ' game — the owner\'s pick.'); }
+  else location.reload();   // back to the default banner text
+  paintPlayMode();
 }
 
 // ══════════════════ FAVORITES ══════════════════
@@ -1284,6 +1321,7 @@ function applyGifts(list){
 
 // Called as a game tile is clicked, immediately before navigation.
 function rewardPlay(file,name){
+  if(window.GBSocial) GBSocial.notePlay(file);
   if(isGuest()) return;               // guests don't earn tokens
   const seen=jsonGet(TOK.seen,[]);
   const ts=jsonGet(TOK.ts,{}), now=Date.now();
@@ -1374,6 +1412,7 @@ function openIconPicker(){
 }
 function renderShop(focusFile){
   paintTokens(); renderDaily(); renderIcons();
+  if(window.GBSocial) GBSocial.renderChallenges();
   const box=document.getElementById('shop-items');
   const specials=GAMES.filter(g=>g.price);
   specials.sort((a,b)=>(isOwned(a.file)-isOwned(b.file))||(a.price-b.price));
@@ -1597,11 +1636,18 @@ function showBan(raw){
   const m = /^(\d*):([\s\S]*)$/.exec(raw);
   const until = m && m[1] ? +m[1] : 0, reason = m ? m[2] : raw;
   if(until && until <= Date.now()){ clearBan(); return; }   // a timed ban that has run out
-  try { localStorage.setItem(BAN_KEY, raw); localStorage.removeItem('glitchbox_session'); } catch(e){}
+  try {
+    // The session can't be used for anything else while banned, but it is what proves
+    // who's appealing — so it's parked under its own key instead of thrown away.
+    const sess = localStorage.getItem('glitchbox_session');
+    if(sess) localStorage.setItem('glitchbox.appealSession', sess);
+    localStorage.setItem(BAN_KEY, raw); localStorage.removeItem('glitchbox_session');
+  } catch(e){}
   document.getElementById('ban-reason').textContent =
     (reason ? 'Reason: “' + reason + '”' : 'No reason was given.') +
     (until ? '\nBanned until ' + new Date(until).toLocaleString([], { dateStyle:'medium', timeStyle:'short' }) + '.' : '');
   document.getElementById('ban-screen').classList.add('show');
+  if(window.GBSocial) GBSocial.renderAppeal(); else addEventListener('load', () => window.GBSocial && GBSocial.renderAppeal());
   document.getElementById('ban-desc').textContent = until
     ? 'This account can come back when the ban runs out — sign in again then.'
     : 'This account can\'t use GLITCHBOX any more.';
@@ -1609,6 +1655,9 @@ function showBan(raw){
 }
 function clearBan(){
   try { localStorage.removeItem(BAN_KEY); localStorage.removeItem('glitchbox.bannedBy'); } catch(e){}
+  // Unbanned: hand the parked session back if this browser has none.
+  try { const p = localStorage.getItem('glitchbox.appealSession');
+        if(p){ if(!localStorage.getItem('glitchbox_session')) localStorage.setItem('glitchbox_session', p); localStorage.removeItem('glitchbox.appealSession'); } } catch(e){}
   document.getElementById('ban-screen').classList.remove('show');
 }
 // ── arcade-wide switches ── announcement banner + maintenance mode. They come from
@@ -1653,6 +1702,7 @@ var arcadeDisabled = [], guestsLockedNow = false, reloadSeen = null;
 function isOff(file){ return (arcadeDisabled||[]).indexOf(file)!==-1 && !(typeof lastState!=='undefined' && lastState && lastState.isOwner); }
 function applySwitches(h){
   if(!h) return;
+  if('featured' in h) applyFeatured(h.featured);
   const dis = Array.isArray(h.disabled) ? h.disabled : [];
   if(dis.join() !== arcadeDisabled.join()){ arcadeDisabled = dis; renderGames(); }
   guestsLockedNow = !!h.guestsLocked;
@@ -1728,7 +1778,7 @@ async function backendLogin(credential){
 // ── terms of service ── bump TOS_VERSION whenever the terms text changes and every
 // player is asked to agree again. Agreement is saved per account on the server (the
 // record of consent) and cached locally so the screen doesn't flash on every visit.
-const TOS_VERSION = '2026-10-07.2';
+const TOS_VERSION = '2026-10-07.3';
 // Guests agree once per browser, under the 'guest' key.
 function tosId(){ return currentUser ? currentUser.sub : 'guest'; }
 function tosKey(){ return 'glitchbox.tos.' + tosId(); }
@@ -1832,6 +1882,7 @@ async function refreshState(){
     clearBan();
     applyArcade(lastState.announce, lastState.maintenance);
     applySwitches(lastState); applyPending(lastState); checkTos();
+    if(window.GBSocial) GBSocial.checkAlerts(lastState.alerts);
     applyGifts(lastState.gifts);
     // The server is the source of truth for your icon, so a pick made on your phone
     // shows up here too.
@@ -2062,10 +2113,17 @@ function renderFriends(){
   if(!list.length){ box.innerHTML = '<div class="friends-empty">No friends yet — share your friend code above, or add someone by theirs.</div>'; return; }
   box.innerHTML = list.map(f => {
     const on = !!f.online;
-    const info = '<div class="friend-info"><div class="friend-name">'+esc(f.name)+'</div>'+
-      '<div class="friend-sub'+(on?' on':'')+'"><span class="dot'+(on?' on':'')+'"></span>'+(on?'Online':'Offline')+'</div></div>';
+    const g = f.playing ? GAMES.find(x => x.file === f.playing) : null;
+    const where = !on ? 'Offline' : f.playing ? '▶ Playing ' + (g ? (g.emoji||'') + ' ' + g.name : gameName(f.playing)) : 'Online · in the hub';
+    const info = '<div class="friend-info" style="cursor:pointer" onclick="GBSocial.openProfile(\''+f.sub+'\')" title="See '+esc(f.name)+'\'s profile">'+
+      '<div class="friend-name">'+esc(f.name)+'</div>'+
+      '<div class="friend-sub'+(on?' on':'')+'"><span class="dot'+(on?' on':'')+'"></span>'+esc(where)+'</div></div>';
+    // In a multiplayer room → straight in. Playing something else → open the same game.
+    const join = f.room && f.playing
+      ? '<button class="friend-btn play" onclick="openRoom(\''+esc(f.playing)+'\',\''+esc(f.room)+'\',false)" title="Join their room">⚡ Join</button>'
+      : (g && !isLocked(g) ? '<a class="friend-btn ghost" style="text-decoration:none" href="'+esc(gameURL(g.file))+'" title="Open the game they\'re playing">Play too</a>' : '');
     return '<div class="friend-row">'+avInitial(f)+info+
-      '<div class="friend-actions">'+
+      '<div class="friend-actions">'+join+
       '<button class="friend-btn play" onclick="openPicker(\''+f.sub+'\')" title="Invite to a multiplayer game">▶ Invite</button>'+
       '<button class="friend-btn ghost" onclick="unfriend(\''+f.sub+'\')">Unfriend</button>'+
       '<button class="friend-btn ghost" onclick="block(\''+f.sub+'\')" title="Block this player">Block</button>'+
@@ -2280,6 +2338,7 @@ async function openProfile(){
   if(pend){ document.getElementById('friend-code-in').value = pend;
             statusMsg('Your inviter’s code is filled in — hit Add to link up.'); }
   updateProfileHeader(); renderIconPicker(); renderFriends(); renderRequests(); renderBlocked(); renderGameInvites();
+  if(window.GBSocial) GBSocial.renderOwn();
   document.getElementById('profile-modal').classList.add('show');
   await refreshState();
 }

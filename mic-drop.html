@@ -743,6 +743,7 @@ function finish(){
   const acc = G.accN ? G.accSum/G.accN : 0;
   G.acc = acc;
   if(!bests[G.song.id] || G.score > bests[G.song.id]){ bests[G.song.id] = G.score; saveBests(); }
+  if(window.GLITCHBOX && GLITCHBOX.score) GLITCHBOX.score(G.score);   // 🏆 arcade leaderboard (best song)
   if(G.online) net.send({ t:'end', s:G.score, a:Math.round(acc*100) });
   paintResults();
   showPanel('panel-done');

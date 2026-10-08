@@ -154,6 +154,7 @@ function die(){
   burst(G.playerX,G.playerY,'255,77,109',60);
   best=Math.max(best,Math.floor(G.dist));
   localStorage.setItem('barrier_best',best);
+  if(window.GLITCHBOX && GLITCHBOX.score) GLITCHBOX.score(Math.floor(G.dist));   // 🏆 arcade leaderboard
   setTimeout(showOver, 700);
 }
 

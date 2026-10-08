@@ -313,7 +313,7 @@ function favList(){ const v=jsonGet(FAV_KEY,[]); return Array.isArray(v)?v:[]; }
 function isFav(file){ return !isGuest() && favList().indexOf(file)!==-1; }
 
 // Same terms gate as the hub and glitchbox-menu.js — keep TOS_VERSION in step.
-const TOS_VERSION='2026-10-07.2';
+const TOS_VERSION='2026-10-07.3';
 function tosAgreed(){
   // newest version ever agreed on this device; anything at or past ours counts
   try{ const u=JSON.parse(localStorage.getItem('glitchbox_user')||'null'), id=u&&u.sub?u.sub:'guest';
@@ -458,7 +458,15 @@ paintFav();
 // ══════════════════ PLAY REWARD ══════════════════
 // Same rules as the hub: the payout is queued and shown the next time you land
 // on the arcade, so it never covers up the game.
+// Same "recently played" list and daily-challenge log the hub keeps (glitchbox-social.js).
+function notePlay(file){
+  const r=jsonGet('glitchbox.recent',[]).filter(x=>x&&x.file!==file); r.unshift({file,at:Date.now()}); jsonSet('glitchbox.recent',r.slice(0,12));
+  const d=new Date(), day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  let t=jsonGet('glitchbox.today',null); if(!t||t.day!==day) t={day,plays:[]};
+  if(t.plays.indexOf(file)===-1) t.plays.push(file); jsonSet('glitchbox.today',t);
+}
 function rewardPlay(g){
+  notePlay(g.file);
   if(isGuest()) return;
   const seen=jsonGet(TOK.seen,[]), ts=jsonGet(TOK.ts,{}), now=Date.now();
   const pay=(amt,why)=>{

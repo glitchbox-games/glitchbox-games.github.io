@@ -21,6 +21,31 @@ const GUEST_KEEP = 30 * 86400000;  // guests unseen for a month drop out of the 
 const GID_RE = /^g[a-z0-9]{8,24}$/;
 const GAME_RE = /^[a-z0-9-]{1,60}\.html$/i;
 function guestName(gid) { return "Guest " + String(gid).slice(-4).toUpperCase(); }
+const ROOM_RE = /^[A-Z0-9]{3,8}$/;
+const ACTIVITY_KEEP = 35 * 86400000; // View shows a week; stats and badges look back a month
+// The relay games — what "Party Animal" counts, and the only games a friend can be joined in.
+const MP_FILES = ["imposter.html", "most-likely-to.html", "rhyme-bomb.html", "scrawl.html", "gridlock.html",
+  "blast-radius.html", "quoridor.html", "neon-frag.html", "mic-drop.html"];
+// "Dave Smith" → "Dave S." — leaderboards are seen by people who aren't your friends.
+function shortName(n) {
+  const w = String(n || "Player").trim().split(/\s+/);
+  return w.length > 1 ? w[0] + " " + w[w.length - 1].charAt(0).toUpperCase() + "." : w[0];
+}
+function newerVersion(a, b) { return String(a || "").localeCompare(String(b || ""), undefined, { numeric: true }) >= 0; }
+// Turn activity rows (sorted by who, then time) into play sessions. Each row lasts until
+// that person's next row, the last one until they were last seen. "~" rows mark going
+// offline; one session is capped at 6h so a tab left open overnight doesn't count.
+function segments(rows, lastSeen, now, from) {
+  const out = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i], n = rows[i + 1];
+    if (!r.game || r.game === "~") continue;
+    const end = n && n.who === r.who ? n.at : Math.min(now, lastSeen[r.who] || r.at);
+    const ms = Math.min(end - Math.max(r.at, from || 0), 6 * 3600000);
+    if (ms > 0) out.push({ who: r.who, game: r.game, at: r.at, ms });
+  }
+  return out;
+}
 
 // ── small helpers ──
 function corsHeaders(origin) {
@@ -159,6 +184,18 @@ export class Hub extends DurableObject {
         id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, game TEXT, at INTEGER)`);
       this.sql.exec("CREATE INDEX IF NOT EXISTS idx_activity_who ON activity(who, at)");
       try { this.sql.exec("ALTER TABLE users ADD COLUMN last_ua TEXT"); } catch (e) { /* already there */ }
+      // The multiplayer room a player is in right now (so friends can join them),
+      // "mod" for moderators, and the "hide what I'm playing from friends" switch.
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN room TEXT"); } catch (e) { /* already there */ }
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN role TEXT"); } catch (e) { /* already there */ }
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN hide_activity INTEGER"); } catch (e) { /* already there */ }
+      // Ban appeals. `who` is "u:<sub>" or "g:<gid>"; `ip` lets an accepted appeal lift a network ban.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS appeals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, name TEXT, ip TEXT, text TEXT, created INTEGER,
+        status TEXT, reply TEXT, decided_at INTEGER)`);
+      // Best score per player per game, for games that report one. `low` = lower is better (golf).
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS scores (
+        game TEXT, sub TEXT, score REAL, low INTEGER, at INTEGER, PRIMARY KEY (game, sub))`);
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
       if (!row) {
@@ -185,7 +222,7 @@ export class Hub extends DurableObject {
     return payload + "." + (await this.hmac(payload));
   }
 
-  async verifySession(token) {
+  async verifySession(token, allowBanned) {
     if (!token) throw new HttpError(401, "no session");
     const [payload, sig] = token.split(".");
     if (!payload || !sig) throw new HttpError(401, "bad session");
@@ -195,14 +232,15 @@ export class Hub extends DurableObject {
     if (!data.exp || data.exp < Date.now()) throw new HttpError(401, "session expired");
     // One check here covers every authenticated endpoint: a banned account can hold a
     // valid session token and still do nothing with it.
-    const ban = this.activeBan(this.userOf(data.sub));
+    // (Appeals are the one thing a banned account may still do.)
+    const ban = allowBanned ? null : this.activeBan(this.userOf(data.sub));
     if (ban) throw new HttpError(403, ban);
     return data.sub;
   }
 
   userOf(sub) {
     return this.sql.exec(
-      "SELECT sub, email, name, picture, code, created, banned, ban_reason, ban_until, email_verified, tos_version, tos_at FROM users WHERE sub = ?",
+      "SELECT sub, email, name, picture, code, created, banned, ban_reason, ban_until, email_verified, tos_version, tos_at, role, hide_activity FROM users WHERE sub = ?",
       sub).toArray()[0] || null;
   }
 
@@ -217,11 +255,11 @@ export class Hub extends DurableObject {
     return "banned:" + (u.ban_until || "") + ":" + (u.ban_reason || "");
   }
 
-  log(action, targetSub, detail) {
+  log(action, targetSub, detail, actor) {
     const u = targetSub && targetSub !== "*" ? this.userOf(targetSub) : null;
     const target = targetSub === "*" ? "everyone" : u ? u.name + " <" + u.email + ">" : (targetSub || "");
     this.sql.exec("INSERT INTO admin_log (at, action, target, detail) VALUES (?, ?, ?, ?)",
-      Date.now(), action, target, String(detail || "").slice(0, 300));
+      Date.now(), action, target, (String(detail || "") + (actor ? " (by " + actor + ")" : "")).trim().slice(0, 300));
     this.sql.exec("DELETE FROM admin_log WHERE id <= (SELECT MAX(id) FROM admin_log) - 500");
   }
 
@@ -236,9 +274,10 @@ export class Hub extends DurableObject {
   disabledGames() { const d = this.metaJson("disabled"); return Array.isArray(d) ? d : []; }
   reloadStamp() { return Number(this.metaGet("reload")) || 0; }
   guestsLocked() { return this.metaGet("guestsLocked") === "1"; }
+  featured() { const f = this.metaGet("featured"); return f && GAME_RE.test(f) ? f : null; }
   switches() {
     return { announce: this.announcement(), maintenance: this.maintenance(), disabled: this.disabledGames(),
-             reload: this.reloadStamp(), guestsLocked: this.guestsLocked() };
+             reload: this.reloadStamp(), guestsLocked: this.guestsLocked(), featured: this.featured() };
   }
 
   // The 403 for a banned network, or null. Same "banned:<until>:<reason>" shape as an
@@ -308,6 +347,21 @@ export class Hub extends DurableObject {
              // The server's copy of the caller's own address — which is the one the pin
              // is compared against, and can drift from the client's cached currentUser.
              email: String(u.email || "") };
+  }
+
+  isModSub(sub) { const u = sub && this.userOf(sub); return !!u && u.role === "mod"; }
+  // Owner or moderator. Moderators get the console's people tools with limits (see
+  // each method) and never see emails or IP addresses.
+  async requireStaff(token) {
+    const me = await this.verifySession(token);
+    if (this.isOwnerSub(me)) return { me, owner: true, actor: "" };
+    if (this.isModSub(me)) return { me, owner: false, actor: this.userOf(me).name };
+    throw new HttpError(403, "not the owner");
+  }
+  // A moderator can't act on the owner or another moderator.
+  modCanTouch(st, sub) {
+    if (st.owner) return;
+    if (this.isOwnerSub(sub) || this.isModSub(sub)) throw new HttpError(403, "moderators can't do that to the owner or another moderator");
   }
 
   async requireOwner(token) {
@@ -390,10 +444,14 @@ export class Hub extends DurableObject {
   }
 
   // ── endpoints ──
-  async login(idToken, ip) {
-    const r = await fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(idToken || ""));
-    if (!r.ok) throw new HttpError(401, "invalid Google token");
-    const info = await r.json();
+  async login(idToken, ip, devInfo) {
+    let info;
+    if (devInfo) info = devInfo;     // local tests only — see the router
+    else {
+      const r = await fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(idToken || ""));
+      if (!r.ok) throw new HttpError(401, "invalid Google token");
+      info = await r.json();
+    }
     if (info.aud !== CLIENT_ID) throw new HttpError(401, "token audience mismatch");
     if (!info.sub) throw new HttpError(401, "no subject");
     const now = Date.now();
@@ -440,18 +498,21 @@ export class Hub extends DurableObject {
     if (this.hubOverridden(prev, "", now)) this.sql.exec("UPDATE users SET last_seen = ? WHERE sub = ?", now, me);
     else {
       this.track("u:" + me, prev, "", now);
-      this.sql.exec("UPDATE users SET last_seen = ?, playing = '', playing_at = ? WHERE sub = ?", now, now, me);
+      this.sql.exec("UPDATE users SET last_seen = ?, playing = '', playing_at = ?, room = '' WHERE sub = ?", now, now, me);
     }
     if (ip) this.sql.exec("UPDATE users SET last_ip = ? WHERE sub = ?", ip, me);
     if (!this.userOf(me).code) this.ensureCode(me);
     // Sweep stale invites so nobody is offered a room that has long since emptied.
     this.sql.exec("DELETE FROM invites WHERE created < ?", now - INVITE_TTL);
     const profile = this.userOf(me); // self — includes email + code
+    // Friends see what you're playing (and can join your room) unless you hid it.
     const friends = this.sql.exec(
-      `SELECT u.sub, u.name, u.picture,
-              (u.last_seen > ?) AS online FROM friends f
-       JOIN users u ON u.sub = f.b WHERE f.a = ? ORDER BY online DESC, u.name`,
-      now - ONLINE_WINDOW, me).toArray();
+      `SELECT u.sub, u.name, u.picture, (u.last_seen > ?) AS online,
+              CASE WHEN u.last_seen > ? AND u.playing_at > ? AND NOT IFNULL(u.hide_activity, 0) THEN u.playing ELSE NULL END AS playing,
+              CASE WHEN u.last_seen > ? AND u.playing_at > ? AND NOT IFNULL(u.hide_activity, 0) THEN u.room ELSE NULL END AS room
+       FROM friends f JOIN users u ON u.sub = f.b WHERE f.a = ? ORDER BY online DESC, u.name`,
+      now - ONLINE_WINDOW, now - ONLINE_WINDOW, now - ONLINE_WINDOW, now - ONLINE_WINDOW, now - ONLINE_WINDOW, me).toArray()
+      .map(f => ({ ...f, room: f.room && MP_FILES.includes(f.playing) ? f.room : null }));
     const incoming = this.sql.exec(
       `SELECT u.sub, u.name, u.picture, r.created FROM requests r
        JOIN users u ON u.sub = r.from_sub WHERE r.to_sub = ? ORDER BY r.created DESC`, me).toArray();
@@ -474,7 +535,9 @@ export class Hub extends DurableObject {
              ...this.switches(), ...this.takePending("u:" + me),
              // `ownerPinned` lets the console explain *why* a non-owner can't claim.
              // The address itself is never sent — knowing it isn't the client's business.
-             isOwner: this.isOwnerSub(me), ownerPinned: !!ownerPin(this.env),
+             isOwner: this.isOwnerSub(me), isMod: !this.isOwnerSub(me) && this.isModSub(me),
+             alerts: this.isOwnerSub(me) || this.isModSub(me) ? this.alerts() : null,
+             ownerPinned: !!ownerPin(this.env),
              // Why the pin rejected *this* caller. Both facts are about the caller's own
              // row and neither reveals the pinned address, but together they turn a
              // locked-out owner's "it just doesn't work" into one readable line.
@@ -486,7 +549,7 @@ export class Hub extends DurableObject {
   // Works signed out too, so a guest's game page still learns about maintenance.
   // Guests ping with their device id (`gid`), which is how the owner can see, kick
   // and ban them. Kicks and pop-up messages ride back on the answer.
-  async ping(token, game, gid, ip, ua, tos) {
+  async ping(token, game, gid, ip, ua, tos, room) {
     const out = { ok: true, ...this.switches() };
     const g = GAME_RE.test(String(game || "")) ? String(game) : "";
     const now = Date.now();
@@ -499,6 +562,10 @@ export class Hub extends DurableObject {
       if (!keep) this.track("u:" + me, prev, g, now);
       this.sql.exec("UPDATE users SET last_seen = ?, playing = ?, playing_at = ?, last_ip = COALESCE(?, last_ip), last_ua = COALESCE(?, last_ua) WHERE sub = ?",
         now, keep ? prev.playing : g, keep ? prev.playing_at : now, ip || null, ua ? String(ua).slice(0, 160) : null, me);
+      if (!keep) {
+        const rm = String(room || "").toUpperCase();
+        this.sql.exec("UPDATE users SET room = ? WHERE sub = ?", ROOM_RE.test(rm) && MP_FILES.includes(g) ? rm : "", me);
+      }
       return { ...out, ...this.takePending("u:" + me) };
     }
     const nb = this.ipBan(ip);
@@ -536,7 +603,7 @@ export class Hub extends DurableObject {
     if (back && prev && prev.last_seen)
       this.sql.exec("INSERT INTO activity (who, game, at) VALUES (?, '~', ?)", who, prev.last_seen);
     this.sql.exec("INSERT INTO activity (who, game, at) VALUES (?, ?, ?)", who, game, now);
-    if (Math.random() < 0.02) this.sql.exec("DELETE FROM activity WHERE at < ?", now - 7 * 86400000);
+    if (Math.random() < 0.02) this.sql.exec("DELETE FROM activity WHERE at < ?", now - ACTIVITY_KEEP);
   }
 
   // The player ticked "I agree" on the terms screen.
@@ -577,7 +644,7 @@ export class Hub extends DurableObject {
   }
 
   async adminOverview(token) {
-    await this.requireOwner(token);
+    const st = await this.requireStaff(token);
     const now = Date.now();
     const n = (q, ...a) => this.sql.exec(q, ...a).toArray()[0].n;
     return {
@@ -594,7 +661,10 @@ export class Hub extends DurableObject {
         guestsOnline: n("SELECT COUNT(*) AS n FROM guests WHERE last_seen > ?", now - ONLINE_WINDOW),
         guestsToday: n("SELECT COUNT(*) AS n FROM guests WHERE last_seen > ?", now - 86400000),
         ipBans:      n("SELECT COUNT(*) AS n FROM ip_bans"),
+        appeals:     n("SELECT COUNT(*) AS n FROM appeals WHERE status = 'open'"),
+        mods:        n("SELECT COUNT(*) AS n FROM users WHERE role = 'mod'"),
       },
+      isOwner: st.owner,
       topGames: this.sql.exec(
         "SELECT game, COUNT(*) AS players FROM saves GROUP BY game ORDER BY players DESC LIMIT 10").toArray(),
       recent: this.sql.exec(
@@ -613,14 +683,14 @@ export class Hub extends DurableObject {
   }
 
   async adminPlayers(token, q, limit) {
-    await this.requireOwner(token);
+    const st = await this.requireStaff(token);
     const term = "%" + String(q || "").toLowerCase() + "%";
     const lim = Math.min(200, Math.max(1, Number(limit) || 100));
     return {
       owner: this.ownerSub(),
       players: this.sql.exec(
         `SELECT u.sub, u.name, u.email, u.picture, u.code, u.created, u.last_seen,
-                u.banned, u.ban_reason, u.ban_until, u.tos_version, u.tos_at,
+                u.banned, u.ban_reason, u.ban_until, u.tos_version, u.tos_at, u.role,
                 CASE WHEN u.playing_at > ? THEN u.playing ELSE NULL END AS playing,
                 (SELECT COUNT(*) FROM friends f WHERE f.a = u.sub)      AS friends,
                 (SELECT COUNT(*) FROM saves s   WHERE s.sub = u.sub)    AS saves,
@@ -629,12 +699,14 @@ export class Hub extends DurableObject {
          FROM users u
          WHERE ? = '%%' OR LOWER(u.name) LIKE ? OR LOWER(u.email) LIKE ? OR LOWER(u.code) LIKE ?
          ORDER BY u.last_seen DESC LIMIT ?`,
-        Date.now() - ONLINE_WINDOW, term, term, term, term, lim).toArray(),
+        Date.now() - ONLINE_WINDOW, term, term, term, term, lim).toArray()
+        // moderators can search by email but never see one
+        .map(p => st.owner ? p : { ...p, email: "", isOwner: this.isOwnerSub(p.sub) }),
     };
   }
 
   async adminReports(token) {
-    await this.requireOwner(token);
+    await this.requireStaff(token);
     return {
       reports: this.sql.exec(
         `SELECT r.id, r.reason, r.created,
@@ -648,14 +720,17 @@ export class Hub extends DurableObject {
   }
 
   async adminBan(token, sub, banned, reason, hours) {
-    const me = await this.requireOwner(token);
+    const st = await this.requireStaff(token), me = st.me;
     if (!sub || sub === me) throw new HttpError(400, "you can't ban yourself");
     if (!this.userOf(sub)) throw new HttpError(404, "no such player");
-    const h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    this.modCanTouch(st, sub);
+    // Moderators only hand out bans of up to a day; anything longer is the owner's call.
+    let h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    if (!st.owner && banned) h = Math.min(24, h || 24);
     const why = banned ? String(reason || "").slice(0, 200) : null;
     this.sql.exec("UPDATE users SET banned = ?, ban_reason = ?, ban_until = ? WHERE sub = ?",
       banned ? 1 : null, why, banned && h ? Date.now() + h * 3600000 : null, sub);
-    this.log(banned ? "ban" : "unban", sub, banned ? (h ? "for " + h + "h" : "permanent") + (why ? " — " + why : "") : "");
+    this.log(banned ? "ban" : "unban", sub, banned ? (h ? "for " + h + "h" : "permanent") + (why ? " — " + why : "") : "", st.actor);
     // A ban should also stop anything already in flight.
     if (banned) {
       this.sql.exec("DELETE FROM invites WHERE from_sub = ? OR to_sub = ?", sub, sub);
@@ -669,6 +744,11 @@ export class Hub extends DurableObject {
     if (!sub || sub === me) throw new HttpError(400, "you can't delete yourself");
     if (!this.userOf(sub)) throw new HttpError(404, "no such player");
     this.log("delete", sub, "");
+    this.erase(sub);
+    return { ok: true, sub };
+  }
+  // Every trace of an account. Shared by the owner's Delete and the player's own.
+  erase(sub) {
     for (const q of [
       "DELETE FROM friends WHERE a = ? OR b = ?",
       "DELETE FROM requests WHERE from_sub = ? OR to_sub = ?",
@@ -676,10 +756,12 @@ export class Hub extends DurableObject {
       "DELETE FROM invites WHERE from_sub = ? OR to_sub = ?",
       "DELETE FROM reports WHERE reporter = ? OR reported = ?",
     ]) this.sql.exec(q, sub, sub);
-    this.sql.exec("DELETE FROM saves WHERE sub = ?", sub);
-    this.sql.exec("DELETE FROM gifts WHERE sub = ?", sub);
+    for (const q of ["DELETE FROM saves WHERE sub = ?", "DELETE FROM gifts WHERE sub = ?", "DELETE FROM scores WHERE sub = ?"])
+      this.sql.exec(q, sub);
+    this.sql.exec("DELETE FROM activity WHERE who = ?", "u:" + sub);
+    this.sql.exec("DELETE FROM pending WHERE who = ?", "u:" + sub);
+    this.sql.exec("DELETE FROM appeals WHERE who = ?", "u:" + sub);
     this.sql.exec("DELETE FROM users WHERE sub = ?", sub);
-    return { ok: true, sub };
   }
 
   // Queue tokens and/or unlocks for one player, or for every player with sub "*".
@@ -730,7 +812,7 @@ export class Hub extends DurableObject {
 
   // ── guests ──
   async adminGuests(token) {
-    const me = await this.requireOwner(token);
+    const st = await this.requireStaff(token), me = st.me;
     const now = Date.now();
     this.sql.exec("DELETE FROM guests WHERE last_seen < ? AND (banned IS NULL OR banned = 0)", now - GUEST_KEEP);
     this.sql.exec("DELETE FROM ip_bans WHERE until AND until <= ?", now);
@@ -747,6 +829,8 @@ export class Hub extends DurableObject {
        FROM guests ORDER BY last_seen DESC LIMIT 200`, now - ONLINE_WINDOW).toArray()
       .map(g => ({ ...g, name: g.label || guestName(g.gid), online: g.last_seen > now - ONLINE_WINDOW,
                    sameAsYou: !!myIp && g.ip === myIp, ipBanned: banned.has(g.ip), alsoOnIp: byIp[g.ip] || [] }));
+    if (!st.owner)   // moderators: no addresses, no network bans
+      return { guests: guests.map(g => ({ ...g, ip: "", alsoOnIp: [], sameAsYou: false })), myIp: "", ipBans: [], guestsLocked: this.guestsLocked() };
     return { guests, myIp, ipBans: this.sql.exec("SELECT ip, reason, until, created, label FROM ip_bans ORDER BY created DESC").toArray(),
              guestsLocked: this.guestsLocked() };
   }
@@ -754,10 +838,12 @@ export class Hub extends DurableObject {
   // Ban a guest's device; `ip` also bans the network they're on. The owner's own
   // network is refused — that would ban everyone at your house but you.
   async adminGuestBan(token, gid, banned, reason, hours, alsoIp) {
-    const me = await this.requireOwner(token);
+    const st = await this.requireStaff(token), me = st.me;
     const g = this.guestOf(String(gid || ""));
     if (!g) throw new HttpError(404, "no such guest");
-    const h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    if (!st.owner && alsoIp) throw new HttpError(403, "only the owner can ban a network");
+    let h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    if (!st.owner && banned) h = Math.min(24, h || 24);
     const why = banned ? String(reason || "").slice(0, 200) : null;
     const until = banned && h ? Date.now() + h * 3600000 : null;
     const name = g.label || guestName(g.gid);
@@ -773,7 +859,7 @@ export class Hub extends DurableObject {
     // Unbanning the device also lifts a network ban that came with it.
     if (!banned && g.ip) this.sql.exec("DELETE FROM ip_bans WHERE ip = ? AND label = ?", g.ip, name);
     this.log(banned ? "ban-guest" : "unban-guest", "", name + (banned ? (alsoIp ? " + network" : "") +
-      (h ? " for " + h + "h" : " permanent") + (why ? " — " + why : "") : ""));
+      (h ? " for " + h + "h" : " permanent") + (why ? " — " + why : "") : ""), st.actor);
     return { ok: true };
   }
 
@@ -803,7 +889,7 @@ export class Hub extends DurableObject {
   // Everything the console's View panel shows about one player or guest: where they
   // are right now, their details, and the last week of moves between games.
   async adminView(token, target) {
-    await this.requireOwner(token);
+    const st = await this.requireStaff(token);
     const t = String(target || ""), now = Date.now();
     let who;
     if (t.indexOf("u:") === 0) {
@@ -823,14 +909,19 @@ export class Hub extends DurableObject {
     } else throw new HttpError(400, "bad target");
     who.online = !!who.last_seen && who.last_seen > now - ONLINE_WINDOW;
     who.playing = who.online && who.playing_at > now - ONLINE_WINDOW ? (who.playing || "") : null;
-    const activity = this.sql.exec("SELECT game, at FROM activity WHERE who = ? ORDER BY at DESC LIMIT 60", t).toArray();
+    const activity = this.sql.exec("SELECT game, at FROM activity WHERE who = ? AND at > ? ORDER BY at DESC LIMIT 60",
+      t, now - 7 * 86400000).toArray();
+    if (!st.owner) { who.email = ""; who.ip = ""; }
+    if (who.kind === "player") who.isMod = who.role === "mod";
     return { who, activity, now };
   }
 
   // Kick: boot someone back to the hub with a message. Not a ban — they can come
   // straight back. target "u:<sub>", "g:<gid>", or "*" for everyone online but you.
   async adminKick(token, target, reason) {
-    const me = await this.requireOwner(token);
+    const st = await this.requireStaff(token), me = st.me;
+    if (!st.owner && target === "*") throw new HttpError(403, "only the owner can kick everyone");
+    if (/^u:/.test(String(target || ""))) this.modCanTouch(st, String(target).slice(2));
     const why = String(reason || "").trim().slice(0, 160);
     const now = Date.now();
     let whos;
@@ -847,13 +938,14 @@ export class Hub extends DurableObject {
     for (const w of whos) this.sql.exec("INSERT INTO pending (who, kind, text, created) VALUES (?, 'kick', ?, ?)", w, why, now);
     this.sql.exec("DELETE FROM pending WHERE created < ?", now - 86400000);
     const label = target === "*" ? "everyone online" : this.whoName(target);
-    this.log("kick", "", label + (why ? " — " + why : ""));
+    this.log("kick", "", label + (why ? " — " + why : ""), st.actor);
     return { ok: true, kicked: whos.length };
   }
 
   // A pop-up on someone's screen right now — works mid-game and for guests.
   async adminPopup(token, target, text) {
-    const me = await this.requireOwner(token);
+    const st = await this.requireStaff(token), me = st.me;
+    if (!st.owner && target === "*") throw new HttpError(403, "only the owner can message everyone");
     const t = String(text || "").trim().slice(0, 200);
     if (!t) throw new HttpError(400, "type a message first");
     const now = Date.now();
@@ -863,7 +955,7 @@ export class Hub extends DurableObject {
         .concat(this.sql.exec("SELECT gid FROM guests WHERE last_seen > ? AND (banned IS NULL OR banned = 0)", now - ONLINE_WINDOW).toArray().map(r => "g:" + r.gid));
     } else whos = [String(target || "")];
     for (const w of whos) this.sql.exec("INSERT INTO pending (who, kind, text, created) VALUES (?, 'msg', ?, ?)", w, t, now);
-    this.log("popup", "", (target === "*" ? "everyone online" : this.whoName(target)) + ' "' + t + '"');
+    this.log("popup", "", (target === "*" ? "everyone online" : this.whoName(target)) + ' "' + t + '"', st.actor);
     return { ok: true, sent: whos.length };
   }
   whoName(t) {
@@ -900,14 +992,287 @@ export class Hub extends DurableObject {
     return { ok: true, guestsLocked: !!on };
   }
 
-  async adminLog(token) {
+  // ── alerts ── what the owner/moderators' hub watches to pop a notification.
+  alerts() {
+    const one = q => this.sql.exec(q).toArray()[0];
+    return { reports: one("SELECT COUNT(*) AS n FROM reports").n, lastReport: one("SELECT IFNULL(MAX(id), 0) AS n FROM reports").n,
+             appeals: one("SELECT COUNT(*) AS n FROM appeals WHERE status = 'open'").n,
+             lastAppeal: one("SELECT IFNULL(MAX(id), 0) AS n FROM appeals").n };
+  }
+
+  // ── moderators ── owner only.
+  async adminSetMod(token, sub, on) {
+    const me = await this.requireOwner(token);
+    if (!this.userOf(sub)) throw new HttpError(404, "no such player");
+    if (sub === me) throw new HttpError(400, "you're already the owner");
+    this.sql.exec("UPDATE users SET role = ? WHERE sub = ?", on ? "mod" : null, sub);
+    this.log(on ? "mod-add" : "mod-remove", sub, "");
+    return { ok: true };
+  }
+
+  // ── appeals ── a banned player (or guest) asks to be let back in.
+  async appeal(token, gid, ip, text) {
+    const t = String(text || "").trim().slice(0, 500);
+    if (t.length < 5) throw new HttpError(400, "write a little more about why you should be unbanned");
+    let who, name, banned;
+    if (token) {
+      const me = await this.verifySession(token, true), u = this.userOf(me);
+      if (!u) throw new HttpError(404, "no such player");
+      who = "u:" + me; name = u.name; banned = !!this.activeBan(u) || !!this.ipBan(ip);
+    } else if (GID_RE.test(String(gid || ""))) {
+      const g = this.guestOf(gid);
+      who = "g:" + gid; name = g ? (g.label || guestName(gid)) : guestName(gid); banned = !!this.guestBan(g) || !!this.ipBan(ip);
+    } else throw new HttpError(400, "sign in, or appeal from the device that was banned");
+    if (!banned) throw new HttpError(400, "you aren't banned right now");
+    if (this.sql.exec("SELECT 1 FROM appeals WHERE who = ? AND status = 'open'", who).toArray()[0])
+      throw new HttpError(409, "your appeal is already waiting for an answer");
+    const last = this.sql.exec("SELECT decided_at FROM appeals WHERE who = ? ORDER BY id DESC LIMIT 1", who).toArray()[0];
+    if (last && last.decided_at && Date.now() - last.decided_at < 86400000)
+      throw new HttpError(429, "you can appeal again a day after your last answer");
+    this.sql.exec("INSERT INTO appeals (who, name, ip, text, created, status) VALUES (?, ?, ?, ?, ?, 'open')",
+      who, name, ip || "", t, Date.now());
+    return { ok: true };
+  }
+  async appealStatus(token, gid) {
+    let who;
+    if (token) who = "u:" + (await this.verifySession(token, true));
+    else if (GID_RE.test(String(gid || ""))) who = "g:" + gid;
+    else return { appeal: null };
+    return { appeal: this.sql.exec("SELECT status, reply, created, decided_at FROM appeals WHERE who = ? ORDER BY id DESC LIMIT 1", who).toArray()[0] || null };
+  }
+  async adminAppeals(token) {
+    const st = await this.requireStaff(token);
+    const rows = this.sql.exec("SELECT id, who, name, ip, text, created, status, reply, decided_at FROM appeals ORDER BY (status = 'open') DESC, id DESC LIMIT 100").toArray();
+    return { appeals: rows.map(a => {
+      let ban = null;
+      if (a.who.indexOf("u:") === 0) { const u = this.userOf(a.who.slice(2)); if (u && u.banned) ban = { reason: u.ban_reason, until: u.ban_until }; }
+      else { const g = this.guestOf(a.who.slice(2)); if (g && g.banned) ban = { reason: g.ban_reason, until: g.ban_until }; }
+      const net = a.ip && this.sql.exec("SELECT reason, until FROM ip_bans WHERE ip = ?", a.ip).toArray()[0];
+      return { ...a, ip: st.owner ? a.ip : "", ban, networkBan: net ? { reason: st.owner ? net.reason : "", until: net.until } : null,
+               kind: a.who.indexOf("u:") === 0 ? "player" : "guest" };
+    }) };
+  }
+  async adminAppealDecide(token, id, accept, reply) {
+    const st = await this.requireStaff(token);
+    const a = this.sql.exec("SELECT * FROM appeals WHERE id = ?", Number(id) || 0).toArray()[0];
+    if (!a) throw new HttpError(404, "no such appeal");
+    if (a.status !== "open") throw new HttpError(409, "that appeal was already answered");
+    const r = String(reply || "").trim().slice(0, 300);
+    let note = "";
+    if (accept) {
+      if (a.who.indexOf("u:") === 0) {
+        this.modCanTouch(st, a.who.slice(2));
+        this.sql.exec("UPDATE users SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE sub = ?", a.who.slice(2));
+      } else this.sql.exec("UPDATE guests SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE gid = ?", a.who.slice(2));
+      if (a.ip && this.sql.exec("SELECT 1 FROM ip_bans WHERE ip = ?", a.ip).toArray()[0]) {
+        if (st.owner) this.sql.exec("DELETE FROM ip_bans WHERE ip = ?", a.ip);
+        else note = " — their network is still banned (only the owner can lift that)";
+      }
+    }
+    this.sql.exec("UPDATE appeals SET status = ?, reply = ?, decided_at = ? WHERE id = ?", accept ? "accepted" : "rejected", r, Date.now(), a.id);
+    this.log(accept ? "appeal-accept" : "appeal-reject", "", a.name + (r ? ' — "' + r + '"' : ""), st.actor);
+    return { ok: true, note };
+  }
+
+  // ── featured game ── the big banner at the top of the hub.
+  async adminFeatured(token, file) {
     await this.requireOwner(token);
+    const f = String(file || "");
+    this.metaSet("featured", GAME_RE.test(f) ? f : "");
+    this.log("featured", "", f || "(default)");
+    return { ok: true, featured: this.featured() };
+  }
+
+  // ── stats ── a month of activity, bucketed into the owner's own days and hours
+  // (`tz` = their Date.getTimezoneOffset(), in minutes).
+  async adminStats(token, tz) {
+    await this.requireOwner(token);
+    const now = Date.now(), from = now - 30 * 86400000, off = (Number(tz) || 0) * 60000;
+    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE at > ? ORDER BY who, at", from).toArray();
+    const seen = this.lastSeenMap();
+    const segs = segments(rows, seen, now, from);
+    const day = t => new Date(t - off).toISOString().slice(0, 10);
+    const days = {};
+    for (let i = 29; i >= 0; i--) days[day(now - i * 86400000)] = { players: new Set(), guests: new Set(), signups: 0, ms: 0 };
+    for (const r of rows) { const d = days[day(r.at)]; if (d && r.game !== "~") (r.who[0] === "u" ? d.players : d.guests).add(r.who); }
+    for (const u of this.sql.exec("SELECT created FROM users WHERE created > ?", from).toArray()) { const d = days[day(u.created)]; if (d) d.signups++; }
+    const hours = new Array(24).fill(0), games = {};
+    for (const sg of segs) {
+      const d = days[day(sg.at)]; if (d) d.ms += sg.ms;
+      hours[new Date(sg.at - off).getUTCHours()] += sg.ms;
+      games[sg.game] = (games[sg.game] || 0) + sg.ms;
+    }
+    const whoAll = new Set(rows.filter(r => r.game !== "~").map(r => r.who));
+    return {
+      days: Object.keys(days).map(k => ({ day: k, players: days[k].players.size, guests: days[k].guests.size, signups: days[k].signups, minutes: Math.round(days[k].ms / 60000) })),
+      hours: hours.map(ms => Math.round(ms / 60000)),
+      games: Object.keys(games).map(g => ({ game: g, minutes: Math.round(games[g] / 60000) })).sort((a, b) => b.minutes - a.minutes).slice(0, 15),
+      totals: { players: [...whoAll].filter(w => w[0] === "u").length, guests: [...whoAll].filter(w => w[0] === "g").length,
+                hours: Math.round(segs.reduce((a, sg) => a + sg.ms, 0) / 3600000) },
+    };
+  }
+  lastSeenMap() {
+    const m = {};
+    for (const u of this.sql.exec("SELECT sub, last_seen FROM users").toArray()) m["u:" + u.sub] = u.last_seen;
+    for (const g of this.sql.exec("SELECT gid, last_seen FROM guests").toArray()) m["g:" + g.gid] = g.last_seen;
+    return m;
+  }
+
+  // ── badges ── earned from what a player has done; worked out fresh each time.
+  badgesFor(sub) {
+    const now = Date.now(), u = this.userOf(sub);
+    if (!u) return [];
+    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE who = ? ORDER BY at", "u:" + sub).toArray();
+    const last = this.sql.exec("SELECT last_seen FROM users WHERE sub = ?", sub).toArray()[0];
+    const segs = segments(rows, { ["u:" + sub]: last && last.last_seen }, now, 0);
+    const per = {};
+    segs.forEach(sg => per[sg.game] = (per[sg.game] || 0) + sg.ms);
+    // A game counts as played the moment it's opened; time only matters for Marathon.
+    const games = [...new Set(rows.map(r => r.game).filter(g => g && g !== "~"))], best = Math.max(0, ...Object.values(per));
+    const days = new Set(rows.filter(r => r.game !== "~").map(r => new Date(r.at).toISOString().slice(0, 10)));
+    const one = (q, ...a) => this.sql.exec(q, ...a).toArray()[0].n;
+    const friends = one("SELECT COUNT(*) AS n FROM friends WHERE a = ?", sub);
+    const saves = one("SELECT COUNT(*) AS n FROM saves WHERE sub = ?", sub);
+    const scores = one("SELECT COUNT(*) AS n FROM scores WHERE sub = ?", sub);
+    return [
+      ["first", "🎮", "First Game", "Play any game", games.length >= 1],
+      ["explorer", "🧭", "Explorer", "Play 10 different games", games.length >= 10],
+      ["globe", "🗺️", "Globetrotter", "Play 25 different games", games.length >= 25],
+      ["marathon", "⏱️", "Marathon", "Spend 2 hours in one game", best >= 2 * 3600000],
+      ["party", "🎉", "Party Animal", "Play a multiplayer game", games.some(g => MP_FILES.includes(g))],
+      ["regular", "🔥", "Regular", "Play on 5 different days", days.size >= 5],
+      ["social", "👥", "Social", "Have 3 friends", friends >= 3],
+      ["popular", "🌟", "Popular", "Have 10 friends", friends >= 10],
+      ["saver", "💾", "Saver", "Make a cloud save", saves >= 1],
+      ["scorer", "🏆", "On the Board", "Post a high score", scores >= 1],
+      ["veteran", "🎂", "Veteran", "Be a member for 30 days", now - (u.created || now) >= 30 * 86400000],
+    ].map(([id, e, name, desc, got]) => ({ id, e, name, desc, got: !!got }));
+  }
+
+  // ── profiles ── yours, a friend's, or anyone's for the owner and moderators.
+  async profile(token, sub) {
+    const me = await this.verifySession(token);
+    const target = sub || me, self = target === me;
+    const staff = this.isOwnerSub(me) || this.isModSub(me);
+    if (!self && !staff && !this.isFriend(me, target)) throw new HttpError(403, "you can only see your friends' profiles");
+    const u = this.userOf(target);
+    if (!u) throw new HttpError(404, "no such player");
+    const now = Date.now();
+    const hidden = !!u.hide_activity && !self && !staff;
+    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE who = ? AND at > ? ORDER BY at", "u:" + target, now - ACTIVITY_KEEP).toArray();
+    const row = this.sql.exec("SELECT last_seen, playing, playing_at FROM users WHERE sub = ?", target).toArray()[0] || {};
+    const segs = segments(rows, { ["u:" + target]: row.last_seen }, now, 0);
+    const per = {};
+    segs.forEach(sg => per[sg.game] = (per[sg.game] || 0) + sg.ms);
+    const online = row.last_seen > now - ONLINE_WINDOW;
+    return {
+      sub: target, name: u.name, picture: u.picture, created: u.created, self,
+      friends: this.sql.exec("SELECT COUNT(*) AS n FROM friends WHERE a = ?", target).toArray()[0].n,
+      badges: this.badgesFor(target), hidden, online,
+      playing: hidden || !online || !(row.playing_at > now - ONLINE_WINDOW) ? null : (row.playing || ""),
+      totalMinutes: hidden ? null : Math.round(segs.reduce((a, sg) => a + sg.ms, 0) / 60000),
+      topGames: hidden ? [] : Object.keys(per).sort((a, b) => per[b] - per[a]).slice(0, 5).map(g => ({ game: g, minutes: Math.round(per[g] / 60000) })),
+      scores: hidden ? [] : this.sql.exec("SELECT game, score, low, at FROM scores WHERE sub = ? ORDER BY at DESC LIMIT 10", target).toArray(),
+    };
+  }
+  async setPrivacy(token, hide) {
+    const me = await this.verifySession(token);
+    this.sql.exec("UPDATE users SET hide_activity = ? WHERE sub = ?", hide ? 1 : 0, me);
+    return { ok: true, hide: !!hide };
+  }
+
+  // ── scores + leaderboards ──
+  async postScore(token, game, score, low) {
+    const me = await this.verifySession(token);
+    const g = String(game || ""), n = Number(score);
+    if (!GAME_RE.test(g) || !isFinite(n) || Math.abs(n) > 1e12) throw new HttpError(400, "bad score");
+    const cur = this.sql.exec("SELECT score, low FROM scores WHERE game = ? AND sub = ?", g, me).toArray()[0];
+    const better = !cur || (low ? n < cur.score : n > cur.score);
+    if (better) this.sql.exec(
+      `INSERT INTO scores (game, sub, score, low, at) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(game, sub) DO UPDATE SET score = excluded.score, low = excluded.low, at = excluded.at`,
+      g, me, n, low ? 1 : 0, Date.now());
+    return { ok: true, best: better ? n : cur.score, newBest: better };
+  }
+  // Who has played `game` the most this week (or the whole arcade with "*"), plus high
+  // scores. Public, so names are shortened, and players who hide their activity are left out.
+  async leaderboard(game) {
+    const g = String(game || "*");
+    if (g !== "*" && !GAME_RE.test(g)) throw new HttpError(400, "unknown game");
+    const now = Date.now(), from = now - 7 * 86400000;
+    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE at > ? AND who LIKE 'u:%' ORDER BY who, at", from).toArray();
+    const segs = segments(rows, this.lastSeenMap(), now, from);
+    const per = {};
+    segs.forEach(sg => { if (g === "*" || sg.game === g) per[sg.who] = (per[sg.who] || 0) + sg.ms; });
+    const people = {};
+    for (const u of this.sql.exec("SELECT sub, name, picture FROM users WHERE NOT IFNULL(hide_activity, 0) AND NOT IFNULL(banned, 0)").toArray()) people["u:" + u.sub] = u;
+    const time = Object.keys(per).filter(w => people[w] && per[w] >= 60000).sort((a, b) => per[b] - per[a]).slice(0, 10)
+      .map(w => ({ sub: people[w].sub, name: shortName(people[w].name), picture: people[w].picture, minutes: Math.round(per[w] / 60000) }));
+    let scores = [];
+    if (g !== "*") {
+      const dir = this.sql.exec("SELECT low FROM scores WHERE game = ? GROUP BY low ORDER BY COUNT(*) DESC LIMIT 1", g).toArray()[0];
+      const low = dir && dir.low;
+      scores = this.sql.exec(
+        `SELECT s.sub, s.score, s.at, u.name, u.picture FROM scores s JOIN users u ON u.sub = s.sub
+         WHERE s.game = ? AND s.low = ? AND NOT IFNULL(u.banned, 0) ORDER BY s.score ${low ? "ASC" : "DESC"} LIMIT 10`, g, low ? 1 : 0).toArray()
+        .map(r => ({ ...r, name: shortName(r.name) }));
+      return { game: g, time, scores, low: !!low };
+    }
+    return { game: g, time, scores };
+  }
+
+  // ── your data ── everything GLITCHBOX keeps about you, and a way to erase it.
+  async myData(token) {
+    const me = await this.verifySession(token);
+    const u = this.sql.exec(
+      `SELECT sub, name, email, picture, code, created, last_seen, last_ip AS ip, last_ua AS device,
+              tos_version, tos_at, hide_activity, role, playing FROM users WHERE sub = ?`, me).toArray()[0];
+    const names = q => this.sql.exec(q, me).toArray();
+    return {
+      account: u,
+      activity: this.sql.exec("SELECT game, at FROM activity WHERE who = ? ORDER BY at DESC LIMIT 500", "u:" + me).toArray(),
+      friends: names("SELECT u.name FROM friends f JOIN users u ON u.sub = f.b WHERE f.a = ?").map(r => r.name),
+      blocked: names("SELECT u.name FROM blocks b JOIN users u ON u.sub = b.blocked WHERE b.blocker = ?").map(r => r.name),
+      reportsYouMade: names("SELECT u.name AS about, r.reason, r.created FROM reports r LEFT JOIN users u ON u.sub = r.reported WHERE r.reporter = ?"),
+      reportsAboutYou: this.sql.exec("SELECT COUNT(*) AS n FROM reports WHERE reported = ?", me).toArray()[0].n,
+      saves: names("SELECT game, updated, LENGTH(box) AS bytes FROM saves WHERE sub = ?"),
+      scores: names("SELECT game, score, at FROM scores WHERE sub = ?"),
+      appeals: this.sql.exec("SELECT text, created, status, reply FROM appeals WHERE who = ?", "u:" + me).toArray(),
+    };
+  }
+  async deleteMe(token, confirm) {
+    const me = await this.verifySession(token);
+    if (String(confirm || "") !== "DELETE") throw new HttpError(400, "type DELETE to confirm");
+    if (this.isOwnerSub(me)) throw new HttpError(400, "the owner account can't delete itself");
+    const u = this.userOf(me);
+    this.log("self-delete", "", (u && u.name) || "");
+    this.erase(me);
+    return { ok: true };
+  }
+  async guestData(gid) {
+    if (!GID_RE.test(String(gid || ""))) throw new HttpError(400, "no guest id");
+    const g = this.guestOf(gid);
+    return { guest: g ? { name: guestName(gid), ip: g.ip, device: g.ua, created: g.created, last_seen: g.last_seen,
+                           tos_version: g.tos_version, banned: !!g.banned } : null,
+             activity: this.sql.exec("SELECT game, at FROM activity WHERE who = ? ORDER BY at DESC LIMIT 500", "g:" + gid).toArray() };
+  }
+  async guestForget(gid) {
+    if (!GID_RE.test(String(gid || ""))) throw new HttpError(400, "no guest id");
+    const g = this.guestOf(gid);
+    if (g && g.banned) throw new HttpError(403, "a banned device can't be forgotten — appeal the ban instead");
+    this.sql.exec("DELETE FROM guests WHERE gid = ?", gid);
+    for (const t of ["activity", "pending", "appeals"]) this.sql.exec("DELETE FROM " + t + " WHERE who = ?", "g:" + gid);
+    return { ok: true };
+  }
+
+  async adminLog(token) {
+    await this.requireStaff(token);
     return { log: this.sql.exec("SELECT id, at, action, target, detail FROM admin_log ORDER BY id DESC LIMIT 200").toArray() };
   }
 
   async adminDismissReport(token, id) {
-    await this.requireOwner(token);
-    this.log("dismiss-report", "", "#" + (Number(id) || 0));
+    const st = await this.requireStaff(token);
+    this.log("dismiss-report", "", "#" + (Number(id) || 0), st.actor);
     this.sql.exec("DELETE FROM reports WHERE id = ?", Number(id) || 0);
     return { ok: true };
   }
@@ -1160,11 +1525,25 @@ export default {
 
       if (path === "/api/login" && request.method === "POST") {
         const body = await request.json().catch(() => ({}));
+        // Test sign-in for `wrangler dev --var DEV_LOGIN:1` on localhost ONLY: lets the
+        // signed-in features be tested without Google. Never active on the live Worker
+        // (no such var there, and the hostname check fails anyway).
+        if (env.DEV_LOGIN === "1" && url.hostname === "localhost" && /^dev:/.test(body.idToken || "")) {
+          const id = String(body.idToken).slice(4);
+          return json(await stub.login("", ip, { aud: CLIENT_ID, sub: "dev-" + id, email: id + "@dev.test", name: id + " Tester", email_verified: "true" }), 200, origin);
+        }
         return json(await stub.login(body.idToken, ip), 200, origin);
       }
       if (path === "/api/me") return json(await stub.state(auth, ip), 200, origin);
       if (path === "/api/ping") return json(await stub.ping(auth, url.searchParams.get("game"),
-        url.searchParams.get("gid"), ip, request.headers.get("User-Agent"), url.searchParams.get("tos")), 200, origin);
+        url.searchParams.get("gid"), ip, request.headers.get("User-Agent"), url.searchParams.get("tos"), url.searchParams.get("room")), 200, origin);
+      if (path === "/api/profile") return json(await stub.profile(auth, url.searchParams.get("sub")), 200, origin);
+      if (path === "/api/leaderboard") return json(await stub.leaderboard(url.searchParams.get("game")), 200, origin);
+      if (path === "/api/my-data") return json(await stub.myData(auth), 200, origin);
+      if (path === "/api/guest-data") return json(await stub.guestData(url.searchParams.get("gid")), 200, origin);
+      if (path === "/api/appeal" && request.method === "GET") return json(await stub.appealStatus(auth, url.searchParams.get("gid")), 200, origin);
+      if (path === "/api/admin/appeals") return json(await stub.adminAppeals(auth), 200, origin);
+      if (path === "/api/admin/stats") return json(await stub.adminStats(auth, url.searchParams.get("tz")), 200, origin);
 
       // Game saves — the cloud half of glitchbox-save.js.
       if (path === "/api/load") {
@@ -1186,6 +1565,14 @@ export default {
       if (request.method === "POST") {
         const body = await request.json().catch(() => ({}));
         if (path === "/api/tos")      return json(await stub.acceptTos(auth, body.version), 200, origin);
+        if (path === "/api/appeal")   return json(await stub.appeal(auth, body.gid, ip, body.text), 200, origin);
+        if (path === "/api/privacy")  return json(await stub.setPrivacy(auth, body.hide), 200, origin);
+        if (path === "/api/score")    return json(await stub.postScore(auth, body.game, body.score, body.low), 200, origin);
+        if (path === "/api/delete-me")    return json(await stub.deleteMe(auth, body.confirm), 200, origin);
+        if (path === "/api/guest-forget") return json(await stub.guestForget(body.gid), 200, origin);
+        if (path === "/api/admin/set-mod")       return json(await stub.adminSetMod(auth, body.sub, body.on), 200, origin);
+        if (path === "/api/admin/appeal-decide") return json(await stub.adminAppealDecide(auth, body.id, body.accept, body.reply), 200, origin);
+        if (path === "/api/admin/featured")      return json(await stub.adminFeatured(auth, body.file), 200, origin);
         if (path === "/api/avatar")   return json(await stub.setAvatar(auth, body.picture), 200, origin);
         if (path === "/api/admin/claim")  return json(await stub.adminClaim(auth, body.code), 200, origin);
         if (path === "/api/admin/ban")    return json(await stub.adminBan(auth, body.sub, body.banned, body.reason, body.hours), 200, origin);

@@ -23,7 +23,9 @@
   function hasTokens() { return typeof tokens === 'function' && typeof setTokens === 'function'; }
 
   // null means "not fetched yet"; an empty array means "fetched, nothing there".
-  let built = false, isOwner = false, tab = 'overview';
+  // isMod: a moderator — the people tools only, with limits the server enforces anyway.
+  let built = false, isOwner = false, isMod = false, tab = 'overview';
+  let appeals = null, stats = null;
   let players = null, reports = null, overview = null, filter = '', logRows = null, guests = null;
   let giftTo = null;   // { sub, name } while the gift form is open; sub '*' = everyone
   // Questions are asked in the panel, never with prompt()/confirm(): Chrome can
@@ -174,21 +176,27 @@
     { id:'players',  label:'Players' },
     { id:'guests',   label:'Guests' },
     { id:'reports',  label:'Reports' },
-    { id:'arcade',   label:'Arcade' },
+    { id:'appeals',  label:'Appeals' },
+    { id:'stats',    label:'Stats', owner:true },
+    { id:'arcade',   label:'Arcade', owner:true },
     { id:'log',      label:'Log' },
-    { id:'god',      label:'God Mode' },
-    { id:'dev',      label:'Dev' },
+    { id:'god',      label:'God Mode', owner:true },
+    { id:'dev',      label:'Dev', owner:true },
   ];
+  const staff = () => isOwner || isMod;
+  const tabsNow = () => TABS.filter(t => isOwner || !t.owner);
 
   function render() {
     const who = (typeof currentUser !== 'undefined' && currentUser)
       ? currentUser.name + ' · ' + currentUser.email : 'not signed in';
-    $('adm-who').textContent = who + (isOwner ? ' · OWNER' : '');
-    $('adm-tabs').innerHTML = TABS.map(t =>
+    $('adm-who').textContent = who + (isOwner ? ' · OWNER' : isMod ? ' · MODERATOR' : '');
+    if (!tabsNow().some(t => t.id === tab)) tab = 'overview';
+    $('adm-tabs').innerHTML = tabsNow().map(t =>
       '<button class="adm-tab' + (tab === t.id ? ' on' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>').join('');
     const body = $('adm-body');
     const view = viewing ? viewWatch() : tab === 'overview' ? viewOverview() : tab === 'players' ? viewPlayers() : tab === 'guests' ? viewGuests()
-      : tab === 'reports' ? viewReports() : tab === 'arcade' ? viewArcade() : tab === 'log' ? viewLog()
+      : tab === 'reports' ? viewReports() : tab === 'appeals' ? viewAppeals() : tab === 'stats' ? viewStats()
+      : tab === 'arcade' ? viewArcade() : tab === 'log' ? viewLog()
       : tab === 'god' ? viewGod() : viewDev();
     body.innerHTML = askBar() + view;
     const s = $('adm-search');
@@ -219,12 +227,13 @@
 
   // ── tabs ───────────────────────────────────────────────────────────────────
   function viewOverview() {
-    if (!isOwner) return claimPanel();
+    if (!staff()) return claimPanel();
     if (!overview) { loadOverview(); return '<div class="adm-empty">Loading…</div>'; }
     const c = overview.counts;
     const stat = (k, label) => '<div class="adm-stat"><b>' + c[k] + '</b><span>' + label + '</span></div>';
     const live = overview.live || [], liveG = overview.liveGuests || [];
-    const status = (overview.maintenance ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">' +
+    const status = (isMod ? '<div class="adm-note">You\'re a <b>moderator</b>: you can view, message, kick and ban players and guests for up to a day, and answer appeals. ' +
+        'Emails and IP addresses stay hidden from you.</div>' : '') + (overview.maintenance ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">' +
         '🛠 Maintenance mode is ON — the arcade is closed to everyone but you. <a href="#" data-act="goarcade" style="color:inherit">Arcade tab →</a></div>' : '') +
       (overview.announce ? '<div class="adm-note" style="color:#00f5ff;border:1px solid currentColor;padding:9px 12px">📣 Live announcement: “' +
         esc(overview.announce.text) + '”</div>' : '');
@@ -233,9 +242,16 @@
         stat('friendships','Friendships') + stat('invites','Live invites') + stat('saves','Cloud saves') +
         stat('reports','Reports') + stat('banned','Banned') +
         stat('guestsOnline','Guests online') + stat('guestsToday','Guests today') +
+        stat('appeals','Open appeals') + stat('mods','Moderators') +
+      '</div>' +
+      '<div class="adm-actions" style="margin-top:12px">' +
+        (c.appeals ? '<button class="adm-btn warn" data-act="goappeals">⚖ ' + c.appeals + ' appeal' + (c.appeals > 1 ? 's' : '') + ' waiting</button>' : '') +
+        ('Notification' in window && Notification.permission !== 'granted'
+          ? '<button class="adm-btn" data-act="alerts">🔔 Turn on desktop alerts</button>'
+          : '<span class="adm-meta" style="align-self:center">🔔 New reports and appeals pop up as alerts' + ('Notification' in window ? ', even when this tab is in the background' : '') + '.</span>') +
       '</div>' +
       '<div class="adm-h">// LIVE NOW · ' + (live.length + liveG.length) + '</div>' +
-      (live.length + liveG.length ? '<div class="adm-actions"><button class="adm-btn warn" data-act="popall">✉ Message everyone online</button>' +
+      (isOwner && live.length + liveG.length ? '<div class="adm-actions"><button class="adm-btn warn" data-act="popall">✉ Message everyone online</button>' +
         '<button class="adm-btn danger" data-act="kickall">👢 Kick everyone</button></div>' : '') +
       (live.length ? live.map(u =>
         '<div class="adm-row"><div class="adm-av" data-act="view" data-target="u:' + esc(u.sub) + '" data-name="' + esc(u.name) + '">' + avatar(u) + '</div><div class="adm-grow"><div class="adm-name">' + esc(u.name) +
@@ -266,12 +282,12 @@
   }
 
   function viewPlayers() {
-    if (!isOwner) return claimPanel();
+    if (!staff()) return claimPanel();
     if (giftTo) return viewGift();
     const head = '<div class="adm-actions">' +
       '<input class="adm-in" id="adm-search" data-act="search" placeholder="Search name, email or friend code…" style="flex:1;min-width:200px">' +
       '<button class="adm-btn" data-act="reload">↻</button>' +
-      '<button class="adm-btn warn" data-act="give" data-sub="*">🎁 Give everyone</button></div>';
+        (isOwner ? '<button class="adm-btn warn" data-act="give" data-sub="*">🎁 Give everyone</button>' : '') + '</div>';
     if (players === null) { loadPlayers(); return head + '<div class="adm-empty">Loading…</div>'; }
     if (!players.length) return head + '<div class="adm-empty">No players match.</div>';
     const me = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.sub : '';
@@ -282,22 +298,26 @@
         '<div class="adm-grow"><div class="adm-name">' + esc(p.name) +
           (self ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">you</span>' : '') +
           (p.banned ? ' <span class="adm-tag">' + (p.ban_until ? 'banned until ' + when(p.ban_until) : 'banned') + '</span>' : '') +
+          (p.role === 'mod' ? ' <span class="adm-tag" style="background:rgba(255,230,0,.12);color:#ffe600;border-color:rgba(255,230,0,.35)">⭐ mod</span>' : '') +
+          (p.isOwner ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">owner</span>' : '') +
           (p.playing != null ? ' <span style="color:#00ff88" title="online">●</span> <span class="adm-meta">' +
             (p.playing ? '▶ ' + esc(gameName(p.playing)) : 'in the hub') + '</span>' : '') + '</div>' +
-        '<div class="adm-meta">' + esc(p.email) + ' · code ' + esc(p.code || '—') + '</div>' +
+        '<div class="adm-meta">' + (p.email ? esc(p.email) + ' · ' : '') + 'code ' + esc(p.code || '—') + '</div>' +
         '<div class="adm-meta">' + p.friends + ' friends · ' + p.saves + ' saves · ' + p.reports +
           ' reports · seen ' + ago(p.last_seen) + (p.gifts ? ' · ' + p.gifts + ' gift' + (p.gifts > 1 ? 's' : '') + ' waiting' : '') +
           (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div>' +
         '<div class="adm-meta">' + (p.tos_at ? '📜 agreed to the terms (' + esc(p.tos_version) + ') ' + ago(p.tos_at)
           : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms yet</span>') + '</div></div>' +
         viewBtn('u:' + p.sub, p.name) +
-        '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' +
-        (self ? '' : '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '">✉</button>') +
-        (self || p.playing == null ? '' : kickBtn('u:' + p.sub, p.name)) +
-        (self ? '' :
+        (isOwner ? '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' : '') +
+        (self ? '' : msgBtn(p.sub, p.name, '✉')) +
+        (self || p.playing == null || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' : kickBtn('u:' + p.sub, p.name)) +
+        (self || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' :
           '<button class="adm-btn ' + (p.banned ? 'warn' : 'danger') + '" data-act="' + (p.banned ? 'unban' : 'ban') +
-            '" data-sub="' + esc(p.sub) + '">' + (p.banned ? 'Unban' : 'Ban') + '</button>' +
-          '<button class="adm-btn danger" data-act="del" data-sub="' + esc(p.sub) + '">Delete</button>') +
+            '" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '">' + (p.banned ? 'Unban' : 'Ban') + '</button>' +
+          (isOwner ? '<button class="adm-btn warn" data-act="setmod" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '" data-on="' + (p.role === 'mod' ? 0 : 1) + '">' +
+            (p.role === 'mod' ? 'Remove mod' : '⭐ Make mod') + '</button>' +
+            '<button class="adm-btn danger" data-act="del" data-sub="' + esc(p.sub) + '">Delete</button>' : '')) +
         '</div>';
     }).join('');
   }
@@ -332,6 +352,7 @@
   const DURATIONS = [['0','until I take it down'],['1','for 1 hour'],['6','for 6 hours'],['24','for 1 day'],['72','for 3 days'],['168','for 1 week']];
   function viewArcade() {
     if (!isOwner) return claimPanel();
+    const feat = overview && overview.featured;
     if (!overview) { loadOverview(); return '<div class="adm-empty">Loading…</div>'; }
     const a = overview.announce, m = overview.maintenance, offList = overview.disabled || [];
     const sel = (id, opts) => '<select class="adm-in" id="' + id + '" style="width:auto">' +
@@ -350,6 +371,12 @@
       (m ? '<div class="adm-actions"><button class="adm-btn" data-act="mainoff">Reopen the arcade</button></div>'
          : '<div class="adm-actions"><input class="adm-in" id="adm-mt-text" maxlength="240" placeholder="Message on the closed sign (optional)" style="flex:1;min-width:220px">' +
            '<button class="adm-btn danger" data-act="mainon">Close the arcade</button></div>') +
+      '<div class="adm-h">// FEATURED GAME</div>' +
+      '<div class="adm-note">The big banner at the top of the arcade. Now: <b>' + esc(feat ? gameName(feat) : 'Pixel War (default)') + '</b></div>' +
+      '<div class="adm-actions"><select class="adm-in" id="adm-feat" style="flex:1;min-width:200px"><option value="">Pixel War (default)</option>' +
+        (typeof GAMES !== 'undefined' ? GAMES : []).slice().sort((x, y) => x.name.localeCompare(y.name)).map(g =>
+          '<option value="' + esc(g.file) + '"' + (g.file === feat ? ' selected' : '') + '>' + esc(g.name) + '</option>').join('') +
+      '</select><button class="adm-btn" data-act="feature">Feature it</button></div>' +
       '<div class="adm-h">// PUSH AN UPDATE</div>' +
       '<div class="adm-note">Every open hub and game page reloads itself within a few seconds — so players get your latest ' +
         'changes without refreshing. Anyone mid-game loses unsaved progress.</div>' +
@@ -374,6 +401,12 @@
   }
 
   function myId() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.sub : ''; }
+  // Owners message players through the gift inbox (lands on their hub); moderators
+  // can't send gifts, so theirs is a pop-up.
+  function msgBtn(sub, name, label) {
+    return isOwner ? '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(sub) + '" data-name="' + esc(name) + '">' + label + '</button>'
+      : '<button class="adm-btn warn" data-act="pop" data-target="u:' + esc(sub) + '" data-name="' + esc(name) + '">' + label + '</button>';
+  }
   function viewBtn(target, name) {
     return '<button class="adm-btn view" data-act="view" data-target="' + esc(target) + '" data-name="' + esc(name) + '" title="See what ' + esc(name) + ' is doing">👁 View</button>';
   }
@@ -400,15 +433,15 @@
     const me = target === 'u:' + myId();
     const actions = '<div class="adm-actions">' +
       (guest ? (w.online ? '<button class="adm-btn warn" data-act="pop" data-target="' + esc(target) + '" data-name="' + esc(w.name) + '">✉ Message</button>' : '')
-             : '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(w.sub) + '" data-name="' + esc(w.name) + '">✉ Message</button>' +
-               '<button class="adm-btn" data-act="give" data-sub="' + esc(w.sub) + '" data-name="' + esc(w.name) + '">🎁 Give</button>') +
-      (w.online && !me ? kickBtn(target, w.name) : '') +
-      (me ? '' : guest
+             : msgBtn(w.sub, w.name, '✉ Message') +
+               (isOwner ? '<button class="adm-btn" data-act="give" data-sub="' + esc(w.sub) + '" data-name="' + esc(w.name) + '">🎁 Give</button>' : '')) +
+      (w.online && !me && !(isMod && w.isMod) ? kickBtn(target, w.name) : '') +
+      (me || (isMod && w.isMod) ? '' : guest
         ? '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'gunban' : 'gban') + '" data-gid="' + esc(w.gid) +
           '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : 'Ban') + '</button>'
         : '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'unban' : 'ban') + '" data-sub="' + esc(w.sub) +
           '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : 'Ban') + '</button>') + '</div>';
-    const row = (k, v) => v === '' || v == null ? '' : '<div class="adm-meta"><b style="color:#e8eefc;display:inline-block;min-width:88px">' + k + '</b> ' + v + '</div>';
+    const row = (k, v) => v === '' || v == null || v === '?' ? '' : '<div class="adm-meta"><b style="color:#e8eefc;display:inline-block;min-width:88px">' + k + '</b> ' + v + '</div>';
     const details = row('Device', esc(device(w.ua))) + row('IP', esc(w.ip || '?')) +
       (guest ? row('First seen', ago(w.created)) :
         row('Email', esc(w.email)) + row('Friend code', esc(w.code || '—')) + row('Joined', ago(w.created)) +
@@ -466,7 +499,7 @@
     ['0ip','Device + their network — permanently'],['24ip','Device + their network — 1 day'],['168ip','Device + their network — 1 week']];
 
   function viewGuests() {
-    if (!isOwner) return claimPanel();
+    if (!staff()) return claimPanel();
     if (guests === null) { loadGuests(); return '<div class="adm-empty">Loading…</div>'; }
     const list = guests.guests || [], bans = guests.ipBans || [];
     const locked = !!guests.guestsLocked;
@@ -475,8 +508,8 @@
         'clears their browser comes back as a new one — that\'s what a <b>network</b> ban is for. Network bans hit everyone on ' +
         'that internet connection (a whole house or school), so use them on troublemakers only.</div>' +
       '<div class="adm-actions"><button class="adm-btn" data-act="reload">↻ Refresh</button>' +
-        '<button class="adm-btn ' + (locked ? '' : 'danger') + '" data-act="guestlock" data-on="' + (locked ? '0' : '1') + '">' +
-          (locked ? '✅ Let guests play again' : '🚫 Turn guest play off') + '</button>' +
+        (isOwner ? '<button class="adm-btn ' + (locked ? '' : 'danger') + '" data-act="guestlock" data-on="' + (locked ? '0' : '1') + '">' +
+          (locked ? '✅ Let guests play again' : '🚫 Turn guest play off') + '</button>' : '') +
         (online ? '<button class="adm-btn danger" data-act="kickguests">👢 Kick all ' + online + ' online guest' + (online > 1 ? 's' : '') + '</button>' : '') +
       '</div>' +
       (locked ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">🚫 Guest play is OFF — ' +
@@ -492,19 +525,19 @@
             (g.ipBanned ? ' <span class="adm-tag">network banned</span>' : '') +
             (g.sameAsYou ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">your network</span>' : '') +
           '</div>' +
-          '<div class="adm-meta">' + esc(device(g.ua)) + ' · IP ' + esc(g.ip || '?') + ' · first seen ' + ago(g.created) + ' · last seen ' + ago(g.last_seen) + '</div>' +
+          '<div class="adm-meta">' + esc(device(g.ua)) + (g.ip ? ' · IP ' + esc(g.ip) : '') + ' · first seen ' + ago(g.created) + ' · last seen ' + ago(g.last_seen) + '</div>' +
           '<div class="adm-meta">' + (g.tos_version ? '📜 agreed to the terms (' + esc(g.tos_version) + ')'
             : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms</span>') + '</div>' +
           (g.alsoOnIp && g.alsoOnIp.length ? '<div class="adm-meta">same network as: ' + esc(g.alsoOnIp.slice(0, 5).join(', ')) + '</div>' : '') +
           (g.ban_reason ? '<div class="adm-meta">“' + esc(g.ban_reason) + '”</div>' : '') + '</div>' +
           viewBtn('g:' + g.gid, g.name) +
-          '<button class="adm-btn warn" data-act="glabel" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" title="Give this guest a name you\'ll recognise">✏</button>' +
+          (isOwner ? '<button class="adm-btn warn" data-act="glabel" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" title="Give this guest a name you\'ll recognise">✏</button>' : '') +
           (g.online && !g.banned ? '<button class="adm-btn warn" data-act="pop" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">✉</button>' +
             kickBtn('g:' + g.gid, g.name) : '') +
           '<button class="adm-btn ' + (g.banned ? 'warn' : 'danger') + '" data-act="' + (g.banned ? 'gunban' : 'gban') +
             '" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" data-same="' + (g.sameAsYou ? 1 : 0) + '">' + (g.banned ? 'Unban' : 'Ban') + '</button>' +
         '</div>').join('') : '<div class="adm-empty">No guests yet.</div>') +
-      '<div class="adm-h">// NETWORK BANS · ' + bans.length + '</div>' +
+      (!isOwner ? '' : '<div class="adm-h">// NETWORK BANS · ' + bans.length + '</div>' +
       (bans.length ? bans.map(b =>
         '<div class="adm-row ban"><div class="adm-grow"><div class="adm-name">' + esc(b.ip) + (b.label ? ' <span class="adm-meta">(' + esc(b.label) + ')</span>' : '') + '</div>' +
         '<div class="adm-meta">' + (b.until ? 'until ' + when(b.until) : 'permanent') + ' · since ' + ago(b.created) + (b.reason ? ' · “' + esc(b.reason) + '”' : '') + '</div></div>' +
@@ -512,16 +545,81 @@
         : '<div class="adm-empty">No networks banned.</div>') +
       '<div class="adm-actions" style="margin-top:10px"><input class="adm-in" id="adm-ip" placeholder="Ban an IP by hand, e.g. 203.0.113.7" style="flex:1;min-width:200px">' +
         '<button class="adm-btn danger" data-act="ipban">Ban IP</button></div>' +
-      (guests.myIp ? '<div class="adm-note">Your own network is ' + esc(guests.myIp) + ' — it can\'t be banned.</div>' : '');
+      (guests.myIp ? '<div class="adm-note">Your own network is ' + esc(guests.myIp) + ' — it can\'t be banned.</div>' : ''));
+  }
+
+  function viewAppeals() {
+    if (!staff()) return claimPanel();
+    if (appeals === null) { loadAppeals(); return '<div class="adm-empty">Loading…</div>'; }
+    const open = appeals.filter(a => a.status === 'open');
+    return '<div class="adm-note">Banned players and guests can ask to be let back in from their ban screen. ' +
+        'Accepting lifts the ban (and, for the owner, any network ban on them); your reply shows on their screen.</div>' +
+      '<div class="adm-actions"><button class="adm-btn" data-act="reload">↻ Refresh</button></div>' +
+      '<div class="adm-h">// WAITING · ' + open.length + '</div>' +
+      (appeals.length ? appeals.map(a => {
+        const tag = a.status === 'open' ? '<span class="adm-tag" style="background:rgba(255,200,0,.12);color:#ffc800;border-color:rgba(255,200,0,.35)">waiting</span>'
+          : a.status === 'accepted' ? '<span class="adm-tag" style="background:rgba(0,255,136,.1);color:#00ff88;border-color:rgba(0,255,136,.3)">accepted</span>'
+          : '<span class="adm-tag">rejected</span>';
+        const ban = a.ban ? (a.ban.until ? 'banned until ' + when(a.ban.until) : 'banned permanently') + (a.ban.reason ? ' for “' + esc(a.ban.reason) + '”' : '') : (a.status === 'open' ? 'not banned any more' : '');
+        return '<div class="adm-row' + (a.status === 'open' ? '' : ' ban') + '" style="' + (a.status === 'open' ? 'border-left-color:#ffc800' : '') + '">' +
+          '<div class="adm-grow"><div class="adm-name">' + esc(a.name) + ' <span class="adm-meta">(' + a.kind + ')</span> ' + tag + '</div>' +
+          '<div class="adm-meta">“' + esc(a.text) + '”</div>' +
+          '<div class="adm-meta">sent ' + ago(a.created) + (ban ? ' · ' + ban : '') + (a.networkBan ? ' · their network is banned' : '') + '</div>' +
+          (a.reply ? '<div class="adm-meta">reply: “' + esc(a.reply) + '”</div>' : '') + '</div>' +
+          viewBtn(a.who, a.name) +
+          (a.status === 'open' ? '<button class="adm-btn" data-act="appeal" data-id="' + a.id + '" data-ok="1" data-name="' + esc(a.name) + '">✅ Unban</button>' +
+            '<button class="adm-btn danger" data-act="appeal" data-id="' + a.id + '" data-ok="0" data-name="' + esc(a.name) + '">Keep ban</button>' : '') +
+          '</div>';
+      }).join('') : '<div class="adm-empty">No appeals yet.</div>');
+  }
+
+  // Bar charts as inline SVG — no chart library needed for four small graphs.
+  function bars(vals, opts) {
+    opts = opts || {};
+    const W = 600, H = opts.h || 120, n = vals.length, max = Math.max(1, ...vals.map(v => (v.a || 0) + (v.b || 0)));
+    const bw = W / n;
+    return '<svg viewBox="0 0 ' + W + ' ' + (H + 18) + '" style="width:100%;height:auto;display:block;margin:4px 0 6px" role="img" aria-label="' + esc(opts.label || '') + '">' +
+      vals.map((v, i) => {
+        const ha = (v.a || 0) / max * H, hb = (v.b || 0) / max * H, x = i * bw + bw * 0.12, w = bw * 0.76;
+        return '<g><title>' + esc(v.tip) + '</title>' +
+          '<rect x="' + x + '" y="' + (H - ha) + '" width="' + w + '" height="' + ha + '" fill="#00f5ff"/>' +
+          (hb ? '<rect x="' + x + '" y="' + (H - ha - hb) + '" width="' + w + '" height="' + hb + '" fill="#ff0080"/>' : '') +
+          (v.label ? '<text x="' + (x + w / 2) + '" y="' + (H + 13) + '" fill="#8b95a8" font-size="9" text-anchor="middle" font-family="sans-serif">' + esc(v.label) + '</text>' : '') + '</g>';
+      }).join('') + '</svg>';
+  }
+  function viewStats() {
+    if (!isOwner) return claimPanel();
+    if (stats === null) { loadStats(); return '<div class="adm-empty">Crunching a month of activity…</div>'; }
+    const d = stats, T = d.totals;
+    const tile = (v, l) => '<div class="adm-stat"><b>' + v + '</b><span>' + l + '</span></div>';
+    const days = d.days.map((x, i) => ({ a: x.players, b: x.guests, tip: x.day + ': ' + x.players + ' players, ' + x.guests + ' guests, ' + x.minutes + ' min played',
+      label: i % 5 === 4 || i === 29 ? x.day.slice(5) : '' }));
+    const ups = d.days.map((x, i) => ({ a: x.signups, tip: x.day + ': ' + x.signups + ' new accounts', label: i % 5 === 4 || i === 29 ? x.day.slice(5) : '' }));
+    const hours = d.hours.map((m, h) => ({ a: m, tip: h + ':00 — ' + m + ' min played', label: h % 3 === 0 ? String(h) : '' }));
+    const top = d.games[0] ? d.games[0].minutes : 1;
+    return '<div class="adm-grid">' + tile(T.players, 'Players · 30d') + tile(T.guests, 'Guests · 30d') + tile(T.hours, 'Hours played') +
+        tile(d.days[29].players + d.days[29].guests, 'Active today') + '</div>' +
+      '<div class="adm-h">// WHO PLAYED EACH DAY</div><div class="adm-meta"><span style="color:#00f5ff">■</span> players &nbsp; <span style="color:#ff0080">■</span> guests · hover a bar for numbers</div>' +
+      bars(days, { label: 'players per day' }) +
+      '<div class="adm-h">// NEW ACCOUNTS</div>' + bars(ups, { h: 60, label: 'new accounts per day' }) +
+      '<div class="adm-h">// BUSIEST HOURS (YOUR TIME)</div>' + bars(hours, { h: 80, label: 'minutes played by hour' }) +
+      '<div class="adm-h">// MOST PLAYED · 30 DAYS</div>' +
+      (d.games.length ? d.games.map(g =>
+        '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + esc(gameName(g.game)) + '</div>' +
+        '<div style="height:5px;background:rgba(255,255,255,.06);margin-top:5px"><div style="height:100%;width:' + Math.max(2, Math.round(g.minutes / top * 100)) + '%;background:#00f5ff"></div></div></div>' +
+        '<span class="adm-meta">' + (g.minutes < 60 ? g.minutes + ' min' : Math.round(g.minutes / 6) / 10 + ' h') + '</span></div>').join('')
+        : '<div class="adm-empty">No play recorded yet — this fills up as people play.</div>') +
+      '<div class="adm-actions" style="margin-top:14px"><button class="adm-btn" data-act="reload">↻ Refresh</button></div>';
   }
 
   function viewLog() {
-    if (!isOwner) return claimPanel();
+    if (!staff()) return claimPanel();
     if (logRows === null) { loadLog(); return '<div class="adm-empty">Loading…</div>'; }
     const icon = { ban:'⛔', unban:'✅', delete:'🗑', gift:'🎁', message:'✉', announce:'📣', 'announce-off':'📣',
                    'maintenance-on':'🛠', 'maintenance-off':'🛠', 'dismiss-report':'🧹',
                    kick:'👢', popup:'✉', 'ban-guest':'⛔', 'unban-guest':'✅', 'ban-ip':'🌐', 'unban-ip':'🌐',
-                   'reload-all':'↻', games:'⏸', 'guests-off':'🚫', 'guests-on':'✅' };
+                   'reload-all':'↻', games:'⏸', 'guests-off':'🚫', 'guests-on':'✅',
+                   'mod-add':'⭐', 'mod-remove':'⭐', 'appeal-accept':'⚖', 'appeal-reject':'⚖', featured:'🌟', 'self-delete':'🗑' };
     return '<div class="adm-actions"><button class="adm-btn" data-act="reload">↻ Refresh</button></div>' +
       (logRows.length ? logRows.map(r =>
         '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + (icon[r.action] || '•') + ' ' + esc(r.action) +
@@ -531,7 +629,7 @@
   }
 
   function viewReports() {
-    if (!isOwner) return claimPanel();
+    if (!staff()) return claimPanel();
     if (reports === null) { loadReports(); return '<div class="adm-empty">Loading…</div>'; }
     if (!reports.length) return '<div class="adm-empty">No reports. Quiet arcade.</div>';
     return reports.map(r =>
@@ -624,6 +722,8 @@
     try { logRows = (await call('/api/admin/log')).log || []; render(); }
     catch (e) { fail(e); }
   }
+  async function loadAppeals() { try { appeals = (await call('/api/admin/appeals')).appeals || []; render(); } catch (e) { fail(e); } }
+  async function loadStats() { try { stats = await call('/api/admin/stats?tz=' + new Date().getTimezoneOffset()); render(); } catch (e) { fail(e); } }
   async function loadGuests() { try { guests = await call('/api/admin/guests'); render(); } catch (e) { fail(e); } }
   async function loadReports() {
     try { reports = (await call('/api/admin/reports')).reports || []; render(); }
@@ -643,7 +743,39 @@
       render();
     };
     try {
-      if (act === 'reload') { overview = null; players = null; reports = null; logRows = null; guests = null; render(); }
+      if (act === 'reload') { overview = null; players = null; reports = null; logRows = null; guests = null; appeals = null; stats = null; render(); }
+      else if (act === 'goappeals') { e.preventDefault(); tab = 'appeals'; render(); }
+      else if (act === 'alerts') {
+        const r = window.GBSocial ? await GBSocial.enableAlerts() : 'unsupported';
+        notice = { text: r === 'granted' ? '🔔 Desktop alerts are on.' : r === 'denied' ? 'Your browser blocked notifications — allow them for this site in its settings.' : 'This browser can\'t show desktop alerts.', bad: r !== 'granted' };
+        render();
+      }
+      else if (act === 'appeal') {
+        const ok = el.dataset.ok === '1', name = el.dataset.name || 'them';
+        askFor({ text: (ok ? 'Unban ' : 'Keep the ban on ') + name + '? Your reply shows on their ban screen.', input: ok ? 'Reply (optional), e.g. OK — be nice' : 'Reply (optional), e.g. Sorry, the ban stays',
+                 yes: ok ? 'Unban ' + name : 'Keep the ban', run: async reply => {
+          const r = await call('/api/admin/appeal-decide', { method:'POST', body:{ id: +el.dataset.id, accept: ok, reply } });
+          appeals = null; players = null; guests = null; overview = null; logRows = null;
+          notice = { text: (ok ? '✅ ' + name + ' is unbanned' : '⚖ The ban on ' + name + ' stays') + (r.note || '') + '.' };
+        }});
+      }
+      else if (act === 'setmod') {
+        const on = el.dataset.on === '1', name = el.dataset.name || 'them';
+        const go = async () => {
+          await call('/api/admin/set-mod', { method:'POST', body:{ sub: el.dataset.sub, on } });
+          players = null; logRows = null; notice = { text: on ? '⭐ ' + name + ' is a moderator.' : name + ' is no longer a moderator.' };
+        };
+        if (on) askFor({ text:'Make ' + name + ' a moderator?\nThey can view, message, kick and ban players and guests for up to a day, and answer appeals. ' +
+          'They never see emails or IP addresses, and can\'t give tokens, delete accounts or change the arcade.', yes:'Make mod', run: go });
+        else { await go(); render(); }
+      }
+      else if (act === 'feature') {
+        const f = $('adm-feat').value;
+        const r = await call('/api/admin/featured', { method:'POST', body:{ file: f } });
+        if (overview) overview.featured = r.featured;
+        if (typeof applyFeatured === 'function') applyFeatured(r.featured);
+        logRows = null; notice = { text:'🌟 Featured: ' + (r.featured ? gameName(r.featured) : 'Pixel War (default)') + '.' }; render();
+      }
       else if (act === 'view') { viewing = { target: el.dataset.target, name: el.dataset.name || 'them' }; watch = null; ask = null; notice = null; render(); $('adm-wrap').scrollTop = 0; }
       else if (act === 'unview') { viewing = null; watch = null; notice = null; render(); }
       else if (act === 'kick' || act === 'kickall' || act === 'kickguests') {
@@ -675,7 +807,8 @@
         const same = el.dataset.same === '1';
         askFor({ text:'Ban ' + name + '? They\'re kicked out within a few seconds, even mid-game.' +
                       (same ? '\nThey\'re on YOUR network, so only their device can be banned.' : ''),
-                 input:'Reason (optional)', choices: same ? BAN_CHOICES.filter(c => !/ip$/.test(c[0])) : BAN_CHOICES,
+                 input:'Reason (optional)', choices: !isOwner ? [['24','This device — 1 day'],['1','This device — 1 hour'],['6','This device — 6 hours']]
+                   : same ? BAN_CHOICES.filter(c => !/ip$/.test(c[0])) : BAN_CHOICES,
                  yes:'Ban ' + name, run: async (reason, pick) => {
           const ip = /ip$/.test(pick), hours = parseInt(pick, 10) || 0;
           await call('/api/admin/guest-ban', { method:'POST', body:{ gid, banned:true, reason, hours, ip } });
@@ -782,7 +915,8 @@
         const r = (reports || []).find(x => x.reported_sub === sub);
         const name = (p && p.name) || (r && r.reported) || el.dataset.name || 'this player';
         askFor({ text:'Ban ' + name + '? They are kicked out within a few seconds, even mid-game.', input:'Reason (optional)',
-                 choices:[['0','Permanently'],['1','for 1 hour'],['24','for 1 day'],['72','for 3 days'],['168','for 1 week']],
+                 choices: isOwner ? [['0','Permanently'],['1','for 1 hour'],['24','for 1 day'],['72','for 3 days'],['168','for 1 week']]
+                   : [['24','for 1 day'],['1','for 1 hour'],['6','for 6 hours']],
                  yes:'Ban ' + name, run: async (reason, hours) => {
           await call('/api/admin/ban', { method:'POST', body:{ sub, banned:true, reason, hours:+hours || 0 } });
           players = null; reports = null; overview = null; logRows = null;
@@ -908,7 +1042,11 @@
   }
 
   function navItem() {
-    if (!isOwner || $('adm-nav-item')) return;
+    const old = $('adm-nav-item');
+    if (old && !staff()) { old.parentNode.parentNode.removeChild(old.parentNode); return; }
+    if (old) { old.querySelector('.nav-text').textContent = isOwner ? 'Owner Console' : 'Mod Console';
+               old.parentNode.querySelector('.sidebar-label').textContent = isOwner ? 'OWNER' : 'MODERATOR'; return; }
+    if (!staff()) return;
     const anchor = document.getElementById('sidebar-user');
     if (!anchor || !anchor.parentNode) return;
     const a = document.createElement('a');
@@ -917,12 +1055,12 @@
     a.href = '#';
     // .nav-text is what the hover-to-unfold sidebar fades; a bare text node would
     // stay visible and get clipped mid-word in the 64px rail.
-    a.innerHTML = '<span class="nav-icon">⚙</span><span class="nav-text">Owner Console</span>';
+    a.innerHTML = '<span class="nav-icon">⚙</span><span class="nav-text">' + (isOwner ? 'Owner Console' : 'Mod Console') + '</span>';
     a.addEventListener('click', ev => { ev.preventDefault(); open(); });
     const sec = document.createElement('div');
     sec.className = 'sidebar-section';
     sec.style.paddingTop = '6px';
-    sec.innerHTML = '<div class="sidebar-label">OWNER</div>';
+    sec.innerHTML = '<div class="sidebar-label">' + (isOwner ? 'OWNER' : 'MODERATOR') + '</div>';
     sec.appendChild(a);
     anchor.parentNode.insertBefore(sec, anchor);
   }
@@ -931,8 +1069,9 @@
   // link appears on its own once you're signed in as that account.
   setInterval(() => {
     const owner = (typeof lastState !== 'undefined' && lastState && !!lastState.isOwner);
-    if (owner !== isOwner) {
-      isOwner = owner;
+    const mod = !owner && (typeof lastState !== 'undefined' && lastState && !!lastState.isMod);
+    if (owner !== isOwner || mod !== isMod) {
+      isOwner = owner; isMod = mod;
       navItem();
       if (built && $('adm-wrap').classList.contains('show')) render();
     }
@@ -990,6 +1129,14 @@
       if (path === '/api/admin/reports') return { reports: db.reports };
       if (path === '/api/admin/gift') return { ok:true, players: opts.body.sub === '*' ? 2 : 1 };
       if (path === '/api/admin/guests') return Object.assign({ guestsLocked: arcade.guestsLocked }, gdb);
+      if (path === '/api/admin/appeals') return { appeals: [
+        { id: 11, who: 'u:s2', name: 'Eve', kind: 'player', text: 'I was not rude, honest', created: now, status: 'open', ban: { reason: 'rude', until: now + 864e5 } },
+        { id: 10, who: 'g:gcccc3333', name: 'Guest 3333', kind: 'guest', text: 'sorry', created: now - 9e6, status: 'rejected', reply: 'no' }] };
+      if (path === '/api/admin/appeal-decide') return { ok: true, note: '' };
+      if (path === '/api/admin/featured') { arcade.featured = opts.body.file || null; return { ok: true, featured: arcade.featured }; }
+      if (path.indexOf('/api/admin/stats') === 0) return { totals: { players: 4, guests: 7, hours: 12 },
+        days: Array.from({ length: 30 }, (_, i) => ({ day: '2026-09-' + String(i + 1).padStart(2, '0'), players: i % 4, guests: i % 3, signups: i % 2, minutes: i * 3 })),
+        hours: Array.from({ length: 24 }, (_, h) => h * 2), games: [{ game: 'gridlock.html', minutes: 300 }, { game: 'neon-putt.html', minutes: 45 }] };
       if (path.indexOf('/api/admin/view') === 0) {
         const tg = decodeURIComponent(path.split('target=')[1] || '');
         return tg.indexOf('g:') === 0
@@ -1215,6 +1362,60 @@
     await click('[data-act="gametoggle"][data-file="' + g0 + '"]'); await wait();
     await click('[data-act="allon"]'); await wait();
     t('switch all back on clears the list', post('/api/admin/games').body.disabled.length === 0);
+
+    // ── Appeals ──
+    tab = 'appeals'; appeals = null; render(); await wait(); await wait();
+    t('appeals are listed with what they said', bodyHas(/I was not rude, honest/) && bodyHas(/WAITING · 1/) && bodyHas(/banned until/));
+    t('answered appeals show the reply', bodyHas(/reply: “no”/));
+    sent.length = 0;
+    await click('[data-act="appeal"][data-ok="1"]');
+    t('unbanning from an appeal asks first', !post('/api/admin/appeal-decide') && /Unban Eve/.test(($('adm-ask') || {}).textContent || ''));
+    await answer('ok be nice'); await wait();
+    t('then answers it with the reply', post('/api/admin/appeal-decide') && post('/api/admin/appeal-decide').body.accept === true &&
+      post('/api/admin/appeal-decide').body.reply === 'ok be nice' && post('/api/admin/appeal-decide').body.id === 11);
+    await wait(); await wait();
+    await click('[data-act="appeal"][data-ok="0"]'); await answer(''); await wait();
+    t('keeping the ban answers no', post('/api/admin/appeal-decide').body.accept === false);
+
+    // ── Stats ──
+    tab = 'stats'; stats = null; render(); await wait(); await wait();
+    t('stats show totals, three charts and a game list', bodyHas(/Players · 30d/) && bodyHas(/Hours played/) && $('adm-body').querySelectorAll('svg').length === 3 && bodyHas(/MOST PLAYED/));
+    t('the bars carry their numbers', !!$('adm-body').querySelector('svg title') && /players,/.test($('adm-body').querySelector('svg title').textContent));
+
+    // ── Featured + mods ──
+    tab = 'arcade'; overview = null; render(); await wait(); await wait();
+    $('adm-feat').value = 'gridlock.html';
+    sent.length = 0;
+    await click('[data-act="feature"]'); await wait();
+    t('the featured game can be picked', post('/api/admin/featured') && post('/api/admin/featured').body.file === 'gridlock.html' && /Featured: .*Gridlock/i.test(($('adm-notice') || {}).textContent || ''));
+    tab = 'players'; players = null; render(); await wait(); await wait();
+    await click('[data-act="setmod"][data-sub="s1"]');
+    t('making a mod explains what they can do', /never see emails/.test(($('adm-ask') || {}).textContent || ''));
+    await answer(); await wait();
+    t('then sets the role', post('/api/admin/set-mod') && post('/api/admin/set-mod').body.sub === 's1' && post('/api/admin/set-mod').body.on === true);
+
+    // ── moderator mode ──
+    lastState.isOwner = false; lastState.isMod = true; await new Promise(r => setTimeout(r, 1600));
+    tab = 'players'; players = null; render(); await wait(); await wait();
+    const tabNames = [...$('adm-tabs').querySelectorAll('.adm-tab')].map(b => b.dataset.tab).join();
+    t('mods get the people tabs only', tabNames === 'overview,players,guests,reports,appeals,log');
+    t('the sidebar says Mod Console', /Mod Console/.test(($('adm-nav-item') || {}).textContent || ''));
+    t('mods get no Give, Delete or Make-mod', !document.querySelector('#adm-body [data-act="give"]') && !document.querySelector('#adm-body [data-act="del"]') &&
+      !document.querySelector('#adm-body [data-act="setmod"]'));
+    await click('[data-act="ban"][data-sub="s1"]');
+    t('mod bans top out at a day', ![...$('adm-ask-sel').options].some(o => o.value === '0' || +o.value > 24));
+    await click('[data-act="askno"]');
+    sent.length = 0;
+    await click('[data-act="pop"][data-target="u:s1"]'); await answer('hey'); await wait();
+    t('mods message by pop-up, not gift', post('/api/admin/popup') && !post('/api/admin/gift'));
+    tab = 'guests'; guests = null; render(); await wait(); await wait();
+    t('mods see no network bans or guest-play switch', !bodyHas(/NETWORK BANS/) && !document.querySelector('#adm-body [data-act="guestlock"]'));
+    await click('[data-act="gban"][data-gid="gaaaa1111"]');
+    t('mods can only ban a guest device for a day', ![...$('adm-ask-sel').options].some(o => /ip$/.test(o.value) || o.value === '0'));
+    await click('[data-act="askno"]');
+    tab = 'stats'; render();
+    t('mods cannot open owner tabs', tab === 'overview');
+    lastState.isMod = false; lastState.isOwner = true; await new Promise(r => setTimeout(r, 1600));
 
     // ── Log tab ──
     tab = 'log'; logRows = null; render(); await wait(); await wait();
