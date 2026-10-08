@@ -26,6 +26,12 @@
     max-width:90vw; text-align:center; display:none; }
   .status.show { display:block; }
   .status.err { color:#ff8a8a; border-color:#ff8a8a55; }
+  .yt { position:fixed; right:14px; bottom:34px; z-index:5; width:min(340px,calc(100vw - 28px)); display:none; flex-direction:column; gap:6px;
+        background:#140c22ee; border:1px solid #3a2a55; border-radius:12px; padding:8px; box-shadow:0 8px 30px #0008; }
+  .yt.show { display:flex; }
+  .yt iframe { width:100%; aspect-ratio:16/9; border:0; border-radius:8px; background:#000; }
+  .yt button { padding:9px 12px; border:none; border-radius:9px; cursor:pointer; font:inherit; font-weight:800; background:var(--neon2); color:#06121a; }
+  .yt-note { font-size:11px; color:#9a86c4; text-align:center; }
   .hint { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#6a5690; font-size:12px; z-index:5; pointer-events:none; }
   .drop { position:fixed; inset:0; z-index:6; display:none; place-items:center; background:#0a0612cc; font-size:22px; color:var(--neon2); }
   .drop.show { display:grid; }
@@ -39,9 +45,14 @@
   <input id="link" type="text" placeholder="Paste a YouTube link…  (or drop an audio file)" autocomplete="off" spellcheck="false" />
   <button id="go">DANCE</button>
   <button id="mic" class="ghost" title="React to your microphone instead">🎤 Mic</button>
+  <button id="file" class="ghost" title="Pick a song from this device">📁 File</button>
+  <input id="filein" type="file" accept="audio/*,video/*" hidden />
 </div>
+<div class="yt" id="yt"><iframe id="ytframe" allow="autoplay; encrypted-media" title="YouTube player"></iframe>
+  <button id="hear">🔊 Let the roaches hear it</button>
+  <div class="yt-note">Pick <b>this tab</b> and switch on <b>Also share tab audio</b>.</div></div>
 <div class="status" id="status"></div>
-<div class="hint">Tip: if YouTube fails, hit 🎤 Mic and play the video out loud — or drop an audio file anywhere.</div>
+<div class="hint">Paste a YouTube link, pick a 📁 file (or drop one anywhere), or use 🎤 Mic for music playing in the room.</div>
 <div class="drop" id="drop">🎵 drop the audio file to make them dance</div>
 
 <audio id="audio" crossorigin="anonymous"></audio>
@@ -61,9 +72,11 @@ let actx, analyser, srcNode, freq, playing = false;
 function ensureAudioGraph(mediaEl){
   if (!actx) { actx = new (window.AudioContext||window.webkitAudioContext)(); }
   if (actx.state === 'suspended') actx.resume();
-  if (!analyser) { analyser = actx.createAnalyser(); analyser.fftSize = 1024; analyser.smoothingTimeConstant = 0.78; freq = new Uint8Array(analyser.frequencyBinCount); analyser.connect(actx.destination); }
+  // The analyser only listens. A media file is also routed to the speakers; a mic or
+  // shared-tab stream is NOT — playing those back out caused feedback / a doubled echo.
+  if (!analyser) { analyser = actx.createAnalyser(); analyser.fftSize = 1024; analyser.smoothingTimeConstant = 0.78; freq = new Uint8Array(analyser.frequencyBinCount); }
   if (mediaEl && srcNode && srcNode._el !== mediaEl) { try{srcNode.disconnect();}catch(e){} srcNode = null; }
-  if (mediaEl && !srcNode) { srcNode = actx.createMediaElementSource(mediaEl); srcNode._el = mediaEl; srcNode.connect(analyser); }
+  if (mediaEl && !srcNode) { srcNode = actx.createMediaElementSource(mediaEl); srcNode._el = mediaEl; srcNode.connect(analyser); srcNode.connect(actx.destination); }
 }
 function connectStream(stream){
   ensureAudioGraph(null);
@@ -247,8 +260,41 @@ function frame(now){
 requestAnimationFrame(frame);
 
 // ── Controls ──
+// youtube.com/watch?v=ID · youtu.be/ID · /shorts/ID · /embed/ID
+function youTubeId(link){
+  const m = /(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/.exec(link || '');
+  return m ? m[1] : null;
+}
+// On the GitHub Pages arcade there's no audio server (it needs yt-dlp on a computer),
+// so the video plays in an embedded player and the roaches listen to this tab's sound.
+let serverChecked = null;
+async function hasAudioServer(){
+  if (serverChecked !== null) return serverChecked;
+  try { const r = await fetch('/audio?url=probe', { method:'GET' }); serverChecked = (r.headers.get('content-type')||'').indexOf('json') !== -1 || r.ok; }
+  catch(_) { serverChecked = false; }
+  return serverChecked;
+}
+function playEmbedded(id){
+  const box = document.getElementById('yt'), fr = document.getElementById('ytframe');
+  fr.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+  box.classList.add('show');
+  setStatus('▶ The video is playing — press “🔊 Let the roaches hear it” to make them dance.');
+}
+document.getElementById('hear').onclick = async () => {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { setStatus('This browser can’t share tab sound — use 🎤 Mic with the volume up.', true); return; }
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video:true, audio:true, preferCurrentTab:true, selfBrowserSurface:'include', systemAudio:'include' });
+    stream.getVideoTracks().forEach(t => t.stop());           // only the sound is needed
+    if (!stream.getAudioTracks().length) { setStatus('No sound was shared — try again and switch on “Also share tab audio”.', true); return; }
+    audio.pause(); connectStream(stream); playing = true;
+    setStatus('🪳 Listening to the video. Dance!');
+    setTimeout(() => setStatus(''), 2500);
+  } catch(e){ setStatus('Sharing was cancelled — or use 🎤 Mic with the volume up.', true); }
+};
 async function playYouTube(link){
   if (!link.trim()) { setStatus('Paste a YouTube link first.', true); return; }
+  const id = youTubeId(link);
+  if (id && !(await hasAudioServer())) { playEmbedded(id); return; }
   setStatus('🪳 fetching the audio… (first time can take a few seconds)');
   try {
     // probe the audio endpoint for an error JSON before handing it to <audio>
@@ -278,15 +324,22 @@ document.getElementById('mic').onclick = async () => {
   } catch(e){ setStatus('Mic permission denied.', true); }
 };
 
+// pick a file
+async function playFile(f){
+  if (!f) return;
+  audio.src = URL.createObjectURL(f); audio.crossOrigin = null;
+  ensureAudioGraph(audio); try { await audio.play(); playing = true; setStatus('🎵 ' + f.name); setTimeout(() => setStatus(''), 2500); } catch(_){ setStatus('Click DANCE to start.', true); }
+}
+document.getElementById('file').onclick = () => document.getElementById('filein').click();
+document.getElementById('filein').onchange = e => playFile(e.target.files[0]);
+
 // drag-drop a local audio file
 const drop = document.getElementById('drop');
 addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('show'); });
 addEventListener('dragleave', e => { if (e.target===drop) drop.classList.remove('show'); });
 addEventListener('drop', async e => {
   e.preventDefault(); drop.classList.remove('show');
-  const f = e.dataTransfer.files[0]; if (!f) return;
-  audio.src = URL.createObjectURL(f); audio.crossOrigin = null;
-  ensureAudioGraph(audio); try { await audio.play(); playing = true; setStatus('🎵 ' + f.name); } catch(_){ setStatus('Click DANCE to start.', true); }
+  playFile(e.dataTransfer.files[0]);
 });
 
 audio.addEventListener('playing', () => { playing = true; setStatus(''); });

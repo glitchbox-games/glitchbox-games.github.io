@@ -707,13 +707,38 @@ const DRAW={
 },
 
 'national-park-simulator':(c)=>{
-  _F(c,0,0,320,200,'#0a1a0a');
-  [[20,20,80,60,'#0f2a0f'],[120,10,90,50,'#122e12'],[220,30,80,70,'#0e280e'],[30,100,70,70,'#102212'],[150,90,100,80,'#0d2010'],[250,110,60,70,'#112612']].forEach(([x,y,w,h,col])=>_F(c,x,y,w,h,col));
-  _C(c,90,80,30,'rgba(10,60,120,0.55)');_C(c,240,150,20,'rgba(10,60,120,0.55)');
-  c.strokeStyle='rgba(180,150,80,0.45)';c.lineWidth=3;c.beginPath();c.moveTo(0,100);c.quadraticCurveTo(160,80,320,120);c.stroke();c.beginPath();c.moveTo(160,0);c.quadraticCurveTo(150,100,155,200);c.stroke();
-  [[145,92,10,8,'#f0a43c'],[155,96,8,8,'#f0a43c'],[148,104,12,6,'#cc8830']].forEach(([x,y,w,h,col])=>_F(c,x,y,w,h,col));
-  [[60,50],[240,70],[180,160],[100,140],[280,90]].forEach(([x,y])=>_C(c,x,y,4,'#8B6914'));
-  _SC(c);
+  // Yellowstone at golden hour: Old Faithful erupting, lodgepole pines, a bison, a camera frame
+  _GV(c,0,0,320,200,'#f0a35a','#f6d28a');
+  const sun=c.createRadialGradient(250,70,0,250,70,90); sun.addColorStop(0,'rgba(255,245,200,.9)'); sun.addColorStop(1,'rgba(255,245,200,0)'); c.fillStyle=sun; c.fillRect(0,0,320,200);
+  // far ridges
+  c.fillStyle='#8a6f8f'; c.beginPath(); c.moveTo(0,110); [[40,88],[90,104],[140,80],[200,100],[250,84],[320,104]].forEach(([x,y])=>c.lineTo(x,y)); c.lineTo(320,200); c.lineTo(0,200); c.fill();
+  c.fillStyle='#5d5a6e'; c.beginPath(); c.moveTo(0,124); [[60,108],[120,122],[180,112],[260,126],[320,116]].forEach(([x,y])=>c.lineTo(x,y)); c.lineTo(320,200); c.lineTo(0,200); c.fill();
+  // geyser basin (pale mineral crust + steaming plume)
+  c.fillStyle='#e9e1cf'; c.beginPath(); c.ellipse(118,150,60,12,0,0,6.283); c.fill();
+  c.fillStyle='#4fb3c9'; c.beginPath(); c.ellipse(118,150,16,4,0,0,6.283); c.fill();
+  // a narrow jet of water that blooms into billowing steam drifting with the wind
+  const jet=c.createLinearGradient(0,150,0,70); jet.addColorStop(0,'rgba(255,255,255,.95)'); jet.addColorStop(1,'rgba(255,255,255,.5)');
+  c.fillStyle=jet; c.beginPath(); c.moveTo(112,150); c.lineTo(115,78); c.lineTo(121,78); c.lineTo(124,150); c.fill();
+  [[118,74,15],[106,62,14],[128,58,16],[114,46,18],[134,40,15],[122,30,19],[142,26,16],[110,30,13],[150,16,15],[130,14,17],[100,50,11],[160,30,12]]
+    .forEach(([x,y,r],i)=>{ c.fillStyle=`rgba(255,255,255,${.92-i*.04})`; c.beginPath(); c.arc(x,y,r,0,6.283); c.fill(); });
+  for(let i=0;i<10;i++){ c.fillStyle='rgba(255,255,255,.75)'; c.beginPath(); c.arc(106+i*2.6,148-((i*7)%10),3,0,6.283); c.fill(); }
+  // meadow
+  _GV(c,0,156,320,44,'#7d8a3e','#4e5a24');
+  // lodgepole pines
+  [[18,150,1],[36,156,.8],[268,150,1.1],[292,158,.85],[306,150,.95]].forEach(([x,y,k])=>{
+    c.fillStyle='#22381f'; for(let j=0;j<5;j++){ c.beginPath(); c.moveTo(x,y-58*k+j*10*k); c.lineTo(x-(7+j*3)*k,y-40*k+j*10*k); c.lineTo(x+(7+j*3)*k,y-40*k+j*10*k); c.fill(); }
+    _F(c,x-1.5,y-12*k,3,14*k,'#3b2a1c'); });
+  // bison
+  c.fillStyle='#3a2416'; c.beginPath(); c.ellipse(222,166,22,12,0,0,6.283); c.fill();
+  c.fillStyle='#2a180e'; c.beginPath(); c.ellipse(204,160,13,13,0,0,6.283); c.fill();
+  c.fillStyle='#1f120a'; c.beginPath(); c.ellipse(195,168,8,7,0,0,6.283); c.fill();
+  [[210,174],[218,176],[232,176],[240,174]].forEach(([x,y])=>_F(c,x,y,4,10,'#1f120a'));
+  _L(c,198,154,194,148,'#d9cbb0',2); _L(c,208,152,212,146,'#d9cbb0',2);
+  // camera viewfinder
+  c.strokeStyle='rgba(255,255,255,.9)'; c.lineWidth=2.5;
+  [[70,26,1,1],[250,26,-1,1],[70,182,1,-1],[250,182,-1,-1]].forEach(([x,y,dx,dy])=>{ c.beginPath(); c.moveTo(x,y+dy*16); c.lineTo(x,y); c.lineTo(x+dx*16,y); c.stroke(); });
+  _C(c,82,170,4,'#ff3b3b'); c.font='bold 10px monospace'; c.fillStyle='#fff'; c.textAlign='left'; c.fillText('REC',90,174);
+  c.font='900 15px sans-serif'; c.fillStyle='#fff3c0'; c.textAlign='right'; c.fillText('YELLOWSTONE',304,22);
 },
 
 'virus':(c)=>{
@@ -808,16 +833,37 @@ const DRAW={
 },
 
 'speed-stars':(c)=>{
-  _F(c,0,0,320,200,'#000408');_ST(c,30);
-  c.strokeStyle='rgba(0,255,208,0.28)';c.lineWidth=3;c.beginPath();c.roundRect(18,18,284,164,58);c.stroke();
-  c.strokeStyle='rgba(0,255,208,0.18)';c.lineWidth=2;c.beginPath();c.roundRect(68,52,184,96,28);c.stroke();
-  c.fillStyle='rgba(0,20,40,0.45)';c.beginPath();c.roundRect(18,18,284,164,58);c.fill();
-  c.fillStyle='rgba(0,40,10,0.45)';c.beginPath();c.roundRect(68,52,184,96,28);c.fill();
-  for(let i=0;i<5;i++)_F(c,157+i*7-17,i%2===0?14:19,7,10,i%2===0?'#fff':'#222');
-  const rcar=(cx,cy,ang,col)=>{c.save();c.translate(cx,cy);c.rotate(ang);_F(c,-10,-5,20,10,col);_F(c,-6,-7,5,14,'rgba(0,0,0,0.45)');c.restore();};
-  rcar(88,100,-0.2,'#00ffd0');rcar(128,40,0.5,'#ff3366');rcar(228,82,-2.8,'#ffcc00');
-  c.strokeStyle='rgba(0,255,208,0.14)';c.lineWidth=1;[[78,98,50,96],[74,103,44,101],[82,107,54,105]].forEach(([x1,y1,x2,y2])=>{c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();});
-  c.fillStyle='#00ffd0';c.font='bold 8px monospace';c.textAlign='right';c.fillText('340 km/h',310,20);
+  // night stadium, a red running track in perspective, a sprinter clearing a hurdle
+  _GV(c,0,0,320,200,'#02040a','#060c1c');
+  // stadium lights + crowd glow
+  [[40,18],[280,18]].forEach(([x,y])=>{ const g=c.createRadialGradient(x,y,0,x,y,70); g.addColorStop(0,'rgba(200,255,250,.55)'); g.addColorStop(1,'rgba(200,255,250,0)'); c.fillStyle=g; c.fillRect(0,0,320,110); _F(c,x-10,y-3,20,6,'#e8fffb'); });
+  for(let i=0;i<70;i++){ c.fillStyle=`rgba(${120+i*7%120},${80+i*13%120},255,.35)`; c.fillRect((i*37)%320,62+(i*11)%14,3,3); }
+  _F(c,0,78,320,4,'#0d1a2e');
+  // track: trapezoid lanes converging to the horizon
+  c.fillStyle='#7a1f22'; c.beginPath(); c.moveTo(118,82); c.lineTo(202,82); c.lineTo(320,200); c.lineTo(0,200); c.closePath(); c.fill();
+  c.strokeStyle='rgba(255,255,255,.75)'; c.lineWidth=1.4;
+  for(let k=0;k<=6;k++){ const t=k/6; c.beginPath(); c.moveTo(118+84*t,82); c.lineTo(0+320*t,200); c.stroke(); }
+  // finish line + distance marks
+  for(let i=0;i<14;i++){ c.fillStyle=i%2?'#fff':'#111'; c.fillRect(120+i*6,84,6,4); }
+  // hurdles (getting smaller toward the horizon)
+  [[166,1.0],[112,0.5]].forEach(([y,sc])=>{ const w=150*sc, x=160-w/2+20*sc;
+    c.fillStyle='#f4f4f4'; c.fillRect(x,y,w,5*sc+2); c.fillStyle='#ff3a3a'; for(let i=0;i<4;i++) c.fillRect(x+i*w/4,y,w/8,5*sc+2);
+    _L(c,x+3,y,x+3,y+26*sc,'#cfd6e0',2); _L(c,x+w-3,y,x+w-3,y+26*sc,'#cfd6e0',2); });
+  // the sprinter mid-leap (cyan neon stick figure)
+  c.save(); c.shadowColor='#00f5ff'; c.shadowBlur=12; c.strokeStyle='#00f5ff'; c.lineWidth=5; c.lineCap='round';
+  // hurdling form: body leaning in, lead leg straight out front, trail leg folded to the side
+  const hx=168, hy=104;
+  c.beginPath(); c.moveTo(hx+10,hy+10); c.lineTo(hx-6,hy+34); c.stroke();                       // torso, leaning forward
+  c.beginPath(); c.moveTo(hx-6,hy+34); c.lineTo(hx+22,hy+44); c.lineTo(hx+44,hy+46); c.stroke();   // lead leg, nearly straight
+  c.beginPath(); c.moveTo(hx-6,hy+34); c.lineTo(hx-28,hy+38); c.lineTo(hx-18,hy+52); c.stroke();   // trail leg, knee out
+  c.beginPath(); c.moveTo(hx+6,hy+16); c.lineTo(hx+28,hy+26); c.stroke();                       // reaching arm
+  c.beginPath(); c.moveTo(hx+4,hy+18); c.lineTo(hx-14,hy+12); c.lineTo(hx-24,hy+20); c.stroke(); // swinging arm
+  _C(c,hx+16,hy+2,7,'#00f5ff'); c.restore();
+  // speed streaks
+  for(let i=0;i<5;i++) _L(c,104-i*6,120+i*7,144-i*4,120+i*7,`rgba(0,245,255,${.5-i*.08})`,2);
+  // HUD
+  c.font='bold 12px monospace'; c.textAlign='left'; c.fillStyle='#ffe600'; c.fillText('9.84s',12,190);
+  c.textAlign='right'; c.fillStyle='rgba(0,245,255,.9)'; c.fillText('100M',308,190);
   _SC(c);
 },
 
@@ -898,6 +944,55 @@ const DRAW={
   c.fillStyle='rgba(180,180,180,0.5)';c.font='12px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText('nothing.',160,100);
 },
 
+'barrier':(c)=>{
+  // a runway into the distance: two gates (×3 good, −8 bad) and a numbered wall, a crowd surging forward
+  _GV(c,0,0,320,200,'#031410','#062a20');
+  // road in perspective
+  c.fillStyle='#0b1f2a'; c.beginPath(); c.moveTo(130,16); c.lineTo(190,16); c.lineTo(310,200); c.lineTo(10,200); c.closePath(); c.fill();
+  c.strokeStyle='rgba(61,255,192,.22)'; c.lineWidth=1;
+  for(let i=0;i<9;i++){ const t=i/8, y=16+184*t*t; c.beginPath(); c.moveTo(130-120*t*t,y); c.lineTo(190+120*t*t,y); c.stroke(); }
+  _L(c,160,16,160,200,'rgba(255,255,255,.12)',2);
+  // the numbered barrier far away
+  c.save(); c.shadowColor='#ff4d6d'; c.shadowBlur=10; _F(c,128,30,64,18,'#ff4d6d'); c.restore();
+  c.font='900 13px sans-serif'; c.textAlign='center'; c.fillStyle='#fff'; c.fillText('42',160,44);
+  // the two gates
+  const gate=(x,w,col,txt)=>{ c.save(); c.fillStyle=col.replace('1)','.22)'); c.fillRect(x,70,w,36); c.shadowColor=col; c.shadowBlur=12; c.strokeStyle=col; c.lineWidth=3; c.strokeRect(x,70,w,36); c.restore();
+    c.font='900 22px sans-serif'; c.fillStyle='#fff'; c.textAlign='center'; c.fillText(txt,x+w/2,96); };
+  gate(92,66,'rgba(61,255,192,1)','×3'); gate(162,66,'rgba(255,77,109,1)','−8');
+  // the crowd: little glowing runners, tighter near the front
+  c.save(); c.shadowColor='#7dfcff'; c.shadowBlur=6;
+  for(let i=0;i<34;i++){ const r=(i*0.618)%1, row=Math.floor(i/7), x=118+r*84+Math.sin(i)*6, y=150+row*9+Math.cos(i*2.1)*3;
+    c.fillStyle=i%5? '#7dfcff' : '#ffffff'; c.beginPath(); c.arc(x,y-6,3,0,6.283); c.fill(); c.fillRect(x-2,y-3,4,7); }
+  c.restore();
+  // HUD
+  c.font='800 16px sans-serif'; c.textAlign='left'; c.fillStyle='#7dfcff'; c.fillText('34',12,26);
+  c.font='600 9px sans-serif'; c.fillStyle='rgba(200,255,240,.7)'; c.fillText('CROWD',12,37);
+  c.font='800 14px sans-serif'; c.textAlign='right'; c.fillStyle='#eafff8'; c.fillText('418 m',308,26);
+  _SC(c);
+},
+'quoridor':(c)=>{
+  // 9×9 board seen at an angle-free top view: two pawns racing, walls cutting off the path
+  _GV(c,0,0,320,200,'#0a1428','#12233f');
+  const N=9, cell=19, gap=2, bx=160-(N*cell+(N-1)*gap)/2, by=100-(N*cell+(N-1)*gap)/2;
+  for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+    c.fillStyle=(y===0)?'rgba(255,90,120,.22)':(y===N-1)?'rgba(80,170,255,.22)':'#1a2c4e';
+    c.fillRect(bx+x*(cell+gap),by+y*(cell+gap),cell,cell); }
+  const P=(gx,gy)=>[bx+gx*(cell+gap),by+gy*(cell+gap)];
+  // walls (span two cells, sit in the grooves)
+  const wall=(gx,gy,horiz)=>{ const [x,y]=P(gx,gy); c.save(); c.shadowColor='#ffd166'; c.shadowBlur=8; c.fillStyle='#ffd166';
+    if(horiz) c.fillRect(x,y+cell,cell*2+gap,gap+1); else c.fillRect(x+cell,y,gap+1,cell*2+gap); c.restore(); };
+  wall(2,2,true); wall(4,3,false); wall(5,5,true); wall(3,6,true); wall(1,4,false); wall(6,1,false);
+  // pawns
+  const pawn=(gx,gy,col)=>{ const [x,y]=P(gx,gy); c.save(); c.shadowColor=col; c.shadowBlur=14;
+    _C(c,x+cell/2,y+cell/2,7.5,col); c.restore(); _C(c,x+cell/2-2,y+cell/2-2,2.4,'rgba(255,255,255,.7)'); };
+  pawn(4,6,'#4fa8ff'); pawn(5,2,'#ff5a78');
+  // the blue pawn's planned route
+  c.strokeStyle='rgba(79,168,255,.6)'; c.setLineDash([3,3]); c.lineWidth=2; c.beginPath();
+  [[4,6],[4,5],[3,5],[3,4],[3,3],[3,2],[3,1],[3,0]].forEach(([gx,gy],i)=>{ const [x,y]=P(gx,gy); i?c.lineTo(x+cell/2,y+cell/2):c.moveTo(x+cell/2,y+cell/2); }); c.stroke(); c.setLineDash([]);
+  // wall counters at the sides
+  c.font='800 10px sans-serif'; c.textAlign='center';
+  [[26,'#4fa8ff','7'],[294,'#ff5a78','5']].forEach(([x,col,n])=>{ for(let i=0;i<+n;i++){ c.fillStyle=col; c.globalAlpha=.75; c.fillRect(x-8,40+i*16,16,4); } c.globalAlpha=1; c.fillStyle=col; c.fillText('WALLS',x,180); });
+},
 fallback:(c,g)=>{
   _GV(c,0,0,320,200,g.color[0],g.color[1]);
   c.fillStyle='rgba(255,255,255,0.08)';c.font='56px sans-serif';c.textAlign='center';c.textBaseline='middle';

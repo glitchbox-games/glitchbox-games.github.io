@@ -119,12 +119,19 @@ body::before {
 .featured-scanlines { position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px); }
 .featured-corner { position:absolute; top:0; right:0; width:80px; height:80px; border-top:2px solid var(--pink); border-right:2px solid var(--pink); box-shadow:4px -4px 20px var(--glow-p); }
 .featured-corner-bl { position:absolute; bottom:0; left:0; width:60px; height:60px; border-bottom:2px solid var(--cyan); border-left:2px solid var(--cyan); box-shadow:-4px 4px 20px var(--glow-c); }
+.featured-art { position:absolute; top:-12%; right:0; height:124%; aspect-ratio:16/10; z-index:1; display:block;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 14%,#000 30%); mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 14%,#000 30%);
+  transform-origin:70% 50%; animation:featDrift 18s ease-in-out infinite alternate; opacity:0; transition:opacity .5s; }
+.featured-art.ready { opacity:1; }
+.featured:hover .featured-art { animation-play-state:paused; }
+@keyframes featDrift { from { transform:scale(1.02) translateX(0); } to { transform:scale(1.1) translateX(-14px); } }
+.featured-emoji { font-size:22px; margin-right:6px; filter:drop-shadow(0 0 8px rgba(255,255,255,.35)); }
 .featured-info { position:relative; z-index:2; padding:24px 28px; background:linear-gradient(to top,rgba(0,0,0,0.9),rgba(0,0,0,0.4) 60%,transparent); width:100%; }
 .featured-tag { font-family:'Press Start 2P',monospace; font-size:7px; letter-spacing:2px; color:var(--pink); text-shadow:0 0 10px var(--pink); margin-bottom:10px; }
 .featured h2 { font-family:'Press Start 2P',monospace; font-size:18px; color:#fff; text-shadow:0 0 20px rgba(255,255,255,0.4); margin-bottom:8px; line-height:1.4; }
 .featured p { color:#8090b0; font-size:14px; font-weight:500; max-width:480px; }
 .featured-play {
-  position:absolute; top:50%; right:36px; transform:translateY(-50%); z-index:2;
+  position:absolute; top:50%; right:36px; transform:translateY(-50%); z-index:3;
   width:60px; height:60px; background:var(--pink); box-shadow:0 0 30px var(--glow-p);
   display:flex; align-items:center; justify-content:center; font-size:22px;
   clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); transition:box-shadow 0.2s,transform 0.2s;
@@ -146,7 +153,27 @@ body::before {
 .game-card:hover { transform:translateY(-5px); border-color:rgba(0,245,255,0.35); box-shadow:0 8px 30px rgba(0,0,0,0.5),0 0 20px rgba(0,245,255,0.1); }
 .game-card:hover::after { border-top-color:var(--cyan); }
 .game-thumb { width:100%; aspect-ratio:16/10; position:relative; overflow:hidden; display:block; }
-.thumb-canvas { width:100%; height:100%; display:block; }
+.thumb-canvas { width:100%; height:100%; display:block; transition:transform .35s cubic-bezier(.2,.7,.2,1), filter .35s; }
+.game-card:not(.locked):hover .thumb-canvas { transform:scale(1.06); filter:saturate(1.15) brightness(1.08); }
+/* tiles fade/slide in, one after another, when the grid changes */
+.game-grid.entering .game-card { animation:cardIn .42s cubic-bezier(.2,.7,.2,1) both; animation-delay:calc(var(--i,0) * 28ms); }
+@keyframes cardIn { from { opacity:0; transform:translateY(14px) scale(.97); } to { opacity:1; transform:none; } }
+/* whole-page entrance + exit when you open a game */
+body { animation:pageIn .38s ease-out both; }
+@keyframes pageIn { from { opacity:0; } to { opacity:1; } }
+body.leaving .main, body.leaving .sidebar { transition:opacity .2s ease-in, transform .2s ease-in, filter .2s; opacity:0; transform:scale(.985); filter:blur(2px); }
+.page-wipe { position:fixed; inset:0; z-index:20000; pointer-events:none; opacity:0; transition:opacity .22s ease-in;
+  background:radial-gradient(circle at var(--wx,50%) var(--wy,50%), rgba(0,245,255,.25), #04050a 60%); }
+body.leaving .page-wipe { opacity:1; }
+/* windows pop open instead of appearing */
+.profile-modal.show .profile-card, .shop-modal.show .shop-card, .gbs-modal.show .gbs-card,
+.auth-overlay:not(.hidden) .auth-card, .ban-screen.show .auth-card { animation:popIn .26s cubic-bezier(.2,.8,.25,1.15) both; }
+@keyframes popIn { from { opacity:0; transform:translateY(10px) scale(.96); } to { opacity:1; transform:none; } }
+.profile-modal.show, .shop-modal.show, .gbs-modal.show { animation:fadeIn .2s ease-out both; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.001ms !important; animation-delay:0s !important; transition-duration:.001ms !important; }
+}
 .game-thumb-scan { position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.1) 3px,rgba(0,0,0,0.1) 4px); pointer-events:none; }
 .game-thumb-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.3); opacity:0; transition:opacity 0.2s; display:flex; align-items:center; justify-content:center; }
 .game-card:hover .game-thumb-overlay { opacity:1; }
@@ -670,6 +697,34 @@ body.sb-pinned { padding-left:var(--rail-open); }
 .sb-pin:hover { color:var(--cyan); border-color:var(--cyan); box-shadow:0 0 12px var(--glow-c); }
 .sb-pin.on { color:var(--cyan); border-color:var(--cyan); }
 @media (max-width:900px) { body, body.sb-pinned { padding-left:0; } }
+/* a slow neon glow drifting behind everything — the arcade breathes a little */
+body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-events:none;
+  background:radial-gradient(40% 35% at 20% 30%, rgba(0,245,255,.07), transparent 70%),
+             radial-gradient(35% 30% at 80% 70%, rgba(255,0,128,.07), transparent 70%);
+  animation:ambient 24s ease-in-out infinite alternate; }
+@keyframes ambient { from { transform:translate(0,0) rotate(0deg); } to { transform:translate(4%,-3%) rotate(8deg); } }
+.dice-btn { gap:6px; }
+.dice-btn.rolling { animation:diceShake .45s ease-in-out; }
+@keyframes diceShake { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-14deg) scale(1.08); } 75% { transform:rotate(12deg) scale(1.08); } }
+@media (max-width:600px) { .dice-txt { display:none; } }
+/* ── phones + small tablets ── the rail is gone, so the whole menu becomes a
+   drawer behind a ☰ button (it used to vanish — no categories, shop or sign-in). */
+.nav-toggle { display:none; flex-shrink:0; width:40px; height:40px; background:var(--bg3); cursor:pointer;
+  border:1px solid rgba(0,245,255,.3); color:var(--cyan); font-size:20px; line-height:1;
+  clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%); }
+.nav-scrim { position:fixed; inset:0; z-index:199; background:rgba(2,4,10,.6); backdrop-filter:blur(3px);
+  opacity:0; pointer-events:none; transition:opacity .22s; }
+@media (max-width:900px) {
+  .nav-toggle { display:block; }
+  .sidebar { display:flex !important; width:var(--rail-open); transform:translateX(-102%);
+    transition:transform .26s cubic-bezier(.4,0,.2,1); box-shadow:14px 0 44px rgba(0,0,0,.6); }
+  .sidebar .logo-text, .sidebar .logo-sub, .sidebar .sidebar-label, .sidebar .nav-text, .sidebar .nav-count,
+  .sidebar .sidebar-user-info, .sidebar .logout-btn, .sidebar #guest-auth { opacity:1; }
+  .sidebar .sb-pin { display:none; }
+  body.nav-open .sidebar { transform:none; }
+  body.nav-open .nav-scrim { opacity:1; pointer-events:auto; }
+  .featured-art { opacity:.55 !important; }
+}
 </style>
 </head>
 <body>
@@ -933,9 +988,10 @@ body.sb-pinned { padding-left:var(--rail-open); }
   <div class="announce hidden" id="announce"><span class="an-icon" id="an-icon">📣</span>
     <span class="an-text" id="an-text"></span><button class="an-x" onclick="dismissAnnounce()" title="Hide">✕</button></div>
   <div class="topbar">
+    <button class="nav-toggle" id="nav-toggle" onclick="toggleNav()" aria-label="Menu" title="Menu">☰</button>
     <div class="search-wrap">
       <span class="search-icon">⌕</span>
-      <input type="text" id="search" placeholder="SEARCH GAMES..." oninput="renderGames()" />
+      <input type="text" id="search" placeholder="SEARCH GAMES..." oninput="gridEnter=true;renderGames()" />
     </div>
     <div class="tag-filter">
       <button class="tag-btn active" onclick="setSort('all',this,'')">ALL</button>
@@ -943,6 +999,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
       <button class="tag-btn" onclick="setSort('new',this,'yellow')">★ NEW</button>
       <button class="tag-btn" onclick="setSort('mp',this,'')">⬡ MULTI</button>
     </div>
+    <button class="mode-btn dice-btn" id="dice-btn" onclick="surpriseMe(this)" title="Open a random game">🎲<span class="dice-txt"> SURPRISE ME</span></button>
     <button class="mode-btn" id="mode-btn" onclick="togglePlayMode()" title="How games open">
       <span class="mb-icon" id="mb-icon">▣</span><span id="mb-text">FRAMED</span>
     </button>
@@ -952,12 +1009,13 @@ body.sb-pinned { padding-left:var(--rail-open); }
   </div>
   <div class="content">
     <a class="featured" id="featured-link" href="pixel-war.html">
+      <canvas class="featured-art" id="featured-art" width="640" height="400" aria-hidden="true"></canvas>
       <div class="featured-scanlines"></div>
       <div class="featured-corner"></div><div class="featured-corner-bl"></div>
       <div class="featured-play">▶</div>
       <div class="featured-info">
         <div class="featured-tag">// FEATURED GAME</div>
-        <h2 id="featured-name">PIXEL WAR</h2>
+        <h2><span class="featured-emoji" id="featured-emoji">🪖</span><span id="featured-name">PIXEL WAR</span></h2>
         <p id="featured-blurb">War Thunder-style vehicle combat — pilot tanks, planes, ships and AA guns against AI. Armor pen, module damage, B-2 bombers.</p>
       </div>
     </a>
@@ -1013,14 +1071,25 @@ function paintPlayMode(){
 
 // The owner picks the featured game from the console (meta.featured); Pixel War otherwise.
 var featuredFile = 'pixel-war.html';
+const FEATURED_DEFAULT_BLURB = 'War Thunder-style vehicle combat — pilot tanks, planes, ships and AA guns against AI. Armor pen, module damage, B-2 bombers.';
+// The banner shows the featured game's own logo art, drawn big on the right.
+function paintFeaturedArt(){
+  const cv = document.getElementById('featured-art'), g = GAMES.find(x => x.file === featuredFile);
+  if(!cv || !g) return;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height); ctx.setTransform(2,0,0,2,0,0);
+  drawThumb(ctx, g);
+  cv.classList.add('ready');
+}
 function applyFeatured(file){
-  const g = file && GAMES.find(x => x.file === file);
-  const want = g ? g.file : 'pixel-war.html';
-  if(want === featuredFile) return;
-  featuredFile = want;
-  const n = document.getElementById('featured-name'), b = document.getElementById('featured-blurb');
-  if(g){ n.textContent = (g.emoji ? g.emoji + ' ' : '') + g.name.toUpperCase(); b.textContent = g.blurb || ('A ' + g.category + ' game — the owner\'s pick.'); }
-  else location.reload();   // back to the default banner text
+  const g = (file && GAMES.find(x => x.file === file)) || GAMES.find(x => x.file === 'pixel-war.html');
+  if(!g) return;
+  featuredFile = g.file;
+  document.getElementById('featured-name').textContent = g.name.toUpperCase();
+  document.getElementById('featured-emoji').textContent = g.emoji || '🎮';
+  document.getElementById('featured-blurb').textContent = g.file === 'pixel-war.html' ? FEATURED_DEFAULT_BLURB
+    : (g.blurb || ('A ' + g.category + ' game — the owner\'s pick.'));
+  paintFeaturedArt();
   paintPlayMode();
 }
 
@@ -1260,14 +1329,19 @@ function buyIcon(id){
   pickIcon(id);
 }
 
+// First signed-in visit: seed the wallet so the shelf isn't a brick wall. Guests get
+// no tokens, so this waits for a sign-in (claimStartup runs before currentUser is set,
+// which is why it reads the stored user instead).
+function grantWelcome(){
+  if(localStorage.getItem(TOK.bal)!==null) return;
+  setTokens(WELCOME_GRANT);
+  tokenToast('+'+WELCOME_GRANT,'Welcome bonus — spend it well');
+}
 function claimStartup(){
-  // First ever visit: seed the wallet so the shelf isn't a brick wall.
-  if(localStorage.getItem(TOK.bal)===null){
-    setTokens(WELCOME_GRANT);
-    tokenToast('+'+WELCOME_GRANT,'Welcome bonus — spend it well');
-  }
+  const signedIn = !!jsonGet('glitchbox_user', null);
+  if(signedIn) grantWelcome();
   paintDaily();
-  if(dailyInfo().ready) setTimeout(()=>tokenToast('DAILY','Reward ready — open the token shop'),700);
+  if(signedIn && dailyInfo().ready) setTimeout(()=>tokenToast('DAILY','Reward ready — open the token shop'),700);
   // Anything earned while walking into a game last time.
   const q=jsonGet(TOK.queue,[]);
   if(Array.isArray(q)&&q.length){
@@ -1458,10 +1532,11 @@ addEventListener('storage',e=>{
 });
 
 let activeCategory='all',activeSort='all';
+var gridEnter=true;   // stagger the tiles in on first paint and whenever the view changes
 
 function filterCategory(cat){
   if(cat==='favorites' && guestWall('save favorites')) return;
-  activeCategory=cat;
+  activeCategory=cat; gridEnter=true;
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav-'+cat);if(el)el.classList.add('active');
   const L={all:'ALL GAMES',favorites:'FAVORITES',special:'SPECIAL GAMES // TOKEN SHELF',action:'ACTION',strategy:'STRATEGY',puzzle:'PUZZLE',simulation:'SIMULATION',adventure:'ADVENTURE',multiplayer:'MULTIPLAYER',other:'OTHER'};
@@ -1469,7 +1544,7 @@ function filterCategory(cat){
   renderGames();
 }
 function setSort(sort,btn,colorClass){
-  activeSort=sort;
+  activeSort=sort; gridEnter=true;
   document.querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('active','pink','yellow'));
   btn.classList.add('active');if(colorClass)btn.classList.add(colorClass);
   renderGames();
@@ -1486,6 +1561,8 @@ function renderGames(){
   if(q)games=games.filter(g=>g.name.toLowerCase().includes(q)||g.category.includes(q));
   const grid=document.getElementById('game-grid'),noRes=document.getElementById('no-results');
   grid.innerHTML='';
+  grid.classList.remove('entering');
+  if(gridEnter){ void grid.offsetWidth; grid.classList.add('entering'); gridEnter=false; }
   if(!games.length){
     const emptyFav=activeCategory==='favorites';
     noRes.querySelector('div').textContent=emptyFav?'★':'🕹';
@@ -1498,6 +1575,7 @@ function renderGames(){
     const locked=isLocked(g)||off;
     const a=document.createElement('a');
     a.className='game-card'+(locked?' locked':'');
+    a.style.setProperty('--i', Math.min(grid.children.length, 24));
     a.href=locked?'#':gameURL(g.file);        // locked tiles open the shop, not the game
     const badges=g.tags.map(t=>`<span class="game-tag ${t}">${t==='hot'?'▲ HOT':t==='new'?'★ NEW':t==='mp'?'⬡ MULTI':t}</span>`).join('')
       +(g.price?`<span class="game-tag special">${locked?'🔒 '+g.price:'✦ OWNED'}</span>`:'');
@@ -1546,7 +1624,30 @@ function updateCounts(){
   if(s)s.textContent=GAMES.filter(g=>isLocked(g)).length;     // how many are still locked
   paintTokens();
 }
-claimStartup();captureRef();paintPlayMode();updateCounts();renderGames();
+claimStartup();captureRef();paintPlayMode();updateCounts();renderGames();paintFeaturedArt();
+
+// ── leaving for a game ── the arcade fades out behind a cyan wipe that grows from where
+// you clicked, so opening a game feels like a transition instead of a hard cut. Runs in
+// the bubble phase, after the terms gate and locked tiles have had their say.
+(function(){
+  const wipe=document.createElement('div'); wipe.className='page-wipe'; document.body.appendChild(wipe);
+  document.addEventListener('click', e=>{
+    if(e.defaultPrevented || e.button!==0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a=e.target.closest && e.target.closest('a[href]');
+    if(!a || a.target==='_blank') return;
+    const href=a.getAttribute('href')||'', file=fileFromHref(href);
+    if(!file || !GAMES.some(g=>g.file===file)) return;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    e.preventDefault();
+    document.documentElement.style.setProperty('--wx', e.clientX+'px');
+    document.documentElement.style.setProperty('--wy', e.clientY+'px');
+    wipe.style.setProperty('--wx', e.clientX+'px'); wipe.style.setProperty('--wy', e.clientY+'px');
+    document.body.classList.add('leaving');
+    setTimeout(()=>{ location.href=href; }, 190);
+  });
+  // coming back with the browser's Back button restores the page from cache — undo the fade
+  addEventListener('pageshow', ()=>document.body.classList.remove('leaving'));
+})();
 // Deep links. Queued behind a tick so the sign-in pass has already run — the icon
 // picker needs to know whether you're signed in before it decides where to send you.
 if(location.hash==='#shop')  addEventListener('load',()=>setTimeout(openShop,0));
@@ -1864,6 +1965,7 @@ if(/^#terms:/.test(location.hash)) addEventListener('load', () => setTimeout(() 
 
 function applyUser(user){
   currentUser = user;
+  grantWelcome();
   document.getElementById('auth-overlay').classList.add('hidden');
   document.body.classList.remove('locked');
   paintSidebarAvatar();
@@ -2477,7 +2579,8 @@ if(location.hash==='#tokencheck'){
     currentUser=null; tosClear('guest');
     const tile=document.querySelector('#game-grid a.game-card:not(.locked)');
     let navigated=false; const stopNav=ev=>{ if(!ev.defaultPrevented){ ev.preventDefault(); navigated=true; } };
-    addEventListener('click',stopNav);           // bubble phase: only reached if the gate let it through
+    // document capture: after the terms gate (window capture), before the page-exit fade (document bubble)
+    document.addEventListener('click',stopNav,true);
     tile.click();
     ok('a guest who has not agreed gets the terms instead of the game', document.getElementById('tos-screen').classList.contains('show') && !navigated);
     ok('and is sent on to that game afterwards', tosNext===safeGameHref(tile.getAttribute('href')) && !!tosNext);
@@ -2487,7 +2590,7 @@ if(location.hash==='#tokencheck'){
     localStorage.setItem('glitchbox.tos.guest',TOS_VERSION);
     tile.click();
     ok('a guest who agreed goes straight to the game', navigated && !document.getElementById('tos-screen').classList.contains('show'));
-    removeEventListener('click',stopNav);
+    document.removeEventListener('click',stopNav,true);
     ok('only game pages are allowed as the way back', !safeGameHref('https://evil.example/x.html') && !safeGameHref('//evil.example/a.html')
       && !safeGameHref('index.html') && !safeGameHref('javascript:alert(1)') && safeGameHref('imposter.html#room=ABCD')==='imposter.html#room=ABCD'
       && !!safeGameHref('play.html?g=gridlock.html'));
@@ -2602,6 +2705,36 @@ window.addEventListener('load', initGoogleAuth);
 
 /* ── sidebar pin ── the rail unfolds on hover for free; this locks it
    open (and widens the gutter so it stops covering the grid). */
+// 🎲 Surprise me: a random game you can actually open right now (not locked, not
+// switched off, not "Nothing"), sent through the normal play flow so the reward,
+// the terms gate and the page transition all still apply.
+function surpriseMe(btn){
+  const pool = GAMES.filter(g => !isLocked(g) && !isOff(g.file) && g.file !== 'nothing.html');
+  if(!pool.length) return;
+  const g = pool[Math.floor(Math.random() * pool.length)];
+  btn.classList.remove('rolling'); void btn.offsetWidth; btn.classList.add('rolling');
+  noticeToast('🎲 ' + g.name.toUpperCase(), 'Rolling the dice…', 1400);
+  setTimeout(() => {
+    const a = document.createElement('a');
+    a.href = gameURL(g.file); a.style.display = 'none';
+    a.addEventListener('click', () => rewardPlay(g.file, g.name));
+    document.body.appendChild(a); a.click(); a.remove();
+  }, 520);
+}
+// Phone drawer: ☰ opens the menu; tapping outside, a menu item, or Esc closes it.
+function toggleNav(on){
+  const open = on === undefined ? !document.body.classList.contains('nav-open') : on;
+  document.body.classList.toggle('nav-open', open);
+  document.getElementById('nav-toggle').textContent = open ? '✕' : '☰';
+}
+(function(){
+  const scrim=document.createElement('div'); scrim.className='nav-scrim'; scrim.onclick=()=>toggleNav(false);
+  document.body.appendChild(scrim);
+  document.querySelector('.sidebar').addEventListener('click', e=>{
+    if(e.target.closest('.nav-item, .logout-btn, #guest-auth button, .sidebar-user-info') && innerWidth<=900) toggleNav(false);
+  });
+  addEventListener('keydown', e=>{ if(e.key==='Escape' && document.body.classList.contains('nav-open')) toggleNav(false); });
+})();
 function toggleSidebarPin(on){
   const bar = document.querySelector('.sidebar'), btn = document.getElementById('sb-pin');
   if(on === undefined) on = !document.body.classList.contains('sb-pinned');

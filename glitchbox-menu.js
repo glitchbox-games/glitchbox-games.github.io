@@ -311,6 +311,7 @@
       // deliberately no preventDefault — the anchor's own navigation is the
       // thing that gets you home, so it works even if scripting is hampered
       try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {}
+      fadeOut();
     });
     // Clicking anywhere ELSE dismisses the confirm. This must ignore pointers
     // landing on our own UI: it runs in the capture phase, so without the guard
@@ -376,6 +377,58 @@
       }, 600);
     }
   }
+
+  // Quitting fades to the arcade's dark instead of a hard cut (navigation still
+  // happens on its own — this only paints over the game while it does).
+  function fadeOut() {
+    try {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var f = document.createElement('div');
+      f.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:#04050a;opacity:0;transition:opacity .18s ease-in;pointer-events:none';
+      (document.body || document.documentElement).appendChild(f);
+      requestAnimationFrame(function () { f.style.opacity = '1'; });
+    } catch (_) {}
+  }
+
+  // ── 3D games on devices without WebGL ── some school Chromebooks and older PCs
+  // have 3D graphics switched off, and three.js games then die on a blank screen.
+  // Catch that one failure and explain it instead.
+  var webglShown = false;
+  function webglHelp() {
+    if (webglShown) return;
+    webglShown = true;
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:2147483645;display:flex;align-items:center;justify-content:center;padding:20px;' +
+      'background:radial-gradient(ellipse at 50% 30%,rgba(0,245,255,.12),transparent 60%),#05070e;color:#d0d8f0;font:500 15px/1.5 system-ui,sans-serif;text-align:center';
+    d.innerHTML = '<div style="max-width:440px"><div style="font-size:46px">🧊</div>' +
+      '<div style="font:800 20px system-ui,sans-serif;color:#00f5ff;margin:8px 0 10px;letter-spacing:.5px">THIS GAME NEEDS 3D GRAPHICS</div>' +
+      '<div>Your browser has 3D graphics (WebGL) turned off, so this game can\'t start here.</div>' +
+      '<div style="margin-top:10px;color:#8b95a8;font-size:13px">On Chrome: Settings → System → turn on <b>Use graphics acceleration when available</b>, then restart Chrome. ' +
+      'Or try another device.</div>' +
+      '<a href="index.html" style="display:inline-block;margin-top:18px;padding:11px 22px;background:#00f5ff;color:#001014;font-weight:800;text-decoration:none;letter-spacing:1px">◀ BACK TO THE ARCADE</a></div>';
+    (document.body || document.documentElement).appendChild(d);
+  }
+  addEventListener('error', function (e) {
+    var m = String((e && (e.message || (e.error && e.error.message))) || '');
+    if (/webgl|WebGL context/i.test(m)) webglHelp();
+  });
+  // The game's own module usually runs (and fails) before this script, so also
+  // check up front on any page that loads three.js.
+  try {
+    var usesThree = [].some.call(document.scripts, function (sc) {
+      return /three/i.test(sc.src || '') || (sc.type === 'importmap' && /three/i.test(sc.textContent || ''));
+    });
+    if (usesThree && !/smoke|check/.test(location.hash)) {
+      var tc = document.createElement('canvas');
+      if (!(tc.getContext('webgl2') || tc.getContext('webgl'))) {
+        if (document.body) webglHelp(); else document.addEventListener('DOMContentLoaded', webglHelp);
+      }
+    }
+  } catch (_) {}
+  addEventListener('unhandledrejection', function (e) {
+    var m = String((e && e.reason && (e.reason.message || e.reason)) || '');
+    if (/webgl|WebGL context/i.test(m)) webglHelp();
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', build);

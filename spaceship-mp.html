@@ -320,6 +320,11 @@
     <div class="class-card" data-class="tank"><div class="cls-icon">🛡️</div><div class="cls-name">Tank</div><div class="cls-desc">Tough hull · ✦ Shockwave</div><div class="cls-stats">HP 220 · Fire ×0.65 · Spd ×0.72</div></div>
     <div class="class-card" data-class="support"><div class="cls-icon">💚</div><div class="cls-name">Support</div><div class="cls-desc">Heals crew · ✦ Repair</div><div class="cls-stats">HP 110 · Heals allies · Spd ×1.05</div></div>
   </div>
+  <div id="roomPick" style="display:none;margin:4px 0 10px">
+    <input id="roomCodeIn" placeholder="Room code — leave empty to host" maxlength="4" autocomplete="off" spellcheck="false"
+      style="text-transform:uppercase;letter-spacing:3px;text-align:center" />
+    <div class="meta" style="margin-top:4px">Empty = start a new game and get a code to share · a code = join a friend</div>
+  </div>
   <button id="joinBtn">Join Game</button>
   <div class="meta" id="connStatus" style="margin-top:10px"></div>
   <div id="lanInfo" style="display:none; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); text-align:center">
@@ -371,6 +376,8 @@
   <div class="touch-btn ability" id="abilityBtn">✦</div>
 </div>
 
+<script src="glitchbox-config.js"></script>
+<script src="glitchbox-hostnet.js"></script>
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -681,12 +688,63 @@ function bearing(from, to) {
 }
 
 let inputIntervalId = null;
+// On the arcade (GitHub Pages) there is no spaceship server, so the HOST's browser runs
+// the real simulation from spaceship-server.js and everyone connects through the
+// arcade's room relay (glitchbox-hostnet.js). Run from `node spaceship-server.js`
+// (port 8098) it works exactly as before.
+const HOSTED = location.port !== '8098' && !!window.GBHostNet;
+const SHIP_PRELUDE = `const wss = { on(ev, fn) { if (ev === 'connection') wss._conn = fn; } };`;
+const SHIP_GLUE = `
+  let started = false;
+  return {
+    setCode() {},
+    open(ws) {
+      ws._h = {}; ws.on = (ev, fn) => { ws._h[ev] = fn; };
+      wss._conn(ws);                                   // the server's own connection handler
+      if (!started) { started = true; setInterval(tick, 1000 / TICK_HZ); setInterval(broadcast, 1000 / NET_HZ); }
+    },
+    message(ws, msg) { if (ws._h.message) ws._h.message(JSON.stringify(msg)); },
+    close(ws) { if (ws._h.close) ws._h.close(); },
+  };`;
+if (HOSTED) {
+  document.getElementById('roomPick').style.display = '';
+  const m = /room=([A-Za-z]{4})/.exec(location.hash);
+  if (m) document.getElementById('roomCodeIn').value = m[1].toUpperCase();
+}
 function connect(name) {
   // Bug 19: clear any prior input loop so reconnects don't accumulate
   if (inputIntervalId) { clearInterval(inputIntervalId); inputIntervalId = null; }
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const host = location.host || ('localhost:8098');
-  ws = new WebSocket(`${proto}://${host}/`);
+  const wantCode = HOSTED ? (document.getElementById('roomCodeIn').value || '').toUpperCase().replace(/[^A-Z]/g, '') : '';
+  ws = HOSTED
+    ? GBHostNet.socket({
+        server: () => GBHostNet.loadServer('spaceship-server.js',
+          [['const PORT = 8098;', '// ── HTTP + WebSocket'], ["wss.on('connection'", 'setInterval(tick, 1000 / TICK_HZ);']], SHIP_GLUE, SHIP_PRELUDE),
+        isCreate: m => m.type === 'name' && !wantCode,
+        joinCode: m => m.type === 'name' && wantCode,
+        // A bad code: drop back to the welcome screen (the close handler resets it) with the reason.
+        error: text => { setTimeout(() => { try { ws.close(); } catch (e) {} document.getElementById('connStatus').textContent = text; }, 0); return { type: 'hostnet-error' }; },
+        thin: str => str.startsWith('{"type":"state"'),   // world snapshots
+        remoteHz: 20,
+        coalesce: m => m.type === 'input',
+        coalesceMs: 50,
+        max: 8,
+        onCode: (code, role) => {
+          let b = document.getElementById('roomBadge');
+          if (!b) {
+            b = document.createElement('div'); b.id = 'roomBadge';
+            b.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:50;padding:5px 12px;border-radius:999px;' +
+              'background:#0b1226dd;border:1px solid #2a3a66;color:#cfe3ff;font:600 12px system-ui,sans-serif;letter-spacing:.5px;cursor:pointer';
+            b.title = 'Click to copy an invite link';
+            b.onclick = () => { try { navigator.clipboard.writeText(location.href); b.dataset.t = b.textContent; b.textContent = 'Link copied ✓'; setTimeout(() => b.textContent = b.dataset.t, 1500); } catch (e) {} };
+            document.body.appendChild(b);
+          }
+          b.textContent = role === 'host' ? '🚀 ROOM ' + code + ' · friends join with this code' : '🚀 ROOM ' + code;
+          try { history.replaceState(null, '', location.pathname + location.search + '#room=' + code); } catch (e) {}
+        },
+      })
+    : new WebSocket(`${proto}://${host}/`);
   document.getElementById('connStatus').textContent = 'Connecting…';
 
   ws.addEventListener('open', () => {
@@ -710,6 +768,7 @@ function connect(name) {
     }, 33);
   });
   ws.addEventListener('close', () => {
+    const rb = document.getElementById('roomBadge'); if (rb) rb.remove();
     if (inputIntervalId) { clearInterval(inputIntervalId); inputIntervalId = null; }
     document.getElementById('connStatus').textContent = 'Disconnected';
     document.getElementById('welcomeStatus').classList.add('show');

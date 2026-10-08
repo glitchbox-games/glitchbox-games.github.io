@@ -241,6 +241,8 @@
   </div>
 </div>
 
+<script src="glitchbox-config.js"></script>
+<script src="glitchbox-hostnet.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const screens = ['connect','lobby','writing','voting','reveal','final'];
@@ -265,9 +267,41 @@ function showErr(msg) {
 let ws, myId = null, myCode = null, state = null;
 let lastPhase = null;
 
+// On the arcade (GitHub Pages) there is no Fib Factory server, so the host's own
+// browser runs the real server code (fib-factory-server.js) and everybody talks
+// through the arcade's room relay — see glitchbox-hostnet.js. The dedicated Node
+// server on :8100 still works exactly as before.
+const FIB_GLUE = `
+  let FORCED = null;
+  const _mk = makeRoom;
+  makeRoom = function () { const r = _mk(); if (FORCED && r.code !== FORCED) { rooms.delete(r.code); r.code = FORCED; rooms.set(FORCED, r); } return r; };
+  return {
+    setCode(c) { FORCED = c; },
+    open(ws) { ws.roomCode = null; ws.playerId = null; },
+    message(ws, msg) { handle(ws, msg); },
+    close(ws) {
+      const room = rooms.get(ws.roomCode);
+      if (!room) return;
+      const p = room.players.get(ws.playerId);
+      if (p) { p.connected = false; p.ws = null; }
+      reassignHostIfNeeded(room);
+      if (room.phase === 'writing') maybeAllWritten(room);
+      else if (room.phase === 'voting') maybeAllVoted(room);
+      if (activePlayers(room).length === 0) { clearTimer(room); rooms.delete(room.code); } else broadcast(room);
+    },
+  };`;
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}`);
+  ws = (location.port !== '8100' && window.GBHostNet)
+    ? GBHostNet.socket({
+        server: () => GBHostNet.loadServer('fib-factory-server.js',
+          [['const TRUTH_POINTS', '// ── Networking'], ['function handle(ws, msg)', 'server.listen(PORT']], FIB_GLUE),
+        isCreate: m => m.t === 'create',
+        joinCode: m => m.t === 'join' && m.code,
+        error: text => ({ t: 'error', msg: text }),
+        max: 12,
+      })
+    : new WebSocket(`${proto}://${location.host}`);
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data);
     if (m.t === 'joined') { myId = m.id; myCode = m.code; }
@@ -446,6 +480,8 @@ function loadQR() {
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 connect();
+// A friend's Join link (#room=CODE) fills in their code.
+{ const m = /room=([A-Za-z]{4})/.exec(location.hash); if (m) $('joincode').value = m[1].toUpperCase(); }
 </script>
 <script src="glitchbox-menu.js" defer></script>
 </body>

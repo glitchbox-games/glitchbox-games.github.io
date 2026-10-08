@@ -25,7 +25,7 @@ const ROOM_RE = /^[A-Z0-9]{3,8}$/;
 const ACTIVITY_KEEP = 35 * 86400000; // View shows a week; stats and badges look back a month
 // The relay games — what "Party Animal" counts, and the only games a friend can be joined in.
 const MP_FILES = ["imposter.html", "most-likely-to.html", "rhyme-bomb.html", "scrawl.html", "gridlock.html",
-  "blast-radius.html", "quoridor.html", "neon-frag.html", "mic-drop.html"];
+  "blast-radius.html", "quoridor.html", "neon-frag.html", "mic-drop.html", "fib-factory.html", "spaceship-mp.html"];
 // "Dave Smith" → "Dave S." — leaderboards are seen by people who aren't your friends.
 function shortName(n) {
   const w = String(n || "Player").trim().split(/\s+/);
