@@ -148,6 +148,9 @@ export class Hub extends DurableObject {
       this.sql.exec(`CREATE TABLE IF NOT EXISTS pending (
         id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, kind TEXT, text TEXT, created INTEGER)`);
       try { this.sql.exec("ALTER TABLE users ADD COLUMN last_ip TEXT"); } catch (e) { /* already there */ }
+      // Which version of the terms this player agreed to, and when — the record of consent.
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN tos_version TEXT"); } catch (e) { /* already there */ }
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN tos_at INTEGER"); } catch (e) { /* already there */ }
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
       if (!row) {
@@ -191,7 +194,7 @@ export class Hub extends DurableObject {
 
   userOf(sub) {
     return this.sql.exec(
-      "SELECT sub, email, name, picture, code, created, banned, ban_reason, ban_until, email_verified FROM users WHERE sub = ?",
+      "SELECT sub, email, name, picture, code, created, banned, ban_reason, ban_until, email_verified, tos_version, tos_at FROM users WHERE sub = ?",
       sub).toArray()[0] || null;
   }
 
@@ -496,6 +499,15 @@ export class Hub extends DurableObject {
     return { ...out, ...this.takePending("g:" + gid) };
   }
 
+  // The player ticked "I agree" on the terms screen.
+  async acceptTos(token, version) {
+    const me = await this.verifySession(token);
+    const v = String(version || "").slice(0, 32);
+    if (!/^[0-9a-z.-]{1,32}$/i.test(v)) throw new HttpError(400, "bad terms version");
+    this.sql.exec("UPDATE users SET tos_version = ?, tos_at = ? WHERE sub = ?", v, Date.now(), me);
+    return { ok: true, tos_version: v };
+  }
+
   // The hub banked these gifts; drop them so no other device banks them again.
   async claimGifts(token, ids) {
     const me = await this.verifySession(token);
@@ -564,7 +576,7 @@ export class Hub extends DurableObject {
       owner: this.ownerSub(),
       players: this.sql.exec(
         `SELECT u.sub, u.name, u.email, u.picture, u.code, u.created, u.last_seen,
-                u.banned, u.ban_reason, u.ban_until,
+                u.banned, u.ban_reason, u.ban_until, u.tos_version, u.tos_at,
                 CASE WHEN u.playing_at > ? THEN u.playing ELSE NULL END AS playing,
                 (SELECT COUNT(*) FROM friends f WHERE f.a = u.sub)      AS friends,
                 (SELECT COUNT(*) FROM saves s   WHERE s.sub = u.sub)    AS saves,
@@ -1101,6 +1113,7 @@ export default {
 
       if (request.method === "POST") {
         const body = await request.json().catch(() => ({}));
+        if (path === "/api/tos")      return json(await stub.acceptTos(auth, body.version), 200, origin);
         if (path === "/api/avatar")   return json(await stub.setAvatar(auth, body.picture), 200, origin);
         if (path === "/api/admin/claim")  return json(await stub.adminClaim(auth, body.code), 200, origin);
         if (path === "/api/admin/ban")    return json(await stub.adminBan(auth, body.sub, body.banned, body.reason, body.hours), 200, origin);

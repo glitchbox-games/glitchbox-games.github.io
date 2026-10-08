@@ -272,7 +272,9 @@
         '<div class="adm-meta">' + esc(p.email) + ' · code ' + esc(p.code || '—') + '</div>' +
         '<div class="adm-meta">' + p.friends + ' friends · ' + p.saves + ' saves · ' + p.reports +
           ' reports · seen ' + ago(p.last_seen) + (p.gifts ? ' · ' + p.gifts + ' gift' + (p.gifts > 1 ? 's' : '') + ' waiting' : '') +
-          (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div></div>' +
+          (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div>' +
+        '<div class="adm-meta">' + (p.tos_at ? '📜 agreed to the terms (' + esc(p.tos_version) + ') ' + ago(p.tos_at)
+          : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms yet</span>') + '</div></div>' +
         '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' +
         (self ? '' : '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '">✉</button>') +
         (self || p.playing == null ? '' : kickBtn('u:' + p.sub, p.name)) +
