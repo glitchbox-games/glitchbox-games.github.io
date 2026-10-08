@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
   {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
   {name:'Most Likely To',     file:'most-likely-to.html',         emoji:'🫵',color:['#120c06','#22101c'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Who\'s most likely to…? Everyone votes, the winner gets crowned. 3 to 16 players'},
   {name:'Rhyme Bomb',         file:'rhyme-bomb.html',             emoji:'💣',color:['#0c0614','#24100a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Rhyme with the word or the bomb blows up in your hands — 2 to 8 players'},
@@ -274,6 +275,35 @@ const DRAW={
   _C(c,-38,-56,11,'#171208');c.strokeStyle='#d29922';c.lineWidth=1.5;c.beginPath();c.arc(-38,-56,11,0,6.28);c.stroke();
   c.fillStyle='#d29922';c.font='bold 12px monospace';c.textAlign='center';c.fillText('2',-38,-51.5);
   c.restore();
+  _SC(c);
+},
+
+'midnight-post':(c)=>{
+  // the gate window at night: a face under the sodium lamp, torch-lit eyes shining back, the red barrier arm
+  _GV(c,0,0,320,200,'#05070b','#0c0f10','#1a140a');
+  const lamp=c.createRadialGradient(120,10,4,120,90,170);lamp.addColorStop(0,'rgba(255,170,70,.35)');lamp.addColorStop(1,'rgba(255,170,70,0)');c.fillStyle=lamp;c.fillRect(0,0,320,200);
+  _F(c,14,80,212,120,'#15181a');
+  // torch shadow on the wall, then the visitor
+  c.save();c.filter='blur(4px)';_C(c,150,112,40,'rgba(0,0,0,.55)');c.restore();c.filter='none';
+  c.fillStyle='#3d4a2c';c.beginPath();c.moveTo(62,200);c.quadraticCurveTo(64,152,104,146);c.lineTo(136,146);c.quadraticCurveTo(176,152,178,200);c.fill();
+  _F(c,112,128,16,22,'#c99169');
+  c.fillStyle='#c99169';c.beginPath();c.ellipse(120,104,30,36,0,0,6.283);c.fill();
+  c.fillStyle='#1b1410';c.beginPath();c.ellipse(120,86,31,22,0,3.1416,6.283);c.fill();
+  c.save();c.shadowColor='#e8ff7a';c.shadowBlur=12;_C(c,109,100,4.2,'#f2ff9c');_C(c,131,100,4.2,'#f2ff9c');c.restore();
+  c.fillStyle='#2a0d0b';c.beginPath();c.ellipse(120,122,11,6,0,0,6.283);c.fill();
+  c.fillStyle='#f1ede2';for(let i=0;i<8;i++){const x=109+i*2.75;c.beginPath();c.moveTo(x,116);c.lineTo(x+1.4,120);c.lineTo(x+2.75,116);c.fill();c.beginPath();c.moveTo(x,128);c.lineTo(x+1.4,124);c.lineTo(x+2.75,128);c.fill();}
+  // torch beam
+  c.save();c.globalCompositeOperation='lighter';const b=c.createRadialGradient(120,104,0,120,104,80);b.addColorStop(0,'rgba(255,250,225,.22)');b.addColorStop(1,'rgba(255,250,225,0)');c.fillStyle=b;c.fillRect(0,0,320,200);c.restore();
+  // rain
+  c.strokeStyle='rgba(170,190,210,.25)';c.lineWidth=1;c.beginPath();for(let i=0;i<40;i++){const x=(i*71.3)%230,y=(i*43.7)%200;c.moveTo(x,y);c.lineTo(x-2,y+9);}c.stroke();
+  // window frame + booth side
+  _F(c,0,0,320,8,'#0d110e');_F(c,0,0,8,200,'#0d110e');_F(c,226,0,94,200,'#0d110e');
+  // barrier arm + the stamps on the desk
+  _F(c,252,60,8,60,'#3a3a3a');c.save();c.translate(256,64);c.rotate(-0.5);for(let i=0;i<5;i++)_F(c,-2+i*14,-4,14,8,i%2?'#f1ede2':'#d32f2f');c.restore();
+  c.font='900 13px sans-serif';c.textAlign='center';
+  c.save();c.translate(272,150);c.rotate(-.18);c.strokeStyle='#5fd47e';c.lineWidth=2;c.strokeRect(-36,-12,72,22);c.fillStyle='#5fd47e';c.fillText('ADMIT',0,4);c.restore();
+  c.save();c.translate(272,182);c.rotate(.12);c.fillStyle='#c4221a';c.fillRect(-38,-12,76,22);c.fillStyle='#fff';c.fillText('DETAIN',0,4);c.restore();
+  c.fillStyle='#ff6b3d';c.font='700 14px monospace';c.fillText('03:12',272,28);
   _SC(c);
 },
 

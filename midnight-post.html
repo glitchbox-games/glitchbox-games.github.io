@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Midnight Post</title>
+<script src="glitchbox-save.js" data-pos="bottom-left"></script>
+<style>
+/* ══════════════════════ MIDNIGHT POST — gatehouse at 3am ═══════════════════
+   Sodium-lamp amber outside, olive drab inside, off-white paper on the desk.
+   Green only ever means ADMIT, red only ever means DETAIN / breach.
+   ========================================================================= */
+:root{
+  --bg:#07090a; --panel:#0e1310; --panel2:#141b16; --raise:#1b241d;
+  --line:#26322a; --line2:#36463a;
+  --ink:#e4e8df; --dim:#97a197; --dimmer:#5f6a61;
+  --amber:#ffb347; --amber-dim:#7a5222;
+  --green:#5fd47e; --red:#ff4d4d; --blue:#7cc4ff;
+  --paper:#ece4cf; --paper2:#ddd3b8; --pink:#f0d7d2; --pinkline:#c9a19a; --paperink:#262019;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+#app{display:grid;grid-template-rows:auto 1fr auto;height:100%;max-width:1400px;margin:0 auto}
+/* ── HUD ── */
+#hud{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:8px 16px 8px 56px;border-bottom:1px solid var(--line);background:var(--panel);font-family:var(--mono);font-size:12.5px}
+#hud .t{color:var(--amber);font-weight:800;letter-spacing:.14em}
+#hud .k{color:var(--dimmer);margin-right:5px}
+#hud .grow{flex:1}
+#hud [data-k]{border-radius:4px;padding:1px 4px}
+#bat{display:inline-block;width:46px;height:9px;border:1px solid var(--line2);border-radius:2px;vertical-align:middle;position:relative}
+#bat i{position:absolute;left:1px;top:1px;bottom:1px;background:var(--amber);border-radius:1px}
+.breach{color:var(--red)}
+#mute{color:var(--dim);padding:2px 6px;border:1px solid var(--line);border-radius:5px}
+/* ── main ── */
+main{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:12px;padding:12px 16px;min-height:0}
+#booth{display:flex;flex-direction:column;gap:8px;min-height:0}
+#sceneWrap{position:relative;border:1px solid var(--line2);border-radius:10px;overflow:hidden;background:#000;flex:0 1 auto;min-height:0}
+#scene{display:block;width:100%;height:auto;max-height:calc(100vh - 290px);object-fit:contain;touch-action:none}
+#arrive{position:absolute;left:10px;top:8px;font:700 11px var(--mono);color:var(--amber);background:rgba(0,0,0,.55);padding:2px 7px;border-radius:4px}
+#tools{display:flex;flex-wrap:wrap;gap:6px}
+.tool{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid var(--line2);border-radius:8px;background:var(--panel2);font-size:12.5px;font-weight:600;user-select:none}
+.tool:hover{border-color:var(--amber-dim)}
+.tool kbd,.vb kbd{font:600 10px var(--mono);color:var(--dimmer);border:1px solid var(--line2);border-radius:3px;padding:0 4px}
+.tool.on{background:#2a2410;border-color:var(--amber);color:var(--amber)}
+.tool:disabled{opacity:.35;cursor:default}
+#talk{flex:1 1 70px;min-height:56px;overflow:auto;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:13px}
+#talk p{margin:0 0 3px}
+#talk .you{color:var(--amber)}
+#talk .them{color:var(--ink)}
+#talk .sys{color:var(--dim);font-style:italic}
+#talk .bad{color:var(--red)}
+#talk .ok{color:var(--green)}
+#talk [data-k]{border-radius:4px}
+/* ── desk ── */
+#desk{display:flex;flex-direction:column;gap:10px;min-height:0}
+#docs{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;min-height:150px;padding:10px;border:1px solid var(--line);border-radius:10px;background:repeating-linear-gradient(90deg,#1a150f 0 22px,#1d1811 22px 44px)}
+#docs .empty{color:#6d5f4a;font-style:italic;padding:30px 10px;margin:auto}
+.doc{background:var(--paper);color:var(--paperink);border-radius:6px;box-shadow:0 6px 16px rgba(0,0,0,.55);font-family:var(--mono);font-size:11.5px;position:relative;animation:slide .35s ease-out}
+@keyframes slide{from{transform:translateY(-18px) rotate(-2deg)}to{transform:none}}
+.doc .hd{font:800 9.5px var(--sans);letter-spacing:.14em;padding:5px 9px;border-bottom:1px solid rgba(0,0,0,.15);border-radius:6px 6px 0 0}
+.idcard{width:300px;display:block}
+.idcard .hd{background:#465a3a;color:#eef2e2}
+.idcard.civ .hd{background:#a3561c}
+.idcard .bd{display:flex;gap:9px;padding:8px 9px}
+.idcard canvas{width:84px;height:102px;border:1px solid #8c8370;background:#cfc6ad;border-radius:3px;flex:none}
+.f{padding:1px 3px;margin:0 0 2px;border-radius:3px}
+.f b{display:block;font:700 8px var(--sans);letter-spacing:.12em;color:#7a6f5c}
+.f span{font-weight:700;font-size:12px}
+.pass{width:230px;background:var(--pink)}
+.pass .hd{background:#8e3b34;color:#fff1ee}
+.pass .bd{padding:7px 9px}
+.sig{font-family:"Brush Script MT","Segoe Script","Snell Roundhand",cursive;font-size:21px;font-weight:400;color:#1d2c6b;line-height:1}
+.xray{width:230px;background:#08182b;color:#bfe3ff}
+.xray .hd{background:#123257;color:#cfe8ff}
+.xray .bd{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:9px}
+.xray .it{text-align:center;font-size:10px;color:#9cc6e8}
+.xray .it i{display:block;font-style:normal;font-size:24px;filter:grayscale(.6) brightness(1.4) drop-shadow(0 0 4px #4fb0ff)}
+.stamp{position:absolute;right:10px;bottom:12px;font:900 17px var(--sans);letter-spacing:.06em;border:3px solid;padding:2px 8px;border-radius:5px;transform:rotate(-12deg);opacity:.85;pointer-events:none;animation:thud .2s ease-out}
+@keyframes thud{from{transform:rotate(-12deg) scale(1.8);opacity:0}}
+.stamp.ok{color:#1f8a43;border-color:#1f8a43}.stamp.no{color:#b52a22;border-color:#b52a22}.stamp.det{color:#fff;background:#c4221a;border-color:#c4221a}
+/* ── rulebook ── */
+#book{flex:1 1 auto;min-height:150px;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+#tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--panel2)}
+#tabs button{padding:7px 10px;font:700 10.5px var(--sans);letter-spacing:.1em;color:var(--dim);border-right:1px solid var(--line)}
+#tabs button.on{color:var(--amber);background:var(--panel)}
+#tabs button .nw{color:var(--red);margin-left:3px}
+#bookbody{flex:1;overflow:auto;padding:10px 12px;font-size:13px}
+#bookbody h4{margin:0 0 6px;font:800 10.5px var(--sans);letter-spacing:.14em;color:var(--amber)}
+#bookbody ol,#bookbody ul{margin:0 0 8px;padding-left:20px}
+#bookbody li{margin-bottom:4px}
+#bookbody .new{color:var(--amber);font-weight:700;font-size:10px;margin-left:4px}
+#bookbody .cols{columns:2;column-gap:20px;font-family:var(--mono);font-size:12px}
+#bookbody .cols div{break-inside:avoid;padding:1px 0}
+.cs{font:800 15px var(--mono);color:var(--amber)}
+.dim{color:var(--dim)}
+/* ── verdict ── */
+#verdict{display:flex;gap:10px;align-items:center;padding:10px 16px 12px;border-top:1px solid var(--line);background:var(--panel)}
+#verdict .sp{flex:1}
+.vb{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:9px;font:800 14px var(--sans);letter-spacing:.1em;border:2px solid}
+.vb.a{border-color:#2f7a45;background:#10251a;color:var(--green)}
+.vb.d{border-color:#6a4a2a;background:#231910;color:var(--amber)}
+.vb.x{border-color:#8a2323;background:#2a0f0f;color:var(--red)}
+.vb:disabled{opacity:.3;cursor:default}
+.vb:not(:disabled):hover{filter:brightness(1.3)}
+#inspectBtn.on{background:#11283a;border-color:var(--blue);color:var(--blue)}
+/* inspect mode */
+body.inspect [data-k]{outline:1px dashed rgba(124,196,255,.55);cursor:help}
+body.inspect [data-k]:hover{background:rgba(124,196,255,.18)}
+[data-k].sel{outline:2px solid var(--blue)!important;background:rgba(124,196,255,.25)!important}
+[data-k].flag{outline:2px solid var(--red)!important;background:rgba(255,77,77,.18)!important}
+body.inspect #sceneWrap{outline:1px dashed rgba(124,196,255,.55)}
+/* ── slips + modals ── */
+#slips{position:fixed;right:16px;top:56px;display:flex;flex-direction:column;gap:8px;z-index:20;pointer-events:none;max-width:300px}
+.slip{background:var(--pink);color:#3a1612;font:12px var(--mono);border-radius:5px;box-shadow:0 8px 22px rgba(0,0,0,.6);padding:8px 11px;animation:slide .3s ease-out}
+.slip b{display:block;font:800 10px var(--sans);letter-spacing:.14em;color:#a3241b}
+.slip.breach{background:#3a0a0a;color:#ffd6d6}.slip.breach b{color:#ff6b6b}
+.slip.good{background:#d9ecd9;color:#173a1f}.slip.good b{color:#1f7a3a}
+#modal{position:fixed;inset:0;background:rgba(2,4,3,.86);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
+#modal.open{display:flex}
+.card{width:min(620px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.card h1{margin:0 0 2px;font:900 34px var(--sans);letter-spacing:.12em;color:var(--amber)}
+.card h2{margin:0 0 10px;font:800 13px var(--sans);letter-spacing:.16em;color:var(--amber)}
+.card .sub{color:var(--dim);margin:0 0 14px}
+.card .radio{font-family:var(--mono);font-size:13px;background:#0a0e0b;border:1px solid var(--line);border-radius:8px;padding:12px 14px;white-space:pre-wrap;margin:0 0 12px}
+.card .report{border-left:3px solid var(--red);padding:6px 12px;margin:0 0 12px;background:#170c0c;font-size:13px}
+.card .report p{margin:0 0 5px}
+.card .newrules{margin:0 0 14px;padding-left:20px}
+.card .newrules li{margin-bottom:5px}
+.card table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin:0 0 14px}
+.card td{padding:4px 0;border-bottom:1px solid var(--line)}
+.card td:last-child{text-align:right}
+.big{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:10px;background:var(--amber);color:#1a1205;font:800 14px var(--sans);letter-spacing:.1em}
+.big.ghost{background:none;border:1px solid var(--line2);color:var(--ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+#smokeout{position:fixed;inset:0;margin:0;background:#000;color:#9f9;padding:12px;overflow:auto;z-index:99;font:12px var(--mono);white-space:pre-wrap}
+@media (max-width:860px){
+  body{overflow:auto}
+  #app{height:auto;min-height:100%}
+  main{grid-template-columns:1fr}
+  #scene{max-height:none}
+  #verdict{position:sticky;bottom:0;flex-wrap:wrap}
+  .vb{padding:10px 14px}
+  .idcard{width:100%}
+  .pass,.xray{width:100%}
+  #book{min-height:260px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <span class="t">🔦 MIDNIGHT POST</span>
+    <span><span class="k">NIGHT</span><b id="hNight">1</b></span>
+    <span data-k="date"><span class="k">DATE</span><b id="hDate">—</b></span>
+    <span><span class="k">TIME</span><b id="hClock">00:00</b></span>
+    <span class="grow"></span>
+    <span><span class="k">RANK</span><b id="hRank">PVT</b></span>
+    <span><span class="k">MERIT</span><b id="hMerit">20</b></span>
+    <span><span class="k">WARNINGS</span><b id="hCite">0</b></span>
+    <span><span class="k">BREACHES</span><b id="hBreach" class="breach">○○○</b></span>
+    <span id="batWrap"><span class="k">TORCH</span><span id="bat"><i></i></span></span>
+    <button id="mute" title="Sound on/off">🔊</button>
+  </header>
+  <main>
+    <section id="booth">
+      <div id="sceneWrap"><canvas id="scene" width="640" height="440" data-k="face"></canvas><div id="arrive" data-k="clock" hidden></div></div>
+      <div id="tools">
+        <button class="tool" id="tChallenge">🗣️ Challenge <kbd>C</kbd></button>
+        <button class="tool" id="tLight">🔦 Torch <kbd>F</kbd></button>
+        <button class="tool" id="tHands">✋ Hands on glass <kbd>H</kbd></button>
+        <button class="tool" id="tBag">🎒 Search bag <kbd>B</kbd></button>
+      </div>
+      <div id="talk"></div>
+    </section>
+    <section id="desk">
+      <div id="docs"><div class="empty">Nobody at the window.</div></div>
+      <div id="book"><nav id="tabs"></nav><div id="bookbody"></div></div>
+    </section>
+  </main>
+  <footer id="verdict">
+    <button class="tool" id="inspectBtn" title="Click two things that should agree">🔍 Inspect <kbd>Space</kbd></button>
+    <span class="sp"></span>
+    <button class="vb a" id="vAdmit">ADMIT <kbd>A</kbd></button>
+    <button class="vb d" id="vDeny">DENY <kbd>D</kbd></button>
+    <button class="vb x" id="vDetain">DETAIN <kbd>X</kbd></button>
+  </footer>
+</div>
+<div id="slips"></div>
+<div id="modal"><div class="card" id="card"></div></div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ══════════════════════════ DATA ══════════════════════════
+const DAY=86400000, SHIFT=360, CLOCK_RATE=1;          // game minutes per real second
+const MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const fmtDate=t=>{const d=new Date(t);return String(d.getUTCDate()).padStart(2,'0')+' '+MON[d.getUTCMonth()]+' '+d.getUTCFullYear();};
+const fmtClock=m=>{m=Math.max(0,Math.floor(m));return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+const todayOf=n=>Date.UTC(1987,10,11+n);               // night 1 = 12 NOV 1987
+
+function rngOf(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const pick=(r,a)=>a[Math.floor(r()*a.length)];
+const ri=(r,a,b)=>a+Math.floor(r()*(b-a+1));
+function shuffle(r,a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+const FIRST=['Danny','Mara','Eli','Tomas','Ruth','Kofi','Ana','Jonah','Ines','Marcus','Lena','Owen','Priya','Sam','Yusuf','Hana','Victor','June','Cal','Nadia','Felix','Rosa','Theo','Ada','Luis','Greta','Omar','Ivy','Pavel','Dee','Ray','Mei','Hugo','Zara','Abel','Lotte','Gus','Noor','Wes','Bea'];
+// Story characters' surnames never come out of the random generator.
+const RAND_LAST=['Dunn','Petrov','Moreau','Sato','Novak','Grant','Ibarra','Holt','Quinn','Mendez','Fischer','Abara','Varga','Cole','Nakamura','Byrne','Silva','Wolfe','Haddad','Kowal','Price','Lund','Ortiz','Becker','Yilmaz','Shaw','Doyle','Asante','Kerr','Pike','Rossi','Hart','Eze','Falk','Moss','Tran','Vance','Wren','Zubov','Calloway','Mbeki','Strand','Ferro','Gallo','Hayes','Jansen','Kaur','Laine','Mercer','Nolan','Osei','Park','Roth','Sandoval','Tate','Ueda','Vidal','Webb','Young','Zeller'];
+const ENL=['PVT','PFC','CPL','SGT','SSG'], OFF=['2LT','1LT','CPT','MAJ'];
+const UNITS_HERE=['3rd Signal Bn','41st Infantry','7th Engineers','2nd Medical','18th Supply','6th MP Co'];
+const UNITS_AWAY=['12th Armor','9th Artillery','5th Recon','22nd Aviation','14th Cavalry','31st Ordnance'];
+const CONTRACTORS=['Halcyon Fuel Co.','Brightline Catering','Ostrava Electric','Kestrel Freight'];
+const SIGNERS=[{r:'MAJ',f:'A',l:'Okafor'},{r:'CPT',f:'R',l:'Lindqvist'},{r:'LTC',f:'J',l:'Ames'},{r:'MAJ',f:'S',l:'Rhee'},{r:'CPT',f:'T',l:'Sorensen'},{r:'MAJ',f:'C',l:'Achebe'},{r:'LTC',f:'H',l:'Whitlock'},{r:'CPT',f:'M',l:'Duarte'}];
+const COUNTERS=[['THUNDER','FLASH'],['IRON','HORSE'],['BLUE','MOON'],['COLD','HARBOR'],['SILVER','FOX'],['RED','LANTERN']];
+const WRONG_REPLIES=['EAGLE','DAWN','RIVER','ANCHOR','WOLF','EMBER'];
+const HARMLESS=[['✉️','letters'],['🥫','rations'],['🧦','socks'],['📻','radio'],['📕','paperback'],['🖼️','photo'],['🪥','toothbrush'],['🧴','canteen'],['🃏','cards'],['👢','boots'],['🔋','batteries'],['🗝️','keys']];
+const LIQUOR=[['🥃','whiskey'],['🍶','moonshine'],['🍾','champagne']];
+const WEAPONS=[['🔫','pistol'],['🔪','knife'],['🗡️','bayonet']];
+const PASS_MIL=['Transfer orders','Night duty relief','Courier: sealed docs','Medical leave return'];
+const PASS_CIV=['Fuel delivery','Generator repair','Kitchen supply','Freight drop-off'];
+const TELLS={
+  eyes:  {n:3,name:'Eyeshine',how:'Shine the torch on them. Hollow eyes reflect it back like an animal\'s.'},
+  fingers:{n:3,name:'Six fingers',how:'Hands on the glass. Count them. Hollows get the number wrong.'},
+  blink: {n:4,name:'No blinking',how:'Watch for a few seconds. People blink. Hollows forget to.'},
+  shadow:{n:5,name:'No shadow',how:'Under the torch, a person throws a shadow on the wall behind them. Hollows don\'t.'},
+  teeth: {n:6,name:'Too many teeth',how:'Challenge them and watch the mouth when they answer.'},
+};
+
+// ══════════════════════════ FACES ══════════════════════════
+const SKIN=['#f1d0b5','#e2b48f','#c99169','#a8714a','#7d4f30','#5a3721'];
+const HAIRC=['#1b1410','#4a2e1a','#8a5a2b','#c9a15a','#a8402a','#8c8c8c'];
+const EYEC=['#5a3a1e','#3d7fc4','#3f9a52','#8a949c'], EYEN=['brown','blue','green','grey'];
+// Can't change between the photo and the person. Hair, glasses and moustaches can.
+const PERMANENT=['shape','skin','eye','nose','scar','mole','ears'];
+function randFace(r,civ){
+  return {civ:!!civ,shape:ri(r,0,2),skin:ri(r,0,5),hair:ri(r,0,5),hairCol:ri(r,0,5),eye:ri(r,0,3),brow:ri(r,0,2),
+    nose:ri(r,0,2),mouth:ri(r,0,2),stache:r()<0.2,scar:r()<0.12?ri(r,1,2):0,mole:r()<0.12,glasses:r()<0.2,ears:ri(r,0,1)};
+}
+function honestPhoto(face,r){
+  const p=Object.assign({},face);
+  if(r()<0.4){const w=ri(r,0,3);
+    if(w===0)p.hair=(p.hair+ri(r,1,5))%6; else if(w===1)p.hairCol=(p.hairCol+ri(r,1,5))%6;
+    else if(w===2)p.glasses=!p.glasses; else p.stache=!p.stache;}
+  return p;
+}
+function forgePhoto(face,r){
+  const p=Object.assign({},face);
+  const ks=shuffle(r,PERMANENT).slice(0,ri(r,1,2));
+  for(const k of ks){
+    if(k==='shape')p.shape=(p.shape+ri(r,1,2))%3;
+    else if(k==='skin')p.skin=(p.skin+ri(r,2,4))%6;
+    else if(k==='eye')p.eye=(p.eye+ri(r,1,3))%4;
+    else if(k==='nose')p.nose=(p.nose+ri(r,1,2))%3;
+    else if(k==='scar')p.scar=p.scar?0:ri(r,1,2);
+    else if(k==='mole')p.mole=!p.mole;
+    else p.ears=1-p.ears;
+  }
+  return p;
+}
+const photoDiff=(a,b)=>PERMANENT.some(k=>a[k]!==b[k]);
+function faceMatchesWanted(f,w){
+  if(f.eye!==w.eye)return false;
+  return w.mark==='mole'?f.mole:f.scar===(w.mark==='scar1'?1:2);
+}
+const markDesc=m=>m==='mole'?'a mole on the right cheek':m==='scar1'?'a scar across the left cheek':'a scar through the right eyebrow';
+
+// Draws head + shoulders centred on the head. Design space: head ~70×82 units.
+// st: {light, blink(0..1 lid), talk(0..1), tells[], unfold(0..1), shadowOnly}
+function drawFace(c,f,cx,cy,k,st){
+  st=st||{};
+  const T=st.tells||[];
+  c.save();c.translate(cx,cy);c.scale(k,k);
+  const skin=SKIN[f.skin], hair=HAIRC[f.hairCol];
+  const hw=[34,30,34][f.shape], hh=[40,46,41][f.shape];
+  // shoulders
+  c.fillStyle=f.civ?'#c9651c':'#3d4a2c';
+  c.beginPath();c.moveTo(-70,130);c.quadraticCurveTo(-66,62,-22,52);c.lineTo(22,52);c.quadraticCurveTo(66,62,70,130);c.closePath();c.fill();
+  if(f.civ){c.fillStyle='#e9e26a';c.fillRect(-62,92,124,7);c.fillRect(-58,108,116,5);}
+  else{c.fillStyle='#2c3620';c.beginPath();c.moveTo(-22,52);c.lineTo(0,76);c.lineTo(22,52);c.lineTo(14,50);c.lineTo(0,64);c.lineTo(-14,50);c.closePath();c.fill();
+    c.fillStyle='#c9b25a';c.fillRect(30,70,8,4);}
+  // neck
+  c.fillStyle=skin;c.fillRect(-12,hh-12,24,22);
+  c.fillStyle='rgba(0,0,0,.18)';c.fillRect(-12,hh-12,24,8);
+  // ears
+  const er=f.ears?9.5:6.5;
+  c.fillStyle=skin;c.beginPath();c.ellipse(-hw+1,2,er*.65,er,0,0,6.283);c.ellipse(hw-1,2,er*.65,er,0,0,6.283);c.fill();
+  // hair behind (long/bun)
+  if(f.hair===4){c.fillStyle=hair;c.beginPath();c.arc(0,-hh-4,11,0,6.283);c.fill();}
+  // head
+  c.fillStyle=skin;c.beginPath();
+  if(f.shape===2){const x=-hw,y=-hh,w=hw*2,h=hh*2,rr=15;c.moveTo(x+rr,y);c.arcTo(x+w,y,x+w,y+h,rr);c.arcTo(x+w,y+h,x,y+h,rr+6);c.arcTo(x,y+h,x,y,rr+6);c.arcTo(x,y,x+w,y,rr);}
+  else c.ellipse(0,0,hw,hh,0,0,6.283);
+  c.fill();
+  c.fillStyle='rgba(0,0,0,.13)';c.beginPath();c.ellipse(0,hh*.55,hw*.85,hh*.4,0,0,3.1416);c.fill();
+  // hair on top
+  c.fillStyle=hair;
+  if(f.hair===1){c.globalAlpha=.55;c.beginPath();c.ellipse(0,-hh*.5,hw*.98,hh*.55,0,3.1416,6.283);c.fill();c.globalAlpha=1;}
+  else if(f.hair===2||f.hair===4){c.beginPath();c.ellipse(0,-hh*.45,hw+2,hh*.68,0,3.1416,6.283);c.fill();c.fillRect(-hw-2,-hh*.48,7,16);c.fillRect(hw-5,-hh*.48,7,16);}
+  else if(f.hair===3){c.beginPath();c.ellipse(0,-hh*.45,hw+2,hh*.68,0,3.1416,6.283);c.fill();c.beginPath();c.moveTo(-hw-2,-hh*.45);c.quadraticCurveTo(-6,-hh*.2,hw*.5,-hh*.62);c.lineTo(-hw*.2,-hh*.8);c.closePath();c.fill();c.fillRect(-hw-2,-hh*.48,6,20);}
+  else if(f.hair===5){for(let i=0;i<11;i++){const a=3.3+i*(2.9/10);c.beginPath();c.arc(Math.cos(a)*hw*.9,-hh*.25+Math.sin(a)*hh*.85,9,0,6.283);c.fill();}}
+  // brows
+  const bw=[1.6,2.6,3.8][f.brow];
+  c.strokeStyle=f.hair===0?'#3a2a20':hair;c.lineWidth=bw;c.lineCap='round';
+  c.beginPath();c.moveTo(-20,-15);c.lineTo(-7,-16);c.moveTo(7,-16);c.lineTo(20,-15);c.stroke();
+  // eyes
+  const ey=-6, lid=st.blink||0;
+  for(const ex of [-13,13]){
+    if(st.unfold>0){c.fillStyle='#000';c.beginPath();c.ellipse(ex,ey,6+st.unfold*4,4.5+st.unfold*7,0,0,6.283);c.fill();continue;}
+    c.fillStyle='#f4f1ea';c.beginPath();c.ellipse(ex,ey,6.6,4.3,0,0,6.283);c.fill();
+    c.fillStyle=EYEC[f.eye];c.beginPath();c.arc(ex,ey,3.3,0,6.283);c.fill();
+    if(st.light&&T.includes('eyes')){c.save();c.shadowColor='#e8ff7a';c.shadowBlur=10;c.fillStyle='#f2ff9c';c.beginPath();c.arc(ex,ey,2.2,0,6.283);c.fill();c.restore();}
+    else{c.fillStyle='#120c08';c.beginPath();c.arc(ex,ey,1.6,0,6.283);c.fill();c.fillStyle='rgba(255,255,255,.8)';c.fillRect(ex+.6,ey-1.8,1.1,1.1);}
+    if(lid>0){c.fillStyle=skin;c.beginPath();c.ellipse(ex,ey-4.6+lid*4.6,7.2,4.6*lid+.01,0,0,6.283);c.fill();}
+  }
+  // nose
+  c.strokeStyle='rgba(60,30,15,.55)';c.lineWidth=1.6;c.beginPath();
+  if(f.nose===0){c.moveTo(-1,0);c.lineTo(-3,9);c.lineTo(2,10);}
+  else if(f.nose===1){c.moveTo(-2,-1);c.lineTo(-5,10);c.quadraticCurveTo(0,14,6,10);}
+  else{c.moveTo(0,-3);c.lineTo(-3,14);c.lineTo(3,15);}
+  c.stroke();
+  // mouth
+  const my=23, mw=[9,12,7][f.mouth];
+  const talk=st.talk||0, un=st.unfold||0;
+  if(un>0){c.fillStyle='#000';c.beginPath();c.ellipse(0,my+un*10,mw+un*14,3+un*22,0,0,6.283);c.fill();
+    c.fillStyle='#eee';for(let i=-5;i<=5;i++){c.beginPath();c.moveTo(i*3.4*(1+un),my+un*10-(2+un*18));c.lineTo(i*3.4*(1+un)+1.6,my+un*10-(2+un*18)+6);c.lineTo(i*3.4*(1+un)+3.2,my+un*10-(2+un*18));c.fill();}}
+  else if(talk>0.05){
+    const wide=T.includes('teeth')?1.5:1, oh=2+talk*7;
+    c.fillStyle='#2a0d0b';c.beginPath();c.ellipse(0,my+1,mw*wide,oh,0,0,6.283);c.fill();
+    c.fillStyle='#f1ede2';
+    if(T.includes('teeth')){
+      const n=14;for(let i=0;i<n;i++){const x=-mw*wide+i*(mw*wide*2/n);
+        c.beginPath();c.moveTo(x,my+1-oh);c.lineTo(x+mw*wide/n,my+1-oh+5);c.lineTo(x+mw*wide*2/n,my+1-oh);c.fill();
+        c.beginPath();c.moveTo(x,my+1+oh);c.lineTo(x+mw*wide/n,my+1+oh-5);c.lineTo(x+mw*wide*2/n,my+1+oh);c.fill();}
+    }else{c.fillRect(-mw*.7,my+1-oh,mw*1.4,Math.min(3,oh*.6));}
+  }else{c.strokeStyle='rgba(90,30,25,.75)';c.lineWidth=2;c.beginPath();c.moveTo(-mw,my);c.quadraticCurveTo(0,my+2,mw,my);c.stroke();}
+  if(f.stache){c.fillStyle=f.hair===0?'#3a2a20':hair;c.beginPath();c.ellipse(0,my-5,12,3.6,0,0,6.283);c.fill();}
+  // marks
+  if(f.scar===1){c.strokeStyle='#8e3f3a';c.lineWidth=2;c.beginPath();c.moveTo(-25,0);c.lineTo(-12,15);c.stroke();c.lineWidth=1;for(let i=0;i<4;i++){const t=i/3,x=-25+13*t,y=15*t;c.beginPath();c.moveTo(x-3,y+2);c.lineTo(x+3,y-2);c.stroke();}}
+  if(f.scar===2){c.strokeStyle='#8e3f3a';c.lineWidth=2.2;c.beginPath();c.moveTo(11,-23);c.lineTo(17,-6);c.stroke();}
+  if(f.mole){c.fillStyle='#3b2214';c.beginPath();c.arc(16,12,2.2,0,6.283);c.fill();}
+  if(f.glasses){c.strokeStyle='#1c1c1c';c.lineWidth=1.8;c.strokeRect(-22,-12,17,12);c.strokeRect(5,-12,17,12);c.beginPath();c.moveTo(-5,-7);c.lineTo(5,-7);c.stroke();}
+  c.restore();
+}
+function drawHand(c,x,y,k,fingers){
+  // a palm pressed flat on the glass, fingers spread upward, thumb out to the side
+  c.save();c.translate(x,y);c.scale(k,k);
+  c.fillStyle='rgba(236,208,184,.94)';
+  const fr=(a,len,w)=>{c.save();c.rotate(a);c.beginPath();c.roundRect?c.roundRect(-w/2,-len,w,len+6,w/2):c.rect(-w/2,-len,w,len+6);c.fill();c.restore();};
+  const n=fingers-1;           // the rest are thumb
+  for(let i=0;i<n;i++){const t=n>1?i/(n-1):.5;c.save();c.translate(-15+30*t,-14);fr(-0.32+0.64*t,30+8*Math.sin(t*3.14),9);c.restore();}
+  c.save();c.translate(-20,8);fr(-1.05,24,10);c.restore();
+  c.beginPath();c.ellipse(0,6,21,23,0,0,6.283);c.fill();
+  c.strokeStyle='rgba(255,255,255,.22)';c.lineWidth=2;c.beginPath();c.ellipse(0,-6,34,42,0,0,6.283);c.stroke();
+  c.restore();
+}
+
+// ══════════════════════════ NIGHTS ══════════════════════════
+function makeDay(n,seed,flags){
+  const r=rngOf((seed*7919+n*104729)>>>0);
+  const today=todayOf(n);
+  const pool=shuffle(r,RAND_LAST);
+  const day={n,today,roster:[],fresh:[],signers:[],wanted:[],challenge:null,reply:null,log:[],used:new Set(),admitted:0,seed};
+  for(let i=0;i<18;i++)day.roster.push({first:pick(r,FIRST),last:pool[i]});
+  for(let i=18;i<pool.length;i++)day.fresh.push({first:pick(r,FIRST),last:pool[i]});
+  if(n>=2){day.challenge=COUNTERS[n-2][0];day.reply=COUNTERS[n-2][1];}
+  if(n>=3)day.signers=shuffle(r,SIGNERS).slice(0,3);
+  if(n>=5){
+    const wn=day.fresh.pop();
+    day.wanted.push({type:'name',first:wn.first,last:wn.last,rank:pick(r,ENL),crime:pick(r,['Deserter','Stole a jeep','Assaulted an MP','Sold fuel to smugglers'])});
+    const marks=shuffle(r,['scar1','scar2','mole']);
+    const eyes=shuffle(r,[0,1,2,3]);
+    for(let i=0;i<2;i++)day.wanted.push({type:'face',eye:eyes[i],mark:marks[i],crime:pick(r,['Sabotage at the fuel depot','Broke out of the stockade','Suspected spy'])});
+  }
+  // story characters who need to be on tonight's roster
+  if(n===4)day.roster.push({first:'Emil',last:'Brandt'});
+  if(n===5)day.roster.push({first:'Danny',last:'Reyes'});
+  if(n===6||n===2)day.roster.push({first:'Mara',last:'Voss'});
+  day.roster.sort((a,b)=>a.last.localeCompare(b.last));
+  day.scripts=SCRIPTS.filter(s=>s.n===n).map(s=>({...s,done:false}));
+  return day;
+}
+const onRoster=(day,p)=>day.roster.some(e=>e.first===p.first&&e.last===p.last);
+const sameName=(a,b)=>a.first===b.first&&a.last===b.last;
+
+function pickName(day,r,fromRoster){
+  const src=(fromRoster?day.roster:day.fresh).filter(e=>!day.used.has(e.last)&&!STORY_LAST.has(e.last));
+  return src.length?pick(r,src):null;
+}
+function makePass(p,day,r){
+  return {first:p.first,last:p.last,date:day.today,purpose:pick(r,p.civ?PASS_CIV:PASS_MIL),sign:pick(r,day.signers)};
+}
+function harmlessBag(r){return shuffle(r,HARMLESS).slice(0,ri(r,2,4)).map(([e,l])=>({e,l,k:'ok'}));}
+
+function basePerson(day,r,arrive){
+  const n=day.n, civ=n>=3&&r()<0.18;
+  const p={civ,arrive,face:randFace(r,civ),mimic:null,pass:null,bag:null,reply:day.reply,noid:false,greet:null,lines:{}};
+  p.photo=honestPhoto(p.face,r);
+  let nm=(!civ&&n>=3&&r()<0.7)?pickName(day,r,true):null;
+  const roster=!!nm;
+  if(!nm)nm=pickName(day,r,false)||{first:pick(r,FIRST),last:pick(r,RAND_LAST)+'-'+ri(r,2,9)};
+  p.first=nm.first;p.last=nm.last;
+  if(civ){p.rank='CIV';p.unit=pick(r,CONTRACTORS);}
+  else{p.rank=r()<0.75?pick(r,ENL):pick(r,OFF);p.unit=pick(r,UNITS_HERE);}
+  p.exp=day.today+ri(r,20,900)*DAY;
+  p.idnum='C-'+ri(r,100000,999999);
+  if(n>=3&&(civ||!roster||(n>=6&&arrive>=180&&ENL.includes(p.rank))))p.pass=makePass(p,day,r);
+  if(n>=5)p.bag=harmlessBag(r);
+  return p;
+}
+const ensurePass=(p,day,r)=>{if(!p.pass)p.pass=makePass(p,day,r);return true;};
+// Each flaw: the verdict it should produce, the first night it can show up, and how to plant it.
+const FLAWS=[
+  {k:'expired',v:'deny',n:1,w:3,apply:(p,day,r)=>{p.exp=day.today-ri(r,1,400)*DAY;return true;}},
+  {k:'noid',v:'deny',n:1,w:1,apply:p=>{p.noid=true;return true;}},
+  {k:'notroster',v:'deny',n:3,w:3,apply:(p,day,r)=>{
+    if(!p.civ&&onRoster(day,p)){const nm=pickName(day,r,false);if(!nm)return false;p.first=nm.first;p.last=nm.last;}
+    p.pass=null;return true;}},
+  {k:'passdate',v:'deny',n:3,w:2,apply:(p,day,r)=>{ensurePass(p,day,r);p.pass.date=day.today+(r()<.5?-1:1)*ri(r,1,3)*DAY;return true;}},
+  {k:'unit',v:'deny',n:4,w:2,apply:(p,day,r)=>{if(p.civ)return false;p.unit=pick(r,UNITS_AWAY);return true;}},
+  {k:'liquor',v:'deny',n:5,w:2,apply:(p,day,r)=>{if(!p.bag)return false;const[e,l]=pick(r,LIQUOR);p.bag.splice(ri(r,0,p.bag.length),0,{e,l,k:'liquor'});return true;}},
+  {k:'curfew',v:'deny',n:6,w:3,apply:(p,day,r)=>{
+    if(p.arrive<180||p.civ)return false;
+    if(!onRoster(day,p)){const nm=pickName(day,r,true);if(!nm)return false;p.first=nm.first;p.last=nm.last;}
+    p.rank=pick(r,ENL);p.pass=null;return true;}},
+  {k:'photo',v:'detain',n:1,w:3,apply:(p,day,r)=>{p.photo=forgePhoto(p.face,r);return true;}},
+  {k:'countersign',v:'detain',n:2,w:3,apply:(p,day,r)=>{p.reply=pick(r,COUNTERS.map(c=>c[1]).concat(WRONG_REPLIES).filter(w=>w!==day.reply));return true;}},
+  {k:'passname',v:'detain',n:3,w:2,apply:(p,day,r)=>{ensurePass(p,day,r);const nm=pickName(day,r,false);if(!nm||nm.last===p.last)return false;p.pass.first=nm.first;p.pass.last=nm.last;return true;}},
+  {k:'signer',v:'detain',n:3,w:2,apply:(p,day,r)=>{ensurePass(p,day,r);p.pass.sign=pick(r,SIGNERS.filter(s=>!day.signers.includes(s)));return true;}},
+  {k:'mimic',v:'detain',n:3,w:5,apply:(p,day,r)=>{p.mimic=[pick(r,Object.keys(TELLS).filter(t=>TELLS[t].n<=day.n))];return true;}},
+  {k:'duplicate',v:'detain',n:4,w:3,apply:(p,day,r)=>{
+    if(!day.log.length)return false;
+    const o=pick(r,day.log).p;
+    Object.assign(p,JSON.parse(JSON.stringify(o)),{arrive:p.arrive,reply:day.reply,mimic:null,script:null,dupOf:true});
+    return true;}},
+  {k:'wanted',v:'detain',n:5,w:3,apply:(p,day,r)=>{
+    const w=pick(r,day.wanted);
+    if(w.type==='name'){p.first=w.first;p.last=w.last;p.civ=false;p.face.civ=false;p.photo.civ=false;p.rank=w.rank;p.unit=pick(r,UNITS_HERE);p.pass=null;}
+    else{p.face.eye=w.eye;if(w.mark==='mole')p.face.mole=true;else p.face.scar=w.mark==='scar1'?1:2;
+      for(const k of PERMANENT)p.photo[k]=p.face[k];}
+    return true;}},
+  {k:'weapon',v:'detain',n:5,w:2,apply:(p,day,r)=>{if(!p.bag)return false;const[e,l]=pick(r,WEAPONS);p.bag.splice(ri(r,0,p.bag.length),0,{e,l,k:'weapon'});return true;}},
+];
+const REASONS={
+  noid:{v:'deny',pair:null,msg:'No ID at all',ex:['I left it in my other jacket.','Lost it in town. I swear I\'m stationed here.']},
+  expired:{v:'deny',pair:['id.exp','date'],msg:'ID is expired',ex:['It\'s just a renewal thing.','Admin never sent the new one.']},
+  photo:{v:'detain',pair:['id.photo','face'],msg:'ID photo is a different person',ex:['...It\'s an old photo.','I\'ve lost weight.','Bad lighting. That\'s me.']},
+  countersign:{v:'detain',pair:['reply','book.rules'],msg:'Wrong countersign',ex:['That\'s what they told me!','They must have changed it.']},
+  notroster:{v:'deny',pair:['id.name','book.roster'],msg:'Not on the roster and no Entry Pass',ex:['My name should be on there.','Nobody told me I needed a pass.']},
+  passdate:{v:'deny',pair:['pass.date','date'],msg:'Entry Pass has the wrong date',ex:['The clerk must have typed it wrong.','It was good when I left.']},
+  passname:{v:'detain',pair:['id.name','pass.name'],msg:'Pass is in someone else\'s name',ex:['Clerk\'s mistake.','He gave me his pass. Same thing.']},
+  signer:{v:'detain',pair:['pass.sign','book.signers'],msg:'Pass signed by an unauthorized officer',ex:['The officer signed it right in front of me.','That\'s a real signature!']},
+  unit:{v:'deny',pair:['id.unit','book.units'],msg:'Unit not stationed at Fort Corvin',ex:['We\'re just passing through.','Temporary attachment.']},
+  duplicate:{v:'detain',pair:['id.name','book.log'],msg:'This person already entered tonight',ex:['What? I\'ve been out all night.','I haven\'t been through here. Check again.']},
+  wantedName:{v:'detain',pair:['id.name','book.wanted'],msg:'Name is on the wanted list',ex:['Never heard of him.','Lots of people have that name.']},
+  wantedFace:{v:'detain',pair:['face','book.wanted'],msg:'Matches a wanted description',ex:['Lots of people have scars.','You\'ve got the wrong guy.']},
+  weapon:{v:'detain',pair:['bag','book.rules'],msg:'Carrying a weapon',ex:['It\'s for protection.','Everybody carries one.']},
+  liquor:{v:'deny',pair:['bag','book.rules'],msg:'Bringing in alcohol',ex:['It\'s a gift!','It\'s for the Sergeant\'s birthday.']},
+  curfew:{v:'deny',pair:['id.rank','clock'],msg:'Enlisted, after 03:00, no Entry Pass',ex:['I\'m only a few minutes late.','The bus broke down.']},
+  mimic:{v:'detain',pair:null,msg:'It was a Hollow',ex:[]},
+};
+function judge(p,day){
+  const n=day.n, R=[];
+  if(p.mimic&&p.mimic.length)R.push('mimic');
+  if(p.noid)R.push('noid');
+  else{
+    if(photoDiff(p.face,p.photo))R.push('photo');
+    if(p.exp<day.today)R.push('expired');
+    if(n>=4&&!p.civ&&!UNITS_HERE.includes(p.unit))R.push('unit');
+    if(n>=4&&day.log.some(e=>sameName(e,p)))R.push('duplicate');
+    if(n>=5&&day.wanted.some(w=>w.type==='name'&&sameName(w,p)))R.push('wantedName');
+  }
+  if(n>=5&&day.wanted.some(w=>w.type==='face'&&faceMatchesWanted(p.face,w)))R.push('wantedFace');
+  if(n>=2&&p.reply!==day.reply)R.push('countersign');
+  if(n>=3){
+    if(p.pass){
+      if(!p.noid&&!sameName(p.pass,p))R.push('passname');
+      if(p.pass.date!==day.today)R.push('passdate');
+      if(!day.signers.some(s=>s.l===p.pass.sign.l))R.push('signer');
+    }else if(!p.noid){
+      if(p.civ||!onRoster(day,p))R.push('notroster');
+      else if(n>=6&&p.arrive>=180&&ENL.includes(p.rank))R.push('curfew');
+    }
+  }
+  if(n>=5&&p.bag){if(p.bag.some(i=>i.k==='weapon'))R.push('weapon');if(p.bag.some(i=>i.k==='liquor'))R.push('liquor');}
+  const v=R.some(k=>REASONS[k].v==='detain')?'detain':R.some(k=>REASONS[k].v==='deny')?'deny':'admit';
+  return {v,R};
+}
+const GREET_MIL=['Evening.','Cold one tonight.','Let me in, it\'s pouring.','Back from town.','Night shift relief.','Long walk from the bus stop.','Hurry up, would you?','Hey. Quiet night?'];
+const GREET_CIV=['Delivery for the motor pool.','Evening, officer. Here\'s my pass.','They called me about the generator.','Got a truck full of bread here.'];
+const GREET_HOLLOW=['Evening. Evening.','It is cold outside. I would like to be inside.','Hello, friend. Let me in now.','I live here. I live here.'];
+function chooseWant(day,r){const x=r();return x<(day.n===1?0.55:0.5)?'admit':x<0.75?'deny':'detain';}
+function commit(day,p){day.used.add(p.last);}
+function makeVisitor(day,r,arrive){
+  const want=chooseWant(day,r);
+  for(let t=0;t<60;t++){
+    const p=basePerson(day,r,arrive);
+    let flaw=null;
+    if(want!=='admit'){
+      const opts=FLAWS.filter(f=>f.v===want&&f.n<=day.n);
+      let tot=opts.reduce((s,f)=>s+f.w,0),x=r()*tot;
+      flaw=opts.find(f=>(x-=f.w)<0)||opts[0];
+      if(!flaw.apply(p,day,r))continue;
+      p.flaw=flaw.k;
+    }
+    const j=judge(p,day);
+    const hit=!flaw||j.R.includes(flaw.k)||(flaw.k==='wanted'&&(j.R.includes('wantedName')||j.R.includes('wantedFace')));
+    if(j.v===want&&hit){
+      p.greet=p.mimic?(r()<.5?pick(r,GREET_HOLLOW):pick(r,GREET_MIL)):pick(r,p.civ?GREET_CIV:GREET_MIL);
+      commit(day,p);return p;
+    }
+  }
+  const p=basePerson(day,r,arrive);p.greet=pick(r,GREET_MIL);commit(day,p);return p;
+}
+
+// ── story visitors ──
+const FACE_REYES={civ:false,shape:0,skin:2,hair:1,hairCol:0,eye:0,brow:2,nose:1,mouth:1,stache:false,scar:0,mole:false,glasses:false,ears:1};
+const FACE_VOSS ={civ:false,shape:1,skin:0,hair:4,hairCol:4,eye:2,brow:1,nose:0,mouth:2,stache:false,scar:0,mole:false,glasses:false,ears:0};
+const FACE_KESS ={civ:false,shape:2,skin:1,hair:2,hairCol:3,eye:1,brow:0,nose:2,mouth:0,stache:false,scar:0,mole:false,glasses:false,ears:0};
+const FACE_BRANDT={civ:false,shape:2,skin:1,hair:3,hairCol:5,eye:3,brow:2,nose:2,mouth:0,stache:true,scar:2,mole:false,glasses:true,ears:1};
+const FACE_HALE ={civ:false,shape:1,skin:3,hair:0,hairCol:5,eye:0,brow:2,nose:1,mouth:1,stache:false,scar:1,mole:false,glasses:false,ears:1};
+const STORY_LAST=new Set(['Reyes','Voss','Kessler','Brandt','Hale']);
+function storyBase(day,o){
+  const p={civ:false,arrive:0,mimic:null,pass:null,bag:day.n>=5?[{e:'🧦',l:'socks',k:'ok'},{e:'✉️',l:'letters',k:'ok'}]:null,reply:day.reply,noid:false,
+    exp:day.today+400*DAY,idnum:'C-'+(100000+((o.last.length*7919)%899999)),unit:'41st Infantry',lines:{},...o};
+  p.face=Object.assign({},o.face);p.photo=Object.assign({},o.face);
+  return p;
+}
+const SCRIPTS=[
+  {id:'reyes1',n:1,at:55,want:'deny',make:day=>storyBase(day,{first:'Danny',last:'Reyes',rank:'PVT',face:FACE_REYES,exp:day.today-DAY,
+    greet:'Hey, hey. Reyes, 41st. Back from town, it\'s freezing.',lines:{expired:'It expired YESTERDAY. Come on, man, Sarge is gonna skin me.'}})},
+  {id:'voss2',n:2,at:45,want:'admit',make:day=>storyBase(day,{first:'Mara',last:'Voss',rank:'1LT',unit:'3rd Signal Bn',face:FACE_VOSS,
+    greet:'Evening, Private. You must be the new face on the gate. Go on, challenge me. Rules are rules.'})},
+  {id:'kessler3',n:3,at:110,want:'detain',make:day=>Object.assign(storyBase(day,{first:'Jonah',last:'Kessler',rank:'PVT',face:FACE_KESS,
+    greet:'...It\'s cold out there. Can I come in? I want to come in.'}),{mimic:['eyes','fingers']})},
+  {id:'brandt4a',n:4,at:35,want:'admit',make:day=>storyBase(day,{first:'Emil',last:'Brandt',rank:'COL',unit:'7th Engineers',face:FACE_BRANDT,
+    greet:'Colonel Brandt. Inspection. Don\'t keep me waiting, Private.'})},
+  {id:'brandt4b',n:4,at:250,want:'detain',make:day=>Object.assign(storyBase(day,{first:'Emil',last:'Brandt',rank:'COL',unit:'7th Engineers',face:FACE_BRANDT,
+    greet:'Colonel Brandt. Inspection. Don\'t keep me waiting, Private.',lines:{duplicate:'I have been outside all night. All night. Let me in.'}}),{mimic:['blink']})},
+  {id:'reyes5',n:5,at:80,want:'deny',make:day=>Object.assign(storyBase(day,{first:'Danny',last:'Reyes',rank:'PFC',face:FACE_REYES,
+    greet:'Me again! Got promoted, got a new ID and everything.',lines:{liquor:'It\'s for Sarge\'s birthday! Come on, after last time?'}}),
+    {bag:[{e:'🧦',l:'socks',k:'ok'},{e:'🥃',l:'whiskey',k:'liquor'},{e:'🃏',l:'cards',k:'ok'}]})},
+  {id:'voss6',n:6,at:200,want:'detain',make:day=>Object.assign(storyBase(day,{first:'Mara',last:'Voss',rank:'1LT',unit:'3rd Signal Bn',face:FACE_VOSS,
+    greet:'Hey, Private. Long night, huh? Go on, challenge me. Rules are rules.'}),{mimic:['teeth']})},
+  {id:'hale7',n:7,at:235,want:'detain',make:day=>Object.assign(storyBase(day,{first:'Augustus',last:'Hale',rank:'GEN',unit:'Corps HQ',face:FACE_HALE,noid:true,
+    greet:'General Hale. I don\'t carry papers, soldier. Raise the gate.',lines:{noid:'Do you know who I am? I said raise the gate.'}}),{mimic:['eyes','blink','shadow']})},
+];
+
+// ══════════════════════════ RULEBOOK ══════════════════════════
+function rulesFor(n){
+  const R=[
+    [1,'Everyone needs an ID card. No ID → <b>DENY</b>.'],
+    [1,'ID must not be expired (check today\'s date) → else <b>DENY</b>.'],
+    [1,'ID photo must be the person at the window. Hair, glasses and moustaches can change. <i>Face shape, skin, eye colour, nose, ears, scars and moles can\'t.</i> Wrong face → <b>DETAIN</b>.'],
+    [2,'Challenge everyone. Wrong countersign reply → <b>DETAIN</b>.'],
+    [3,'Military personnel must be on tonight\'s ROSTER, or carry an Entry Pass. Civilians always need a pass. Neither → <b>DENY</b>.'],
+    [3,'An Entry Pass must be dated today (else <b>DENY</b>), in the holder\'s name, signed by an officer on tonight\'s SIGNERS list (else <b>DETAIN</b>).'],
+    [3,'Hollows: papers are perfect, but the body is wrong. Any tell → <b>DETAIN</b>. See the HOLLOWS tab.'],
+    [4,'Only units stationed at Fort Corvin (UNITS tab) → else <b>DENY</b>. Civilians are exempt.'],
+    [4,'Someone you already admitted tonight (LOG) comes back → <b>DETAIN</b>. One of them is a Hollow.'],
+    [5,'Anyone on the WANTED board, by name or description → <b>DETAIN</b>.'],
+    [5,'Search bags. Firearms and blades → <b>DETAIN</b>. Alcohol → <b>DENY</b>.'],
+    [6,'Curfew: arriving at or after <b>03:00</b>, enlisted ranks (PVT–SSG) need an Entry Pass even if on the roster → else <b>DENY</b>. Officers exempt.'],
+  ];
+  return R.filter(x=>x[0]<=n);
+}
+const TABS=[
+  {k:'rules',name:'RULES',n:1},{k:'roster',name:'ROSTER',n:3},{k:'signers',name:'SIGNERS',n:3},{k:'hollow',name:'HOLLOWS',n:3},
+  {k:'units',name:'UNITS',n:4},{k:'log',name:'LOG',n:1},{k:'wanted',name:'WANTED',n:5},
+];
+
+// ══════════════════════════ STATE ══════════════════════════
+const SAVE_KEY='midnightpost.v1';
+const G={night:1,merit:20,breaches:0,flags:{},seed:1,best:null,over:false,
+  day:null,clock:0,running:false,cur:null,curJ:null,nextAt:0,cites:0,stats:null,incidents:[],
+  battery:100,light:false,handsT:0,talkT:0,talkText:'',talkWho:'',walk:0,leaving:null,leaveT:0,blinkT:0,blinkNext:2,
+  barrier:0,flash:0,unfoldT:0,inspect:false,sel:null,flagged:new Set(),challenged:false,bagShown:false,tab:'rules',newTabs:new Set(),
+  queue:2,rng:null,mute:false};
+const RANKS=[[0,'PVT'],[45,'PFC'],[90,'CPL'],[150,'SGT'],[220,'SSG'],[300,'SFC']];
+const rankOf=m=>(RANKS.filter(x=>m>=x[0]).pop()||RANKS[0])[1];
+
+function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({night:G.night,merit:G.merit,breaches:G.breaches,flags:G.flags,seed:G.seed}));}catch(e){}}
+function loadSaved(){try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'null');}catch(e){return null;}}
+function clearSaved(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+
+// ══════════════════════════ AUDIO ══════════════════════════
+let AC=null,rainNode=null;
+function audio(){
+  if(G.mute||SMOKE)return null;
+  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+  if(AC.state==='suspended')AC.resume();
+  if(!rainNode){
+    const b=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const s=AC.createBufferSource();s.buffer=b;s.loop=true;
+    const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=900;
+    const g=AC.createGain();g.gain.value=0.05;
+    s.connect(f).connect(g).connect(AC.destination);s.start();rainNode=g;
+  }
+  return AC;
+}
+function tone(freq,dur,type,vol,slide){
+  const a=audio();if(!a)return;
+  const o=a.createOscillator(),g=a.createGain(),t=a.currentTime;
+  o.type=type||'sine';o.frequency.setValueAtTime(freq,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
+  g.gain.setValueAtTime(vol||0.15,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.02);
+}
+const SFX={
+  stamp:()=>{tone(90,0.18,'square',0.2,40);},
+  buzz:()=>{tone(140,0.35,'sawtooth',0.1);},
+  alarm:()=>{for(let i=0;i<4;i++)setTimeout(()=>tone(880,0.18,'square',0.07,560),i*230);},
+  click:()=>tone(1400,0.04,'square',0.05),
+  barrier:()=>tone(220,0.6,'triangle',0.06,330),
+  scream:()=>{tone(1200,0.9,'sawtooth',0.07,180);tone(90,1,'square',0.05,40);},
+  bell:()=>{tone(660,0.5,'sine',0.1);setTimeout(()=>tone(990,0.6,'sine',0.08),120);},
+};
+
+// ══════════════════════════ FLOW ══════════════════════════
+function newGame(){G.night=1;G.merit=20;G.breaches=0;G.flags={};G.seed=(Math.random()*1e9)>>>0;G.over=false;persist();showBriefing();}
+function startNight(){
+  G.day=makeDay(G.night,G.seed,G.flags);
+  G.rng=rngOf((G.seed^(G.night*2654435761))>>>0);
+  G.clock=0;G.cur=null;G.cites=0;G.battery=100;G.incidents=[];G.nextAt=1.5;G.queue=ri(G.rng,1,4);
+  G.stats={seen:0,right:0,detained:0,hollows:0,cites:0,breaches:0,meritStart:G.merit};
+  G.tab='rules';G.newTabs=new Set(TABS.filter(t=>t.n===G.night).map(t=>t.k));
+  $('#talk').innerHTML='';say('sys','Shift starts. '+fmtDate(G.day.today)+'. Rain.');
+  renderDocs();renderBook();renderTools();hud();
+  G.running=true;
+}
+function spawn(){
+  const day=G.day;
+  const due=day.scripts.filter(s=>!s.done&&(G.clock>=s.at||G.clock>=SHIFT));
+  let p;
+  if(due.length){const s=due[0];s.done=true;p=s.make(day);p.arrive=Math.floor(G.clock);p.script=s.id;p.want=s.want;commit(day,p);}
+  else{if(G.clock>=SHIFT)return false;p=makeVisitor(day,G.rng,Math.floor(G.clock));}
+  G.cur=p;G.walk=0;G.leaving=null;G.challenged=false;G.bagShown=false;G.handsT=0;G.talkT=0;G.flagged=new Set();G.sel=null;
+  G.blinkT=0;G.blinkNext=1+G.rng()*2.5;G.unfoldT=0;
+  G.stats.seen++;G.queue=Math.max(0,G.queue+ri(G.rng,-1,1));
+  $('#arrive').hidden=false;$('#arrive').textContent='ARRIVED '+fmtClock(p.arrive);
+  setTimeout(()=>{if(G.cur===p){speak(p.greet);renderDocs();}},700);
+  renderDocs();renderTools();
+  if(G.night===1&&G.stats.seen===1)say('sys','Tip: compare the ID photo to the face, and the expiry date to today\'s date (top bar). Then ADMIT, DENY or DETAIN.');
+  return true;
+}
+function say(cls,txt,k){
+  const el=document.createElement('p');el.className=cls;el.innerHTML=txt;if(k)el.dataset.k=k;
+  const t=$('#talk');t.appendChild(el);while(t.children.length>40)t.firstChild.remove();t.scrollTop=1e9;
+}
+function speak(txt){if(!G.cur)return;G.talkT=Math.min(3.2,0.8+txt.length*0.035);G.talkText=txt;say('them','“'+esc(txt)+'”');tone(180+G.rng()*60,0.07,'triangle',0.04);}
+
+function act(kind){
+  const p=G.cur;if(!p||G.leaving||!G.running)return;
+  if(kind==='challenge'){
+    if(G.day.n<2||G.challenged)return;G.challenged=true;
+    say('you','You: “'+G.day.challenge+'.”');SFX.click();
+    setTimeout(()=>{if(G.cur!==p)return;G.talkT=1.8;G.talkText=p.reply+'.';say('them','“'+p.reply+'.”','reply');},700);
+  }else if(kind==='hands'){
+    if(G.day.n<3)return;G.handsT=3.5;say('you','You: “Hand flat on the glass.”');
+  }else if(kind==='bag'){
+    if(G.day.n<5||!p.bag||G.bagShown)return;G.bagShown=true;say('you','You: “Bag through the hatch.”');SFX.click();renderDocs();
+  }
+  renderTools();
+}
+function decide(choice){
+  const p=G.cur;if(!p||G.leaving||!G.running)return;
+  const j=judge(p,G.day), S=G.stats;
+  let pts=0,cite=null,breach=false,note=null;
+  if(choice===j.v){pts=choice==='detain'?10:5;S.right++;}
+  else if(j.v==='detain'&&choice==='deny'){pts=2;note='Turned away, but should have been detained: '+REASONS[j.R.find(k=>REASONS[k].v==='detain')].msg+'.';}
+  else if(j.v==='detain'&&choice==='admit'){breach=true;}
+  else if(j.v==='admit')cite=choice==='deny'?'Turned away a valid entrant.':'Wrongful detention of a valid entrant.';
+  else cite=(choice==='admit'?'Admitted: ':'Detained over paperwork: ')+REASONS[j.R[0]].msg.toLowerCase()+'.';
+  if(choice==='detain')S.detained++;
+  if(choice==='detain'&&p.mimic)S.hollows++;
+  if(p.script)G.flags[p.script]=choice;
+  G.merit+=pts;
+  if(cite){G.cites++;S.cites++;const pen=G.cites>2?10:0;G.merit-=pen;slip(pen?'CITATION −'+pen+' MERIT':'WARNING ('+G.cites+'/2 free)',cite,'');}
+  if(breach){
+    G.breaches++;S.breaches++;G.merit-=25;
+    const k=j.R.find(k=>REASONS[k].v==='detain');G.incidents.push({k,t:p.arrive,name:p.last});
+    slip('SECURITY BREACH −25','You let in something you shouldn\'t have. You\'ll hear about it in the morning.','breach');
+  }
+  if(note)slip('NOTED',note,'');
+  if(choice==='admit')G.day.log.push({first:p.first,last:p.last,rank:p.rank,t:p.arrive,p:JSON.parse(JSON.stringify(p))});
+  // feedback on stage
+  G.leaving=choice;G.leaveT=0;
+  if(choice==='admit'){SFX.stamp();setTimeout(SFX.barrier,250);}
+  else if(choice==='deny'){SFX.stamp();setTimeout(SFX.buzz,150);}
+  else{SFX.alarm();G.flash=1.6;if(p.mimic){G.unfoldT=0.01;setTimeout(SFX.scream,300);}}
+  stampDocs(choice);
+  say(choice==='admit'?'ok':choice==='deny'?'sys':'bad',choice==='admit'?'✔ Admitted.':choice==='deny'?'✖ Denied. They walk back into the rain.':'⚠ Detained. MPs drag them off.'+(p.mimic?' It doesn\'t sound human anymore.':''));
+  if(G.inspect)toggleInspect(false);
+  hud();renderBook();renderTools();
+  if(G.breaches>=3){setTimeout(()=>{G.running=false;gameOver('court');},1600);}
+}
+function afterLeave(){
+  G.cur=null;G.leaving=null;$('#arrive').hidden=true;renderDocs();renderTools();
+  G.nextAt=G.clock+(SMOKE?0:2.2*CLOCK_RATE);
+}
+function slip(title,txt,cls){
+  if(SMOKE)return;
+  const el=document.createElement('div');el.className='slip '+(cls||'');el.innerHTML='<b>'+esc(title)+'</b>'+esc(txt);
+  $('#slips').appendChild(el);setTimeout(()=>el.remove(),5200);
+}
+function endNight(){
+  G.running=false;
+  const S=G.stats,n=G.night;
+  const lines=[];
+  for(const inc of G.incidents)lines.push(INCIDENT[inc.k]?INCIDENT[inc.k](inc):'Something got in.');
+  const story=storyNews(n);
+  const relieved=G.merit<0;
+  G.night++;
+  if(!relieved&&n<7)persist();
+  const rows=[['Visitors processed',S.seen],['Correct calls',S.right],['Detained',S.detained],['Hollows caught',S.hollows],['Citations',S.cites],['Breaches',S.breaches],['Merit',(G.merit-S.meritStart>=0?'+':'')+(G.merit-S.meritStart)+'  →  '+G.merit]];
+  let html='<h2>06:00 — SHIFT OVER · NIGHT '+n+'</h2><table>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</table>';
+  if(lines.length||story.length)html+='<div class="report"><p><b>MORNING REPORT</b></p>'+story.concat(lines).map(l=>'<p>'+l+'</p>').join('')+'</div>';
+  if(relieved){html+='<p class="sub">Your merit fell below zero. Command has relieved you of gate duty.</p><div class="row"><button class="big" id="mGo">Try again</button></div>';clearSaved();G.over=true;}
+  else if(n>=7){html+='<div class="row"><button class="big" id="mGo">The last morning →</button></div>';}
+  else html+='<p class="sub">Rank: <b>'+rankOf(G.merit)+'</b>. Sleep. You\'re back on at midnight.</p><div class="row"><button class="big" id="mGo">Next night →</button></div>';
+  openModal(html);
+  $('#mGo').onclick=()=>{closeModal();if(relieved)newGame();else if(n>=7)finalEnding();else showBriefing();};
+  if(SMOKE)G._lastSummary={relieved,n};
+}
+const INCIDENT={
+  mimic:i=>'04:'+String(10+(i.t%49)).padStart(2,'0')+' — Barracks C. The man you let in as “'+esc(i.name)+'” never reached his bunk. Two other soldiers are missing. Claw marks on the inside of the door.',
+  photo:i=>'Ammunition store B was broken into. The fake ID in the name of '+esc(i.name)+' was found in the snow.',
+  countersign:()=>'Someone who didn\'t know the countersign cut the phone lines to HQ.',
+  passname:()=>'A borrowed Entry Pass got a saboteur into the motor pool. Three trucks burned.',
+  signer:()=>'The forged signature on that pass led back to a spy ring. They were already inside.',
+  duplicate:i=>'There were two '+esc(i.name)+'s inside the wire tonight. Now there\'s none.',
+  wantedName:i=>esc(i.name)+' stole a jeep and drove it through the east fence.',
+  wantedFace:()=>'The man matching the wanted poster set fire to the fuel depot.',
+  weapon:()=>'Shots fired in the motor pool. One soldier wounded.',
+};
+function storyNews(n){
+  const f=G.flags,out=[];
+  if(n===1&&f.reyes1)out.push(f.reyes1==='admit'?'PVT Reyes made it to his bunk on an expired ID. He owes you one. Your sergeant noticed.':'PVT Reyes slept in the bus shelter. He\'ll live. Probably.');
+  if(n===3&&f.kessler3)out.push(f.kessler3==='detain'?'The MPs say the thing in Kessler\'s uniform screamed for an hour. Then it stopped looking like Kessler.':f.kessler3==='deny'?'Kessler walked back into the trees. A patrol saw him at dawn standing at the fence, smiling at the base.':'Kessler walked into Barracks C. By morning nobody in Barracks C was walking.');
+  if(n===4&&f.brandt4b)out.push(f.brandt4b==='detain'?'There were two Colonel Brandts. The one you stopped melted in its cell.':'There were two Colonel Brandts. One of them was found in a supply closet this morning. The other is still on base.');
+  if(n===6&&f.voss6)out.push('Lt. Voss\'s body was found at the north fence at dawn. She had been dead for two days. '+(f.voss6==='detain'?'You already knew that thing wasn\'t her.':f.voss6==='admit'?'So who did you let in?':'So who was at your window?'));
+  return out;
+}
+function finalEnding(){
+  const h=G.flags.hale7,b=G.breaches;
+  let t,txt;
+  if(h==='detain'){t=b===0?'THE SILVER STAR':'THE GENERAL HAD NO SHADOW';txt='The thing in General Hale\'s coat took eleven MPs to hold down. When it stopped struggling, the others past the treeline stopped too. They just... stood there, and then they were gone.<br><br>'+(b===0?'Not one breach in seven nights. They pin a Silver Star to your jacket. You don\'t sleep for a week.':'There were mistakes along the way. But you stopped the one that mattered.');}
+  else if(h==='deny'){t='IT WALKED BACK INTO THE TREES';txt='You kept the gate down. The General smiled with too many teeth, turned, and walked into the dark. At 06:00 the treeline was empty.<br><br>Fort Corvin survived. But it\'s still out there. And now it knows your face.';}
+  else{t='FORT CORVIN WENT SILENT';txt='You raised the gate for the General. At 05:12 the radio went quiet, one barracks at a time.<br><br>When relief arrived at dawn, every soldier on base was standing at attention in the rain, waiting to be let out.';}
+  clearSaved();G.over=true;
+  try{const prev=JSON.parse(localStorage.getItem(SAVE_KEY+'.endings')||'{}');prev[t]=1;localStorage.setItem(SAVE_KEY+'.endings',JSON.stringify(prev));}catch(e){}
+  openModal('<h2>ENDING</h2><h1 style="font-size:26px">'+t+'</h1><p class="sub" style="margin-top:10px">'+txt+'</p><table><tr><td>Final merit</td><td>'+G.merit+'</td></tr><tr><td>Final rank</td><td>'+rankOf(G.merit)+'</td></tr><tr><td>Breaches</td><td>'+b+'</td></tr></table><div class="row"><button class="big" id="mGo">New career</button><a class="big ghost" href="index.html" style="text-decoration:none">Back to GLITCHBOX</a></div>');
+  $('#mGo').onclick=()=>{closeModal();newGame();};
+  if(SMOKE)G._ending=t;
+}
+function gameOver(why){
+  clearSaved();G.over=true;
+  openModal('<h2>COURT-MARTIAL</h2><h1 style="font-size:26px">THREE BREACHES</h1><p class="sub" style="margin-top:10px">Three times you raised the gate for something that should never have come through. The tribunal took eleven minutes.<br><br>You survived '+(G.night-1)+' full night'+(G.night===2?'':'s')+'.</p><div class="row"><button class="big" id="mGo">Try again</button><a class="big ghost" href="index.html" style="text-decoration:none">Back to GLITCHBOX</a></div>');
+  $('#mGo').onclick=()=>{closeModal();newGame();};
+  if(SMOKE)G._ending='court';
+}
+
+// ── briefings ──
+const BRIEF={
+1:'Evening, Private. Staff Sergeant Bell. Welcome to the Corvin gate.\n\nMidnight to six, you\'re all that stands between that fence and the base. Tonight\'s easy. Everybody shows a military ID. Check it isn\'t expired, and check the photo is the face in your window.\n\nHaircuts and glasses change. Faces don\'t. Wrong face means a fake ID: DETAIN them. Bad paperwork from an honest idiot, just DENY.',
+2:'Countersign is in effect from tonight. When they step up, CHALLENGE them. They answer with the reply. Wrong answer, they\'re not ours: DETAIN.\n\nLt. Voss from Signals says hi. She\'s through around one. Don\'t go easy on her, she\'ll respect you for it.',
+3:'Bad news, Private. Kessler\'s patrol didn\'t come back from the north fence. We found two of them. We didn\'t find Kessler.\n\nSomething out there is wearing our faces. Command calls them HOLLOWS. Their papers are perfect: they copy everything. But they get the body wrong.\n\nShine your torch in their eyes: Hollow eyes catch the light like an animal\'s. Make them put a hand on the glass and COUNT the fingers. Torch battery doesn\'t last, so pick your moments.\n\nThe roster\'s live now too. Anyone not on it needs an Entry Pass.',
+4:'Inspection week. Colonel Brandt is on the roster tonight, so look sharp.\n\nOnly units stationed here get through. And watch your entry LOG. If somebody you already let in tonight walks up to the window again, one of them is a Hollow. Detain the one at the glass.\n\nAnd Private? Watch their eyes for a few seconds. People blink. Hollows forget to.',
+5:'MPs are hunting deserters. The WANTED board is on your desk. Some by name, some just by description.\n\nBags get searched from tonight. Firearms and blades: DETAIN. Booze: DENY.\n\nAnother torch trick: a person under the light throws a shadow on the wall behind them. A Hollow doesn\'t.',
+6:'Curfew from tonight. After 03:00, enlisted need an Entry Pass even if they\'re on the roster. Officers are exempt.\n\nOne more thing about Hollows, Private. Listen to them answer the challenge. Watch the mouth. If you see more teeth than a person should have, you hit that alarm.',
+7:'This is it. Lockdown night. There are things massing past the treeline. Dozens of them.\n\nCommand thinks something big is coming in wearing brass, maybe whatever\'s been running them. Every rule you\'ve learned, all at once. Trust nothing.\n\nIt\'s been an honour, Private. See you at six.',
+};
+function showBriefing(){
+  const n=G.night;
+  const fresh=rulesFor(n).filter(r=>r[0]===n);
+  const newTells=Object.entries(TELLS).filter(([k,t])=>t.n===n);
+  let html='<h2>NIGHT '+n+' OF 7 · '+fmtDate(todayOf(n))+' · 00:00–06:00</h2><div class="radio">📻 '+esc(BRIEF[n])+'</div>';
+  if(fresh.length||newTells.length)html+='<b style="font-size:12px;letter-spacing:.12em;color:var(--amber)">NEW TONIGHT</b><ul class="newrules">'+fresh.map(r=>'<li>'+r[1]+'</li>').join('')+newTells.map(([k,t])=>'<li>🫥 Hollow tell: <b>'+t.name+'</b>. '+esc(t.how)+'</li>').join('')+'</ul>';
+  if(n===1)html+='<p class="sub">Keys: <b>A</b> admit · <b>D</b> deny · <b>X</b> detain · <b>Space</b> inspect (click two things that should agree). Warnings: 2 free per night, then −10 merit each. Let 3 threats through and you\'re court-martialed.</p>';
+  html+='<div class="row"><button class="big" id="mGo">Start shift</button></div>';
+  openModal(html);
+  $('#mGo').onclick=()=>{closeModal();audio();startNight();};
+}
+function showTitle(){
+  const s=loadSaved();
+  let html='<h1>MIDNIGHT POST</h1><p class="sub">Fort Corvin, November 1987. You guard the gate from midnight to six. Check the papers. Challenge them. Admit, deny or detain.<br><br>Seven nights. Something in the woods has started wearing our faces.</p>';
+  html+='<div class="row">'+(s&&s.night>1?'<button class="big" id="mCont">Continue: Night '+s.night+'</button><button class="big ghost" id="mNew">New career</button>':'<button class="big" id="mNew">Report for duty</button>')+'</div>';
+  openModal(html);
+  $('#mNew').onclick=()=>{closeModal();newGame();};
+  if($('#mCont'))$('#mCont').onclick=()=>{Object.assign(G,{night:s.night,merit:s.merit,breaches:s.breaches,flags:s.flags||{},seed:s.seed,over:false});closeModal();showBriefing();};
+}
+function openModal(html){$('#card').innerHTML=html;$('#modal').classList.add('open');}
+function closeModal(){$('#modal').classList.remove('open');}
+
+// ══════════════════════════ RENDER: DOM ══════════════════════════
+function hud(){
+  const d=G.day;
+  $('#hNight').textContent=G.night>7?7:(d?d.n:G.night);
+  $('#hDate').textContent=d?fmtDate(d.today):'—';
+  $('#hClock').textContent=fmtClock(G.clock);
+  $('#hMerit').textContent=G.merit;$('#hRank').textContent=rankOf(G.merit);
+  $('#hCite').textContent=G.cites+'/2';
+  $('#hBreach').textContent='●'.repeat(G.breaches)+'○'.repeat(Math.max(0,3-G.breaches));
+  $('#batWrap').style.display=d&&d.n>=3?'':'none';
+  $('#bat i').style.width=Math.max(0,G.battery*0.44)+'px';
+}
+function renderTools(){
+  const n=G.day?G.day.n:1,p=G.cur,live=!!p&&!G.leaving&&G.running;
+  const show=(id,on)=>{$(id).style.display=on?'':'none';};
+  show('#tChallenge',n>=2);show('#tLight',n>=3);show('#tHands',n>=3);show('#tBag',n>=5);
+  $('#tChallenge').disabled=!live||G.challenged;$('#tHands').disabled=!live;$('#tBag').disabled=!live||G.bagShown||!(p&&p.bag);
+  $('#tLight').disabled=!live||G.battery<=0;$('#tLight').classList.toggle('on',G.light);
+  for(const id of ['#vAdmit','#vDeny','#vDetain'])$(id).disabled=!live;
+  $('#inspectBtn').disabled=!live;
+}
+const F=(k,label,val,cls)=>'<div class="f'+(cls?' '+cls:'')+'" data-k="'+k+'"><b>'+label+'</b><span>'+val+'</span></div>';
+function renderDocs(){
+  const box=$('#docs'),p=G.cur;
+  if(!p||G.walk<0.6&&!G.leaving){box.innerHTML='<div class="empty">'+(p?'Someone is walking up…':'Nobody at the window.')+'</div>';return;}
+  let h='';
+  if(p.noid)h+='<div class="doc pass" style="background:var(--paper2)"><div class="hd" style="background:#555">NO DOCUMENTS</div><div class="bd">They have no ID card.</div></div>';
+  else{
+    h+='<div class="doc idcard'+(p.civ?' civ':'')+'"><div class="hd">'+(p.civ?'FORT CORVIN · CIVILIAN CONTRACTOR':'ARMED FORCES · IDENTIFICATION')+'</div><div class="bd"><canvas width="168" height="204" data-k="id.photo" id="photoCv"></canvas><div style="flex:1;min-width:0">'+
+      F('id.name','NAME',esc(p.last.toUpperCase()+', '+p.first))+
+      F('id.rank',p.civ?'STATUS':'RANK',esc(p.civ?'CIVILIAN':p.rank))+
+      F('id.unit',p.civ?'EMPLOYER':'UNIT',esc(p.unit))+
+      '<div style="display:flex;gap:6px">'+F('id.num','ID NO.',esc(p.idnum))+F('id.exp','EXPIRES',fmtDate(p.exp))+'</div></div></div></div>';
+  }
+  if(p.pass){
+    const s=p.pass.sign;
+    h+='<div class="doc pass"><div class="hd">ENTRY PASS · FORT CORVIN</div><div class="bd">'+
+      F('pass.name','ISSUED TO',esc(p.pass.last.toUpperCase()+', '+p.pass.first))+
+      F('purpose','PURPOSE',esc(p.pass.purpose))+F('pass.date','VALID ON',fmtDate(p.pass.date))+
+      '<div class="f" data-k="pass.sign"><b>AUTHORIZED BY</b><div class="sig">'+esc(s.f+'. '+s.l)+'</div></div></div></div>';
+  }
+  if(G.bagShown&&p.bag)h+='<div class="doc xray" data-k="bag"><div class="hd">BAG X-RAY</div><div class="bd">'+p.bag.map(i=>'<div class="it"><i>'+i.e+'</i>'+esc(i.l)+'</div>').join('')+'</div></div>';
+  box.innerHTML=h;
+  const cv=$('#photoCv');
+  if(cv){const c=cv.getContext('2d');c.fillStyle='#bfc7c9';c.fillRect(0,0,168,204);c.fillStyle='#a9b3b6';c.fillRect(0,150,168,54);drawFace(c,p.photo,84,92,1.15,{});}
+  for(const k of G.flagged)document.querySelectorAll('[data-k="'+k+'"]').forEach(e=>e.classList.add('flag'));
+}
+function stampDocs(choice){
+  const d=document.querySelector('#docs .doc');if(!d)return;
+  const s=document.createElement('div');s.className='stamp '+(choice==='admit'?'ok':choice==='deny'?'no':'det');
+  s.textContent=choice==='admit'?'ENTRY GRANTED':choice==='deny'?'DENIED':'DETAINED';d.appendChild(s);
+}
+function renderBook(){
+  const d=G.day;if(!d)return;
+  const tabs=TABS.filter(t=>t.n<=d.n);
+  $('#tabs').innerHTML=tabs.map((t,i)=>'<button data-tab="'+t.k+'" class="'+(G.tab===t.k?'on':'')+'">'+(i+1)+' '+t.name+(G.newTabs.has(t.k)?'<span class="nw">•</span>':'')+'</button>').join('');
+  let h='';
+  if(G.tab==='rules'){
+    h='<div data-k="book.rules">';
+    if(d.n>=2)h+='<h4>COUNTERSIGN</h4><p>Challenge: <span class="cs">'+d.challenge+'</span> &nbsp;→&nbsp; Reply: <span class="cs">'+d.reply+'</span></p>';
+    h+='<h4>STANDING ORDERS</h4><ol>'+rulesFor(d.n).map(r=>'<li>'+r[1]+(r[0]===d.n&&d.n>1?'<span class="new">NEW</span>':'')+'</li>').join('')+'</ol>';
+    h+='<p class="dim">Detain beats deny: if any rule says detain, detain.</p></div>';
+  }else if(G.tab==='roster'){
+    h='<div data-k="book.roster"><h4>TONIGHT\'S ROSTER · '+d.roster.length+' NAMES</h4><div class="cols">'+d.roster.map(e=>'<div>'+esc(e.last.toUpperCase()+', '+e.first)+'</div>').join('')+'</div><p class="dim">Not on this list? Then they need an Entry Pass.</p></div>';
+  }else if(G.tab==='signers'){
+    h='<div data-k="book.signers"><h4>AUTHORIZED TO SIGN ENTRY PASSES TONIGHT</h4><ul>'+d.signers.map(s=>'<li><b>'+s.r+' '+s.f+'. '+s.l+'</b> <span class="sig" style="font-size:17px;color:var(--blue)">'+s.f+'. '+s.l+'</span></li>').join('')+'</ul><p class="dim">This list changes every night.</p></div>';
+  }else if(G.tab==='units'){
+    h='<div data-k="book.units"><h4>UNITS STATIONED AT FORT CORVIN</h4><ul>'+UNITS_HERE.map(u=>'<li>'+u+'</li>').join('')+'</ul><p class="dim">Civilian contractors are exempt.</p></div>';
+  }else if(G.tab==='hollow'){
+    h='<div data-k="book.hollow"><h4>HOLLOWS: KNOWN TELLS</h4><ul>'+Object.values(TELLS).filter(t=>t.n<=d.n).map(t=>'<li><b>'+t.name+'.</b> '+esc(t.how)+'</li>').join('')+'</ul><p class="dim">Their papers will be perfect. Only the body gives them away. Any tell → DETAIN.</p></div>';
+  }else if(G.tab==='log'){
+    h='<div data-k="book.log"><h4>ENTRY LOG · ADMITTED TONIGHT</h4>'+(d.log.length?'<div class="cols">'+d.log.map(e=>'<div>'+fmtClock(e.t)+' '+esc(e.last.toUpperCase()+', '+e.first)+'</div>').join('')+'</div>':'<p class="dim">Nobody yet.</p>')+'</div>';
+  }else if(G.tab==='wanted'){
+    h='<div data-k="book.wanted"><h4>WANTED · DETAIN ON SIGHT</h4><ul>'+d.wanted.map(w=>w.type==='name'?'<li><b>'+w.rank+' '+esc(w.first+' '+w.last)+'</b>. '+esc(w.crime)+'</li>':'<li><b>Unknown person:</b> '+EYEN[w.eye]+' eyes and '+markDesc(w.mark)+'. '+esc(w.crime)+'</li>').join('')+'</ul></div>';
+  }
+  $('#bookbody').innerHTML=h;
+  for(const k of G.flagged)document.querySelectorAll('#bookbody [data-k="'+k+'"]').forEach(e=>e.classList.add('flag'));
+}
+
+// ── inspect ──
+function toggleInspect(on){
+  G.inspect=on===undefined?!G.inspect:on;if(G.inspect&&(!G.cur||G.leaving))G.inspect=false;
+  document.body.classList.toggle('inspect',G.inspect);$('#inspectBtn').classList.toggle('on',G.inspect);
+  if(G.sel){document.querySelectorAll('.sel').forEach(e=>e.classList.remove('sel'));G.sel=null;}
+}
+function inspectPair(p,day,a,b){
+  const j=judge(p,day);
+  for(const k of j.R){const pr=REASONS[k].pair;if(pr&&((pr[0]===a&&pr[1]===b)||(pr[0]===b&&pr[1]===a)))return k;}
+  return null;
+}
+function inspectClick(k,el){
+  if(!G.inspect||!G.cur)return;
+  if(!G.sel){G.sel=k;el.classList.add('sel');return;}
+  if(G.sel===k){el.classList.remove('sel');G.sel=null;return;}
+  const a=G.sel;document.querySelectorAll('.sel').forEach(e=>e.classList.remove('sel'));G.sel=null;
+  const hit=inspectPair(G.cur,G.day,a,k);
+  if(hit){
+    G.flagged.add(a);G.flagged.add(k);
+    say('bad','🔍 Discrepancy: '+REASONS[hit].msg+'.');
+    const p=G.cur,ex=(p.lines&&p.lines[hit])||(REASONS[hit].ex.length?pick(G.rng,REASONS[hit].ex):null);
+    if(ex)setTimeout(()=>speak(ex),450);
+    tone(330,0.12,'square',0.06);
+    renderDocs();renderBook();
+  }else say('sys','🔍 No discrepancy between those two.');
+  toggleInspect(false);
+}
+
+// ══════════════════════════ RENDER: SCENE ══════════════════════════
+const cv=$('#scene'),cx=cv.getContext('2d');
+const W=640,H=440;
+const drops=Array.from({length:70},(_,i)=>({x:(i*97.13)%W,y:(i*53.7)%H,l:6+(i%5)*3,s:340+(i%7)*40}));
+const beads=Array.from({length:26},(_,i)=>({x:(i*151.3)%460+10,y:(i*89.1)%400+20,r:1.5+(i%4)}));
+let T=0;
+function drawScene(){
+  const c=cx;T+=1/60;
+  // exterior
+  const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#05070b');g.addColorStop(.6,'#0b0f12');g.addColorStop(1,'#141310');
+  c.fillStyle=g;c.fillRect(0,0,W,H);
+  // fence + distant lights
+  c.strokeStyle='rgba(120,130,120,.18)';c.lineWidth=1;
+  for(let x=0;x<W;x+=26){c.beginPath();c.moveTo(x,120);c.lineTo(x,180);c.stroke();}
+  c.beginPath();c.moveTo(0,124);c.lineTo(W,124);c.moveTo(0,150);c.lineTo(W,150);c.stroke();
+  for(const [x,y] of [[60,110],[380,104],[600,112]]){const r=c.createRadialGradient(x,y,0,x,y,26);r.addColorStop(0,'rgba(255,190,110,.5)');r.addColorStop(1,'rgba(255,190,110,0)');c.fillStyle=r;c.fillRect(x-26,y-26,52,52);}
+  // gatehouse wall behind the visitor (catches the shadow)
+  c.fillStyle='#16191a';c.fillRect(30,170,430,270);
+  c.strokeStyle='rgba(255,255,255,.035)';for(let y=180;y<H;y+=22){c.beginPath();c.moveTo(30,y);c.lineTo(460,y);c.stroke();}
+  // sodium lamp
+  const lamp=c.createRadialGradient(250,40,10,250,200,330);lamp.addColorStop(0,'rgba(255,170,70,.32)');lamp.addColorStop(1,'rgba(255,170,70,0)');c.fillStyle=lamp;c.fillRect(0,0,W,H);
+  const p=G.cur;
+  let vx=250,alpha=1;
+  if(p){
+    G.walk=Math.min(1,G.walk+1/50);
+    const e=1-Math.pow(1-G.walk,3);vx=-120+370*e;
+    if(G.leaving){G.leaveT+=1/60;const t=Math.min(1,G.leaveT/1.3);
+      if(G.leaving==='admit')vx=250+380*t*t;else if(G.leaving==='deny')vx=250-420*t*t;else{vx=250;alpha=1-Math.max(0,(t-.55)/.45);}
+      if(G.leaveT>1.5)afterLeave();}
+    // blinking
+    let lid=0;
+    if(!(p.mimic&&p.mimic.includes('blink'))){G.blinkT+=1/60;if(G.blinkT>G.blinkNext){const b=G.blinkT-G.blinkNext;lid=b<.07?b/.07:b<.14?1-(b-.07)/.07:0;if(b>.14){G.blinkT=0;G.blinkNext=1.6+Math.random()*3;}}}
+    const talking=G.talkT>0?(0.5+0.5*Math.sin(T*22)):0;
+    if(G.talkT>0)G.talkT-=1/60;
+    if(G.unfoldT>0)G.unfoldT=Math.min(1,G.unfoldT+1/50);
+    // torch shadow on the wall
+    if(G.light&&!(p.mimic&&p.mimic.includes('shadow'))){c.save();c.globalAlpha=.55*alpha;c.filter='blur(6px)';
+      c.fillStyle='#000';c.beginPath();c.ellipse(vx+70,215,90,104,0,0,6.283);c.fill();c.fillRect(vx-60,300,280,160);c.restore();c.filter='none';}
+    c.save();c.globalAlpha=alpha;
+    drawFace(c,p.face,vx,230,2.35,{light:G.light,blink:lid,talk:talking,tells:p.mimic||[],unfold:G.unfoldT});
+    c.restore();
+  }
+  // torch beam
+  if(G.light){c.save();c.globalCompositeOperation='lighter';const r=c.createRadialGradient(250,220,0,250,220,200);r.addColorStop(0,'rgba(255,250,225,.30)');r.addColorStop(1,'rgba(255,250,225,0)');c.fillStyle=r;c.fillRect(0,0,W,H);c.restore();}
+  else{c.fillStyle='rgba(0,0,0,.12)';c.fillRect(0,0,W,H);}
+  // rain outside
+  c.strokeStyle='rgba(170,190,210,.22)';c.lineWidth=1;c.beginPath();
+  for(const d of drops){d.y+=d.s/60;d.x-=0.6;if(d.y>H){d.y=-10;d.x=Math.random()*W;}c.moveTo(d.x,d.y);c.lineTo(d.x-2,d.y+d.l);}c.stroke();
+  // hand on glass
+  if(p&&G.handsT>0){G.handsT-=1/60;const fade=Math.min(1,G.handsT*2,(3.5-G.handsT)*4);c.save();c.globalAlpha=fade;drawHand(c,345,372,1.35,p.mimic&&p.mimic.includes('fingers')?6:5);c.restore();}
+  // glass: beads + streaks + reflection
+  c.fillStyle='rgba(200,220,240,.13)';for(const b of beads){c.beginPath();c.arc(b.x,b.y,b.r,0,6.283);c.fill();}
+  const rf=c.createLinearGradient(0,0,470,H);rf.addColorStop(0,'rgba(255,255,255,.05)');rf.addColorStop(.35,'rgba(255,255,255,0)');rf.addColorStop(.6,'rgba(255,255,255,.03)');rf.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=rf;c.fillRect(0,0,470,H);
+  // window frame + hatch
+  c.fillStyle='#0d110e';c.fillRect(0,0,W,14);c.fillRect(0,0,14,H);c.fillRect(456,0,184,H);c.fillRect(0,H-26,470,26);
+  c.fillStyle='#1d241e';c.fillRect(170,H-26,160,8);c.fillStyle='#2b352c';c.fillRect(176,H-24,148,3);
+  // ── gate camera monitor ──
+  const mx=472,my=22,mw=154,mh=118;
+  c.fillStyle='#000';c.fillRect(mx-4,my-4,mw+8,mh+24);
+  c.fillStyle='#071209';c.fillRect(mx,my,mw,mh);
+  c.save();c.beginPath();c.rect(mx,my,mw,mh);c.clip();
+  c.fillStyle='#0d2614';c.fillRect(mx,my+mh*.62,mw,mh*.38);
+  // barrier
+  const target=G.leaving==='admit'?1:0;G.barrier+=(target-G.barrier)*0.06;
+  const bx=mx+mw*.62,by=my+mh*.62;
+  c.fillStyle='#3a6a44';c.fillRect(bx-4,by-26,8,30);
+  c.save();c.translate(bx,by-22);c.rotate(-G.barrier*1.35);c.fillStyle='#9fe0a8';c.fillRect(-mw*.5,-3,mw*.5,6);
+  c.fillStyle='#0d2614';for(let i=0;i<4;i++)c.fillRect(-mw*.5+i*20+8,-3,8,6);c.restore();
+  // queue silhouettes
+  c.fillStyle='#4f9c5c';
+  for(let i=0;i<G.queue;i++){const qx=mx+14+i*16,qy=by-4;c.beginPath();c.arc(qx,qy-18,4,0,6.283);c.fill();c.fillRect(qx-4,qy-14,8,16);}
+  for(let y=my;y<my+mh;y+=3){c.fillStyle='rgba(0,0,0,.25)';c.fillRect(mx,y,mw,1);}
+  c.fillStyle='rgba(120,255,150,'+(0.03+Math.random()*0.03)+')';c.fillRect(mx,my,mw,mh);
+  c.restore();
+  c.fillStyle='#ff4d4d';if(Math.floor(T*2)%2)c.fillRect(mx+6,my+6,5,5);
+  c.font='700 9px ui-monospace,monospace';c.fillStyle='#6fe08a';c.fillText('CAM 2 · GATE',mx+14,my+12);
+  c.fillStyle='#8a9a8c';c.fillText('QUEUE '+G.queue,mx,my+mh+14);
+  // booth interior: calendar + clock
+  c.fillStyle='#ece4cf';c.fillRect(492,170,112,70);c.fillStyle='#8e3b34';c.fillRect(492,170,112,16);
+  c.fillStyle='#fff';c.font='800 10px ui-monospace,monospace';c.textAlign='center';c.fillText(G.day?MON[new Date(G.day.today).getUTCMonth()]+' 1987':'',548,182);
+  c.fillStyle='#262019';c.font='900 34px -apple-system,sans-serif';c.fillText(G.day?String(new Date(G.day.today).getUTCDate()):'',548,226);
+  c.fillStyle='#000';c.fillRect(500,262,96,34);c.fillStyle='#ff6b3d';c.font='700 24px ui-monospace,monospace';c.fillText(fmtClock(G.clock),548,288);
+  c.textAlign='left';
+  c.fillStyle='#8a9a8c';c.font='700 9px ui-monospace,monospace';c.fillText('TORCH',492,322);
+  c.fillStyle='#1d241e';c.fillRect(492,328,112,8);c.fillStyle=G.battery>25?'#ffb347':'#ff4d4d';c.fillRect(492,328,112*G.battery/100,8);
+  // speech bubble
+  if(p&&G.talkT>0&&G.talkText){
+    c.font='600 14px -apple-system,sans-serif';
+    const words=G.talkText.split(' '),ls=[];let ln='';for(const w of words){if(c.measureText(ln+' '+w).width>330){ls.push(ln);ln=w;}else ln=ln?ln+' '+w:w;}ls.push(ln);
+    const bw=Math.max(...ls.map(l=>c.measureText(l).width))+24,bh=ls.length*19+14,bx2=Math.min(440-bw,Math.max(22,vx-bw/2)),by2=22;
+    c.fillStyle='rgba(236,228,207,.95)';c.beginPath();c.roundRect?c.roundRect(bx2,by2,bw,bh,8):c.rect(bx2,by2,bw,bh);c.fill();
+    c.fillStyle='#262019';ls.forEach((l,i)=>c.fillText(l,bx2+12,by2+23+i*19));
+  }
+  // detain strobe
+  if(G.flash>0){G.flash-=1/60;c.fillStyle='rgba(255,30,30,'+(0.22*(Math.sin(T*30)>0?1:0.3))+')';c.fillRect(0,0,W,H);}
+  // vignette
+  const v=c.createRadialGradient(240,220,150,240,220,430);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.6)');c.fillStyle=v;c.fillRect(0,0,470,H);
+}
+
+// ══════════════════════════ LOOP + INPUT ══════════════════════════
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.1,(now-last)/1000);last=now;
+  if(G.running&&!$('#modal').classList.contains('open')){
+    G.clock+=dt*CLOCK_RATE;
+    if(G.light){G.battery=Math.max(0,G.battery-dt*6);if(G.battery<=0){G.light=false;renderTools();}}
+    if(!G.cur&&G.clock>=G.nextAt){if(!spawn()&&G.clock>=SHIFT)endNight();}
+    if(G.cur&&G.walk>=0.6&&!G.leaving&&!$('#docs .doc'))renderDocs();
+    hud();
+  }
+  drawScene();
+  requestAnimationFrame(frame);
+}
+function setLight(on){
+  if(on&&(!G.cur||G.leaving||!G.day||G.day.n<3||G.battery<=0))on=false;
+  if(on!==G.light){G.light=on;if(on)SFX.click();renderTools();}
+}
+$('#tChallenge').onclick=()=>act('challenge');
+$('#tHands').onclick=()=>act('hands');
+$('#tBag').onclick=()=>act('bag');
+const tl=$('#tLight');
+tl.addEventListener('pointerdown',e=>{e.preventDefault();setLight(true);});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>tl.addEventListener(ev,()=>setLight(false)));
+$('#vAdmit').onclick=()=>decide('admit');$('#vDeny').onclick=()=>decide('deny');$('#vDetain').onclick=()=>decide('detain');
+$('#inspectBtn').onclick=()=>toggleInspect();
+// keep Space free for inspect: never leave a clicked button focused
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(b)b.blur();});
+$('#mute').onclick=()=>{G.mute=!G.mute;$('#mute').textContent=G.mute?'🔇':'🔊';if(rainNode)rainNode.gain.value=G.mute?0:0.05;};
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;G.tab=b.dataset.tab;G.newTabs.delete(G.tab);renderBook();});
+document.addEventListener('click',e=>{
+  if(!G.inspect)return;const el=e.target.closest('[data-k]');
+  if(!el||el.closest('#tabs'))return;e.preventDefault();e.stopPropagation();inspectClick(el.dataset.k,el);
+},true);
+document.addEventListener('keydown',e=>{
+  if($('#modal').classList.contains('open')){if(e.key==='Enter'&&$('#mGo'))$('#mGo').click();return;}
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const k=e.key.toLowerCase();
+  if(k==='a')decide('admit');else if(k==='d')decide('deny');else if(k==='x')decide('detain');
+  else if(k==='c')act('challenge');else if(k==='h')act('hands');else if(k==='b')act('bag');
+  else if(k==='f'){if(!e.repeat)setLight(true);}
+  else if(k===' '){e.preventDefault();toggleInspect();}
+  else if(/^[1-7]$/.test(k)&&G.day){const t=TABS.filter(t=>t.n<=G.day.n)[+k-1];if(t){G.tab=t.k;G.newTabs.delete(t.k);renderBook();}}
+});
+document.addEventListener('keyup',e=>{if(e.key.toLowerCase()==='f')setLight(false);});
+
+if(window.GBSave)GBSave.register({
+  save:()=>(!G.over&&G.night>1)?{night:G.night,merit:G.merit,breaches:G.breaches,flags:G.flags,seed:G.seed}:null,
+  load:d=>{if(!d)return;Object.assign(G,{night:d.night,merit:d.merit,breaches:d.breaches,flags:d.flags||{},seed:d.seed,over:false,running:false});persist();showBriefing();},
+  autosave:0
+});
+
+// ══════════════════════════ SMOKE TESTS ══════════════════════════
+const SMOKE=/smoke/.test(location.hash);
+function smoke(){
+  const out=[];let pass=0,fail=0;
+  const ok=(name,cond,info)=>{if(cond){pass++;}else{fail++;out.push('FAIL '+name+(info?' — '+info:''));}};
+  // 1. generated visitors: intended verdict == judge, every flaw kind shows up on its nights
+  for(let n=1;n<=7;n++){
+    const kinds=new Set(),wants={admit:0,deny:0,detain:0};let bad=0,honestTell=0;
+    for(let s=1;s<=60;s++){
+      const day=makeDay(n,s,{}),r=rngOf(s*31+n);
+      for(let i=0;i<14;i++){
+        const arrive=Math.floor(i*26);
+        const p=makeVisitor(day,r,arrive);const j=judge(p,day);
+        wants[j.v]++;if(p.flaw)kinds.add(p.flaw);
+        if(p.flaw){const f=FLAWS.find(f=>f.k===p.flaw);if(f.v!==j.v)bad++;}
+        else if(j.v!=='admit')bad++;
+        if(!p.flaw&&p.mimic)honestTell++;
+        if(j.v==='admit'&&r()<.6)day.log.push({first:p.first,last:p.last,rank:p.rank,t:arrive,p:JSON.parse(JSON.stringify(p))});
+      }
+    }
+    ok('night '+n+' verdicts match flaws',bad===0,bad+' mismatches');
+    ok('night '+n+' honest visitors have no tells',honestTell===0);
+    ok('night '+n+' has all three verdicts',wants.admit>50&&wants.deny>30&&wants.detain>30,JSON.stringify(wants));
+    const expect=FLAWS.filter(f=>f.n<=n).map(f=>f.k);
+    const missing=expect.filter(k=>!kinds.has(k));
+    ok('night '+n+' every flaw appears',missing.length===0,'missing '+missing.join(','));
+  }
+  // 2. faces
+  {const r=rngOf(7);let ok1=true,ok2=true;
+   for(let i=0;i<300;i++){const f=randFace(r,r()<.3);if(photoDiff(f,honestPhoto(f,r)))ok1=false;if(!photoDiff(f,forgePhoto(f,r)))ok2=false;}
+   ok('honest photos keep permanent features',ok1);ok('forged photos change a permanent feature',ok2);
+   const tc=document.createElement('canvas').getContext('2d');let threw=null;
+   try{for(let i=0;i<40;i++){const f=randFace(r,i%3===0);drawFace(tc,f,100,100,i%2?2.3:1,{light:i%2,blink:(i%5)/4,talk:(i%3)/2,tells:Object.keys(TELLS).slice(0,i%6),unfold:i%7===0?0.7:0});drawHand(tc,50,50,1,5+(i%2));}}catch(e){threw=e.message;}
+   ok('drawFace/drawHand never throw',!threw,threw);}
+  // 3. story visitors produce the verdict the story expects
+  for(const s of SCRIPTS){
+    const day=makeDay(s.n,5,{});const p=s.make(day);p.arrive=s.at;
+    if(s.id==='brandt4b'){const a=SCRIPTS.find(x=>x.id==='brandt4a').make(day);day.log.push({first:a.first,last:a.last,t:30,p:a});}
+    const j=judge(p,day);
+    ok('story '+s.id+' → '+s.want,j.v===s.want,'got '+j.v+' '+j.R.join(','));
+  }
+  {const day=makeDay(4,5,{});const p=SCRIPTS.find(x=>x.id==='brandt4b').make(day);ok('second Brandt is a duplicate once the first is logged',(day.log.push({first:'Emil',last:'Brandt',t:1,p:{}}),judge(p,day).R.includes('duplicate')));}
+  // 4. specific rule edges
+  {const day=makeDay(6,9,{}),r=rngOf(3);
+   const p=basePerson(day,r,200);p.civ=false;p.rank='PVT';const rr=day.roster.find(e=>!STORY_LAST.has(e.last));p.first=rr.first;p.last=rr.last;p.pass=null;p.mimic=null;p.reply=day.reply;p.photo=Object.assign({},p.face);p.bag=[];p.unit=UNITS_HERE[0];
+   ok('curfew: enlisted on roster after 03:00 w/o pass → deny',judge(p,day).v==='deny',judge(p,day).R.join(','));
+   p.arrive=170;ok('curfew: same at 02:50 → admit',judge(p,day).v==='admit',judge(p,day).R.join(','));
+   p.arrive=200;p.rank='CPT';ok('curfew: officer exempt',judge(p,day).v==='admit');
+   p.rank='PVT';p.pass=makePass(p,day,r);ok('curfew: enlisted with pass → admit',judge(p,day).v==='admit');
+   p.pass.sign=SIGNERS.find(s=>!day.signers.includes(s));ok('unauthorized signer → detain',judge(p,day).v==='detain');
+   p.pass=null;p.exp=day.today;ok('ID expiring today is still valid',!judge(p,day).R.includes('expired'));}
+  // 5. inspect finds the planted discrepancy, and never exposes a Hollow
+  {const day=makeDay(5,11,{}),r=rngOf(9);let found=0,tried=0,leak=0;
+   for(let i=0;i<300;i++){const p=makeVisitor(day,r,i%300);const j=judge(p,day);
+     for(const k of j.R){const pr=REASONS[k].pair;if(!pr)continue;tried++;if(inspectPair(p,day,pr[0],pr[1])===k||inspectPair(p,day,pr[1],pr[0]))found++;}
+     if(p.mimic&&j.R.length===1&&inspectPair(p,day,'face','book.hollow'))leak++;}
+   ok('inspect flags every planted pair',found===tried&&tried>50,found+'/'+tried);ok('inspect cannot see Hollows',leak===0);}
+  // 6. full nights driven by bots
+  const runNight=(n,bot,start)=>{
+    Object.assign(G,{night:n,merit:start&&start.merit!==undefined?start.merit:20,breaches:start&&start.breaches||0,flags:{},seed:42,over:false});
+    G.night=n;startNight();let guard=0;
+    while(G.running&&guard++<5000){
+      G.clock+=8;if(!G.cur&&G.clock>=G.nextAt){if(!spawn()&&G.clock>=SHIFT){endNight();break;}}
+      if(G.cur&&!G.leaving){decide(bot(G.cur));if(G.running)afterLeave();}
+    }
+    closeModal();return G.stats;
+  };
+  {const S=runNight(7,p=>judge(p,G.day).v);ok('perfect bot: no citations or breaches on night 7',S.cites===0&&S.breaches===0,JSON.stringify(S));
+   ok('perfect bot gains merit',G.merit>20);ok('Hale appeared and was detained',G.flags.hale7==='detain');
+   ok('night summary shown',G._lastSummary&&G._lastSummary.n===7);finalEnding();closeModal();ok('Hale detained → good ending',/SILVER|SHADOW/.test(G._ending));}
+  {const S=runNight(4,p=>judge(p,G.day).v);ok('night 4: both Brandts appear',G.flags.brandt4a==='admit'&&G.flags.brandt4b==='detain',JSON.stringify(G.flags));ok('night 4 perfect',S.cites===0);}
+  {G._ending=null;runNight(5,()=>'admit');ok('admit-everything bot gets court-martialed',G._ending==='court'||G.breaches>=3,'breaches '+G.breaches);closeModal();}
+  {runNight(2,p=>judge(p,G.day).v==='admit'?'deny':'admit',{merit:5});ok('reckless bot relieved of duty',G._lastSummary&&G._lastSummary.relieved,'merit '+G.merit);closeModal();}
+  for(let n=1;n<=7;n++){const S=runNight(n,p=>judge(p,G.day).v);ok('night '+n+' sees 8+ visitors at a brisk pace',S.seen>=8,'saw '+S.seen);closeModal();}
+  ok('every story visitor fired',SCRIPTS.every(s=>{runNight(s.n,p=>judge(p,G.day).v);closeModal();return G.flags[s.id];}));
+  ok('quit button script present',!!document.querySelector('script[src="glitchbox-menu.js"]'));
+  clearSaved();
+  const res=(fail?'SMOKE FAIL ':'SMOKE PASS ')+pass+'/'+(pass+fail);
+  document.title=res;
+  const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=res+'\n'+out.join('\n');document.body.appendChild(pre);
+}
+
+if(SMOKE)document.addEventListener('DOMContentLoaded',()=>{try{smoke();}catch(e){document.title='SMOKE FAIL exception';const pre=document.createElement('pre');pre.id='smokeout';pre.textContent='SMOKE FAIL exception: '+e.message+'\n'+e.stack;document.body.appendChild(pre);}});
+else if(/demo\d/.test(location.hash)){
+  // #demo<N>[light|hands|talk]: jump straight into night N with someone at the window (screenshots)
+  const h=location.hash;Object.assign(G,{night:+h.match(/demo(\d)/)[1],seed:7});audio();startNight();G.clock=200;spawn();G.walk=1;
+  for(const s of G.day.scripts)s.done=true;
+  if(/talk/.test(h)){G.challenged=true;setTimeout(()=>{G.talkT=99;G.talkText=G.cur.reply+'.';},50);}
+  if(/hands/.test(h))G.handsT=99;
+  if(/light/.test(h)){G.battery=1e9;G.light=true;}
+  if(/bag/.test(h))G.bagShown=true;
+  renderDocs();renderTools();requestAnimationFrame(frame);
+}
+else{showTitle();requestAnimationFrame(frame);}
+})();
+</script>
+<script src="glitchbox-menu.js" data-pos="bottom-left" defer></script>
+</body>
+</html>
