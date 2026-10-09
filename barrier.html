@@ -69,7 +69,7 @@ function newGame(){
     dist:0, speed:520, targetX:LANE.cx, playerX:LANE.cx, playerY:H*0.78,
     crowd:12, peak:12, runners:[], particles:[], floaters:[],
     entities:[], nextSpawn:0, shake:0, flash:0, flashColor:'255,255,255',
-    dead:false, deadAt:0, spawnGap:340, sinceGate:0
+    dead:false, deadAt:0, spawnGap:340, sinceGate:0, par:12
   };
   seedRunners(G.crowd);
 }
@@ -91,18 +91,28 @@ function syncRunners(){
 // ---------- entity spawning ----------
 // gate pair: two side-by-side gates with operations. barrier: full-width wall with HP.
 let rng=Math.random;
+let PAR_GROW=1.55, PAR_LO=0.4, PAR_SPAN=0.4;   // tuned with a headless bot: picking well ~250 m median, picking at random ~35 m
+let RAMP_M=1500;
+window.__PAR=v=>{PAR_GROW=v[0];PAR_LO=v[1];PAR_SPAN=v[2];if(v[3])RAMP_M=v[3];};
 function spawnAhead(){
   const roll=Math.random();
   const spawnY = -80; // enters at top, world moves it down (we move dist)
-  if(G.sinceGate>2 || roll<0.62){
+  // never two barriers in a row, and every run opens with a gate (a barrier first could
+  // wipe out most of the starting 12 before you'd made a single choice)
+  if(G.sinceGate>=1 || G.dist<1 || roll<0.6){
     G.sinceGate=0;
     // gate pair
     const ops=makeGatePair();
     G.entities.push({ type:'gate', y:-100, left:ops[0], right:ops[1], done:false, w:LANE.w });
+    G.par=Math.round(G.par*PAR_GROW);          // what a crowd that picked well would be by now
   }else{
     // barrier
-    const base=Math.max(8, Math.floor(G.crowd*(0.55+Math.random()*0.9)));
-    const hp=base + Math.floor(Math.random()*10);
+    // Barriers used to roll 55-145% of your CURRENT crowd, so ~40% were unbeatable no
+    // matter which gates you took. Now they follow `par` — the crowd you'd have if you'd
+    // chosen well — so good choices carry you and bad ones catch up with you.
+    const ramp=Math.min(0.55, G.dist/RAMP_M);   // walls get tougher the further you run
+    const hp=Math.max(6, Math.round(G.par*(PAR_LO+ramp+Math.random()*PAR_SPAN)));
+    G.par=Math.max(12, Math.round(G.par-hp*0.9));
     G.entities.push({ type:'barrier', y:-140, hp:hp, max:hp, done:false, hit:0 });
     G.sinceGate++;
   }
@@ -416,7 +426,7 @@ if(window.GBSave) GBSave.register({
     best,
     dist:G.dist, speed:G.speed, crowd:G.crowd, peak:G.peak,
     playerX:G.playerX, targetX:G.targetX,
-    entities:G.entities, nextSpawn:G.nextSpawn, spawnGap:G.spawnGap, sinceGate:G.sinceGate
+    entities:G.entities, nextSpawn:G.nextSpawn, spawnGap:G.spawnGap, sinceGate:G.sinceGate, par:G.par
   },
   load:d=>{
     newGame();
@@ -425,7 +435,7 @@ if(window.GBSave) GBSave.register({
       dist:d.dist||0, speed:d.speed||520, crowd:d.crowd||12, peak:d.peak||d.crowd||12,
       playerX:d.playerX!=null?d.playerX:LANE.cx, targetX:d.targetX!=null?d.targetX:LANE.cx,
       entities:d.entities||[], nextSpawn:d.nextSpawn||0,
-      spawnGap:d.spawnGap||340, sinceGate:d.sinceGate||0
+      spawnGap:d.spawnGap||340, sinceGate:d.sinceGate||0, par:d.par||Math.max(12,d.crowd||12)
     });
     seedRunners(G.crowd);
     state='play'; startEl.classList.add('hidden'); overEl.classList.add('hidden');
