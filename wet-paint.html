@@ -125,7 +125,7 @@ addEventListener('resize', resize);
 const KEYMAP = {
   ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
   KeyW:'up', KeyS:'down', KeyA:'left', KeyD:'right',
-  KeyZ:'ok', Enter:'ok', KeyX:'no', ShiftLeft:'no', ShiftRight:'no',
+  KeyZ:'ok', Enter:'ok', KeyX:'no', ShiftLeft:'shift', ShiftRight:'shift',
   Backspace:'undo', KeyC:'menu', Escape:'pause', KeyM:'mute', KeyG:'ghost',
   KeyF:'fill', KeyQ:'dither', Tab:'peek', Space:'ok',
   Digit1:'s1', Digit2:'s2', Digit3:'s3', Digit4:'s4',
@@ -270,7 +270,7 @@ const Dlg = {
   update(dt){
     if (!this.active) return;
     if (this.lock > 0) this.lock -= dt;
-    const fast = down('ok') || down('no');
+    const fast = down('ok') || down('no') || down('shift');
     if (this.pause > 0){ this.pause -= dt * (fast ? 4 : 1); return; }
     if (!this.done){
       const rate = this.rate * (fast ? 4 : 1);
@@ -971,7 +971,7 @@ function owUpdate(dt){
   if (room.waypoints) lookerUpdate(dt, room);
 
   const [ax, ay] = axis();
-  G.running = down('no');
+  G.running = down('no') || down('shift');
   const sp = (G.running ? 160 : 90) * dt;
   const d = topDir(); if (d) G.facing = d;
 
@@ -1169,6 +1169,15 @@ function edOpen(){
   ED.dx = G.spot.anchors[G.pose][0] + m.w/2; ED.dy = G.spot.anchors[G.pose][1] + m.h/2;
   edMeter();
 }
+// Leave the editor back to the room. It was called (ESC / START / the paint timer
+// running out) but never defined, so the editor could not be closed: the throw
+// stopped the game dead the moment you tried to go and hide.
+function closeEditor(){
+  ED.dropper = false; ED.painting = false; held.ok = false;
+  blankDirty = true;
+  if (G.st === 'EDITOR') G.st = 'PAINT';
+  Audio_.sfx('menu');
+}
 function edPushUndo(){
   ED.undo.push(G.grid.slice());
   if (ED.undo.length > 16) ED.undo.shift();
@@ -1236,9 +1245,10 @@ function edUpdate(dt){
     if (i !== G.slot){ G.prevSlot = G.slot; G.slot = i; Audio_.sfx('menu'); }
   }
   if (hit('slotnext')){ G.prevSlot = G.slot; G.slot = (G.slot + 1) % 8; Audio_.sfx('menu'); }
+  if (hit('coat')){ edPushUndo(); for (const c of m.cells) G.grid[c.i] = G.slots[G.slot]; blankDirty = true; Audio_.sfx('fill'); }
   if (hit('fill')){
     edPushUndo();
-    if (down('no')){ for (const c of m.cells) G.grid[c.i] = G.slots[G.slot]; }   // BASE COAT
+    if (down('shift')){ for (const c of m.cells) G.grid[c.i] = G.slots[G.slot]; }   // BASE COAT (Shift used to also be the eyedropper key, so this never worked)
     else floodFill(ED.cx, ED.cy, G.slots[G.slot]);
     blankDirty = true; Audio_.sfx('fill');
   }
@@ -1351,7 +1361,7 @@ function edDraw(c){
 
   if (PAD_H){
     txt(c, 'TAP THE GRID TO PAINT   B  DROPPER', 8, 210, UI.DIM);
-    txt(c, 'FILL  UNDO  SLOT  BELOW   START  DONE', 8, 222, UI.DIM);
+    txt(c, 'FILL COAT UNDO SLOT BELOW  START DONE', 8, 222, UI.DIM);
   } else {
     txt(c, 'Z PAINT  X DROPPER  F FILL  SH+F COAT', 8, 210, UI.DIM);
     txt(c, 'G VIEW  E MIRROR  Q DITH  , . SHADE  ESC', 8, 222, UI.DIM);
@@ -1586,7 +1596,7 @@ function hideUpdate(dt){
   const myX = myAnchor[0] + G.gridW/2, myY = myAnchor[1] + G.gridH/2;
 
   // ---- breath ----
-  const holding = down('no') && HIDE.breath > 0;
+  const holding = (down('no') || down('shift')) && HIDE.breath > 0;
   if (holding){ HIDE.breath = Math.max(0, HIDE.breath - 34*dt); }
   else HIDE.breath = Math.min(100, HIDE.breath + 14*dt);
 
@@ -2287,7 +2297,8 @@ function update(dt){
     if (hit('no')){ paused = false; G.st = 'TITLE'; titleReset(); }
     return;
   }
-  if (hit('pause') && (G.st === 'PAINT' || G.st === 'HIDE') && !Dlg.active){ paused = true; return; }
+  // state first: hit() consumes the press, so checking it first ate ESC/START in the editor
+  if ((G.st === 'PAINT' || G.st === 'HIDE') && !Dlg.active && hit('pause')){ paused = true; return; }
 
   switch(G.st){
     case 'TITLE':  titleUpdate(dt); break;
@@ -2368,6 +2379,9 @@ function runSmoke(){
   const guard = (n, fn) => { try { fn(); ok(n, true); } catch(e){ ok(n + ' -> ' + e.message, false); } };
 
   for (const [n, c] of paletteAudit()) ok(n, c);
+  guard('the paint editor can be closed (ESC / START / timer)', () => {
+    const st = G.st; G.st = 'EDITOR'; closeEditor(); if (G.st !== 'PAINT') throw new Error('still ' + G.st); G.st = st; });
+  ok('SHIFT is not the eyedropper key (base coat works)', KEYMAP.ShiftLeft !== KEYMAP.KeyX);
   ok('font has 95 glyphs', FONTDATA.blob.length === 95 * 7);
   ok('atlas bakes', atlas(UI.WHITE).width === 96 && atlas(UI.WHITE).height === 48);
 
@@ -2586,7 +2600,7 @@ boot();
     const [bx, by] = toBuf(e);
     if (ED.dropper){ ED.dx = Math.max(0, Math.min(VW-1, bx)); ED.dy = Math.max(0, Math.min(VH-1, by)); buffered.ok = BUFFER; e.preventDefault(); return; }
     const c = cellAt(bx, by); if (!c) return;
-    e.preventDefault(); view.setPointerCapture && view.setPointerCapture(e.pointerId);
+    e.preventDefault(); try { view.setPointerCapture(e.pointerId); } catch(_) {}
     ED.cx = c[0]; ED.cy = c[1]; painting = true; held.ok = true;
   });
   view.addEventListener('pointermove', e => {
@@ -2609,7 +2623,7 @@ boot();
   bootEl.textContent = 'TAP TO START';
   const css = document.createElement('style');
   css.textContent = `
-    #pad{position:fixed;inset:auto 0 0 0;height:190px;z-index:4;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
+    #pad{position:fixed;inset:auto 0 0 0;height:232px;z-index:4;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none}
     #pad button{position:absolute;pointer-events:auto;border:2px solid #5a5a5a;background:#1c1c1ccc;color:#cfcfcf;
       font:700 13px monospace;letter-spacing:1px;border-radius:12px;touch-action:none}
     #pad button.on{background:#4a4a4a;color:#fff}
@@ -2618,12 +2632,12 @@ boot();
     #pad .a{right:18px;bottom:76px;width:70px;height:70px;border-radius:50%;font-size:18px}
     #pad .b{right:98px;bottom:28px;width:62px;height:62px;border-radius:50%;font-size:16px}
     #pad .st{right:14px;bottom:160px;width:76px;height:30px;font-size:11px;border-radius:8px}
-    #pad .t{bottom:160px;width:56px;height:30px;font-size:11px;border-radius:8px}
-    #pad .fl{right:96px} #pad .un{right:158px} #pad .sl{right:220px}`;
+    #pad .t{bottom:198px;width:56px;height:30px;font-size:11px;border-radius:8px}
+    #pad .fl{right:96px} #pad .un{right:158px} #pad .sl{right:220px} #pad .co{right:282px}`;
   document.head.appendChild(css);
   const pad = document.createElement('div'); pad.id = 'pad';
   [['up','d up','▲'],['down','d dn','▼'],['left','d lf','◀'],['right','d rt','▶'],['ok','a','A'],['no','b','B'],['pause','st','START'],
-   ['fill','t fl','FILL'],['undo','t un','UNDO'],['slotnext','t sl','SLOT▶']]
+   ['fill','t fl','FILL'],['undo','t un','UNDO'],['slotnext','t sl','SLOT▶'],['coat','t co','COAT']]
     .forEach(([act, cls, label]) => {
       const b = document.createElement('button'); b.className = cls; b.textContent = label;
       const press = e => { e.preventDefault(); wake(); b.classList.add('on');
@@ -2635,7 +2649,7 @@ boot();
       pad.appendChild(b);
     });
   document.body.appendChild(pad);
-  PAD_H = 196; document.body.style.alignItems = 'flex-start'; resize();
+  PAD_H = 238; document.body.style.alignItems = 'flex-start'; resize();
 })();
 </script>
 <script src="glitchbox-menu.js" defer></script>
