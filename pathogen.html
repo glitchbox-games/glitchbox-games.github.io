@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PATHOGEN</title>
 <script src="glitchbox-save.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -20,7 +21,7 @@ body{
 }
 /* --- TOPBAR --- */
 #topbar{
-  display:flex;align-items:center;gap:20px;padding:8px 18px;
+  display:flex;align-items:center;gap:20px;padding:8px 18px 8px 60px;
   background:rgba(2,4,12,0.98);
   border-bottom:1px solid rgba(0,180,150,0.10);
   flex-shrink:0;position:relative;
@@ -75,6 +76,7 @@ body{
 #main{display:flex;flex:1;overflow:hidden;min-height:0;}
 #map-area{flex:1;position:relative;overflow:hidden;}
 #map-canvas{display:block;}
+
 /* --- SIDEBAR --- */
 #sidebar{
   width:240px;
@@ -270,6 +272,20 @@ body{
   cursor:pointer;border-radius:3px;transition:all .2s;
 }
 .mut-devolve:hover{border-color:rgba(80,120,180,.4);color:#6688aa;}
+/* phones: the desktop layout was just shrunk to an unreadable miniature */
+@media (max-width:760px){
+  body{height:100dvh}
+  #topbar{flex-wrap:wrap;gap:8px 14px;padding:6px 10px 6px 56px}
+  #game-title{font-size:15px;letter-spacing:2px}
+  #cure-wrap{order:5;flex:1 1 100%;min-width:0}
+  #speed-btns{margin-left:auto}
+  #main{flex-direction:column}
+  #map-area{flex:0 0 46vh}
+  #sidebar{width:auto;flex:1;min-height:0;border-left:0;border-top:1px solid rgba(20,50,100,.3)}
+  #disease-panel{padding:8px 12px}
+  #mut-popup{min-width:0;width:90%}
+  .evo-node{padding:10px 10px}
+}
 </style>
 </head>
 <body>
@@ -878,7 +894,7 @@ let bubbles=[];
 let notifs=[];
 function addNotif(msg,col){
   notifs.unshift({msg,col:col||'#ffaa22',age:0,maxAge:260,slideAge:0});
-  if(notifs.length>6) notifs.pop();
+  if(notifs.length>(innerWidth<760?3:6)) notifs.pop();
 }
 
 const DIFF_CFG={
@@ -936,6 +952,8 @@ if(window.GBSave) GBSave.register({
     pushNews('Outbreak restored — '+diseaseName+' is still spreading.');
     if(animId) cancelAnimationFrame(animId);
     renderLoop();
+    // the clock never restarted after a load, so a restored plague sat frozen
+    clearInterval(tickTimer); if(G.running&&!G.over) tickTimer=setInterval(tick,getTickMs());
   },
   autosave:30
 });
@@ -993,9 +1011,11 @@ function tick(){
     const td=G.countries.reduce((s,c)=>s+c.dead,0);
     const ti=G.countries.reduce((s,c)=>s+c.infected,0);
     const h=Math.max(0,tp-td-ti);
-    if(h/tp>.002) G.cure=Math.min(1,G.cure+h/tp*.0012*G.cureMult*cfg.cureMult);
+    if(h/tp>.002) G.cure=Math.min(1,G.cure+h/tp*BAL.cure*G.cureMult*cfg.cureMult);
   }
 
+  for(const b of bubbles) b.age+=Math.max(1,Math.round(getTickMs()/50));   // ~170 = 8.5s on screen
+  bubbles=bubbles.filter(b=>b.age<b.maxAge);
   if(G.tick%cfg.bubRate===0) spawnBubble();
   if(G.tick%120===0&&!pendingMut) maybeMutate();
   if(G.tick%55===0) periodicNews(totalInf);
@@ -1019,13 +1039,16 @@ function getSpread(c){
   return r;
 }
 
+// Balance dials (tuned with a headless bot so the plague can actually reach the
+// world before the cure lands — it used to almost never cross a border).
+const BAL={route:5,detect:.02,cure:.0013};
 function routeSpread(from,to,delta,cfg){
   const alive=to.pop-to.dead,healthy=Math.max(0,alive-to.infected);
   if(healthy<=0) return;
   let mult=from.bordersClosed||to.bordersClosed?.15:1;
   if(from.airportClosed||to.airportClosed) mult=.02;
-  const sr=getSpread(from)*.22*mult;
-  if(Math.random()<sr*(from.infected/from.pop))
+  const p=Math.min(.5,getSpread(from)*BAL.route*mult*Math.sqrt(from.infected/from.pop));
+  if(Math.random()<p)
     delta[to.id]+=Math.max(1,Math.floor(to.pop*.00006));
 }
 
@@ -1037,7 +1060,7 @@ function updateDetection(c,cfg){
   } else {
     if(c.infected<=0) return;
     const sev=Math.max(0,G.severity+G.stealthBonus);
-    c.visibility=Math.min(1,c.visibility+(sev*.0006+c.infected/c.pop*1.5)*cfg.detMult);
+    c.visibility=Math.min(1,c.visibility+(sev*.0006+c.infected/c.pop*BAL.detect)*cfg.detMult);
     if(c.visibility>=1){
       c.detected=true;G.cureStarted=true;
       pushNews(`🔬 ${c.name} confirms pathogen — cure research begins`);
@@ -1089,7 +1112,9 @@ const NEWS=[
   'Morgues at capacity in multiple affected cities.',
   'Final cure trial shows promising preliminary results.',
 ];
+let lastNews='';
 function pushNews(msg,notifCol){
+  if(msg===lastNews||notifs.some(n=>n.msg===msg&&n.age<n.maxAge)) return; lastNews=msg;
   const el=document.getElementById('news-text');
   el.style.opacity='0';
   setTimeout(()=>{el.textContent=msg;el.style.transition='opacity .35s';el.style.opacity='1';},240);
