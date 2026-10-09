@@ -11,8 +11,9 @@
   html,body{margin:0;height:100%;background:#0d120c;overflow:hidden;color:var(--ink);
     font:14px/1.4 "Courier New",monospace;user-select:none;-webkit-font-smoothing:none;}
   #game{position:fixed;inset:0;display:block;image-rendering:pixelated;cursor:crosshair;}
-  .hud{position:fixed;left:10px;top:8px;z-index:5;text-shadow:2px 2px 0 #000;pointer-events:none;font-weight:bold;}
+  .hud{position:fixed;left:10px;top:52px;z-index:5;text-shadow:2px 2px 0 #000;pointer-events:none;font-weight:bold;}
   .hud .row{margin-bottom:3px;letter-spacing:1px;}
+  @media (max-width:600px){ .hud{max-width:calc(100vw - 150px);font-size:12px} #flash{font-size:18px;width:90vw} }
   .stars{color:#ff5a5a;letter-spacing:2px;}
   .cash{color:#ffe14d;font-size:18px;}
   .route{color:#9ad6ff;}
@@ -239,17 +240,32 @@ const hotspots=[];
 for(const k in PLACES){ const p=PLACES[k]; if(p.vill||p.ent) hotspots.push(p); }
 for(const f of FEATURES){ if(f.geyser) hotspots.push(f); }
 for(const h of hotspots){ const n=h.vill?16:(h.ent?6:9);
-  for(let i=0;i<n;i++){ let tx,ty,tr=0; do{ tx=h.x+rint(-q(7),q(7)); ty=h.y+rint(-q(7),q(7)); tr++; }while(SOLID[tile(tx,ty)]&&tr<25); spawnTourist(tx*T+T/2,ty*T+T/2); } }
+  for(let i=0;i<n;i++){ let tx,ty,tr=0; do{ tx=h.x+rint(-q(3),q(3)); ty=h.y+rint(-q(3),q(3)); tr++; }while(SOLID[tile(tx,ty)]&&tr<25); spawnTourist(tx*T+T/2,ty*T+T/2); } }
 // a parked car at every junction/village/entrance so you can actually travel the Loop
 for(const k in PLACES){ const p=PLACES[k]; cars.push({ x:p.x*T+T/2, y:(p.y+1)*T+T/2, vx:0,vy:0, ang:0, occupied:false }); }
 
+// Tourists killed (or scared off) are replaced by new arrivals at a hotspot you can't see.
+const TOURIST_TARGET=npcs.filter(n=>n.type==='tourist').length; let touristT=0;
+function respawnTourists(dt){
+  touristT-=dt; if(touristT>0) return; touristT=1.5;
+  if(npcs.filter(n=>n.type==='tourist'&&!n.dead).length>=TOURIST_TARGET) return;
+  for(let tr=0;tr<8;tr++){ const h=hotspots[rint(0,hotspots.length-1)];
+    const tx=h.x+rint(-q(3),q(3)), ty=h.y+rint(-q(3),q(3)), wx=tx*T+T/2, wy=ty*T+T/2;
+    if(SOLID[tile(tx,ty)]) continue;
+    if(Math.abs(wx-player.x)<W*0.7 && Math.abs(wy-player.y)<H*0.7) continue;   // never pop in on screen
+    spawnTourist(wx,wy); return; }
+}
 // Wildlife bubble: a fixed herd that's recycled to stay around the player as you travel.
+const nearVillage=(tx,ty)=>hotspots.some(h=>Math.abs(h.x-tx)<q(9)&&Math.abs(h.y-ty)<q(9));
 function placeNear(cx,cy,minR,maxR,wantGrass){
-  for(let tr=0;tr<26;tr++){ const a=rng(0,6.28),d=rng(minR,maxR), tx=((cx+Math.cos(a)*d)/T)|0, ty=((cy+Math.sin(a)*d)/T)|0;
-    if(tx>2&&ty>2&&tx<MW-2&&ty<MH-2 && !SOLID[tile(tx,ty)] && (!wantGrass||tile(tx,ty)===GRASS)) return {x:tx*T+T/2,y:ty*T+T/2}; }
-  return {x:cx+rng(-300,300),y:cy+rng(-300,300)}; }
-for(let i=0;i<130;i++){ const p=placeNear(player.x,player.y,260,1600,true);  spawnBison(p.x,p.y); }
-for(let i=0;i<55;i++){  const p=placeNear(player.x,player.y,260,1600,false); spawnBear(p.x,p.y); }
+  for(let tr=0;tr<40;tr++){ const a=rng(0,6.28),d=rng(minR,maxR), tx=((cx+Math.cos(a)*d)/T)|0, ty=((cy+Math.sin(a)*d)/T)|0;
+    if(tx>2&&ty>2&&tx<MW-2&&ty<MH-2 && !SOLID[tile(tx,ty)] && (!wantGrass||(tile(tx,ty)===GRASS&&(tr>30||!nearVillage(tx,ty))))) return {x:tx*T+T/2,y:ty*T+T/2}; }
+  // nothing suitable: any open tile at the right distance, never right next to the player
+  for(let tr=0;tr<40;tr++){ const a=rng(0,6.28),d=rng(minR,maxR), tx=((cx+Math.cos(a)*d)/T)|0, ty=((cy+Math.sin(a)*d)/T)|0;
+    if(tx>2&&ty>2&&tx<MW-2&&ty<MH-2 && !SOLID[tile(tx,ty)]) return {x:tx*T+T/2,y:ty*T+T/2}; }
+  const a=rng(0,6.28); return {x:cx+Math.cos(a)*maxR,y:cy+Math.sin(a)*maxR}; }
+for(let i=0;i<45;i++){ const p=placeNear(player.x,player.y,500,2400,true);  spawnBison(p.x,p.y); }
+for(let i=0;i<20;i++){  const p=placeNear(player.x,player.y,600,2400,false); spawnBear(p.x,p.y); }
 let _wIdx=0;
 function recycleWildlife(){ const far=Math.max(W,H)*1.7, near=Math.max(W,H)*1.06;
   for(let n=0;n<12;n++){ if(npcs.length===0) break; _wIdx=(_wIdx+1)%npcs.length; const a=npcs[_wIdx];
@@ -269,6 +285,39 @@ addEventListener('keyup',e=>{ keys[e.code]=false; });
 cv.addEventListener('mousemove',e=>{ mx=e.clientX; my=e.clientY; });
 cv.addEventListener('mousedown',e=>{ if(e.button===0){ firing=true; if(!actx)startAudio(); } });
 addEventListener('mouseup',e=>{ if(e.button===0) firing=false; });
+
+// ── Touch controls: stick on the left, ATTACK + E on the right (auto-aims at the nearest target) ──
+const touch={on:false,jx:0,jy:0,atk:false,id:null,ox:0,oy:0,lastAng:0};
+function touchAim(ix,iy){
+  let best=null,bd=player.gun?380:120;
+  for(const n of npcs){ if(n.dead||n.spared) continue; const d=Math.hypot(n.x-player.x,n.y-player.y); if(d<bd){bd=d;best=n;} }
+  if(best) touch.lastAng=Math.atan2(best.y-player.y,best.x-player.x); else if(ix||iy) touch.lastAng=Math.atan2(iy,ix);
+  mx=player.x-camX+Math.cos(touch.lastAng)*60; my=player.y-camY+Math.sin(touch.lastAng)*60;
+}
+function setupTouch(){
+  if(touch.ui) return; touch.on=true;
+  const st=document.createElement('style');st.textContent=`.tc{position:fixed;z-index:6;touch-action:none;user-select:none;-webkit-user-select:none}
+  #tStick{left:18px;bottom:22px;width:130px;height:130px;border-radius:50%;background:#ffffff14;border:3px solid #ffffff40}
+  #tKnob{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#ffe14dcc}
+  .tb{right:18px;width:86px;height:86px;border-radius:50%;border:3px solid #fff;color:#000;font:bold 16px "Courier New",monospace;display:flex;align-items:center;justify-content:center}
+  #tAtk{bottom:26px;background:#ff5a5ad0;color:#fff} #tE{bottom:126px;width:64px;height:64px;right:30px;background:#ffe14dd0}
+  #wep{bottom:160px!important} #hint{display:none}`;document.head.appendChild(st);
+  const stick=document.createElement('div');stick.id='tStick';stick.className='tc';stick.innerHTML='<div id="tKnob"></div>';document.body.appendChild(stick);
+  const atk=document.createElement('div');atk.id='tAtk';atk.className='tc tb';atk.textContent='ATTACK';document.body.appendChild(atk);
+  const eb=document.createElement('div');eb.id='tE';eb.className='tc tb';eb.textContent='E';document.body.appendChild(eb);
+  const knob=stick.firstChild;
+  const mv=t=>{const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=t.clientX-cx,dy=t.clientY-cy;const d=Math.hypot(dx,dy),R=48;if(d>R){dx*=R/d;dy*=R/d}
+    knob.style.left=(40+dx)+'px';knob.style.top=(40+dy)+'px';touch.jx=Math.abs(dx)>8?dx/R:0;touch.jy=Math.abs(dy)>8?dy/R:0;};
+  stick.addEventListener('touchstart',e=>{e.preventDefault();touch.id=e.changedTouches[0].identifier;mv(e.changedTouches[0]);if(!actx)startAudio();},{passive:false});
+  stick.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(t.identifier===touch.id)mv(t);},{passive:false});
+  const end=e=>{for(const t of e.changedTouches)if(t.identifier===touch.id){touch.id=null;touch.jx=touch.jy=0;knob.style.left='40px';knob.style.top='40px';}};
+  stick.addEventListener('touchend',end);stick.addEventListener('touchcancel',end);
+  atk.addEventListener('touchstart',e=>{e.preventDefault();touch.atk=true;},{passive:false});
+  atk.addEventListener('touchend',()=>{touch.atk=false;});atk.addEventListener('touchcancel',()=>{touch.atk=false;});
+  eb.addEventListener('touchstart',e=>{e.preventDefault();interact();},{passive:false});
+  touch.ui=true;
+}
+addEventListener('touchstart',()=>{ if(started) setupTouch(); },{passive:true});
 
 // ── Camera ──
 let camX=0,camY=0;
@@ -294,8 +343,13 @@ function killNpc(npc, byCar){
   burst(npc.x,npc.y, npc.color||'#7a5a3a', 16);
   npc.dead=true; sfx('die');
 }
-function hurt(npc, dmg, byCar){
+function hurt(npc, dmg, byCar, env){
   npc.hp-=dmg;
+  if(env){ // the park did it, not you: no wanted heat, no kill credit, no loot
+    if(npc.type==='tourist') npc.state='flee';
+    if(npc.hp<=0){ burst(npc.x,npc.y,npc.color||'#7a5a3a',12); npc.dead=true; }
+    return;
+  }
   if(npc.type==='tourist'){ npc.state='flee'; if(!npc.spoke) addHeat(0.4); }
   else if(npc.type==='bison'){ npc.state='flee'; npc.t2=4; addHeat(0.5); }   // stampede
   else if(npc.type==='bear'){ npc.angry=2.5; addHeat(0.5); }                  // enrage
@@ -304,9 +358,11 @@ function hurt(npc, dmg, byCar){
 }
 function hurtPlayer(d){ const dmg = player.vest? d*0.5 : d; player.hp-=dmg; player.flash=0.3; if(player.hp<=0) respawn(); }
 function respawn(){ flash("☠ YOU DIED ☠ — woke up in a ranger station. (-half your cash)");
-  player.hp=player.maxHp; player.cash=Math.floor(player.cash/2); heat=0; player.car=null;
+  player.hp=player.maxHp; player.cash=Math.floor(player.cash/2); heat=0; if(player.car) player.car.occupied=false; player.car=null;
+  for(const n of npcs) if(n.type==='ranger') n.dead=true; bullets=[];
   player.x=PLACES.oldFaithful.x*T+T/2; player.y=PLACES.oldFaithful.y*T+T/2; player.vx=player.vy=0; }
 
+function angDiff(a,b){ let d=a-b; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; return d; }
 function meleeOrShoot(){
   if(player.attackCd>0) return;
   const wm=worldMouse(); player.aim=Math.atan2(wm.y-player.y, wm.x-player.x);
@@ -317,7 +373,7 @@ function meleeOrShoot(){
     // melee swing — hit nearest npc in front within 34px
     for(const n of npcs){ if(n.dead) continue;
       const dx=n.x-player.x, dy=n.y-player.y, d=Math.hypot(dx,dy);
-      if(d<34 && Math.abs(Math.atan2(dy,dx)-player.aim)<1.0){ hurt(n,16); break; }
+      if(d<34 && Math.abs(angDiff(Math.atan2(dy,dx),player.aim))<1.0){ hurt(n,16); break; }
     }
     player.attackCd=0.32; sfx('punch');
   }
@@ -441,6 +497,9 @@ function update(dt){
   const sp = (player.boots?330:250);
   let ix=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
   let iy=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
+  if(touch.on&&(touch.jx||touch.jy)){ ix=touch.jx; iy=touch.jy; }
+  if(shopOpen||dlgOpen){ ix=0; iy=0; }
+  if(touch.on) touchAim(ix,iy);
   const wm=worldMouse(); player.aim=Math.atan2(wm.y-player.y, wm.x-player.x);
 
   if(player.car){
@@ -453,15 +512,15 @@ function update(dt){
     player.x=c.x; player.y=c.y;
     // run over npcs
     if(cs>120){ for(const n of npcs){ if(n.dead)continue; if(Math.hypot(n.x-c.x,n.y-c.y)<(n.r||9)+10){
-      if(n.wild){ hurt(n,60,true); c.vx*=-0.45; c.vy*=-0.45; hurtPlayer(12); flash('* You hit a '+n.type+'. Bad idea.'); }
+      if(n.wild){ if((n.hitCd||0)>0) continue; n.hitCd=0.6; hurt(n,60,true); c.vx*=-0.45; c.vy*=-0.45; hurtPlayer(12); flash('* You hit a '+n.type+'. Bad idea.'); }
       else { killNpc(n,true); c.vx*=0.7; c.vy*=0.7; } } } }
   } else {
-    if(ix||iy){ const m=Math.hypot(ix,iy); player.vx=ix/m*sp; player.vy=iy/m*sp; } else { player.vx*=0.6; player.vy*=0.6; }
+    if(ix||iy){ const m=Math.max(1,Math.hypot(ix,iy)); player.vx=ix/m*sp; player.vy=iy/m*sp; } else { player.vx*=0.6; player.vy*=0.6; }
     moveCircle(player, player.vx*dt, player.vy*dt, player.r);
   }
   player.attackCd=Math.max(0,player.attackCd-dt);
   player.flash=Math.max(0,player.flash-dt);
-  if((firing||keys.Space) && !dlgOpen && !shopOpen) meleeOrShoot();
+  if((firing||keys.Space||touch.atk) && !dlgOpen && !shopOpen) meleeOrShoot();
 
   // camera
   camX += ((player.x - W/2) - camX)*Math.min(1,dt*8);
@@ -473,12 +532,16 @@ function update(dt){
   const wantRangers = Math.floor(heat) ;
   const liveRangers = npcs.filter(n=>n.type==='ranger'&&!n.dead).length;
   if(liveRangers<wantRangers && Math.random()<dt*1.2){ // spawn off-screen on a road
-    const ang=rng(0,6.28), d=Math.max(W,H)*0.7; spawnRanger(player.x+Math.cos(ang)*d, player.y+Math.sin(ang)*d);
+    const d=Math.max(W,H)*0.7, p=placeNear(player.x,player.y,d,d*1.3,false); spawnRanger(p.x,p.y);
   }
   recycleWildlife();   // keep herds roaming around the player across the giant map
+  // rangers left far behind (you drove off) give up, so fresh ones can be sent after you
+  for(const n of npcs) if(n.type==='ranger'&&!n.dead&&Math.hypot(n.x-player.x,n.y-player.y)>Math.max(W,H)*2.6) n.dead=true;
+  respawnTourists(dt);
 
   // npcs
   for(const n of npcs){ if(n.dead) continue;
+    if(n.hitCd>0) n.hitCd-=dt;
     const dToP=Math.hypot(player.x-n.x,player.y-n.y);
     if(n.type==='tourist'){
       if(n.state==='flee'){ const a=Math.atan2(n.y-player.y,n.x-player.x); n.vx=Math.cos(a)*150; n.vy=Math.sin(a)*150;
@@ -524,7 +587,7 @@ function update(dt){
     if(Math.abs(gx0-player.x)>W+200 || Math.abs(gy0-player.y)>H+200) continue;
     g.t-=dt; if(g.erupt>0){ g.erupt-=dt;
       const gx=g.x*T+T/2, gy=g.y*T+T/2;
-      for(const n of npcs){ if(!n.dead && Math.hypot(n.x-gx,n.y-gy)<40){ const a=Math.atan2(n.y-gy,n.x-gx); n.vx+=Math.cos(a)*300; n.vy+=Math.sin(a)*300; hurt(n,30); } }
+      for(const n of npcs){ if(!n.dead && Math.hypot(n.x-gx,n.y-gy)<40){ const a=Math.atan2(n.y-gy,n.x-gx); n.vx+=Math.cos(a)*300; n.vy+=Math.sin(a)*300; hurt(n,40*dt,false,true); } }
       if(Math.hypot(player.x-gx,player.y-gy)<40){ hurtPlayer(20*dt*6); }
     } else if(g.t<=0){ g.erupt=0.8; g.t=rng(7,14); sfx('geyser'); burst(g.x*T+T/2,g.y*T+T/2,'#dff',20); } }
 
@@ -672,7 +735,7 @@ function drawLabels(){
   ctx.textAlign='left';
 }
 function drawMinimap(){
-  const mw=204, mh=172, ox=W-mw-12, oy=12;
+  const sm=W<600, mw=sm?120:204, mh=sm?101:172, ox=W-mw-(sm?8:12), oy=sm?8:12;
   ctx.fillStyle='#0a0e08e0'; ctx.fillRect(ox,oy,mw,mh); ctx.strokeStyle='#5a6b3a'; ctx.lineWidth=2; ctx.strokeRect(ox,oy,mw,mh);
   const sx=v=>ox+(v/MW)*mw, sy=v=>oy+(v/MH)*mh;
   ctx.fillStyle='#2e6b8a';
@@ -686,16 +749,14 @@ function drawMinimap(){
   ctx.fillStyle='#8aa06a'; ctx.font='9px monospace'; ctx.fillText('GRAND LOOP RD · figure-8',ox+8,oy+mh-7);
 }
 function drawScale(){
-  const mpp=0.80;                 // the world spans the real park (~0.8 m per pixel)
-  const barPx=200/mpp;            // a 200-metre bar
-  const ox=W/2-230, oy=H-22, w=460;
-  ctx.fillStyle='rgba(8,12,8,0.78)'; ctx.fillRect(ox-12,oy-26,w,40);
+  if(W<900||touch.on) return;   // no room on small screens
+  const mpp=0.80, barPx=200/mpp;   // the world spans the real park (~0.8 m per pixel); a 200-metre bar
+  const w=barPx+190, ox=W/2-w/2, oy=26;
+  ctx.fillStyle='rgba(8,12,8,0.7)'; ctx.fillRect(ox-10,oy-18,w+20,30);
   ctx.strokeStyle='#fff'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+barPx,oy); ctx.moveTo(ox,oy-4); ctx.lineTo(ox,oy+4); ctx.moveTo(ox+barPx,oy-4); ctx.lineTo(ox+barPx,oy+4); ctx.stroke();
   ctx.fillStyle='#fff'; ctx.font='11px monospace'; ctx.fillText('200 m', ox+barPx/2-14, oy-6);
-  ctx.fillStyle='#ffd86e'; ctx.font='11px monospace';
-  ctx.fillText('human : park  ≈  1 : 30,000,000,000   (you’re drawn ~20× too big — at true scale you’d be one pixel)', ox+barPx+16, oy-9);
-  ctx.fillStyle='#9ad6a0'; ctx.fillText('YELLOWSTONE N.P. · 3,472 mi²', ox+barPx+16, oy+5);
+  ctx.fillStyle='#9ad6a0'; ctx.fillText('YELLOWSTONE · 3,472 mi²', ox+barPx+14, oy+3);
 }
 
 // ── HUD ──
@@ -704,7 +765,7 @@ function route(){ if(player.kills===0) return player.spares>=4?'PACIFIST ☮':'N
 function updateHUD(){
   document.getElementById('hCash').textContent='$'+player.cash;
   document.getElementById('hHp').textContent='['+'█'.repeat(Math.max(0,Math.round(player.hp/10)))+' '.repeat(10-Math.max(0,Math.round(player.hp/10)))+']';
-  document.getElementById('hStars').textContent=stars[Math.floor(heat)]||'★★★★★';
+  document.getElementById('hStars').textContent=heat>=1?stars[Math.min(5,Math.floor(heat))]:'—';
   document.getElementById('hRoute').textContent=route();
   document.getElementById('hKills').textContent=' ('+player.kills+' kills / '+player.spares+' spared · '+invCount()+' goods)';
   document.getElementById('wep').textContent= player.car? '🚚 TRUCK (E to exit)' : (player.gun?'🔫 GLOCK':'👊 FISTS');
@@ -737,8 +798,9 @@ function sfx(kind){ if(!actx) return; const t=actx.currentTime;
 }
 
 // ── Start ──
-document.getElementById('startBtn').onclick=()=>{ document.getElementById('start').style.display='none'; started=true; startAudio(); cv.focus(); flash("Welcome to Yellowstone. Please don't feed the economy."); };
+document.getElementById('startBtn').onclick=()=>{ document.getElementById('start').style.display='none'; started=true; startAudio(); cv.focus();
+  if(matchMedia('(pointer:coarse)').matches||'ontouchstart' in window) setupTouch(); flash("Welcome to Yellowstone. Please don't feed the economy."); };
 </script>
-<script src="glitchbox-menu.js" defer></script>
+<script src="glitchbox-menu.js" data-pos="top-left" defer></script>
 </body>
 </html>
