@@ -3,7 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
-  {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'puzzle',     tags:['new','hot'],blurb:'Hungry monsters want snacks! Count, match and serve — made for younger players'},
+  {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hungry monsters want snacks! Count, match and serve — race up to 5 friends. Made for younger players'},
   {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
   {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
   {name:'Most Likely To',     file:'most-likely-to.html',         emoji:'🫵',color:['#120c06','#22101c'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Who\'s most likely to…? Everyone votes, the winner gets crowned. 3 to 16 players'},

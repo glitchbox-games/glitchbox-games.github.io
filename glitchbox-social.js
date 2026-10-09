@@ -506,7 +506,7 @@
     const realUser = currentUser;
     currentUser = { sub: 'me', name: 'Lev', email: 'l@x.com' };
     lastState.friends = [{ sub: 'f1', name: 'Dave', online: 1, playing: 'gridlock.html', room: 'AB12' },
-                         { sub: 'f2', name: 'Eve', online: 1, playing: 'neon-putt.html', room: null }];
+                         { sub: 'f2', name: 'Eve', online: 1, playing: 'idle-universe.html', room: null }];
     lastState.profile = { sub: 'me', code: 'ZZZZ', hide_activity: 0 };
     const badges = [{ id: 'first', e: '🎮', name: 'First Game', desc: 'Play any game', got: true }, { id: 'social', e: '👥', name: 'Social', desc: 'Have 3 friends', got: false }];
     window.api = async (path, opts) => {

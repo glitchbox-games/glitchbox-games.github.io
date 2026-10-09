@@ -6,6 +6,7 @@
 <title>Snack Monsters</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="glitchbox-config.js"></script>
 <script src="glitchbox-save.js" data-pos="top-left"></script>
 <style>
 :root{
@@ -110,6 +111,29 @@ h2{margin:4px 0 8px;font-size:32px;color:var(--plum)}
 #toast{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:clamp(34px,8vw,58px);font-weight:700;color:#fff;z-index:12;pointer-events:none;
   text-shadow:0 4px 0 var(--ink),0 -2px 0 var(--ink),3px 0 0 var(--ink),-3px 0 0 var(--ink);opacity:0;white-space:nowrap}
 #toast.on{animation:toast 1.3s ease-out}
+#chips{position:absolute;left:0;right:0;bottom:8px;display:none;justify-content:center;flex-wrap:wrap;gap:6px;z-index:4;padding:0 8px;pointer-events:none}
+#chips.on{display:flex}
+.chip{display:flex;align-items:center;gap:5px;background:#fff;border:3px solid #e9d8ef;border-radius:999px;padding:2px 10px 2px 4px;font-size:15px;font-weight:700;box-shadow:0 3px 0 var(--shadow)}
+.chip.me{border-color:var(--plum)}
+.chip i{width:20px;height:20px;border-radius:50%;display:inline-block;border:2px solid rgba(0,0,0,.15)}
+.chip b{font-size:16px}
+#wait{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);display:none;font-size:clamp(22px,5vw,32px);font-weight:700;color:var(--plum);background:#fff;border:4px solid var(--ink);border-radius:24px;padding:10px 20px;box-shadow:0 6px 0 var(--shadow);z-index:3;text-align:center;white-space:nowrap}
+#wait.on{display:block}
+#wait small{display:block;font-size:16px;color:#8c6fa3}
+.code{font-size:56px;letter-spacing:10px;font-weight:700;color:var(--berry);background:#fff3f8;border:4px dashed #ffb3cf;border-radius:22px;padding:4px 18px 4px 28px;display:inline-block;margin:4px 0}
+.in{font-family:inherit;font-size:24px;padding:10px 14px;border-radius:18px;border:4px solid #e2cce0;text-align:center;width:100%;max-width:320px;color:var(--ink);background:#fff}
+.in:focus{outline:none;border-color:var(--plum)}
+#joinCode{text-transform:uppercase;letter-spacing:8px;font-weight:700;max-width:220px}
+.plist{display:flex;flex-direction:column;gap:6px;margin:10px auto;max-width:360px}
+.prow{display:flex;align-items:center;gap:10px;background:#fff3f8;border-radius:16px;padding:6px 12px;font-size:20px;font-weight:700;text-align:left}
+.prow i{width:30px;height:30px;border-radius:50%;border:3px solid rgba(0,0,0,.15)}
+.prow span{flex:1}
+.prow.me{outline:3px solid var(--plum)}
+.lv{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.lv button{padding:8px 14px;border-radius:16px;background:#f4eaff;font-size:18px;font-weight:700}
+.lv button.on{background:var(--plum);color:#fff}
+.err{color:#e0336b;font-weight:700;min-height:24px;margin-top:6px}
+.or{color:#b9a3c9;font-weight:700;margin:10px 0 4px}
 #smokeout{position:fixed;inset:0;z-index:999;background:#111;color:#7f7;font:13px monospace;white-space:pre-wrap;overflow:auto;padding:12px;display:none}
 
 @keyframes popin{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
@@ -152,6 +176,8 @@ h2{margin:4px 0 8px;font-size:32px;color:var(--plum)}
     <div id="hint">👆</div>
     <div id="catchbar"><span>Catch</span><span id="ctarget">🍎</span><span id="cscore">0</span><div id="ctime"><i></i></div></div>
     <div id="toast"></div>
+    <div id="chips"></div>
+    <div id="wait"></div>
   </div>
   <div id="bar">
     <button id="undo" disabled title="Take one back">↩️</button>
@@ -165,8 +191,10 @@ h2{margin:4px 0 8px;font-size:32px;color:var(--plum)}
     <canvas id="titleMon" width="440" height="340"></canvas>
     <div class="sub">Hungry monsters are coming!<br>Give them the snacks they ask for.</div>
     <button class="big" id="playBtn">▶ Play</button>
+    <button class="big pink" id="mpBtn">👫 Play with friends</button>
     <button class="big alt" id="bookBtn2">📖 Book</button>
   </div></div>
+  <div class="ov" id="mpOv"><div class="card" id="mpCard"></div></div>
 
   <div class="ov" id="dayOv"><div class="card" id="dayCard"></div></div>
   <div class="ov" id="bookOv"><div class="card" id="bookCard"></div></div>
@@ -182,7 +210,8 @@ h2{margin:4px 0 8px;font-size:32px;color:var(--plum)}
 // Orders grow with the days: more snacks, bigger numbers, then colours
 // ("two red snacks"). Stars buy hats for your chef; each day's VIP monster
 // goes in the sticker book.
-//   #smoke   self-tests        #demo  #democatch  #demoday  #demobook  screenshots
+//   #smoke   self-tests        #demo  #democatch  #demoday  #demobook  #demolobby  #demorace  #demoresults  screenshots
+//   Online: '👫 Play with friends' (Snack Race, 2-6 players) — see the multiplayer section.
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='snackmonsters.v1';
@@ -465,9 +494,11 @@ function startDay(){
 }
 function nextCustomer(){
   const vip=G.i===PER_DAY-1;
-  const m=vip?G.vip:makeMonster(Math.floor(G.r()*1e6));
+  // in a match every player gets the same monster and order, from the host's seed
+  const m=vip?G.vip:makeMonster(G.mp?G.seed*1000+G.i:Math.floor(G.r()*1e6));
   // the very first order of the game is a single apple, with a pointing hand
-  const order=S.tut&&S.served===0?[{f:'apple',n:1}]:makeOrder(G.day,G.r,vip);
+  const order=G.mp?makeOrder(G.day,rngOf(G.seed*7+G.i*13+1),vip):S.tut&&S.served===0?[{f:'apple',n:1}]:makeOrder(G.day,G.r,vip);
+  $('wait').classList.remove('on');
   G.cust={m,order,vip,tries:0,state:'enter',st:0,x:W+L.ms,mood:'idle',mouth:0,hmmT:0};
   G.plate=[];renderPlate();renderOrder();$('bubble').classList.remove('on');
   sfxStep();
@@ -479,7 +510,7 @@ function showOrder(){
   hint();
 }
 function addFood(id,fromEl){
-  if(mode!=='serve'||!G.cust||G.cust.state!=='order'||!FOOD[id])return false;
+  if(mode!=='serve'||!G||!G.cust||G.cust.state!=='order'||!FOOD[id])return false;
   if(G.plate.length>=12){toast('Plate full!');return false}
   G.plate.push(id);sfx('pop',FOODS.findIndex(f=>f.id===id)%8);
   if(fromEl&&fromEl.animate){
@@ -490,18 +521,19 @@ function addFood(id,fromEl){
   }
   clearBad();renderPlate();hint();return true;
 }
-function removeAt(i){if(mode!=='serve'||!G.cust||G.cust.state!=='order'||i<0||i>=G.plate.length)return;G.plate.splice(i,1);sfx('boop');clearBad();renderPlate();hint()}
-function undo(){removeAt(G.plate.length-1)}
+function removeAt(i){if(mode!=='serve'||!G||!G.cust||G.cust.state!=='order'||i<0||i>=G.plate.length)return;G.plate.splice(i,1);sfx('boop');clearBad();renderPlate();hint()}
+function undo(){if(G)removeAt(G.plate.length-1)}
 function clearBad(){document.querySelectorAll('.oi.miss').forEach(e=>e.classList.remove('miss'))}
 // Serve the plate. Right → eat, stars, next. Wrong → "hmm", mark what's off, try again.
 function serve(){
-  if(mode!=='serve'||!G.cust||G.cust.state!=='order'||!G.plate.length)return null;
+  if(mode!=='serve'||!G||!G.cust||G.cust.state!=='order'||!G.plate.length)return null;
   const c=G.cust;c.tries++;
   const j=judge(c.order,G.plate);
   if(j.ok){
-    const st=starsFor(c.tries)+(c.vip?2:0);
+    const st=G.mp?0:starsFor(c.tries)+(c.vip?2:0);
     c.earned=st;c.state='eat';c.st=0;c.mood='idle';
     G.earned+=st;S.stars+=st;S.total+=st;S.served++;S.tut=false;
+    if(G.mp)toHost({t:'done',cid:MY,i:G.i,tries:c.tries});
     flyers=G.plate.map((id,k)=>({id,delay:k*.22,t:0,done:false}));
     G.plate=[];renderPlate();$('bubble').classList.remove('on');hint();
     G.log.push({tries:c.tries,stars:st});
@@ -519,6 +551,12 @@ function serve(){
   return j;
 }
 function afterHappy(){
+  if(G.mp){ // wait for the host to move everyone on together
+    G.cust=null;
+    if(G.pendingI!=null){G.i=G.pendingI;G.pendingI=null;renderDots();nextCustomer()}
+    else{$('wait').innerHTML='Waiting for friends…<small>'+mpStill()+'</small>';$('wait').classList.add('on')}
+    return;
+  }
   G.i++;renderDots();
   if(G.i>=PER_DAY){startCatch();return}
   nextCustomer();
@@ -545,14 +583,14 @@ function renderOrder(){
 function renderDots(){
   $('dots').innerHTML=Array.from({length:PER_DAY},(_,i)=>`<div class="dot${G&&i<G.i?' done':''}${G&&i===G.i&&mode==='serve'?' now':''}">${i===PER_DAY-1?'👑':''}</div>`).join('');
 }
-function updateHud(){$('stars').textContent=S.stars;$('daylbl').textContent='Day '+S.day;$('sndBtn').textContent=S.sound?'🔊':'🔇'}
+function updateHud(){$('stars').textContent=S.stars;$('daylbl').textContent=G&&G.mp?'Snack Race':'Day '+S.day;$('sndBtn').textContent=S.sound?'🔊':'🔇'}
 let toastT=0;
 function toast(t){const el=$('toast');el.textContent=t;el.classList.remove('on');void el.offsetWidth;el.classList.add('on')}
 // Glow the next useful button; the first order also gets a pointing hand.
 function hint(strong){
   document.querySelectorAll('.food.glow').forEach(e=>e.classList.remove('glow'));$('serve').classList.remove('glow');
   const h=$('hint');h.style.display='none';
-  if(mode!=='serve'||!G.cust||G.cust.state!=='order')return;
+  if(mode!=='serve'||!G||!G.cust||G.cust.state!=='order')return;
   const tut=S.tut&&S.served===0;
   if(!tut&&!strong&&!(G.cust.tries>=2))return;
   const j=judge(G.cust.order,G.plate);
@@ -594,6 +632,7 @@ function catchStep(dt){
   C.items=C.items.filter(it=>!it.gone&&it.y<H+40);
   if(C.moodT>0&&(C.moodT-=dt)<=0)C.mood='eat';
   if(C.left<=0&&!C.ended)endCatch();
+  if(C.ended)C.items=[];
   updateCatchBar();
 }
 function catchHit(it){
@@ -611,6 +650,7 @@ function endCatch(){
   // the GLITCHBOX contests can run on Snack Catch scores
   try{if(!DEMO&&window.GLITCHBOX&&GLITCHBOX.score)GLITCHBOX.score(C.score)}catch(e){}
   save();
+  if(G.mp){toHost({t:'cs',cid:MY,score:C.score});toast('⭐ '+C.score+'!');$('wait').innerHTML='Nice catching!<small>Waiting for everyone…</small>';$('wait').classList.add('on');return}
   setTimeout(endDay,700);
 }
 function catchMove(clientX){if(mode!=='catch'||!C)return;const s=$('stage').getBoundingClientRect();C.tx=Math.max(30,Math.min(W-30,clientX-s.left))}
@@ -696,7 +736,7 @@ function drawServe(dt){
         const sx=L.plate.x+L.plate.w/2,sy=L.counterY-20,x=sx+(mouthX-sx)*k,y=sy+(mouthY-sy)*k-Math.sin(k*Math.PI)*60;
         emoji(cx,FOOD[f.id].e,x,y,36*(1-k*.4));if(k>=1){f.done=true;sfx('chomp');burst(mouthX,mouthY,'crumb',6)}}});
       if(flyers.every(f=>f.done)&&c.st>.4){c.state='happy';c.st=0;c.mouth=0;c.mood='happy';sfx('yay');burst(c.x,L.counterY-L.ms,'heart',7);
-        toast(c.earned>=3?'Yum! ⭐'.repeat(Math.min(3,c.earned))+(c.earned>3?'+':''):'Yum! '+'⭐'.repeat(c.earned));say(pick(Math.random,['Yum yum! Thank you!','Delicious!','Wow, that was tasty!','Mmm! Thank you, chef!']));updateHud()}
+        if(G.mp)toast('Yum!');else toast(c.earned>=3?'Yum! ⭐'.repeat(Math.min(3,c.earned))+(c.earned>3?'+':''):'Yum! '+'⭐'.repeat(c.earned));say(pick(Math.random,['Yum yum! Thank you!','Delicious!','Wow, that was tasty!','Mmm! Thank you, chef!']));updateHud()}
     }else if(c.state==='happy'){if(c.st>1.3){c.state='leave';c.st=0;c.mood='idle'}}
     else if(c.state==='leave'){c.x+=dt*W*.9;if(c.x>W+L.ms*1.5){G.cust=null;afterHappy()}}
     if(c&&G.cust)drawMonster(cx,c.m,c.x,L.counterY+L.ms*.08,L.ms,{t:T,mood:c.mood,mouth:c.mouth,look:-1,blink,crown:c.vip});
@@ -730,6 +770,7 @@ $('sndBtn').onclick=()=>{S.sound=!S.sound;save();updateHud();if(!S.sound&&window
 $('bookBtn').onclick=()=>openBook(mode);
 $('bookBtn2').onclick=()=>{$('titleOv').classList.remove('on');openBook('title')};
 $('playBtn').onclick=()=>{ac();$('titleOv').classList.remove('on');startDay()};
+$('mpBtn').onclick=()=>{ac();$('titleOv').classList.remove('on');mpHome()};
 document.addEventListener('click',e=>{
   const t=e.target;
   if(t.id==='nextDay'){$('dayOv').classList.remove('on');startDay()}
@@ -753,6 +794,212 @@ const relayout=()=>{layout();if(G&&G.cust&&G.cust.state==='order')G.cust.x=L.mx}
 addEventListener('resize',relayout);
 if(window.ResizeObserver)new ResizeObserver(relayout).observe($('stage'));
 
+
+// ═══════════════════════ multiplayer: Snack Race ═══════════════════════
+// 2-6 players through the arcade's room relay. The host's browser runs the match
+// (HS) and broadcasts its state; everyone (host included) plays the same five
+// monsters on their own screen. First correct plate = 3⭐, second 2⭐, the rest 1⭐
+// (a fumbled first try costs a medal star), the VIP is worth +2. Then everyone
+// plays Snack Catch at once and the podium shows who fed the most monsters.
+//   guest → host  {t:'hi',cid,name,hue} {t:'hb',cid} {t:'done',cid,i,tries} {t:'cs',cid,score} {t:'bye',cid}
+//   host  → all   {t:'st', ph:lobby|serve|catch|results, pl:[[cid,name,hue,stars,place,last,cs]], seed, day, i, lvl, h}
+const MAXP=6,GONE=15000,RACE_WAIT=30000;
+const CODE_A='ABCDEFGHJKMNPQRSTUVWXYZ';
+const rcode=n=>Array.from({length:n},()=>CODE_A[Math.floor(Math.random()*CODE_A.length)]).join('');
+const MY=rcode(8);
+const NET={mode:'off',ws:null,code:'',st:null,lastHost:0,credited:{},stickered:{},lastHb:0};
+let HS=null;
+const LEVELS=[[1,'🐣 Easy'],[3,'🐥 Medium'],[6,'🦉 Tricky']];
+function wsURL(room,role){const b=window.GLITCHBOX_WS&&!/PLACEHOLDER/i.test(window.GLITCHBOX_WS)?window.GLITCHBOX_WS:(location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws';return b+'?room='+encodeURIComponent(room)+'&role='+role}
+function netConnect(room,role){
+  netClose();NET.code=room;NET.mode=role;NET.lastHost=Date.now();
+  let ws;try{ws=new WebSocket(wsURL(room,role))}catch(e){mpHome('Couldn\'t reach the game server.');return}
+  NET.ws=ws;
+  ws.onopen=()=>ws.send(JSON.stringify(role==='host'?{t:'create',code:room,max:MAXP}:{t:'join',code:room}));
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}onNet(m)};
+  ws.onclose=()=>{if(NET.ws===ws){NET.ws=null;if(NET.mode!=='off')mpLost('Lost the connection to the game.')}};
+}
+function netSend(o){if(NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(o))}
+function netClose(){const w=NET.ws;NET.ws=null;if(w){w.onclose=null;try{w.close()}catch(e){}}}
+const myName=()=>(S.name||'Chef').slice(0,12);
+function toHost(m){if(NET.mode==='host')hostIn(m);else netSend(m)}
+
+function onNet(m){
+  if(m.t==='created'){HS={ph:'lobby',players:[],seed:0,day:1,i:0,done:{},firstAt:0,advAt:0,catchEnd:0,lvl:1,seen:{}};hostIn({t:'hi',cid:MY,name:myName(),hue:S.hue});return}
+  if(m.t==='joined'||m.t==='start'){if(NET.mode==='guest')netSend({t:'hi',cid:MY,name:myName(),hue:S.hue});return}
+  if(m.t==='error'){const msg=m.msg||'That didn\'t work.';netClose();NET.mode='off';mpHome(msg==='No game with that code.'?'No room with that code — check the letters!':msg);return}
+  if(m.t==='left')return;
+  if(NET.mode==='host'){hostIn(m);return}
+  if(m.to&&m.to!==MY)return;
+  if(m.t==='st')clientState(m);
+  else if(m.t==='full'){netClose();NET.mode='off';mpHome('That room is full (6 players).')}
+}
+
+// ── host ──
+const HP=cid=>HS.players.find(p=>p.cid===cid);
+function hostIn(m){
+  if(!HS)return;
+  if(m.cid)HS.seen[m.cid]=Date.now();
+  if(m.t==='hi'){
+    const p=HP(m.cid);
+    if(p){p.name=String(m.name||p.name).slice(0,12);p.hue=+m.hue||0}
+    else{if(HS.players.length>=MAXP){netSend({t:'full',to:m.cid});return}
+      HS.players.push({cid:m.cid,name:String(m.name||'Chef').slice(0,12),hue:+m.hue||0,stars:0,last:0,cs:-1})}
+    hostPush();
+  }else if(m.t==='done')hostDone(m.cid,m.i,m.tries);
+  else if(m.t==='cs'){const p=HP(m.cid);if(p&&HS.ph==='catch'&&p.cs<0){p.cs=Math.max(0,Math.min(999,m.score|0));p.stars+=Math.floor(p.cs/3);if(HS.players.every(q=>q.cs>=0))HS.ph='results';hostPush()}}
+  else if(m.t==='bye')hostDrop(m.cid);
+}
+function hostDrop(cid){if(cid===MY)return;HS.players=HS.players.filter(p=>p.cid!==cid);delete HS.done[cid];hostPush()}
+function hostDone(cid,i,tries){
+  const p=HP(cid);
+  if(!p||HS.ph!=='serve'||i!==HS.i||HS.done[cid])return;
+  const place=Object.keys(HS.done).length+1;HS.done[cid]=place;
+  const st=Math.max(1,(place===1?3:place===2?2:1)-(tries>1&&place<=2?1:0))+(i===PER_DAY-1?2:0);
+  p.stars+=st;p.last=st;
+  if(!HS.firstAt)HS.firstAt=Date.now();
+  if(HS.players.every(q=>HS.done[q.cid]))HS.advAt=Date.now()+2600;
+  hostPush();
+}
+function hostStart(){
+  if(!HS||HS.players.length<2)return false;
+  HS.seed=1+Math.floor(Math.random()*1e6);HS.day=HS.lvl;HS.i=0;HS.done={};HS.firstAt=0;HS.advAt=0;HS.ph='serve';
+  HS.players.forEach(p=>{p.stars=0;p.last=0;p.cs=-1});
+  hostPush();return true;
+}
+function hostAdvance(){
+  HS.i++;HS.done={};HS.firstAt=0;HS.advAt=0;HS.players.forEach(p=>p.last=0);
+  if(HS.i>=PER_DAY){HS.ph='catch';HS.catchEnd=Date.now()+(CATCH_TIME+8)*1000;HS.players.forEach(p=>p.cs=-1)}
+  hostPush();
+}
+function hostTick(){
+  if(NET.mode!=='host'||!HS)return;
+  const now=Date.now();
+  for(const p of HS.players.slice())if(p.cid!==MY&&now-(HS.seen[p.cid]||now)>GONE)hostDrop(p.cid);
+  if(HS.ph==='serve'){
+    if(HS.advAt&&now>=HS.advAt)hostAdvance();
+    else if(!HS.advAt&&HS.firstAt&&now-HS.firstAt>RACE_WAIT)hostAdvance();
+  }else if(HS.ph==='catch'&&(HS.players.every(p=>p.cs>=0)||now>HS.catchEnd)){HS.ph='results';hostPush()}
+  if(now-(HS.lastPush||0)>2000)hostPush();
+}
+function hostPush(){
+  HS.lastPush=Date.now();
+  const st={t:'st',ph:HS.ph,h:MY,seed:HS.seed,day:HS.day,i:HS.i,lvl:HS.lvl,
+    pl:HS.players.map(p=>[p.cid,p.name,p.hue,p.stars,HS.done[p.cid]||0,p.last,p.cs])};
+  netSend(st);clientState(st);
+}
+
+// ── everyone ──
+const PL=a=>({cid:a[0],name:a[1],hue:a[2],stars:a[3],place:a[4],last:a[5],cs:a[6]});
+function clientState(m){
+  NET.st=m;NET.lastHost=Date.now();
+  const pl=m.pl.map(PL),me=pl.find(p=>p.cid===MY);
+  if(m.ph==='lobby'){
+    if(mode!=='lobby'){mpReset();mode='lobby'}
+    renderLobby();return;
+  }
+  if(!me)return;   // the host hasn't seen our hello yet
+  if(m.ph==='serve'){
+    if(mode!=='serve'||!G||!G.mp||G.seed!==m.seed)startMatch(m);
+    else if(m.i>G.i&&G.pendingI==null){
+      const c=G.cust;
+      if(!c){G.i=m.i;renderDots();nextCustomer()}
+      else if(c.state==='enter'||c.state==='order'){c.state='leave';c.mood='idle';c.st=0;G.pendingI=m.i;G.plate=[];renderPlate();$('bubble').classList.remove('on');hint();say('Too slow! Bye bye!')}
+      else G.pendingI=m.i;
+    }
+    // stars for the monster I just fed arrive with my finishing place
+    const key=m.seed+':'+m.i;
+    if(me.place&&!NET.credited[key]){NET.credited[key]=1;S.stars+=me.last;S.total+=me.last;G.earned+=me.last;save();updateHud();
+      toast(['🥇 First!','🥈 Second!','🥉 Third!'][me.place-1]||'⭐ Done!');sfx(me.place===1?'fanfare':'star')}
+  }else if(m.ph==='catch'){
+    if(mode!=='catch'){if(!G||!G.mp)startMatch(m);G.i=PER_DAY;G.cust=null;$('wait').classList.remove('on');startCatch()}
+  }else if(m.ph==='results'&&mode!=='results')showResults();
+  if(mode==='results')showResults();
+  renderChips();
+  if($('wait').classList.contains('on')&&mode==='serve')$('wait').innerHTML='Waiting for friends…<small>'+mpStill()+'</small>';
+}
+function mpStill(){const st=NET.st;if(!st)return'';const left=st.pl.map(PL).filter(p=>!p.place&&p.cid!==MY);return left.length?left.map(p=>p.name).join(', ')+' still cooking':'Next monster coming!'}
+function startMatch(m){
+  ['titleOv','mpOv','dayOv','bookOv'].forEach(id=>$(id).classList.remove('on'));
+  $('catchbar').classList.remove('on');$('bar').style.display='';$('shelf').style.display='';layout();
+  G={mp:true,seed:m.seed,day:m.day,r:rngOf(m.seed),i:m.i,earned:0,cust:null,plate:[],vip:makeMonster(m.seed*31+5),log:[],pendingI:null};
+  C=null;mode='serve';renderShelf();renderDots();updateHud();renderChips();
+  if(m.ph==='serve')nextCustomer();
+}
+function renderChips(){
+  const st=NET.st,el=$('chips');
+  if(!st||NET.mode==='off'||(mode!=='serve'&&mode!=='catch')){el.classList.remove('on');return}
+  el.classList.add('on');
+  el.innerHTML=st.pl.map(PL).map(p=>`<div class="chip${p.cid===MY?' me':''}"><i style="background:hsl(${p.hue},70%,62%)"></i>${esc(p.name)} <b>⭐${p.stars}</b>${mode==='catch'?(p.cs>=0?' 🧺'+p.cs:''):(p.place?' '+(['🥇','🥈','🥉'][p.place-1]||'✅'):' 🍽️')}</div>`).join('');
+}
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function mpReset(){
+  G=null;C=null;$('bubble').classList.remove('on');$('wait').classList.remove('on');$('chips').classList.remove('on');$('catchbar').classList.remove('on');
+  $('bar').style.display='';$('shelf').style.display='';$('plate').innerHTML='';hint();layout();
+  ['titleOv','dayOv','bookOv'].forEach(id=>$(id).classList.remove('on'));
+}
+// Start screen: your name, make a room, or type a friend's code.
+function mpHome(err){
+  mode='mphome';mpReset();
+  $('mpCard').innerHTML=`<h2>👫 Play with friends</h2>
+    <div class="sub" style="margin-top:0">Race to feed the same hungry monsters!</div>
+    <input class="in" id="myName" maxlength="12" placeholder="Your name" value="${esc(S.name||'')}">
+    <div style="margin-top:6px"><button class="big" id="mkRoom">🏠 Make a room</button></div>
+    <div class="or">— or join a friend —</div>
+    <input class="in" id="joinCode" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters">
+    <div><button class="big alt" id="joinRoom">🚪 Join</button></div>
+    <div class="err" id="mpErr">${esc(err||'')}</div>
+    <button class="big" style="background:#c9b6d9;box-shadow:0 6px 0 #a993bd" id="mpBack">◀ Back</button>`;
+  $('mpOv').classList.add('on');
+  $('joinCode').oninput=e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z]/g,'')};
+}
+function readName(){const n=($('myName')&&$('myName').value||'').trim().slice(0,12);if(n){S.name=n;save()}return n}
+function renderLobby(){
+  const st=NET.st;if(!st)return;
+  const pl=st.pl.map(PL),host=st.h===MY,need=Math.max(0,2-pl.length);
+  $('mpCard').innerHTML=`<h2>Snack Race!</h2><div class="sub" style="margin:0">Tell your friends this code:</div>
+    <div class="code">${esc(NET.code)}</div>
+    <div class="plist">${pl.map(p=>`<div class="prow${p.cid===MY?' me':''}"><i style="background:hsl(${p.hue},70%,62%)"></i><span>${esc(p.name)}${p.cid===MY?' (you)':''}</span>${p.cid===st.h?'👑':''}</div>`).join('')}</div>
+    ${host?`<div class="lv">${LEVELS.map(([d,n])=>`<button data-lvl="${d}" class="${st.lvl===d?'on':''}">${n}</button>`).join('')}</div>
+      <button class="big" id="raceGo" ${need?'disabled style="opacity:.5"':''}>${need?'Waiting for a friend…':'▶ Start!'}</button>`
+    :`<div class="sub">Waiting for ${esc((pl.find(p=>p.cid===st.h)||{}).name||'the host')} to start…</div>`}
+    <div><button class="big" style="background:#c9b6d9;box-shadow:0 6px 0 #a993bd" id="mpLeave">🚪 Leave</button></div>`;
+  $('mpOv').classList.add('on');
+}
+function showResults(){
+  mode='results';
+  const st=NET.st,pl=st.pl.map(PL).sort((a,b)=>b.stars-a.stars||b.cs-a.cs);
+  $('catchbar').classList.remove('on');$('wait').classList.remove('on');$('chips').classList.remove('on');
+  // everyone keeps the VIP sticker from the match
+  if(G&&G.vip&&!NET.stickered[st.seed]){NET.stickered[st.seed]=1;if(!S.stickers.some(x=>x.seed===G.vip.seed))S.stickers.push({seed:G.vip.seed,name:G.vip.name,day:G.day});save()}
+  const first=!$('mpOv').classList.contains('on');
+  $('mpCard').innerHTML=`<h2>🏆 Snack Race results</h2>
+    <div class="plist">${pl.map((p,k)=>`<div class="prow${p.cid===MY?' me':''}">${['🥇','🥈','🥉'][k]||'🎖️'}<i style="background:hsl(${p.hue},70%,62%)"></i><span>${esc(p.name)}</span>⭐ ${p.stars}${p.cs>=0?' · 🧺 '+p.cs:''}</div>`).join('')}</div>
+    <div class="sub">Everybody fed the monsters — and ${G&&G.vip?esc(G.vip.name):'the VIP'} joined your sticker book!</div>
+    ${st.h===MY?'<button class="big" id="raceAgain">▶ Play again</button>':'<div class="sub">The host can start another race.</div>'}
+    <button class="big" style="background:#c9b6d9;box-shadow:0 6px 0 #a993bd" id="mpLeave">🚪 Leave</button>`;
+  $('mpOv').classList.add('on');
+  if(first){sfx('fanfare');burst(W/2,H*.3,'confetti',50);say(pl[0].name+' wins the snack race!')}
+}
+function mpLeave(){if(NET.mode==='guest')netSend({t:'bye',cid:MY});netClose();NET.mode='off';NET.st=null;HS=null;mpReset();mode='title';$('mpOv').classList.remove('on');$('titleOv').classList.add('on')}
+function mpLost(msg){netClose();NET.mode='off';NET.st=null;HS=null;mpHome(msg)}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.id==='mkRoom'){readName();netConnect(rcode(4),'host');$('mpErr').textContent='Making a room…'}
+  else if(t.id==='joinRoom'){const c=$('joinCode').value.trim();if(c.length<4){$('mpErr').textContent='Type the 4 letters from your friend\'s screen.';return}readName();netConnect(c,'guest');$('mpErr').textContent='Joining…'}
+  else if(t.id==='mpBack'){mode='title';$('mpOv').classList.remove('on');$('titleOv').classList.add('on')}
+  else if(t.id==='mpLeave')mpLeave();
+  else if(t.id==='raceGo'){if(NET.mode==='host')hostStart()}
+  else if(t.id==='raceAgain'){if(NET.mode==='host'){HS.ph='lobby';HS.players.forEach(p=>{p.stars=0;p.cs=-1;p.last=0});hostPush()}}
+  else if(t.dataset.lvl&&NET.mode==='host'){HS.lvl=+t.dataset.lvl;hostPush()}
+});
+setInterval(()=>{
+  hostTick();
+  if(NET.mode==='guest'){const now=Date.now();if(now-NET.lastHb>4000){NET.lastHb=now;netSend({t:'hb',cid:MY})}
+    if(NET.st&&now-NET.lastHost>GONE)mpLost('The host left the game.')}
+},250);
+addEventListener('pagehide',()=>{if(NET.mode==='guest')netSend({t:'bye',cid:MY})});
+
 // ── GLITCHBOX cloud save ──
 if(window.GBSave)GBSave.register({save:()=>S.total>0?S:null,load:d=>{if(d&&d.v===1){S=Object.assign(fresh(),d);save();updateHud()}},autosave:60});
 
@@ -761,6 +1008,9 @@ const HASH=location.hash;
 load();
 layout();updateHud();renderDots();renderShelf();
 if(S.served>0)$('playBtn').textContent='▶ Play Day '+S.day;
+// Straight into a room from a hub invite or a shared link (#room=CODE&host=1 / &join=1).
+{const h=new URLSearchParams(HASH.replace(/^#/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ if(room.length>=3&&room.length<=8){$('titleOv').classList.remove('on');mpHome('');$('mpErr').textContent=h.get('host')?'Making the room…':'Joining…';netConnect(room,h.get('host')?'host':'guest')}}
 requestAnimationFrame(frame);
 
 // screenshots: #demo (mid-order), #democatch, #demoday, #demobook
@@ -768,7 +1018,14 @@ if(/^#demo/.test(HASH)){
   DEMO=true;S=fresh();S.day=5;S.stars=23;S.served=12;S.tut=false;S.hat='bow';S.hats=['chef','bow','cap'];S.hue=330;S.voice=false;S.sound=false;
   for(let i=0;i<5;i++)S.stickers.push({seed:i*31+5+31,name:makeMonster(i*31+36).name});
   $('titleOv').classList.remove('on');
-  if(HASH==='#demobook'){bookTab=/chef/.test(HASH)?'chef':'friends';openBook('title')}
+  if(/^#demo(lobby|race|results)$/.test(HASH)){
+    NET.mode='host';NET.code='MUNK';S.name='Lev';onNet({t:'created'});
+    [['g1','Mia',140],['g2','Sam',30],['g3','Zoe',270]].forEach(([cid,name,hue])=>hostIn({t:'hi',cid,name,hue}));
+    if(HASH!=='#demolobby'){HS.lvl=3;hostStart();HS.players[1].stars=5;HS.players[2].stars=3;HS.players[3].stars=4;hostDone('g1',0,1);
+      G.cust.x=L.mx;G.cust.state='order';showOrder();addFood(G.cust.order[0].f||'apple');
+      if(HASH==='#demoresults'){HS.players.forEach((p,k)=>{p.stars=[9,14,7,11][k];p.cs=[8,12,5,9][k]});HS.ph='results';hostPush()}}
+  }
+  else   if(HASH==='#demobook'){bookTab=/chef/.test(HASH)?'chef':'friends';openBook('title')}
   else if(HASH==='#demochef'){bookTab='chef';openBook('title')}
   else{startDay();
     if(HASH==='#democatch'){G.i=PER_DAY;startCatch();for(let i=0;i<9;i++)C.items.push({x:40+i*(W-80)/8,y:60+(i*53)%(H*.55),id:i%3?C.target:pick(Math.random,C.foods).id,vy:0,rot:i,vr:0});C.score=7;C.left=11;C.x=C.tx=W*.45}
@@ -872,6 +1129,48 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
     ok(buyHat('chef')&&S.hat==='chef'&&S.stars===1,'switching to an owned hat is free');
     bookTab='friends';renderBook();ok(document.querySelectorAll('#friends canvas').length===1&&document.querySelectorAll('#friends .lock').length===11,'book shows friends and empty slots');
     closeBook();ok(!$('bookOv').classList.contains('on'),'book closes');
+    // ── Snack Race (host logic, no network) ──
+    $('bookOv').classList.remove('on');$('dayOv').classList.remove('on');
+    S.name='Lev';NET.mode='host';NET.ws=null;
+    onNet({t:'created'});
+    ok(HS&&HS.players.length===1&&mode==='lobby'&&$('mpOv').classList.contains('on'),'room made: host in the lobby');
+    ok(/Waiting for a friend/.test($('mpCard').textContent),'can\'t start alone');
+    ok(!hostStart(),'hostStart refuses a solo race');
+    hostIn({t:'hi',cid:'g1',name:'Bo<b>',hue:30});
+    ok(HS.players.length===2&&/Start!/.test($('mpCard').textContent)&&$('mpCard').innerHTML.includes('Bo&lt;b&gt;'),'friend joins (name escaped), Start appears');
+    hostIn({t:'hi',cid:'g1',name:'Bo',hue:40});ok(HS.players.length===2&&HP('g1').hue===40,'a repeat hello updates, never duplicates');
+    document.querySelector('[data-lvl="3"]').click();ok(HS.lvl===3,'host picks the level');
+    ok(hostStart()&&mode==='serve'&&G.mp&&G.day===3&&G.i===0,'race starts for the host too');
+    ok($('chips').classList.contains('on')&&$('chips').children.length===2,'player chips show');
+    const want=makeOrder(3,rngOf(G.seed*7+0*13+1),false);ok(JSON.stringify(G.cust.order)===JSON.stringify(want),'order comes from the shared seed');
+    hostIn({t:'done',cid:'g1',i:0,tries:1});ok(HP('g1').stars===3&&HS.done.g1===1,'first correct plate = 3 stars');
+    hostIn({t:'done',cid:'g1',i:0,tries:1});ok(HP('g1').stars===3,'finishing twice counts once');
+    hostIn({t:'done',cid:'g1',i:3,tries:1});ok(HP('g1').stars===3,'a done for the wrong monster is ignored');
+    const s0=S.stars;G.cust.state='order';G.plate=[];
+    for(const l of G.cust.order)for(let k=0;k<l.n;k++)addFood(l.f||FOODS.find(f=>f.col===l.col&&f.day<=G.day).id);
+    serve();ok(HS.done[MY]===2&&HP(MY).stars===2&&S.stars===s0+2,'second place = 2 stars, credited to my wallet');
+    ok(HS.advAt>0,'everyone done → next monster soon');
+    HS.advAt=1;hostTick();ok(HS.i===1&&G.pendingI===1,'host moves on; my monster finishes eating first');
+    afterHappy();ok(G.i===1&&G.cust&&G.pendingI==null,'then the next monster walks in');
+    ok(JSON.stringify(G.cust.order)===JSON.stringify(makeOrder(3,rngOf(G.seed*7+1*13+1),false)),'monster 2 order matches the seed');
+    G.cust.state='order';
+    hostIn({t:'done',cid:'g1',i:1,tries:2});ok(HP('g1').stars===3+2,'a fumbled first place loses one star');
+    HS.firstAt=Date.now()-RACE_WAIT-10;hostTick();
+    ok(HS.i===2&&G.cust.state==='leave'&&G.pendingI===2,'slowpokes get 30s, then the monster leaves');
+    afterHappy();ok(G.i===2&&G.cust.state==='enter','and the next arrives');
+    HS.i=PER_DAY-1;hostAdvance();ok(HS.ph==='catch'&&mode==='catch'&&C&&!C.ended,'after five monsters: Snack Catch together');
+    C.score=9;C.left=.01;catchStep(.05);ok(C.ended&&HP(MY).cs===9&&HP(MY).stars===2+3,'my catch score reaches the host (+3 bonus)');
+    ok(HS.ph==='catch','still waiting for the friend');
+    hostIn({t:'cs',cid:'g1',score:4});ok(HS.ph==='results'&&mode==='results','everyone in → results');
+    ok(/Snack Race results/.test($('mpCard').textContent)&&$('mpCard').querySelectorAll('.prow').length===2,'podium lists both');
+    ok(S.stickers.some(x=>x.seed===G.vip.seed),'the VIP joins the sticker book');
+    document.getElementById('raceAgain').click();ok(HS.ph==='lobby'&&mode==='lobby'&&HP('g1').stars===0,'play again → lobby, scores reset');
+    HS.seen.g1=Date.now()-GONE-100;hostTick();ok(HS.players.length===1,'a friend who goes quiet is dropped');
+    // a guest who isn't in the host's list yet ignores state
+    NET.mode='guest';const modeBefore=mode;clientState({t:'st',ph:'serve',h:'x',seed:5,day:1,i:0,lvl:1,pl:[['x','Host',0,0,0,0,-1]]});ok(mode===modeBefore,'state before my hello lands is ignored');
+    mpLeave();ok(NET.mode==='off'&&mode==='title'&&$('titleOv').classList.contains('on'),'leave goes back to the title');
+    $('titleOv').classList.remove('on');
+    ok(wsURL('ABCD','host').indexOf('glitchbox-api')!==-1&&/room=ABCD&role=host$/.test(wsURL('ABCD','host')),'relay url');
     // save
     DEMO=false;save();const snap=JSON.stringify(S);S=fresh();load();ok(JSON.stringify(S)===snap,'save roundtrip');DEMO=true;
     localStorage.removeItem(SAVE_KEY);
