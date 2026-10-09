@@ -129,7 +129,7 @@
     if (document.hidden || !window.fetch || /smoke|check|debug|menuquit/.test(location.hash)) return;
     var tosv = ''; try { tosv = localStorage.getItem('glitchbox.tosv.guest') || localStorage.getItem('glitchbox.tos.guest') || ''; } catch (_) {}
     fetch(BAN_API + '/api/ping?game=' + encodeURIComponent(PING_GAME) + (currentRoom() ? '&room=' + currentRoom() : '') +
-          (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tosv)),
+          '&gid=' + guestId() + (s ? '' : '&tos=' + encodeURIComponent(tosv)),
           s ? { headers: { Authorization: 'Bearer ' + s } } : {}).then(function (r) {
       return r.json().then(function (d) {
         if (r.status === 403) {

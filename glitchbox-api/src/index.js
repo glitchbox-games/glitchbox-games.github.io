@@ -194,6 +194,12 @@ export class Hub extends DurableObject {
       this.sql.exec(`CREATE TABLE IF NOT EXISTS appeals (
         id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, name TEXT, ip TEXT, text TEXT, created INTEGER,
         status TEXT, reply TEXT, decided_at INTEGER)`);
+      // Which browsers (guest device ids) each account has signed in from. A ban on either
+      // side follows the link: a banned device can't sign in to a fresh Google account,
+      // and a banned account's browser can't play on as a guest or under a second account.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS device_links (
+        sub TEXT, gid TEXT, seen INTEGER, PRIMARY KEY (sub, gid))`);
+      this.sql.exec("CREATE INDEX IF NOT EXISTS idx_device_links_gid ON device_links(gid)");
       // Best score per player per game, for games that report one. `low` = lower is better (golf).
       this.sql.exec(`CREATE TABLE IF NOT EXISTS scores (
         game TEXT, sub TEXT, score REAL, low INTEGER, at INTEGER, PRIMARY KEY (game, sub))`);
@@ -299,6 +305,35 @@ export class Hub extends DurableObject {
     }
     return "banned:" + (g.ban_until || "") + ":" + (g.ban_reason || "");
   }
+  // The ban on this browser, or null: either the device itself is banned, or some
+  // other account that signed in on it is. The owner's own account never counts.
+  deviceBan(gid, exceptSub) {
+    if (!GID_RE.test(String(gid || ""))) return null;
+    const gb = this.guestBan(this.guestOf(gid));
+    if (gb) return gb;
+    const subs = this.sql.exec("SELECT sub FROM device_links WHERE gid = ? AND sub != ?", gid, exceptSub || "").toArray();
+    for (const r of subs) {
+      if (this.isOwnerSub(r.sub)) continue;
+      const b = this.activeBan(this.userOf(r.sub));
+      if (b) return b;
+    }
+    return null;
+  }
+  linkDevice(sub, gid) {
+    if (!sub || !GID_RE.test(String(gid || ""))) return;
+    this.sql.exec(`INSERT INTO device_links (sub, gid, seen) VALUES (?, ?, ?)
+      ON CONFLICT(sub, gid) DO UPDATE SET seen = excluded.seen`, sub, gid, Date.now());
+  }
+  // Put a device's ban on the account that just showed up on it, so signing in from
+  // another browser afterwards doesn't get them out of it either.
+  carryBan(sub, ban) {
+    const m = /^banned:(\d*):([\s\S]*)$/.exec(ban || "");
+    if (!m || !this.userOf(sub)) return;
+    this.sql.exec("UPDATE users SET banned = 1, ban_reason = ?, ban_until = ? WHERE sub = ?",
+      m[2] || null, m[1] ? +m[1] : null, sub);
+    this.log("ban", sub, "automatic: signed in on a banned device" + (m[1] ? "" : " (permanent)") + (m[2] ? " — " + m[2] : ""), "");
+  }
+
   // Hand over (and forget) whatever kicks and messages are waiting for `who`.
   takePending(who) {
     const rows = this.sql.exec("SELECT id, kind, text FROM pending WHERE who = ? ORDER BY id", who).toArray();
@@ -445,7 +480,7 @@ export class Hub extends DurableObject {
   }
 
   // ── endpoints ──
-  async login(idToken, ip, devInfo) {
+  async login(idToken, ip, devInfo, gid) {
     let info;
     if (devInfo) info = devInfo;     // local tests only — see the router
     else {
@@ -464,6 +499,10 @@ export class Hub extends DurableObject {
     const pinned = ownerPin(this.env) && String(info.email || "").toLowerCase() === ownerPin(this.env);
     const nb = !pinned && this.ipBan(ip);
     if (nb) throw new HttpError(403, nb);
+    // A banned browser can't sign its way out with a different Google account.
+    const owner = pinned || this.isOwnerSub(info.sub);
+    const db = !owner && this.deviceBan(gid, info.sub);
+    if (db) { if (existing) this.carryBan(info.sub, db); throw new HttpError(403, db); }
     // A chosen arcade icon outranks the Google photo — otherwise every sign-in would
     // quietly reset the player's avatar back to their Google account picture.
     const picture = isIcon(existing && existing.picture) ? existing.picture : (info.picture || "");
@@ -486,6 +525,7 @@ export class Hub extends DurableObject {
       if (this.ownerSub() !== info.sub) this.metaSet("owner", info.sub);
     }
     this.ensureCode(info.sub);
+    this.linkDevice(info.sub, gid);
     const session = await this.makeSession(info.sub);
     const profile = this.userOf(info.sub);
     return { sessionToken: session, profile, created: profile.created, isNew: !existing };
@@ -558,6 +598,11 @@ export class Hub extends DurableObject {
       const me = await this.verifySession(token);
       out.isOwner = this.isOwnerSub(me);
       if (!out.isOwner) { const nb = this.ipBan(ip); if (nb) throw new HttpError(403, nb); }
+      if (GID_RE.test(String(gid || ""))) {
+        this.linkDevice(me, gid);
+        const db = !out.isOwner && this.deviceBan(gid, me);
+        if (db) { this.carryBan(me, db); throw new HttpError(403, db); }
+      }
       const prev = this.sql.exec("SELECT playing, playing_at, last_seen FROM users WHERE sub = ?", me).toArray()[0];
       const keep = this.hubOverridden(prev, g, now);
       if (!keep) this.track("u:" + me, prev, g, now);
@@ -582,7 +627,7 @@ export class Hub extends DurableObject {
       gid, ip || "", String(ua || "").slice(0, 160), now, now, gkeep ? gprev.playing : g, gkeep ? gprev.playing_at : now);
     if (/^[0-9a-z.-]{1,32}$/i.test(String(tos || "")))
       this.sql.exec("UPDATE guests SET tos_version = ? WHERE gid = ?", String(tos), gid);
-    const ban = this.guestBan(this.guestOf(gid));
+    const ban = this.deviceBan(gid);
     if (ban) throw new HttpError(403, ban);
     out.guest = guestName(gid);
     return { ...out, ...this.takePending("g:" + gid) };
@@ -1536,9 +1581,9 @@ export default {
         // (no such var there, and the hostname check fails anyway).
         if (env.DEV_LOGIN === "1" && url.hostname === "localhost" && /^dev:/.test(body.idToken || "")) {
           const id = String(body.idToken).slice(4);
-          return json(await stub.login("", ip, { aud: CLIENT_ID, sub: "dev-" + id, email: id + "@dev.test", name: id + " Tester", email_verified: "true" }), 200, origin);
+          return json(await stub.login("", ip, { aud: CLIENT_ID, sub: "dev-" + id, email: id + "@dev.test", name: id + " Tester", email_verified: "true" }, body.gid), 200, origin);
         }
-        return json(await stub.login(body.idToken, ip), 200, origin);
+        return json(await stub.login(body.idToken, ip, null, body.gid), 200, origin);
       }
       if (path === "/api/me") return json(await stub.state(auth, ip), 200, origin);
       if (path === "/api/ping") return json(await stub.ping(auth, url.searchParams.get("game"),

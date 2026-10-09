@@ -1866,7 +1866,7 @@ async function pollArcade(){
   const s = getSession();
   try {
     let tv = ''; try { tv = localStorage.getItem('glitchbox.tosv.guest') || localStorage.getItem('glitchbox.tos.guest') || ''; } catch(e){}
-    const r = await fetch(API_BASE + '/api/ping?game=' + (s ? '' : '&gid=' + guestId() + '&tos=' + encodeURIComponent(tv)),
+    const r = await fetch(API_BASE + '/api/ping?game=&gid=' + guestId() + (s ? '' : '&tos=' + encodeURIComponent(tv)),
       s ? { headers:{ Authorization:'Bearer '+s } } : {});
     const h = await r.json().catch(()=>({}));
     if(r.status === 403){
@@ -1889,7 +1889,7 @@ function checkBan(){ openAuth('login'); if(window.google && google.accounts && g
 
 async function backendLogin(credential){
   try {
-    const res = await api('/api/login', { method:'POST', body:{ idToken:credential } });
+    const res = await api('/api/login', { method:'POST', body:{ idToken:credential, gid:guestId() } });
     clearBan();
     localStorage.setItem('glitchbox_session', res.sessionToken);
     if(res.profile) lastState.profile = res.profile;
