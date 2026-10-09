@@ -38,7 +38,7 @@
   .yt { position:fixed; right:14px; bottom:34px; z-index:5; width:min(340px,calc(100vw - 28px)); display:none; flex-direction:column; gap:6px;
         background:#140c22ee; border:1px solid #3a2a55; border-radius:12px; padding:8px; box-shadow:0 8px 30px #0008; }
   .yt.show { display:flex; }
-  .yt iframe { width:100%; aspect-ratio:16/9; border:0; border-radius:8px; background:#000; }
+  .yt iframe, .yt #ytframe { width:100%; aspect-ratio:16/9; border:0; border-radius:8px; background:#000; }
   .yt button { padding:9px 12px; border:none; border-radius:9px; cursor:pointer; font:inherit; font-weight:800; background:var(--neon2); color:#06121a; }
   .yt-note { font-size:11px; color:#9a86c4; text-align:center; }
   .hint { position:fixed; bottom:10px; left:0; right:0; text-align:center; color:#6a5690; font-size:12px; z-index:5; pointer-events:none; }
@@ -354,6 +354,11 @@ async function playEmbedded(id){
   }
   if (ytPlayer && ytPlayer.loadVideoById) { ytPlayer.loadVideoById(id); }
   else {
+    // The API only builds a player into a placeholder it can replace. Handed our empty
+    // <iframe>, it assumed a player was already there and never set a src — the box
+    // stayed black and nothing ever played.
+    const old = document.getElementById('ytframe');
+    if (old && old.tagName === 'IFRAME' && !old.src) { const d = document.createElement('div'); d.id = 'ytframe'; old.replaceWith(d); }
     ytPlayer = new YT.Player('ytframe', { videoId: id, host: 'https://www.youtube-nocookie.com',
       playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
       events: {
@@ -362,6 +367,10 @@ async function playEmbedded(id){
         onError: () => setStatus('That video can’t be played here — try another link, a 📁 file or 🎤 Mic.', true),
       } });
   }
+  clearTimeout(playEmbedded._t);
+  playEmbedded._t = setTimeout(() => {
+    if (srcKind === 'yt' && !ytPlaying) setStatus('▶ Press play on the video — the roaches start dancing as soon as it plays.');
+  }, 9000);
 }
 document.getElementById('hear').onclick = async () => {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { setStatus('This browser can’t share tab sound — use 🎤 Mic with the volume up.', true); return; }
