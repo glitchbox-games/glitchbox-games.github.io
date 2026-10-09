@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'puzzle',     tags:['new','hot'],blurb:'Hungry monsters want snacks! Count, match and serve — made for younger players'},
   {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
   {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
   {name:'Most Likely To',     file:'most-likely-to.html',         emoji:'🫵',color:['#120c06','#22101c'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Who\'s most likely to…? Everyone votes, the winner gets crowned. 3 to 16 players'},
@@ -278,6 +279,27 @@ const DRAW={
   _SC(c);
 },
 
+'snack-monsters':(c)=>{
+  // pastel snack counter: a big round monster with its mouth open, an order bubble, snacks on a plate
+  _GV(c,0,0,320,200,'#ffe2ee','#fff3dc');
+  c.fillStyle='rgba(255,170,200,.22)';for(let x=0;x<320;x+=30)c.fillRect(x,0,15,140);
+  const ol='#3b2a4a';c.lineWidth=4;c.strokeStyle=ol;
+  // monster
+  c.fillStyle='#5fd3e0';c.beginPath();c.ellipse(222,104,64,62,0,0,6.283);c.fill();c.stroke();
+  c.fillStyle='#b5eef4';c.beginPath();c.ellipse(222,132,36,26,0,0,6.283);c.fill();
+  for(const x of[198,246]){c.fillStyle='#fff';c.beginPath();c.arc(x,84,15,0,6.283);c.fill();c.stroke();c.fillStyle='#2b1d36';c.beginPath();c.arc(x-4,87,8,0,6.283);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(x-1,83,3,0,6.283);c.fill()}
+  c.fillStyle='#5a1f3a';c.beginPath();c.ellipse(222,118,20,15,0,0,6.283);c.fill();c.stroke();c.fillStyle='#ff7aa2';c.beginPath();c.ellipse(222,126,11,5,0,0,6.283);c.fill();
+  c.fillStyle='rgba(255,120,160,.5)';c.beginPath();c.ellipse(182,108,9,6,0,0,6.283);c.ellipse(262,108,9,6,0,0,6.283);c.fill();
+  // counter + plate
+  _F(c,0,140,320,60,'#f6a96b');_F(c,0,140,320,9,'#ffc08a');c.fillStyle='#e8935a';for(let x=14;x<320;x+=60)c.fillRect(x,158,34,34);
+  c.fillStyle='#fff';c.strokeStyle='#d8c6e4';c.lineWidth=3;c.beginPath();c.ellipse(96,143,62,9,0,0,6.283);c.fill();c.stroke();
+  c.font='26px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';c.textAlign='center';c.textBaseline='middle';
+  c.fillText('🍎',70,128);c.fillText('🍪',98,126);c.fillText('🍌',126,128);
+  // order bubble
+  c.fillStyle='#fff';c.strokeStyle=ol;c.lineWidth=4;c.beginPath();c.moveTo(30,20);c.lineTo(140,20);c.quadraticCurveTo(152,20,152,32);c.lineTo(152,58);c.quadraticCurveTo(152,70,140,70);c.lineTo(132,70);c.lineTo(150,84);c.lineTo(116,70);c.lineTo(30,70);c.quadraticCurveTo(18,70,18,58);c.lineTo(18,32);c.quadraticCurveTo(18,20,30,20);c.fill();c.stroke();
+  c.font='24px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';c.fillText('🍎',46,46);c.fillText('🍪',78,46);c.fillText('🍌',112,46);
+  c.font='18px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';c.fillText('⭐',290,26);c.fillText('💖',300,62);
+},
 'midnight-post':(c)=>{
   // the gate window at night: a face under the sodium lamp, torch-lit eyes shining back, the red barrier arm
   _GV(c,0,0,320,200,'#05070b','#0c0f10','#1a140a');

@@ -27,7 +27,7 @@
   const isOwner = () => typeof lastState !== 'undefined' && lastState && !!lastState.isOwner;
   const PLACES = ['🥇', '🥈', '🥉', '4th', '5th'];
   // Games that report a score with GLITCHBOX.score(); `low` = lower is better.
-  const SCORE_GAMES = [{ file: 'neon-putt.html', low: true, unit: 'strokes' }, { file: 'mic-drop.html', unit: 'points' }, { file: 'barrier.html', unit: 'distance' }];
+  const SCORE_GAMES = [{ file: 'neon-putt.html', low: true, unit: 'strokes' }, { file: 'mic-drop.html', unit: 'points' }, { file: 'barrier.html', unit: 'distance' }, { file: 'snack-monsters.html', unit: 'snacks caught' }];
   const scoreInfo = f => SCORE_GAMES.find(g => g.file === f) || {};
 
   let data = { live: [], past: [] }, skew = 0, open = false, busy = false, form = false;
@@ -308,7 +308,7 @@
       window.lastState.isOwner = true; render();
       t('owner sees New / End / Cancel', !!$('gbc-box').querySelector('[data-gbc="new"]') && !!$('gbc-box').querySelector('[data-gbc="end"]'));
       $('gbc-box').querySelector('[data-gbc="new"]').click(); await wait();
-      t('form opens', !!$('gbc-title') && $('gbc-game').options.length === 3);
+      t('form opens', !!$('gbc-title') && $('gbc-game').options.length === 4);
       t('neon putt is marked lowest-wins', /lowest wins/.test($('gbc-game').options[0].textContent));
       $('gbc-kind').value = 'time'; $('gbc-kind').onchange();
       t('time contests can use any game or the whole arcade', $('gbc-game').options.length === games().length + 1 && $('gbc-game').options[0].value === '*');
