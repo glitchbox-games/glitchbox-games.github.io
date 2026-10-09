@@ -3,6 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 // The OAuth client the ID tokens must be minted for.
 const CLIENT_ID = "292202234478-kdcu37vvdogpttpksc6acg85ljavkfj6.apps.googleusercontent.com";
 const ALLOWED_ORIGINS = [
+  "https://glitchbox-games.github.io",
   "https://levtheduck-web.github.io",
   "http://localhost:8095",
   "http://127.0.0.1:8095",
