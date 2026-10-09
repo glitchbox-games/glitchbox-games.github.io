@@ -145,6 +145,10 @@
         }
         if (!d) return;
         (d.messages || []).forEach(popup);
+        // In-game gifts from the owner (e.g. Idle Universe energy): the game listens for these.
+        (d.gameGifts || []).forEach(function (g) {
+          try { window.dispatchEvent(new CustomEvent('glitchbox-gift', { detail: g })); } catch (_) {}
+        });
         if (d.isOwner) return;
         if (d.kick != null) bounce(d.kick ? 'Kicked by the owner: ' + d.kick : 'The owner kicked you out of this game.');
         else if (d.maintenance) location.replace('index.html');       // the hub shows the closed sign

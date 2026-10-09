@@ -252,6 +252,7 @@
       '</div>' +
       '<div class="adm-h">// LIVE NOW · ' + (live.length + liveG.length) + '</div>' +
       (isOwner && live.length + liveG.length ? '<div class="adm-actions"><button class="adm-btn warn" data-act="popall">✉ Message everyone online</button>' +
+        '<button class="adm-btn" data-act="energyall">⚡ Energy to everyone</button>' +
         '<button class="adm-btn danger" data-act="kickall">👢 Kick everyone</button></div>' : '') +
       (live.length ? live.map(u =>
         '<div class="adm-row"><div class="adm-av" data-act="view" data-target="u:' + esc(u.sub) + '" data-name="' + esc(u.name) + '">' + avatar(u) + '</div><div class="adm-grow"><div class="adm-name">' + esc(u.name) +
@@ -259,6 +260,7 @@
         (u.playing ? '▶ playing ' + esc(gameName(u.playing)) : 'in the hub') + ' · ' + ago(u.last_seen) + '</div></div>' +
         viewBtn('u:' + u.sub, u.name) +
         '<button class="adm-btn warn" data-act="msg" data-sub="' + esc(u.sub) + '" data-name="' + esc(u.name) + '">✉ Message</button>' +
+        energyBtn('u:' + u.sub, u.name) +
         (u.sub === myId() ? '' : kickBtn('u:' + u.sub, u.name)) + '</div>').join('') +
         liveG.map(g =>
         '<div class="adm-row" style="border-left-color:rgba(255,180,0,.5)"><div class="adm-av" data-act="view" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">👤</div><div class="adm-grow"><div class="adm-name">' + esc(g.name) +
@@ -266,6 +268,7 @@
         (g.playing ? '▶ playing ' + esc(gameName(g.playing)) : 'in the hub') + ' · ' + ago(g.last_seen) + '</div></div>' +
         viewBtn('g:' + g.gid, g.name) +
         '<button class="adm-btn warn" data-act="pop" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">✉ Message</button>' +
+        energyBtn('g:' + g.gid, g.name) +
         kickBtn('g:' + g.gid, g.name) + '</div>').join('')
         : '<div class="adm-empty">Nobody online right now.</div>') +
       '<div class="adm-h">// NEWEST PLAYERS</div>' +
@@ -400,6 +403,14 @@
         }).join('');
   }
 
+  // "2.5m" → 2500000. Accepts plain numbers, 1e15, and k/m/b/t/qa/qi suffixes.
+  function parseEnergy(t) {
+    const m = /^\s*([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)\s*(k|m|b|t|qa|qi)?\s*$/i.exec(String(t || '').replace(/,/g, ''));
+    if (!m) return 0;
+    const mul = { k:1e3, m:1e6, b:1e9, t:1e12, qa:1e15, qi:1e18 }[(m[2] || '').toLowerCase()] || 1;
+    const n = parseFloat(m[1]) * mul;
+    return isFinite(n) && n > 0 && n <= 1e300 ? n : 0;
+  }
   function myId() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.sub : ''; }
   // Owners message players through the gift inbox (lands on their hub); moderators
   // can't send gifts, so theirs is a pop-up.
@@ -435,6 +446,7 @@
       (guest ? (w.online ? '<button class="adm-btn warn" data-act="pop" data-target="' + esc(target) + '" data-name="' + esc(w.name) + '">✉ Message</button>' : '')
              : msgBtn(w.sub, w.name, '✉ Message') +
                (isOwner ? '<button class="adm-btn" data-act="give" data-sub="' + esc(w.sub) + '" data-name="' + esc(w.name) + '">🎁 Give</button>' : '')) +
+      (w.banned ? '' : energyBtn(target, w.name)) +
       (w.online && !me && !(isMod && w.isMod) ? kickBtn(target, w.name) : '') +
       (me || (isMod && w.isMod) ? '' : guest
         ? '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'gunban' : 'gban') + '" data-gid="' + esc(w.gid) +
@@ -483,6 +495,10 @@
     catch (e) { fail(e); }
   }
 
+  // Owner-only: drop Idle Universe energy into someone's bank (lands next time they're in it).
+  function energyBtn(target, name) {
+    return isOwner ? '<button class="adm-btn" data-act="energy" data-target="' + esc(target) + '" data-name="' + esc(name) + '" title="Gift Idle Universe energy">⚡ Energy</button>' : '';
+  }
   function kickBtn(target, name) {
     return '<button class="adm-btn warn" data-act="kick" data-target="' + esc(target) + '" data-name="' + esc(name) + '">👢 Kick</button>';
   }
@@ -532,6 +548,7 @@
           (g.ban_reason ? '<div class="adm-meta">“' + esc(g.ban_reason) + '”</div>' : '') + '</div>' +
           viewBtn('g:' + g.gid, g.name) +
           (isOwner ? '<button class="adm-btn warn" data-act="glabel" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" title="Give this guest a name you\'ll recognise">✏</button>' : '') +
+          (g.banned ? '' : energyBtn('g:' + g.gid, g.name)) +
           (g.online && !g.banned ? '<button class="adm-btn warn" data-act="pop" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">✉</button>' +
             kickBtn('g:' + g.gid, g.name) : '') +
           '<button class="adm-btn ' + (g.banned ? 'warn' : 'danger') + '" data-act="' + (g.banned ? 'gunban' : 'gban') +
@@ -791,6 +808,17 @@
             notice = { text:'👢 Kicked ' + (all ? r.kicked + ' player' + (r.kicked === 1 ? '' : 's') : name) + ' — it lands within a few seconds.' };
           }
           logRows = null; overview = null; guests = null;
+        }});
+      }
+      else if (act === 'energy' || act === 'energyall') {
+        const all = act === 'energyall', name = all ? 'every player and guest' : (el.dataset.name || 'them');
+        askFor({ text:'Gift Idle Universe energy to ' + name + '. It lands within a few seconds if they\'re playing it, or the next time they open it.' +
+                      '\nType an amount — 5000, 2.5m, 1b, 3t or 1e15 all work.',
+                 input:'Amount of energy', yes:'⚡ Send energy', run: async text => {
+          const n = parseEnergy(text);
+          if (!n) throw new Error('Type an amount, like 1m or 5e12.');
+          const r = await call('/api/admin/game-gift', { method:'POST', body:{ target: all ? '*' : el.dataset.target, game:'idle-universe.html', amount:n } });
+          logRows = null; notice = { text:'⚡ Sent ' + text.trim() + ' energy to ' + (all ? r.sent + ' player' + (r.sent === 1 ? '' : 's') + ' and guests' : name) + '.' };
         }});
       }
       else if (act === 'pop' || act === 'popall') {
@@ -1127,6 +1155,7 @@
         liveGuests:[{ gid:'gaaaa1111', name:'Guest 1111', last_seen:now, playing:'' }],
         announce: arcade.announce, maintenance: arcade.maintenance, disabled: arcade.disabled.slice(), guestsLocked: arcade.guestsLocked };
       if (path === '/api/admin/reports') return { reports: db.reports };
+      if (path === '/api/admin/game-gift') return { ok:true, sent: opts.body.target === '*' ? 5 : 1 };
       if (path === '/api/admin/gift') return { ok:true, players: opts.body.sub === '*' ? 2 : 1 };
       if (path === '/api/admin/guests') return Object.assign({ guestsLocked: arcade.guestsLocked }, gdb);
       if (path === '/api/admin/appeals') return { appeals: [
@@ -1289,6 +1318,17 @@
     tab = 'overview'; overview = null; render(); await wait(); await wait();
     await click('[data-act="popall"]'); await answer('brb'); await wait();
     t('message everyone posts *', post('/api/admin/popup').body.target === '*');
+    tab = 'overview'; overview = null; render(); await wait(); await wait();
+    await click('[data-act="energy"][data-target="g:gaaaa1111"]'); await answer('2.5m'); await wait();
+    t('a guest gets Idle Universe energy', post('/api/admin/game-gift') && post('/api/admin/game-gift').body.target === 'g:gaaaa1111' &&
+      post('/api/admin/game-gift').body.amount === 2.5e6 && post('/api/admin/game-gift').body.game === 'idle-universe.html');
+    tab = 'overview'; overview = null; render(); await wait(); await wait();
+    await click('[data-act="energy"][data-target="u:s1"]'); await answer('1e15'); await wait();
+    t('a player gets energy', post('/api/admin/game-gift').body.target === 'u:s1' && post('/api/admin/game-gift').body.amount === 1e15);
+    tab = 'overview'; overview = null; render(); await wait(); await wait();
+    await click('[data-act="energyall"]'); await answer('3t'); await wait();
+    t('energy to everyone posts *', post('/api/admin/game-gift').body.target === '*' && post('/api/admin/game-gift').body.amount === 3e12);
+    t('energy amounts parse', parseEnergy('5,000') === 5000 && parseEnergy('1b') === 1e9 && !parseEnergy('lots') && !parseEnergy('-5'));
 
     // ── 👁 View ──
     tab = 'players'; players = null; render(); await wait(); await wait();
@@ -1408,6 +1448,7 @@
     sent.length = 0;
     await click('[data-act="pop"][data-target="u:s1"]'); await answer('hey'); await wait();
     t('mods message by pop-up, not gift', post('/api/admin/popup') && !post('/api/admin/gift'));
+    t('mods get no energy gifts', !document.querySelector('#adm-body [data-act="energy"]') && !document.querySelector('#adm-body [data-act="energyall"]'));
     tab = 'guests'; guests = null; render(); await wait(); await wait();
     t('mods see no network bans or guest-play switch', !bodyHas(/NETWORK BANS/) && !document.querySelector('#adm-body [data-act="guestlock"]'));
     await click('[data-act="gban"][data-gid="gaaaa1111"]');

@@ -532,6 +532,15 @@ function load(){
   showModal('<h2>WHILE YOU WERE AWAY</h2><p>The universe kept expanding for <b>'+fmtTime(away)+'</b>.</p><div class="big">+'+fmt(g)+'</div><p style="margin-top:8px">energy, at '+Math.round((tree('flow')?100:50)*(S.law==='cold'?3:1))+'% efficiency.</p><div class="row"><button class="btn" onclick="closeModal()">Continue</button></div>');
  }
 }
+// Energy gifted by the GLITCHBOX owner; glitchbox-menu.js fires this when the gift lands.
+function receiveGift(g){
+ const n=Number(g&&g.amount); if(!isFinite(n)||n<=0) return false;
+ earn(n); dirty=true; save();
+ const note=String((g&&g.note)||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+ showModal('<h2>🎁 A GIFT FROM THE OWNER</h2>'+(note?'<p>“'+note+'”</p>':'<p>Someone up there likes your universe.</p>')+'<div class="big">+'+fmt(n)+'</div><p style="margin-top:8px">energy, added to your bank.</p><div class="row"><button class="btn" onclick="closeModal()">Nice!</button></div>');
+ return true;
+}
+window.addEventListener('glitchbox-gift',e=>{ if(!DEMO) receiveGift(e.detail); });
 if(window.GBSave) GBSave.register({ save:()=>S.all>0?snapshot():null, load:d=>{restore(d);save();}, autosave:60 });
 
 /* ═══════════════════════════ AUDIO ═══════════════════════════ */
@@ -999,6 +1008,7 @@ if(SMOKE) setTimeout(()=>{
   // law choices
   ok(lawChoices().length===5,'4 laws +standard with wider physics');
   // save roundtrip
+  const keepS=S; S=fresh(); S.e=10; ok(receiveGift({amount:1e12,note:'<b>hi</b>'})&&S.e===1e12+10,'owner gift adds energy'); ok(/&lt;b&gt;hi/.test($('mbox').innerHTML),'gift note is escaped'); ok(!receiveGift({amount:-5})&&!receiveGift({amount:'x'})&&S.e===1e12+10,'bad gifts ignored'); closeModal(); S=keepS;
   S.e=12345; const snap=snapshot(); S=fresh(); restore(snap); ok(S.e===12345&&S.tree.heat===1&&S.owned[0]===20,'save roundtrip');
   // offline
   S=fresh(); S.owned[5]=10; recalc(); near(offlineGain(100),EPS*100*.5,'offline 50%'); S.tree.flow=1; near(offlineGain(100),EPS*100,'dark flow 100%');

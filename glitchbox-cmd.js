@@ -474,6 +474,18 @@
       ok('✉ sent to ' + (all ? r.sent + ' online' : who.name));
     }},
 
+    energy: { usage:'energy <player|guest|everyone> <amount>', about:'gift Idle Universe energy (1m, 5b, 1e15…)', owner:true, async run(a) {
+      const m = /^\s*([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)\s*(k|m|b|t|qa|qi)?\s*$/i.exec(String(a[a.length - 1] || '').replace(/,/g, ''));
+      const n = m ? parseFloat(m[1]) * ({ k:1e3, m:1e6, b:1e9, t:1e12, qa:1e15, qi:1e18 }[(m[2] || '').toLowerCase()] || 1) : 0;
+      if (a.length < 2 || !(n > 0 && n <= 1e300)) { bad('usage: energy <player|guest|everyone> <amount>   e.g. energy dave 5b'); return; }
+      const name = a.slice(0, -1).join(' ');
+      const all = /^(everyone|all|\*)$/i.test(name);
+      const who = all ? { target:'*', name:'everyone' } : await pickAnyone(name);
+      if (!who) return;
+      const r = await call('/api/admin/game-gift', { method:'POST', body:{ target:who.target, game:'idle-universe.html', amount:n } });
+      ok('⚡ sent ' + a[a.length - 1] + ' energy to ' + (all ? r.sent + ' players and guests' : who.name) + ' — lands next time they\'re in Idle Universe');
+    }},
+
     gban: { usage:'gban <guest> [net] [reason]', about:'ban a guest (add  net  to ban their network too)', owner:true, async run(a) {
       const g = await pickGuest(a[0]);
       if (!g) return;
@@ -838,6 +850,7 @@
       if (path === '/api/admin/kick') return { ok:true, kicked: opts.body.target === '*' ? 4 : 1 };
       if (path === '/api/admin/appeals') return { appeals:[{ id:5, name:'Eve', kind:'player', text:'sorry', created:Date.now(), status:'open' }] };
       if (path === '/api/admin/appeal-decide') return { ok:true, note:'' };
+      if (path === '/api/admin/game-gift') return { ok:true, sent: opts.body.target === '*' ? 4 : 1 };
       if (path === '/api/admin/popup') return { ok:true, sent: opts.body.target === '*' ? 4 : 1 };
       return { ok:true };
     };
@@ -958,6 +971,15 @@
     seen.length = 0;
     await run('popup sam "dinner time"');
     t('popup reaches a named guest', seen.some(s => s.path === '/api/admin/popup' && s.body.target === 'g:gyyyy9z9z' && s.body.text === 'dinner time'));
+    seen.length = 0;
+    await run('energy 1A2B 5b');
+    t('energy reaches a guest', seen.some(s => s.path === '/api/admin/game-gift' && s.body.target === 'g:gxxxx1a2b' && s.body.amount === 5e9 && s.body.game === 'idle-universe.html'));
+    seen.length = 0;
+    await run('energy everyone 1e12');
+    t('energy everyone posts *', seen.some(s => s.path === '/api/admin/game-gift' && s.body.target === '*' && s.body.amount === 1e12));
+    seen.length = 0;
+    await run('energy 1A2B lots');
+    t('a bad amount sends nothing', !seen.some(s => s.path === '/api/admin/game-gift'));
     seen.length = 0;
     await run('gban 1A2B net spam');
     const gb = seen.find(s => s.path === '/api/admin/guest-ban');

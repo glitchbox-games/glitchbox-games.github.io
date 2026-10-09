@@ -173,6 +173,10 @@ export class Hub extends DurableObject {
       // `who` is "u:<sub>" or "g:<gid>".
       this.sql.exec(`CREATE TABLE IF NOT EXISTS pending (
         id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, kind TEXT, text TEXT, created INTEGER)`);
+      // In-game gifts (e.g. Idle Universe energy). Unlike `pending`, these wait for a ping
+      // from that exact game, so the hub or another game can't swallow them.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS game_gifts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, game TEXT, amount REAL, note TEXT, created INTEGER)`);
       try { this.sql.exec("ALTER TABLE users ADD COLUMN last_ip TEXT"); } catch (e) { /* already there */ }
       // Which version of the terms this player agreed to, and when — the record of consent.
       try { this.sql.exec("ALTER TABLE users ADD COLUMN tos_version TEXT"); } catch (e) { /* already there */ }
@@ -341,6 +345,13 @@ export class Hub extends DurableObject {
     const kick = rows.filter(r => r.kind === "kick").pop();
     return { kick: kick ? (kick.text || "") : null,
              messages: rows.filter(r => r.kind === "msg").map(r => r.text) };
+  }
+  // In-game gifts waiting for `who` in `game`; handed over once.
+  takeGameGifts(who, game) {
+    if (!game) return [];
+    const rows = this.sql.exec("SELECT id, amount, note FROM game_gifts WHERE who = ? AND game = ? ORDER BY id", who, game).toArray();
+    if (rows.length) this.sql.exec("DELETE FROM game_gifts WHERE who = ? AND game = ?", who, game);
+    return rows.map(r => ({ amount: r.amount, note: r.note || "" }));
   }
 
   // ── owner / admin ──
@@ -612,7 +623,7 @@ export class Hub extends DurableObject {
         const rm = String(room || "").toUpperCase();
         this.sql.exec("UPDATE users SET room = ? WHERE sub = ?", ROOM_RE.test(rm) && MP_FILES.includes(g) ? rm : "", me);
       }
-      return { ...out, ...this.takePending("u:" + me) };
+      return { ...out, ...this.takePending("u:" + me), gameGifts: this.takeGameGifts("u:" + me, g) };
     }
     const nb = this.ipBan(ip);
     if (nb) throw new HttpError(403, nb);
@@ -630,7 +641,7 @@ export class Hub extends DurableObject {
     const ban = this.deviceBan(gid);
     if (ban) throw new HttpError(403, ban);
     out.guest = guestName(gid);
-    return { ...out, ...this.takePending("g:" + gid) };
+    return { ...out, ...this.takePending("g:" + gid), gameGifts: this.takeGameGifts("g:" + gid, g) };
   }
 
   // Log a move to `game` ('' = the hub) when it differs from where they were, or when
@@ -806,6 +817,7 @@ export class Hub extends DurableObject {
       this.sql.exec(q, sub);
     this.sql.exec("DELETE FROM activity WHERE who = ?", "u:" + sub);
     this.sql.exec("DELETE FROM pending WHERE who = ?", "u:" + sub);
+    this.sql.exec("DELETE FROM game_gifts WHERE who = ?", "u:" + sub);
     this.sql.exec("DELETE FROM appeals WHERE who = ?", "u:" + sub);
     this.sql.exec("DELETE FROM users WHERE sub = ?", sub);
   }
@@ -1002,6 +1014,33 @@ export class Hub extends DurableObject {
     } else whos = [String(target || "")];
     for (const w of whos) this.sql.exec("INSERT INTO pending (who, kind, text, created) VALUES (?, 'msg', ?, ?)", w, t, now);
     this.log("popup", "", (target === "*" ? "everyone online" : this.whoName(target)) + ' "' + t + '"', st.actor);
+    return { ok: true, sent: whos.length };
+  }
+  // Gift something inside a game — today, Idle Universe energy. target "u:<sub>",
+  // "g:<gid>", or "*" for every player and every guest seen this month. It waits
+  // until they next open that game, then lands within a ping (a few seconds).
+  async adminGameGift(token, target, game, amount, note) {
+    await this.requireOwner(token);
+    const GAME_GIFTS = ["idle-universe.html"];
+    const gm = String(game || "");
+    if (!GAME_GIFTS.includes(gm)) throw new HttpError(400, "that game can't take gifts");
+    const n = Number(amount);
+    if (!isFinite(n) || n <= 0 || n > 1e300) throw new HttpError(400, "pick an amount above zero");
+    const msg = String(note || "").trim().slice(0, 120);
+    const now = Date.now();
+    let whos;
+    if (target === "*") {
+      whos = this.sql.exec("SELECT sub FROM users WHERE banned IS NULL OR banned = 0").toArray().map(r => "u:" + r.sub)
+        .concat(this.sql.exec("SELECT gid FROM guests WHERE last_seen > ? AND (banned IS NULL OR banned = 0)", now - GUEST_KEEP).toArray().map(r => "g:" + r.gid));
+    } else {
+      const t = String(target || "");
+      if (!(/^u:/.test(t) && this.userOf(t.slice(2))) && !(/^g:/.test(t) && this.guestOf(t.slice(2))))
+        throw new HttpError(404, "nobody by that id");
+      whos = [t];
+    }
+    for (const w of whos)
+      this.sql.exec("INSERT INTO game_gifts (who, game, amount, note, created) VALUES (?, ?, ?, ?, ?)", w, gm, n, msg, now);
+    this.log("game-gift", "", (target === "*" ? "everyone" : this.whoName(target)) + " · " + n + " in " + gm + (msg ? ' "' + msg + '"' : ""));
     return { ok: true, sent: whos.length };
   }
   whoName(t) {
@@ -1312,7 +1351,7 @@ export class Hub extends DurableObject {
     const g = this.guestOf(gid);
     if (g && g.banned) throw new HttpError(403, "a banned device can't be forgotten — appeal the ban instead");
     this.sql.exec("DELETE FROM guests WHERE gid = ?", gid);
-    for (const t of ["activity", "pending", "appeals"]) this.sql.exec("DELETE FROM " + t + " WHERE who = ?", "g:" + gid);
+    for (const t of ["activity", "pending", "appeals", "game_gifts"]) this.sql.exec("DELETE FROM " + t + " WHERE who = ?", "g:" + gid);
     return { ok: true };
   }
 
@@ -1637,6 +1676,7 @@ export default {
         if (path === "/api/admin/ip-ban")      return json(await stub.adminIpBan(auth, body.ip, body.banned, body.reason, body.hours), 200, origin);
         if (path === "/api/admin/kick")        return json(await stub.adminKick(auth, body.target, body.reason), 200, origin);
         if (path === "/api/admin/popup")       return json(await stub.adminPopup(auth, body.target, body.text), 200, origin);
+        if (path === "/api/admin/game-gift")   return json(await stub.adminGameGift(auth, body.target, body.game, body.amount, body.note), 200, origin);
         if (path === "/api/admin/reload-all")  return json(await stub.adminReloadAll(auth), 200, origin);
         if (path === "/api/admin/games")       return json(await stub.adminGames(auth, body.disabled), 200, origin);
         if (path === "/api/admin/guests-lock") return json(await stub.adminGuestsLock(auth, body.on), 200, origin);
