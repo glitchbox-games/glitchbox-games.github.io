@@ -111,6 +111,9 @@
   .final .tally{ font-family:'Press Start 2P',monospace; font-size:38px; color:#fff; margin:18px 0 6px; }
   .final .tally .a{ color:var(--cyan); } .final .tally .b{ color:var(--pink); }
 
+  #paused{ position:fixed; inset:0; z-index:7; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(5,4,14,.6); color:#00f5ff; font:700 28px 'Press Start 2P',monospace; letter-spacing:3px; cursor:pointer; text-shadow:0 0 16px #00f5ff; }
+  #paused small{ font:600 15px Rajdhani,sans-serif; letter-spacing:2px; color:#cfd8ff; margin-top:14px; }
   /* ── touch controls ── */
   #touch{ position:fixed; inset:0; z-index:6; pointer-events:none; }
   #touch .stick{ position:absolute; left:26px; bottom:26px; width:130px; height:130px; border-radius:50%;
@@ -148,6 +151,7 @@
   <div id="respawn" class="hidden"><div class="rt1" id="deathmsg">FRAGGED</div><div class="rt2" id="rcount">3</div></div>
 </div>
 
+<div id="paused" class="hidden" onclick="">⏸ PAUSED<small>click to jump back in</small></div>
 <div id="touch" class="hidden">
   <div class="stick" id="stick"><i id="knob"></i></div>
   <div class="fire" id="firebtn">FIRE</div>
@@ -592,7 +596,10 @@ function damage(f, dmg, now){
 }
 
 function respawn(f, now){
-  spawnAt(f, f.me ? (net.role === 'guest' ? 1 : 0) : (net.role === 'guest' ? 0 : 1));
+  // Respawn at whichever spawn is farther from the enemy — always using your own
+  // spawn let a camper (or the bot) farm you the moment you reappeared.
+  const foe = f === P ? E : P, d = i => { const sp = MAP.spawns[i] || MAP.spawns[0]; return Math.hypot(sp[0]-foe.x, sp[1]-foe.y); };
+  spawnAt(f, MAP.spawns.length > 1 && d(1) > d(0) ? 1 : 0);
   f.alive = true;
   if(f.me){ $('respawn').classList.add('hidden'); net.send({ t:'rs', x:f.x, y:f.y }); }
 }
@@ -723,6 +730,7 @@ view.addEventListener('mousedown', () => {
 });
 addEventListener('mouseup', () => { firing = false; });
 document.addEventListener('pointerlockchange', () => { locked = document.pointerLockElement === view; });
+$('paused').addEventListener('mousedown', () => { Audio_.on(); lockPointer(); });
 addEventListener('mousemove', e => {
   if(locked && state === 'play') P.ang = (P.ang + e.movementX*0.0022*sens + TAU) % TAU;
 });
@@ -923,6 +931,10 @@ function step(now){
   requestAnimationFrame(step);
   const dt = Math.min(0.05, (now - last)/1000 || 0.016); last = now;
   if(state !== 'play'){ return; }
+  // Esc released the mouse and the bot kept shooting you. Practice pauses until you click back in.
+  const paused = mode === 'practice' && !isTouch && !!view.requestPointerLock && !locked;
+  $('paused').classList.toggle('hidden', !paused);
+  if(paused){ render(now); drawGun(now); updateHud(now); drawMinimap(); return; }
 
   if(P.alive){
     // movement
