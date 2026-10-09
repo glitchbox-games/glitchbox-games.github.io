@@ -320,7 +320,9 @@ function renderBook(){
 }
 
 // ── Rank / HUD ──
-const RANKS=[[0,'Junior Ranger'],[400,'Park Ranger'],[1100,'Senior Ranger'],[2200,'Park Naturalist'],[3800,'Chief Ranger'],[6000,'Park Superintendent']];
+// Thresholds fit an honest full run (~5,400 pts photographing everything once) — the
+// old 6,000 Superintendent was only reachable by re-shooting the same subjects.
+const RANKS=[[0,'Junior Ranger'],[350,'Park Ranger'],[1000,'Senior Ranger'],[2000,'Park Naturalist'],[3200,'Chief Ranger'],[4800,'Park Superintendent']];
 function rankName(){ let r=RANKS[0][1]; for(const [s,n] of RANKS) if(score>=s) r=n; return r; }
 function refreshHUD(){ document.getElementById('hScore').textContent=score; document.getElementById('hRank').textContent=rankName();
   document.getElementById('hWild').textContent=WILD_TYPES.filter(t=>journal.has('wild:'+t)).length+'/'+WILD_TYPES.length;
