@@ -290,7 +290,8 @@
     const head = '<div class="adm-actions">' +
       '<input class="adm-in" id="adm-search" data-act="search" placeholder="Search name, email or friend code…" style="flex:1;min-width:200px">' +
       '<button class="adm-btn" data-act="reload">↻</button>' +
-        (isOwner ? '<button class="adm-btn warn" data-act="give" data-sub="*">🎁 Give everyone</button>' : '') + '</div>';
+        (isOwner ? '<button class="adm-btn warn" data-act="give" data-sub="*">🎁 Give everyone</button>' +
+          '<button class="adm-btn" data-act="energyall">⚡ Energy to everyone</button>' : '') + '</div>';
     if (players === null) { loadPlayers(); return head + '<div class="adm-empty">Loading…</div>'; }
     if (!players.length) return head + '<div class="adm-empty">No players match.</div>';
     const me = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.sub : '';
@@ -313,6 +314,7 @@
           : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms yet</span>') + '</div></div>' +
         viewBtn('u:' + p.sub, p.name) +
         (isOwner ? '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' : '') +
+        (p.banned ? '' : energyBtn('u:' + p.sub, p.name)) +
         (self ? '' : msgBtn(p.sub, p.name, '✉')) +
         (self || p.playing == null || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' : kickBtn('u:' + p.sub, p.name)) +
         (self || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' :
@@ -337,8 +339,12 @@
       '<input type="checkbox" name="' + name + '" value="' + esc(val) + '">' + label + '</label>';
     return '<div class="adm-h">// GIFT → ' + esc(all ? 'EVERY PLAYER' : giftTo.name) + '</div>' +
       '<div class="adm-note">Tokens (negative takes them away):</div>' +
-      '<div class="adm-actions"><input class="adm-in" id="adm-gtok" type="number" value="100" style="max-width:160px">' +
+      '<div class="adm-actions"><input class="adm-in" id="adm-gtok" type="number" placeholder="0" style="max-width:160px">' +
         [100, 500, 1000, 10000].map(n => '<button class="adm-btn warn" data-act="gtok" data-n="' + n + '">' + n + '</button>').join('') +
+      '</div>' +
+      '<div class="adm-note">⚡ Idle Universe energy' + (all ? ' (goes to guests too)' : '') + ' — 5000, 2.5m, 1b, 3t, 1e15…:</div>' +
+      '<div class="adm-actions"><input class="adm-in" id="adm-genergy" placeholder="0" style="max-width:160px">' +
+        ['1m', '1b', '1t', '1e15'].map(n => '<button class="adm-btn" data-act="genergy" data-n="' + n + '">' + n + '</button>').join('') +
       '</div>' +
       (paid.length ? '<div class="adm-note">Unlock games:</div><div id="adm-ggames">' +
         paid.map(g => box('g', g.file, esc(g.name) + ' <span style="opacity:.6">(' + g.price + ')</span>')).join('') + '</div>' : '') +
@@ -982,6 +988,7 @@
         render();
       }
       else if (act === 'gtok') { $('adm-gtok').value = el.dataset.n; }
+      else if (act === 'genergy') { $('adm-genergy').value = el.dataset.n; }
       else if (act === 'giftcancel') { giftTo = null; render(); }
       else if (act === 'giftsend') {
         const checked = n => [...$('adm-body').querySelectorAll('input[name="' + n + '"]:checked')].map(i => i.value);
@@ -990,12 +997,18 @@
           .filter(s => cats.indexOf(s.cat) !== -1).reduce((a, s) => a.concat(s.icons.map(ic => ic.id)), []);
         const body = { sub: giftTo.sub, tokens: parseInt($('adm-gtok').value, 10) || 0,
                        games: checked('g'), icons, note: ($('adm-gnote').value || '').trim() };
-        if (!body.tokens && !body.games.length && !body.icons.length) { $('adm-gmsg').textContent = 'Nothing to give — add tokens or tick something.'; return; }
+        const etext = ($('adm-genergy').value || '').trim(), energy = parseEnergy(etext);
+        if (etext && !energy) { $('adm-gmsg').textContent = 'That energy amount doesn\'t read right — try 1m, 5b or 1e15.'; return; }
+        const stuff = body.tokens || body.games.length || body.icons.length;
+        if (!stuff && !energy) { $('adm-gmsg').textContent = 'Nothing to give — add tokens, energy or tick something.'; return; }
         const who = giftTo.name;
         const send = async () => {
-          const r = await call('/api/admin/gift', { method:'POST', body });
-          giftTo = null; players = null;
-          notice = { text: '🎁 Gift queued for ' + (body.sub === '*' ? r.players + ' players' : who) + '.' };
+          const r = stuff ? await call('/api/admin/gift', { method:'POST', body }) : null;
+          const e = energy ? await call('/api/admin/game-gift', { method:'POST', body:{ target: body.sub === '*' ? '*' : 'u:' + body.sub,
+            game:'idle-universe.html', amount: energy, note: body.note } }) : null;
+          giftTo = null; players = null; logRows = null;
+          notice = { text: '🎁 Gift queued for ' + (body.sub === '*' ? (r ? r.players : e.sent) + ' players' : who) +
+            (energy ? ' — ⚡ ' + etext + ' energy lands next time they\'re in Idle Universe' : '') + '.' };
         };
         if (body.sub === '*') askFor({ text:'Send this gift to every player?', yes:'Send to everyone', run: send });
         else { await send(); render(); }
@@ -1247,6 +1260,20 @@
     t('the gift carries tokens, a game, icons and the note', gift && gift.body.sub === 's1' && gift.body.tokens === 1000 &&
       gift.body.games.length === (gbox ? 1 : 0) && (!ibox || gift.body.icons.length > 0) && gift.body.note === 'nice');
     t('sending closes the form', !bodyHas(/GIFT →/));
+    t('the Players list has an energy button', !!document.querySelector('#adm-body [data-act="energy"][data-target="u:s1"]'));
+    sent.length = 0;
+    await click('[data-act="give"][data-sub="s1"]');
+    await click('[data-act="genergy"][data-n="1b"]');
+    $('adm-gnote').value = 'enjoy';
+    await click('[data-act="giftsend"]');
+    t('energy alone from the Give form sends only energy', !post('/api/admin/gift') && post('/api/admin/game-gift') &&
+      post('/api/admin/game-gift').body.target === 'u:s1' && post('/api/admin/game-gift').body.amount === 1e9 && post('/api/admin/game-gift').body.note === 'enjoy');
+    await click('[data-act="give"][data-sub="s1"]');
+    $('adm-genergy').value = 'heaps';
+    sent.length = 0;
+    await click('[data-act="giftsend"]');
+    t('a bad energy amount is refused', !post('/api/admin/game-gift') && bodyHas(/doesn't read right/));
+    await click('[data-act="giftcancel"]');
     await click('[data-act="give"][data-sub="*"]');
     $('adm-gtok').value = '0';
     sent.length = 0;
