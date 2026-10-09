@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Build a Bridge</title>
 <script src="glitchbox-save.js" data-pos="bottom-left"></script>
 <style>
@@ -78,6 +79,7 @@ button.danger:hover:not(:disabled){background:var(--bad);color:#fff}
   pointer-events:none;
 }
 #toast.show{opacity:1}
+#rotate-tip{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);display:none;z-index:9;background:var(--panel);border:1px solid var(--warn);color:var(--warn);padding:8px 14px;border-radius:4px;font-size:11px;letter-spacing:1px;white-space:nowrap;pointer-events:none}
 .kbd{
   display:inline-block;padding:1px 5px;
   border:1px solid #64748b;border-radius:2px;
@@ -101,6 +103,7 @@ button.danger:hover:not(:disabled){background:var(--bad);color:#fff}
   <canvas id="map"></canvas>
   <div id="hint">Drag from a <span style="color:var(--accent)">●</span> anchor to draw a beam. Each beam costs $10. Connect both sides, then hit TEST.</div>
   <div id="toast"></div>
+  <div id="rotate-tip">📱↻ Turn your phone sideways for a bigger bridge</div>
 </div>
 
 <script>
@@ -119,10 +122,18 @@ const NODE_RADIUS = 5;
 // ── Canvas / state ────────────────────────────────────────────────────────────
 const canvas = document.getElementById('map');
 const ctx = canvas.getContext('2d');
-let W=0, H=0;
+// The level is a fixed 1280x800 world scaled to fit the screen. It used to be laid out
+// in screen pixels while the car stayed the same size, so the same level was a
+// different puzzle on every device (trusses failed on phones, flat decks passed).
+const WW = 1280, WH = 800;
+let W = WW, H = WH, CW = 0, CH = 0, VS = 1, VX = 0, VY = 0;
 function resize(){
-  W = canvas.width = canvas.clientWidth;
-  H = canvas.height = canvas.clientHeight;
+  CW = canvas.width = canvas.clientWidth;
+  CH = canvas.height = canvas.clientHeight;
+  const top = document.getElementById('topbar').offsetHeight || 0;
+  VS = Math.min(CW / WW, (CH - top) / WH);
+  VX = (CW - WW * VS) / 2; VY = top + (CH - top - WH * VS) / 2;
+  const tip = document.getElementById('rotate-tip'); if (tip) tip.style.display = CH > CW * 1.2 ? 'block' : 'none';
 }
 window.addEventListener('resize', resize);
 
@@ -179,6 +190,7 @@ function loadLevel(n){
   }
   document.getElementById('level').textContent = level;
   updateBudgetUI();
+  resetTestUI();
   document.getElementById('canvas')?.classList.remove('testing');
   canvas.classList.remove('testing');
   setHint('Drag from a anchor to draw a beam. Each beam costs $10. Connect both sides, then hit TEST.');
@@ -215,7 +227,7 @@ function addBeam(a,b){
 function bridgeSnapshot(){
   const idx = new Map(); nodes.forEach((n,i)=>idx.set(n,i));
   return {
-    level, w:W, h:H,
+    level, w:WW, h:WH, world:1,
     nodes: nodes.map(n=>[Math.round(n.x), Math.round(n.y), n.fixed?1:0, n.ground?1:0]),
     beams: beams.map(b=>[idx.get(b.a), idx.get(b.b), b.broken?1:0])
   };
@@ -277,9 +289,10 @@ function undo(){
 function pos(e){
   const r=canvas.getBoundingClientRect();
   const t=e.touches?.[0]||e.changedTouches?.[0]||e;
-  return {x:t.clientX-r.left, y:t.clientY-r.top};
+  return {x:(t.clientX-r.left-VX)/VS, y:(t.clientY-r.top-VY)/VS};
 }
 function nodeAt(x,y,r=NODE_HIT_RADIUS){
+  r = Math.max(r, (touchUsed ? 26 : 12) / VS);   // never smaller than a fingertip on screen
   let best=null, bestD=r;
   for (const n of nodes) {
     const d = Math.hypot(n.x-x, n.y-y);
@@ -290,7 +303,8 @@ function nodeAt(x,y,r=NODE_HIT_RADIUS){
 canvas.addEventListener('mousedown', onDown);
 canvas.addEventListener('mousemove', onMove);
 canvas.addEventListener('mouseup', onUp);
-canvas.addEventListener('touchstart', e=>{onDown(e); e.preventDefault();}, {passive:false});
+let touchUsed = false;
+canvas.addEventListener('touchstart', e=>{touchUsed=true; onDown(e); e.preventDefault();}, {passive:false});
 canvas.addEventListener('touchmove',  e=>{onMove(e); e.preventDefault();}, {passive:false});
 canvas.addEventListener('touchend',   e=>{onUp(e);   e.preventDefault();}, {passive:false});
 
@@ -375,14 +389,18 @@ function startTest(){
   spawnVehicle();
   setHint('Vehicle is crossing — let physics decide. Hit STOP to keep building.');
 }
+// After a win the TEST button became NEXT and UNDO/RESET stayed disabled into the
+// next level; every level load and every STOP now puts the bar back.
+function resetTestUI(){
+  const tb = document.getElementById('test-btn');
+  tb.textContent = '▶ TEST'; tb.classList.add('primary'); tb.classList.remove('danger'); tb.onclick = toggleTest;
+  document.getElementById('undo-btn').disabled = false;
+  document.getElementById('reset-btn').disabled = false;
+}
 function endTest(){
   mode = 'BUILD';
   canvas.classList.remove('testing');
-  document.getElementById('test-btn').textContent = '▶ TEST';
-  document.getElementById('test-btn').classList.add('primary');
-  document.getElementById('test-btn').classList.remove('danger');
-  document.getElementById('undo-btn').disabled = false;
-  document.getElementById('reset-btn').disabled = false;
+  resetTestUI();
   // Restore exact pre-test state (any broken beams get repaired)
   if (preTestState) {
     nodes = preTestState.nodes.map(n=>({...n, ox:n.x, oy:n.y}));
@@ -406,7 +424,8 @@ function spawnVehicle(){
   // Heavier vehicles so a single straight beam will visibly sag and snap. A
   // bridge needs triangulation / support struts to carry the load. Tuned so a
   // well-engineered triangulated truss carries the load while a flat span sags.
-  const massMult = isTruck ? 1.5 : 1.0;
+  // x1.6: at x1 a bare flat deck carried the car on most levels; now it needs supports
+  const massMult = isTruck ? 2.4 : 1.6;
   // Spawn just to the left of the left-cliff edge, on top of the ground
   const startX = groundLeft - bw/2 - 30;
   // Body center sits so the bottom of the WHEEL (hub + wheelR) just touches
@@ -597,7 +616,7 @@ function stepPhysics(dt){
     if (hubX > groundRight + 40 && hubY < groundRightY + 30) {
       mode = 'WIN';
       toast('★ BRIDGE HOLDS — LEVEL CLEAR');
-      setHint('Press NEXT to continue, or STOP to keep building.');
+      setHint(level<LEVELS.length ? 'Press NEXT LEVEL to continue.' : 'You beat every level! Press RESTART to play again.');
       setTimeout(()=>{
         document.getElementById('test-btn').textContent = level<LEVELS.length ? '▶ NEXT LEVEL' : '▶ RESTART';
         document.getElementById('test-btn').onclick = ()=>{
@@ -607,8 +626,18 @@ function stepPhysics(dt){
         };
       }, 200);
     }
+    // FAIL: stuck — the car used to sit in a sagging deck forever with no feedback
+    if (mode === 'TEST') {
+      vehicle.watchT = (vehicle.watchT || 0) + dt;
+      if (vehicle.watchX === undefined || hubX > vehicle.watchX + 12) { vehicle.watchX = hubX; vehicle.watchT = 0; }
+      else if (vehicle.watchT > 5) {
+        mode = 'FAIL';
+        toast('✖ VEHICLE STUCK — THE DECK SAGS');
+        setHint('The deck bends too much under the weight. Add triangles underneath for support, then STOP and try again.');
+      }
+    }
     // FAIL: dropped off the bottom
-    if (hubY > H + 80) {
+    if (mode === 'TEST' && hubY > H + 80) {
       mode = 'FAIL';
       toast('✖ VEHICLE FELL — TRY AGAIN');
       setHint('Hit STOP to fix the bridge.');
@@ -961,6 +990,9 @@ function drawVehicle(){
 }
 
 function render(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle = '#0a2240'; ctx.fillRect(0,0,CW,CH);
+  ctx.setTransform(VS,0,0,VS,VX,VY);
   drawGrid();
   drawGround();
   drawBeams();
@@ -970,19 +1002,16 @@ function render(){
 }
 
 // ── Main loop ─────────────────────────────────────────────────────────────────
-let lastTime = 0;
+let lastTime = 0, physAcc = 0;
 function loop(t){
   const dt = lastTime ? Math.min((t-lastTime)/1000, 0.05) : TIMESTEP;
   lastTime = t;
   if (mode==='TEST') {
-    // Run physics at fixed substeps for stability regardless of frame rate
-    let acc = dt;
-    while (acc > 0) {
-      const step = Math.min(acc, TIMESTEP);
-      stepPhysics(step);
-      acc -= step;
-    }
-  }
+    // Fixed 1/60 s steps (leftover time carries over), so the car drives at the same
+    // speed on a 30 Hz Chromebook and a 144 Hz monitor
+    physAcc = Math.min(physAcc + dt, 0.25);
+    while (physAcc >= TIMESTEP) { stepPhysics(TIMESTEP); physAcc -= TIMESTEP; }
+  } else physAcc = 0;
   render();
   requestAnimationFrame(loop);
 }
