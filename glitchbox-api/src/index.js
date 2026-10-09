@@ -338,6 +338,38 @@ export class Hub extends DurableObject {
     this.log("ban", sub, "automatic: signed in on a banned device" + (m[1] ? "" : " (permanent)") + (m[2] ? " — " + m[2] : ""), "");
   }
 
+  // Unbanning has to lift the whole web a ban spread across: the accounts and browsers
+  // linked through device_links. Otherwise a still-banned browser (or second account)
+  // re-bans the person the moment they come back. Start is "u:<sub>" or "g:<gid>".
+  // Returns how many extra accounts/devices it cleared besides the start.
+  liftLinkedBans(start) {
+    const seen = new Set([start]), queue = [start];
+    let lifted = 0;
+    while (queue.length && seen.size < 60) {
+      const cur = queue.shift();
+      const next = cur[0] === "u"
+        ? this.sql.exec("SELECT gid FROM device_links WHERE sub = ?", cur.slice(2)).toArray().map(r => "g:" + r.gid)
+        : this.sql.exec("SELECT sub FROM device_links WHERE gid = ?", cur.slice(2)).toArray().map(r => "u:" + r.sub);
+      for (const n of next) if (!seen.has(n)) { seen.add(n); queue.push(n); }
+    }
+    for (const w of seen) {
+      if (w === start) continue;
+      const id = w.slice(2);
+      if (w[0] === "u") {
+        const u = this.userOf(id);
+        if (u && u.banned) { this.sql.exec("UPDATE users SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE sub = ?", id); lifted++; }
+      } else {
+        const g = this.guestOf(id);
+        if (g && g.banned) {
+          this.sql.exec("UPDATE guests SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE gid = ?", id);
+          if (g.ip) this.sql.exec("DELETE FROM ip_bans WHERE ip = ? AND label = ?", g.ip, g.label || guestName(g.gid));
+          lifted++;
+        }
+      }
+    }
+    return lifted;
+  }
+
   // Hand over (and forget) whatever kicks and messages are waiting for `who`.
   takePending(who) {
     const rows = this.sql.exec("SELECT id, kind, text FROM pending WHERE who = ? ORDER BY id", who).toArray();
@@ -787,7 +819,9 @@ export class Hub extends DurableObject {
     const why = banned ? String(reason || "").slice(0, 200) : null;
     this.sql.exec("UPDATE users SET banned = ?, ban_reason = ?, ban_until = ? WHERE sub = ?",
       banned ? 1 : null, why, banned && h ? Date.now() + h * 3600000 : null, sub);
-    this.log(banned ? "ban" : "unban", sub, banned ? (h ? "for " + h + "h" : "permanent") + (why ? " — " + why : "") : "", st.actor);
+    const also = banned ? 0 : this.liftLinkedBans("u:" + sub);
+    this.log(banned ? "ban" : "unban", sub, banned ? (h ? "for " + h + "h" : "permanent") + (why ? " — " + why : "")
+      : also ? "also lifted " + also + " linked account/device ban" + (also > 1 ? "s" : "") : "", st.actor);
     // A ban should also stop anything already in flight.
     if (banned) {
       this.sql.exec("DELETE FROM invites WHERE from_sub = ? OR to_sub = ?", sub, sub);
@@ -916,6 +950,7 @@ export class Hub extends DurableObject {
         g.ip, why, until, Date.now(), name);
     // Unbanning the device also lifts a network ban that came with it.
     if (!banned && g.ip) this.sql.exec("DELETE FROM ip_bans WHERE ip = ? AND label = ?", g.ip, name);
+    if (!banned) this.liftLinkedBans("g:" + g.gid);
     this.log(banned ? "ban-guest" : "unban-guest", "", name + (banned ? (alsoIp ? " + network" : "") +
       (h ? " for " + h + "h" : " permanent") + (why ? " — " + why : "") : ""), st.actor);
     return { ok: true };
@@ -1154,6 +1189,7 @@ export class Hub extends DurableObject {
         this.modCanTouch(st, a.who.slice(2));
         this.sql.exec("UPDATE users SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE sub = ?", a.who.slice(2));
       } else this.sql.exec("UPDATE guests SET banned = NULL, ban_reason = NULL, ban_until = NULL WHERE gid = ?", a.who.slice(2));
+      this.liftLinkedBans(a.who);
       if (a.ip && this.sql.exec("SELECT 1 FROM ip_bans WHERE ip = ?", a.ip).toArray()[0]) {
         if (st.owner) this.sql.exec("DELETE FROM ip_bans WHERE ip = ?", a.ip);
         else note = " — their network is still banned (only the owner can lift that)";
