@@ -381,15 +381,15 @@ const Mic = {
     const minLag = Math.floor(sr/1000), maxLag = Math.floor(sr/70);   // 70Hz–1kHz singing range
     let best = -1, bestCorr = 0, lastCorr = 1;
     for(let lag = minLag; lag < maxLag; lag++){
-      let c = 0;
-      for(let i=0;i<N-lag;i++) c += buf[i]*buf[i+lag];
-      c /= (N-lag);
+      let c = 0; const M = Math.min(N - lag, 1024);   // half the work of the full buffer
+      for(let i=0;i<M;i++) c += buf[i]*buf[i+lag];
+      c /= M;
       if(c > bestCorr && c > lastCorr){ bestCorr = c; best = lag; }
       lastCorr = c;
     }
     if(best < 0 || bestCorr < 0.004) return null;
     // parabolic interpolation around the peak sharpens the estimate
-    const corrAt = lag => { let c = 0; for(let i=0;i<N-lag;i++) c += buf[i]*buf[i+lag]; return c/(N-lag); };
+    const corrAt = lag => { let c = 0; const M = Math.min(N - lag, 1024); for(let i=0;i<M;i++) c += buf[i]*buf[i+lag]; return c/M; };
     const y1 = corrAt(best-1), y2 = bestCorr, y3 = corrAt(best+1);
     const shift = (y3 - y1)/(2*(2*y2 - y1 - y3) || 1e-9);
     const freq = sr/(best + clamp(shift,-1,1));
@@ -407,13 +407,13 @@ const G = {
   pitch:null, disp:null, trail:[], parts:[], pos:0, running:false, online:false,
   oppScore:0, oppName:'OPPONENT', ended:false, input:'mic', started:0,
 };
-let state = 'menu';
+let state = 'menu', micNotice = '';
 
 function resetRun(song){
   G.song = song;
   G.notes = song.built.notes.map(n => Object.assign({}, n, { hit:0, done:false }));
   G.score = 0; G.combo = 0; G.best = 0; G.accSum = 0; G.accN = 0;
-  G.trail.length = 0; G.parts.length = 0; G.oppScore = 0; G.ended = false; G.pos = -99;
+  G.trail.length = 0; G.parts.length = 0; G.oppScore = 0; G.ended = false; G.pos = -99; G.quietFor = 0;
 }
 
 // Distance in semitones ignoring octave — a bass and a soprano can both nail a note.
@@ -472,6 +472,7 @@ function update(dt){
     }
   }
   G.disp = active ? nearestOctave(p, active.midi) : p;
+  if(active && p == null) G.quietFor = (G.quietFor || 0) + dt; else if(p != null) G.quietFor = 0;
 
   // pitch trail, oldest first
   G.trail.push({ b:G.pos, m:G.disp, on:p != null });
@@ -613,6 +614,16 @@ function draw(now){
   }
 
   // ── HUD ──
+  // tell the singer when the game can't hear them (or switched them to keys mode)
+  let notice = '';
+  if(micNotice && performance.now() - G.started < 8000) notice = micNotice;
+  else if(G.input === 'mic' && G.running && G.quietFor > 4) notice = 'CAN’T HEAR YOU — SING LOUDER, OR PICK KEYS MODE IN SETUP';
+  if(notice){
+    cx.textAlign = 'center'; cx.font = '800 15px Rajdhani, sans-serif';
+    const tw = cx.measureText(notice).width + 28;
+    cx.fillStyle = 'rgba(10,4,20,.85)'; cx.fillRect(W/2 - tw/2, 44, tw, 30);
+    cx.fillStyle = '#ffe600'; cx.fillText(notice, W/2, 64);
+  }
   cx.textAlign = 'left';
   cx.font = '800 13px Rajdhani, sans-serif'; cx.fillStyle = 'rgba(239,230,255,.5)';
   // pushed clear of the shared MENU / SAVE dots that live in the top-left corner
@@ -728,7 +739,19 @@ function renderSongs(online){
     beginSong(s, !!online);
   });
 }
-function beginSong(song, online){
+async function beginSong(song, online){
+  // Mic is the default input, but the microphone was only ever switched on from the
+  // Setup screen's test button — going straight to a song sang into nothing (0 pts).
+  if(G.input === 'mic' && !Mic.ready){
+    $('songs-sub').textContent = '// ALLOW THE MICROPHONE TO SING…';
+    const ok = await Mic.enable();
+    if(!ok){
+      G.input = 'keys';
+      [...$('seg-input').children].forEach(c => c.classList.toggle('on', c.dataset.i === 'keys'));
+      try { localStorage.setItem('micdrop.input', 'keys'); } catch(e){}
+      micNotice = 'No microphone — using KEYS MODE: ' + (isTouch ? 'hold the pad and slide up/down' : 'hold SPACE, steer with ↑ / ↓');
+    }
+  }
   resetRun(song);
   G.online = !!online; G.oppFinal = false;
   A.init(); A.resume();
