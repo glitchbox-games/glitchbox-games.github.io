@@ -1620,6 +1620,7 @@ const chatLog = document.getElementById('chat-log');
 const chatInput = document.getElementById('chat-input');
 const chatSend = document.getElementById('chat-send');
 
+const escHTML = t => String(t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 function appendChat(speaker, text, color) {
   const div = document.createElement('div');
   div.style.marginBottom = '10px';
@@ -1632,7 +1633,7 @@ async function sendChat() {
   const msg = chatInput.value.trim();
   if (!msg) return;
   chatInput.value = '';
-  appendChat('YOU', msg, '#c8d4e0');
+  appendChat('YOU', escHTML(msg), '#c8d4e0');
   if (!LLM.enabled()) {
     appendChat('ARIA', '<span style="color:#6fd6c8; font-style:italic;">(silence — no API key configured)</span>', '#6fd6c8');
     return;
@@ -1641,7 +1642,7 @@ async function sendChat() {
   const last = chatLog.lastChild;
   const reply = await callLLM(msg, { maxTokens: 200 });
   last.remove();
-  appendChat('ARIA', reply || '<span style="color:#5a7080;">(no response)</span>', '#6fd6c8');
+  appendChat('ARIA', reply ? escHTML(reply) : '<span style="color:#5a7080;">(no response)</span>', '#6fd6c8');
 }
 
 chatSend.addEventListener('click', sendChat);
