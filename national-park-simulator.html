@@ -10,7 +10,7 @@
   html,body{margin:0;height:100%;background:#0d120c;overflow:hidden;color:#eef3e6;
     font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;user-select:none;}
   #game{position:fixed;inset:0;display:block;cursor:crosshair;}
-  .hud{position:fixed;left:12px;top:10px;z-index:5;text-shadow:1px 2px 0 #000;pointer-events:none;}
+  .hud{position:fixed;left:12px;top:52px;z-index:5;text-shadow:1px 2px 0 #000;pointer-events:none;}
   .hud .row{margin-bottom:3px;font-weight:600;letter-spacing:.3px;}
   .rank{color:#ffe08a;font-size:17px;} .sc{color:#bfe89a;}
   #prompt{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:5;background:#10160d;
@@ -203,9 +203,13 @@ for(const h of hot){ const n=h.vill?14:6; for(let i=0;i<n;i++){ let tx,ty,tr=0; 
 for(const k in PLACES){ const p=PLACES[k]; cars.push({x:p.x*T+T/2,y:(p.y+1)*T+T/2,vx:0,vy:0,ang:0,occupied:false}); }
 // wildlife bubble
 function placeNear(cx,cy,minR,maxR,wantGrass){ for(let tr=0;tr<26;tr++){ const a=rng(0,6.28),d=rng(minR,maxR),tx=((cx+Math.cos(a)*d)/T)|0,ty=((cy+Math.sin(a)*d)/T)|0;
-  if(tx>2&&ty>2&&tx<MW-2&&ty<MH-2&&!SOLID[tile(tx,ty)]&&(!wantGrass||tile(tx,ty)===GRASS)) return {x:tx*T+T/2,y:ty*T+T/2}; } return {x:cx+rng(-300,300),y:cy+rng(-300,300)}; }
+  if(tx>2&&ty>2&&tx<MW-2&&ty<MH-2&&!SOLID[tile(tx,ty)]&&(!wantGrass||tile(tx,ty)===GRASS)) return {x:tx*T+T/2,y:ty*T+T/2}; }
+  // nothing grassy: any open tile at the right distance — never dumped on top of the player
+  for(let tr=0;tr<30;tr++){ const a=rng(0,6.28),d=rng(minR,maxR),tx=((cx+Math.cos(a)*d)/T)|0,ty=((cy+Math.sin(a)*d)/T)|0;
+    if(tx>2&&ty>2&&tx<MW-2&&ty<MH-2&&!SOLID[tile(tx,ty)]) return {x:tx*T+T/2,y:ty*T+T/2}; }
+  const a=rng(0,6.28); return {x:cx+Math.cos(a)*maxR,y:cy+Math.sin(a)*maxR}; }
 const POP={bison:60,elk:40,coyote:20,blackbear:14,grizzly:8,wolf:10};
-for(const t in POP) for(let i=0;i<POP[t];i++){ const p=placeNear(player.x,player.y,260,1500,t==='bison'||t==='elk'); spawnWild(t,p.x,p.y); }
+for(const t in POP) for(let i=0;i<POP[t];i++){ const p=placeNear(player.x,player.y,450,1800,t==='bison'||t==='elk'); spawnWild(t,p.x,p.y); }
 let _wIdx=0;
 function recycleWildlife(){ const far=Math.max(W,H)*1.7, near=Math.max(W,H)*1.06;
   for(let n=0;n<12;n++){ if(!npcs.length) break; _wIdx=(_wIdx+1)%npcs.length; const a=npcs[_wIdx]; if(!a.wild) continue;
@@ -227,7 +231,7 @@ if(window.GBSave) GBSave.register({
     discovered.clear(); (d.discovered||[]).forEach(k=>discovered.add(k));
     started=true;
     document.getElementById('start').style.display='none';
-    document.getElementById('hPhotos').textContent=photos;
+    document.getElementById('hPhotos').textContent=photos; refreshHUD();
     toast('📂 Back on patrol — '+score+' pts, '+photos+' photos.');
   },
   autosave:30
@@ -242,6 +246,27 @@ addEventListener('keyup',e=>{ keys[e.code]=false; });
 cv.addEventListener('mousemove',e=>{ mx=e.clientX; my=e.clientY; });
 cv.addEventListener('mousedown',e=>{ if(e.button===0){ if(!actx)startAudio(); takePhoto(); } });
 let camX=0,camY=0; const worldMouse=()=>({x:camX+mx,y:camY+my});
+// ── Touch: stick to walk/drive, tap the map to take a photo there, E + journal buttons ──
+const touch={on:false,jx:0,jy:0,id:null};
+function setupTouch(){
+  if(touch.on) return; touch.on=true;
+  const st=document.createElement('style');st.textContent=`.tc{position:fixed;z-index:6;touch-action:none;user-select:none;-webkit-user-select:none}
+  #tStick{left:18px;bottom:22px;width:130px;height:130px;border-radius:50%;background:#ffffff14;border:3px solid #ffffff40}
+  #tKnob{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#bfe89acc}
+  .tb{right:18px;width:64px;height:64px;border-radius:50%;border:3px solid #fff;background:#6fae54d0;color:#0d120c;font:bold 16px sans-serif;display:flex;align-items:center;justify-content:center}
+  #tE{bottom:26px} #tJ{bottom:104px;font-size:24px} #hint{display:none} #wep{bottom:166px!important} #card{bottom:180px!important} #prompt{bottom:180px!important}`;document.head.appendChild(st);
+  const mk=(id,cls,h)=>{const d=document.createElement('div');d.id=id;d.className=cls;d.innerHTML=h;document.body.appendChild(d);return d;};
+  const stick=mk('tStick','tc','<div id="tKnob"></div>'),eb=mk('tE','tc tb','E'),jb=mk('tJ','tc tb','📔'),knob=stick.firstChild;
+  const mv=t=>{const r=stick.getBoundingClientRect();let dx=t.clientX-r.left-65,dy=t.clientY-r.top-65;const d=Math.hypot(dx,dy);if(d>48){dx*=48/d;dy*=48/d}
+    knob.style.left=(40+dx)+'px';knob.style.top=(40+dy)+'px';touch.jx=Math.abs(dx)>8?dx/48:0;touch.jy=Math.abs(dy)>8?dy/48:0;};
+  stick.addEventListener('touchstart',e=>{e.preventDefault();touch.id=e.changedTouches[0].identifier;mv(e.changedTouches[0]);if(!actx)startAudio();},{passive:false});
+  stick.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches)if(t.identifier===touch.id)mv(t);},{passive:false});
+  const end=e=>{for(const t of e.changedTouches)if(t.identifier===touch.id){touch.id=null;touch.jx=touch.jy=0;knob.style.left=knob.style.top='40px';}};
+  stick.addEventListener('touchend',end);stick.addEventListener('touchcancel',end);
+  eb.addEventListener('touchstart',e=>{e.preventDefault();interact();},{passive:false});
+  jb.addEventListener('touchstart',e=>{e.preventDefault();toggleBook();},{passive:false});
+}
+addEventListener('touchstart',()=>{ if(started) setupTouch(); },{passive:true});
 
 // ── Interact (cars) ──
 function nearest(arr,maxD){ let best=null,bd=maxD; for(const a of arr){ if(a.dead)continue; const d=Math.hypot(a.x-player.x,a.y-player.y); if(d<bd){bd=d;best=a;} } return best; }
@@ -253,6 +278,7 @@ function interact(){ if(!started||bookOpen) return;
 const toastEl=document.getElementById('toast'); let toastT=0;
 function toast(m){ toastEl.textContent=m; toastEl.style.opacity=1; toastT=1.8; }
 function flashCam(){ const f=document.getElementById('flash'); f.style.transition='none'; f.style.opacity=0.85; requestAnimationFrame(()=>{ f.style.transition='opacity .35s'; f.style.opacity=0; }); }
+const lastShot={};
 function takePhoto(){ if(!started||bookOpen) return; const wm=worldMouse(); const fw=170,fh=120;
   let best=null,bestPts=0,bestKey=null;
   for(const a of npcs){ if(a.dead) continue; if(Math.abs(a.x-wm.x)<fw&&Math.abs(a.y-wm.y)<fh){ const s=SPECIES[a.type]; let pts=s?s.pts:(a.type==='tourist'?5:0), key=a.type;
@@ -262,6 +288,9 @@ function takePhoto(){ if(!started||bookOpen) return; const wm=worldMouse(); cons
   for(const f of FEATURES){ const fx=f.x*T,fy=f.y*T; if(Math.abs(fx-wm.x)<fw*1.6&&Math.abs(fy-wm.y)<fh*1.6){ const pts=f.peak?45:f.valley?35:40; if(pts>bestPts){ bestPts=pts; best=f.name; bestKey='feat:'+f.name; } } }
   photos++; flashCam(); sfx('shutter'); document.getElementById('hPhotos').textContent=photos;
   if(!best){ toast('📷 …nice scenery, but nothing in frame'); return; }
+  // the same subject again within 20s is a duplicate shot — no points (it used to be an infinite score tap)
+  const nowT=performance.now(); if(!journal.has(bestKey)) {} else if(lastShot[bestKey] && nowT-lastShot[bestKey]<20000){ toast('📷 You already have that shot — find something new!'); return; }
+  lastShot[bestKey]=nowT;
   let bonus=0; if(bestKey && !journal.has(bestKey)){ journal.add(bestKey); bonus=120; toast('📔 NEW: '+best+'   +'+(bestPts+bonus)+' pts'); sfx('chime'); }
   else toast('📷 '+best+'   +'+bestPts+' pts');
   score+=bestPts+bonus; refreshHUD();
@@ -302,12 +331,17 @@ let last=performance.now();
 function moveCircle(o,dx,dy,r){ let nx=o.x+dx; if(!sol(nx-r,o.y)&&!sol(nx+r,o.y)&&!sol(nx,o.y-r)&&!sol(nx,o.y+r)) o.x=nx; let ny=o.y+dy; if(!sol(o.x-r,ny)&&!sol(o.x+r,ny)&&!sol(o.x,ny-r)&&!sol(o.x,ny+r)) o.y=ny; }
 function sol(px,py){ return SOLID[tile((px/T)|0,(py/T)|0)]?true:false; }
 function update(dt){ if(!started) return;
-  if(player.dazed>0){ player.dazed-=dt; if(player.dazed<=0){ const v=PLACES.canyon; player.x=v.x*T+T/2; player.y=(v.y+2)*T+T/2; player.car=null; toast('A ranger walked you back. Keep your distance next time!'); } camX+=((player.x-W/2)-camX)*dt*8; camY+=((player.y-H/2)-camY)*dt*8; return; }
+  if(player.dazed>0){ player.dazed-=dt;
+    if(player.dazed<=0){ // back off to a safe distance from whatever you startled
+      const th=player.threat; if(th){ const a=Math.atan2(player.y-th.y,player.x-th.x), o=player.car||player; moveCircle(o,Math.cos(a)*140,Math.sin(a)*140,player.car?12:player.r); player.x=o.x; player.y=o.y; th.spook=3; }
+      toast('A ranger steered you back. Keep your distance next time!'); } camX+=((player.x-W/2)-camX)*dt*8; camY+=((player.y-H/2)-camY)*dt*8; return; }
   let ix=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0), iy=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
+  if(touch.on&&(touch.jx||touch.jy)){ ix=touch.jx; iy=touch.jy; }
+  if(bookOpen){ ix=0; iy=0; }
   const wm=worldMouse(); player.aim=Math.atan2(wm.y-player.y,wm.x-player.x);
   if(player.car){ const c=player.car; c.vx+=ix*600*dt; c.vy+=iy*600*dt; c.vx*=0.92; c.vy*=0.92; const cs=Math.hypot(c.vx,c.vy),max=430; if(cs>max){c.vx*=max/cs;c.vy*=max/cs;} moveCircle(c,c.vx*dt,c.vy*dt,12); if(cs>4)c.ang=Math.atan2(c.vy,c.vx); player.x=c.x;player.y=c.y;
     if(cs>140){ for(const n of npcs){ if(n.wild&&!n.dead&&Math.hypot(n.x-c.x,n.y-c.y)<60){ n.spook=2.5; n.dir=Math.atan2(n.y-c.y,n.x-c.x); if(Math.random()<dt*2) toast('🦬 SLOW DOWN — wildlife on the road!'); } } } }
-  else { const sp=250; if(ix||iy){ const m=Math.hypot(ix,iy); player.vx=ix/m*sp; player.vy=iy/m*sp; } else { player.vx*=0.6; player.vy*=0.6; } moveCircle(player,player.vx*dt,player.vy*dt,player.r); }
+  else { const sp=250; if(ix||iy){ const m=Math.max(1,Math.hypot(ix,iy)); player.vx=ix/m*sp; player.vy=iy/m*sp; } else { player.vx*=0.6; player.vy*=0.6; } moveCircle(player,player.vx*dt,player.vy*dt,player.r); }
   camX+=((player.x-W/2)-camX)*Math.min(1,dt*8); camY+=((player.y-H/2)-camY)*Math.min(1,dt*8);
   recycleWildlife(); checkDiscover();
   // npcs
@@ -318,7 +352,7 @@ function update(dt){ if(!started) return;
       if(n.spook>0){ n.spook-=dt; const a=Math.atan2(n.y-player.y,n.x-player.x); n.vx=Math.cos(a)*(n.type==='bison'?150:200); n.vy=Math.sin(a)*(n.type==='bison'?150:200); }
       else if(d<70){ // you got too close — they get agitated
         if(bearish||n.type==='bison'||n.type==='wolf'){ n.spook=0.1; const a=Math.atan2(player.y-n.y,player.x-n.x); n.vx=Math.cos(a)*120; n.vy=Math.sin(a)*120;
-          if(d<n.r+12 && player.dazed<=0){ player.dazed=1.6; toast('⚠ TOO CLOSE! You startled a '+SPECIES[n.type].name+'.'); sfx('thud'); }
+          if(d<n.r+12 && player.dazed<=0){ player.dazed=1.6; player.threat=n; toast('⚠ TOO CLOSE! You startled a '+SPECIES[n.type].name+'.'); sfx('thud'); }
           if(Math.random()<dt*1.5){ document.getElementById('prompt').style.display='block'; document.getElementById('prompt').textContent='⚠ Stay 25 yds from wildlife (100 yds from bears/wolves)'; promptT=1.5; } }
       } else { n.t-=dt; if(n.t<=0){n.dir=rng(0,6.28);n.t=rng(2,6);} const sp=n.type==='bison'?26:bearish?52:64; n.vx=Math.cos(n.dir)*sp; n.vy=Math.sin(n.dir)*sp; }
       moveCircle(n,n.vx*dt,n.vy*dt,n.r);
@@ -392,7 +426,7 @@ function drawLabels(){ ctx.textAlign='center';ctx.font='bold 12px monospace';
   for(const f of FEATURES){ const sx=f.x*T-camX,sy=f.y*T-camY; if(sx<-70||sy<-30||sx>W+70||sy>H+30) continue; const got=discovered.has(f.name);
     const col=f.peak?'#cfd6e0':f.geyser?'#9be0ff':f.valley?'#bfe89a':'#9cf0d0'; ctx.fillStyle='#000';ctx.fillText((got?'✔ ':'')+f.name,sx+1,sy+19); ctx.fillStyle=col;ctx.fillText((got?'✔ ':'')+f.name,sx,sy+18); }
   ctx.textAlign='left'; }
-function drawMinimap(){ const mw=204,mh=172,ox=W-mw-12,oy=12; ctx.fillStyle='#0a140add';ctx.fillRect(ox,oy,mw,mh);ctx.strokeStyle='#5a6b3a';ctx.lineWidth=2;ctx.strokeRect(ox,oy,mw,mh);
+function drawMinimap(){ const smm=W<600,mw=smm?120:204,mh=smm?101:172,ox=W-mw-(smm?8:12),oy=smm?8:12; ctx.fillStyle='#0a140add';ctx.fillRect(ox,oy,mw,mh);ctx.strokeStyle='#5a6b3a';ctx.lineWidth=2;ctx.strokeRect(ox,oy,mw,mh);
   const sx=v=>ox+(v/MW)*mw,sy=v=>oy+(v/MH)*mh; ctx.fillStyle='#39708f';
   for(const e of [[q(167),q(200),q(40),q(30)],[q(120),q(224),q(17),q(15)],[q(150),q(236),q(12),q(22)],[q(189),q(233),q(11),q(20)]]) { ctx.beginPath();ctx.ellipse(sx(e[0]),sy(e[1]),(e[2]/MW)*mw,(e[3]/MH)*mh,0,0,6.3);ctx.fill(); }
   ctx.strokeStyle='#c25a44';ctx.lineWidth=2; for(const [a,b] of ROADS){ const A=PLACES[a],B=PLACES[b]; ctx.beginPath();ctx.moveTo(sx(A.x),sy(A.y));ctx.lineTo(sx(B.x),sy(B.y));ctx.stroke(); }
@@ -401,7 +435,7 @@ function drawMinimap(){ const mw=204,mh=172,ox=W-mw-12,oy=12; ctx.fillStyle='#0a
   ctx.fillStyle='#fff';ctx.fillRect(sx(player.x/T)-2,sy(player.y/T)-2,5,5);
   ctx.strokeStyle='#ffffff55';ctx.lineWidth=1;ctx.strokeRect(sx(camX/T),sy(camY/T),(W/T/MW)*mw,(H/T/MH)*mh);
   ctx.fillStyle='#8aa06a';ctx.font='9px monospace';ctx.fillText('GRAND LOOP RD',ox+8,oy+mh-7); }
-function drawScale(){ const barPx=200/0.32, ox=12,oy=H-30; ctx.fillStyle='rgba(8,16,8,.7)';ctx.fillRect(ox-6,oy-20,260,30);
+function drawScale(){ if(touch.on||W<600) return; const barPx=200/0.32, ox=W/2-125,oy=H-30; ctx.fillStyle='rgba(8,16,8,.7)';ctx.fillRect(ox-6,oy-20,260,30);
   ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+barPx,oy);ctx.moveTo(ox,oy-4);ctx.lineTo(ox,oy+4);ctx.moveTo(ox+barPx,oy-4);ctx.lineTo(ox+barPx,oy+4);ctx.stroke();
   ctx.fillStyle='#fff';ctx.font='11px monospace';ctx.fillText('200 m',ox+barPx/2-14,oy-6); }
 
@@ -421,7 +455,8 @@ function sfx(k){ if(!actx) return; const t=actx.currentTime;
   else if(k==='steam'){ note(70,t,0.7,'sawtooth',0.10); }
   else if(k==='thud'){ note(110,t,0.18,'sine',0.2); } }
 
-document.getElementById('startBtn').onclick=()=>{ document.getElementById('start').style.display='none'; started=true; startAudio(); refreshHUD(); toast('Welcome to Yellowstone! 🏞️ Snap some photos.'); };
+document.getElementById('startBtn').onclick=()=>{ document.getElementById('start').style.display='none'; started=true; startAudio(); refreshHUD();
+  if(matchMedia('(pointer:coarse)').matches||'ontouchstart' in window) setupTouch(); toast('Welcome to Yellowstone! 🏞️ Snap some photos.'); };
 </script>
 <script src="glitchbox-menu.js" defer></script>
 </body>
