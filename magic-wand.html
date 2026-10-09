@@ -71,6 +71,8 @@
     background:#ffb37a;box-shadow:0 0 9px #ffb37a;animation:blink 1s steps(1) infinite}
   @keyframes blink{50%{opacity:0}}
 
+  #ship{font-size:13px;letter-spacing:.08em;color:#b9aee0;text-align:center}
+  #ship b{color:#ffd48a}
   #hint{font-size:11px;letter-spacing:.12em;color:#6a5f8f;text-align:center;max-width:94vw}
   #hint b{color:#ffb37a;font-weight:700}
 
@@ -118,6 +120,7 @@
     <div id="out"></div>
   </div>
 
+  <div id="ship">🚀 Ship the build — <b id="shipProg">0%</b> · <span id="shipTime">0.0s</span> · best <b id="shipBest">—</b></div>
   <div id="hint">CLICK anywhere to cast · HOLD to charge a big one · <b>SPACE</b> works too</div>
 </div>
 
@@ -354,9 +357,12 @@ function up(){
   cast(S.mx,S.my,strength);
   S.charge=0;
 }
-addEventListener('mousedown',down);
+// Taps on real controls (the arcade's quit / save buttons) must stay taps — blocking
+// every touchstart on the page made it impossible to leave the game on a phone.
+const onUi=e=>!!(e.target&&e.target.closest&&e.target.closest('a,button,input,[role=button],[data-gb],#glitchbox-menu-host,#glitchbox-save-host'));
+addEventListener('mousedown',e=>{ if(!onUi(e)) down(e) });
 addEventListener('mouseup',up);
-addEventListener('touchstart',e=>{down(e);e.preventDefault()},{passive:false});
+addEventListener('touchstart',e=>{ if(onUi(e)) return; down(e);e.preventDefault()},{passive:false});
 addEventListener('touchend',up);
 addEventListener('keydown',e=>{
   if(e.code==='Space'&&!e.repeat){e.preventDefault();down({clientX:S.mx,clientY:S.my})}
@@ -407,6 +413,7 @@ function typeStep(dt){
     else{
       curEl.innerHTML=s.t;             // drop cursor from finished line
       li++;ci=0;newLine();
+      if(li%SESSION.length===0) shipped();
       return;
     }
   }
@@ -419,6 +426,28 @@ function termCast(strength){
   t.animate([{transform:'scale(1)'},{transform:`scale(${1+.018*strength})`},{transform:'scale(1)'}],
     {duration:260,easing:'ease-out'});
   acc+=6*strength;
+}
+
+// ── the goal: type out the whole session ("ship the build") as fast as you can ──
+let shipStart=null, shipBest=+(localStorage.getItem('magicwand.best')||0);
+const SESSION_CHARS=SESSION.reduce((a,s)=>a+s.t.length,0);
+function shipProgress(){ const k=li%SESSION.length; let n=ci; for(let i=0;i<k;i++) n+=SESSION[i].t.length; return n/SESSION_CHARS; }
+function shipped(){
+  const t=(performance.now()-(shipStart||performance.now()))/1000;
+  const best=!shipBest||t<shipBest;
+  if(best){ shipBest=t; try{localStorage.setItem('magicwand.best',t.toFixed(2))}catch(e){} }
+  showBanner((best?'🏆 NEW BEST · ':'🚀 SHIPPED · ')+t.toFixed(1)+'s', best?'#ffd48a':'#7dffb0');
+  for(let i=0;i<90;i++){ const a=Math.random()*6.283,sp=2+Math.random()*11; spark(W/2,H*.45,{vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:2+Math.random()*5,hue:20+Math.random()*90}); }
+  chime(24,.16,1.2,'sine'); chime(31,.1,1.2,'sine');
+  try{ if(window.GLITCHBOX&&GLITCHBOX.score) GLITCHBOX.score(Math.round(t*10)/10,{low:true}); }catch(e){}
+  shipStart=null;
+}
+const shipProgEl=document.getElementById('shipProg'), shipTimeEl=document.getElementById('shipTime'), shipBestEl=document.getElementById('shipBest');
+function shipHud(){
+  if(shipStart===null && S.casts>0) shipStart=performance.now();
+  shipProgEl.textContent=Math.floor(shipProgress()*100)+'%';
+  shipTimeEl.textContent=shipStart===null?'tap to start':((performance.now()-shipStart)/1000).toFixed(1)+'s';
+  shipBestEl.textContent=shipBest?shipBest.toFixed(1)+'s':'—';
 }
 
 // ── HUD ─────────────────────────────────────────────────────
@@ -532,7 +561,7 @@ function frame(now){
   cx.restore();
 
   typeStep(dt);
-  hud();
+  hud(); shipHud();
   wrap.style.transform = sh>0.2 ? `translate(${(Math.random()-.5)*sh*.35}px,${(Math.random()-.5)*sh*.35}px)` : '';
   requestAnimationFrame(frame);
 }
@@ -555,6 +584,9 @@ if(location.hash==='#smoke'){
   const before=out.lastChild.textContent.length;
   for(let i=0;i<40;i++)typeStep(1/60);
   ok('terminal types',out.lastChild.textContent.length!==before||li>0);
+  ok('ship goal shows progress', /%/.test(document.getElementById('shipProg').textContent));
+  ok('taps on buttons are left alone', onUi({target:document.createElement('button')}) && !onUi({target:document.body}));
+  { const b=li; li=SESSION.length-1; ci=SESSION[li].t.length; acc=1; shipStart=performance.now()-12000; typeStep(0); ok('finishing the session ships it and records a best', shipBest>0&&shipBest<13); li=b; }
   ok('power decays',(()=>{const a=S.power;S.power=Math.max(0,S.power-.5*(0.085+S.power*.16));return S.power<a})());
   document.body.innerHTML='<pre style="padding:24px;font:13px monospace;color:#7dffb0;background:#05030a">'
     +chk.join('\n')+'\n\n'+(chk.some(x=>x[0]==='F')?'❌ SMOKE FAILED':'✅ ALL SMOKE TESTS PASSED')+'</pre>';
