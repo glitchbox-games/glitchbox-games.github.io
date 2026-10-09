@@ -107,10 +107,16 @@ function nosmooth(c){
   c.mozImageSmoothingEnabled = false;
   c.msImageSmoothingEnabled = false;
 }
+// Draw at a whole-number scale (crisp), then let CSS fit it to the space left over
+// — on a 390px phone the integer-only scale left a postage stamp of a game.
+let PAD_H = 0;
 function resize(){
-  SCALE = Math.max(1, Math.floor(Math.min(innerWidth / VW, innerHeight / VH)));
+  const availH = innerHeight - PAD_H;
+  SCALE = Math.max(1, Math.ceil(Math.min(innerWidth / VW, availH / VH)));
   view.width = VW * SCALE; view.height = VH * SCALE;
-  view.style.width = (VW * SCALE) + 'px'; view.style.height = (VH * SCALE) + 'px';
+  const fit = Math.min(innerWidth / VW, availH / VH);
+  view.style.width = Math.floor(VW * fit) + 'px'; view.style.height = Math.floor(VH * fit) + 'px';
+  view.style.marginBottom = PAD_H + 'px';
   nosmooth(vctx); nosmooth(ctx);
 }
 addEventListener('resize', resize);
@@ -1229,6 +1235,7 @@ function edUpdate(dt){
   for (let i = 0; i < 8; i++) if (hit('s'+(i+1))){
     if (i !== G.slot){ G.prevSlot = G.slot; G.slot = i; Audio_.sfx('menu'); }
   }
+  if (hit('slotnext')){ G.prevSlot = G.slot; G.slot = (G.slot + 1) % 8; Audio_.sfx('menu'); }
   if (hit('fill')){
     edPushUndo();
     if (down('no')){ for (const c of m.cells) G.grid[c.i] = G.slots[G.slot]; }   // BASE COAT
@@ -1277,6 +1284,7 @@ function dropperUpdate(dt){
     Audio_.sfx('drop');
   }
   for (let i = 0; i < 8; i++) if (hit('s'+(i+1))){ G.prevSlot = G.slot; G.slot = i; Audio_.sfx('menu'); }
+  if (hit('slotnext')){ G.prevSlot = G.slot; G.slot = (G.slot + 1) % 8; Audio_.sfx('menu'); }
   if (hit('no') || hit('pause')){ ED.dropper = false; Audio_.sfx('menu'); }
 }
 
@@ -1341,8 +1349,13 @@ function edDraw(c){
   panel(c, 248, 136, 60, 60, 2, UI.WHITE);
   drawPreview(c, 250, 138, 56);
 
-  txt(c, 'Z PAINT  X DROPPER  F FILL  SH+F COAT', 8, 210, UI.DIM);
-  txt(c, 'G VIEW  E MIRROR  Q DITH  , . SHADE  ESC', 8, 222, UI.DIM);
+  if (PAD_H){
+    txt(c, 'TAP THE GRID TO PAINT   B  DROPPER', 8, 210, UI.DIM);
+    txt(c, 'FILL  UNDO  SLOT  BELOW   START  DONE', 8, 222, UI.DIM);
+  } else {
+    txt(c, 'Z PAINT  X DROPPER  F FILL  SH+F COAT', 8, 210, UI.DIM);
+    txt(c, 'G VIEW  E MIRROR  Q DITH  , . SHADE  ESC', 8, 222, UI.DIM);
+  }
   if (ED.peek > 0) drawFullPreview(c);
 }
 function drawPreview(c, x, y, size){
@@ -2557,6 +2570,33 @@ function runSmoke(){
 boot();
 </script>
 <script>
+/* ---------- paint with the pointer ----------
+   The editor was cursor-keys-only: tap or drag on the grid to paint there, and in
+   the eyedropper tap the colour you want. Works with a mouse too. */
+(function () {
+  let painting = false;
+  const toBuf = e => { const r = view.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * VW, (e.clientY - r.top) / r.height * VH]; };
+  const cellAt = (bx, by) => {
+    const m = maskFor(G.shape, G.pose), scale = Math.min(CELL, Math.floor(176 / m.w), Math.floor(160 / m.h));
+    const cx = Math.floor((bx - GX) / scale), cy = Math.floor((by - GY) / scale);
+    return (cx >= 0 && cy >= 0 && cx < m.w && cy < m.h) ? [cx, cy] : null;
+  };
+  view.addEventListener('pointerdown', e => {
+    if (G.st !== 'EDITOR') return;
+    const [bx, by] = toBuf(e);
+    if (ED.dropper){ ED.dx = Math.max(0, Math.min(VW-1, bx)); ED.dy = Math.max(0, Math.min(VH-1, by)); buffered.ok = BUFFER; e.preventDefault(); return; }
+    const c = cellAt(bx, by); if (!c) return;
+    e.preventDefault(); view.setPointerCapture && view.setPointerCapture(e.pointerId);
+    ED.cx = c[0]; ED.cy = c[1]; painting = true; held.ok = true;
+  });
+  view.addEventListener('pointermove', e => {
+    if (!painting || G.st !== 'EDITOR' || ED.dropper) return;
+    const c = cellAt(...toBuf(e)); if (c){ ED.cx = c[0]; ED.cy = c[1]; }
+  });
+  const end = () => { if (painting){ painting = false; held.ok = false; } };
+  view.addEventListener('pointerup', end); view.addEventListener('pointercancel', end);
+})();
+
 /* ---------- touch gamepad (phones/tablets) ----------
    Wet Paint was keyboard-only: on a phone it sat on "PRESS ANY KEY" forever. These
    buttons feed the same action layer the keyboard uses (held / buffered / dirStack). */
@@ -2577,10 +2617,13 @@ boot();
     #pad .up{left:70px;bottom:118px} #pad .dn{left:70px;bottom:10px} #pad .lf{left:12px;bottom:64px} #pad .rt{left:128px;bottom:64px}
     #pad .a{right:18px;bottom:76px;width:70px;height:70px;border-radius:50%;font-size:18px}
     #pad .b{right:98px;bottom:28px;width:62px;height:62px;border-radius:50%;font-size:16px}
-    #pad .st{right:14px;bottom:160px;width:76px;height:30px;font-size:11px;border-radius:8px}`;
+    #pad .st{right:14px;bottom:160px;width:76px;height:30px;font-size:11px;border-radius:8px}
+    #pad .t{bottom:160px;width:56px;height:30px;font-size:11px;border-radius:8px}
+    #pad .fl{right:96px} #pad .un{right:158px} #pad .sl{right:220px}`;
   document.head.appendChild(css);
   const pad = document.createElement('div'); pad.id = 'pad';
-  [['up','d up','▲'],['down','d dn','▼'],['left','d lf','◀'],['right','d rt','▶'],['ok','a','A'],['no','b','B'],['pause','st','START']]
+  [['up','d up','▲'],['down','d dn','▼'],['left','d lf','◀'],['right','d rt','▶'],['ok','a','A'],['no','b','B'],['pause','st','START'],
+   ['fill','t fl','FILL'],['undo','t un','UNDO'],['slotnext','t sl','SLOT▶']]
     .forEach(([act, cls, label]) => {
       const b = document.createElement('button'); b.className = cls; b.textContent = label;
       const press = e => { e.preventDefault(); wake(); b.classList.add('on');
@@ -2592,6 +2635,7 @@ boot();
       pad.appendChild(b);
     });
   document.body.appendChild(pad);
+  PAD_H = 196; document.body.style.alignItems = 'flex-start'; resize();
 })();
 </script>
 <script src="glitchbox-menu.js" defer></script>
