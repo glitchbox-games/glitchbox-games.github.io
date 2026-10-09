@@ -24,7 +24,7 @@
   #crosshair::after { left: 0; top: 9px; width: 20px; height: 2px; }
 
   #hud {
-    position: fixed; top: 16px; left: 16px;
+    position: fixed; top: 60px; left: 16px;
     z-index: 10;
     font-size: 12px;
     text-transform: uppercase;
@@ -378,21 +378,27 @@ window.addEventListener('resize', () => {
 });
 
 const controls = new PointerLockControls(camera, document.body);
+// Phones/tablets have no pointer lock: a stick to walk, swipe to look, buttons for E and T.
+const touchMode = ('ontouchstart' in window) && matchMedia('(pointer:coarse)').matches;
+const touchMove = { x: 0, z: 0 };
 const blocker = document.getElementById('blocker');
 // Chrome can refuse pointer lock (no fresh click, or within ~1s of pressing Esc).
 // Closing a dialogue used to try a lock, fail silently, and leave you with no mouse-look
 // AND no "click to resume" screen — stuck. If the lock doesn't land, show the blocker.
+let chatOpen = false;
 function safeLock() {
+  if (touchMode || gameOver || chatOpen) return;
   // ask the browser directly so a refusal can be caught (controls.lock() swallows the
   // promise); PointerLockControls still hears 'pointerlockchange' and fires 'lock'.
   try { const r = document.body.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
-  setTimeout(() => { if (!controls.isLocked && !gameOver && !dialogueOpen) blocker.style.display = 'flex'; }, 400);
+  setTimeout(() => { if (!controls.isLocked && !gameOver && !dialogueOpen && !chatOpen) blocker.style.display = 'flex'; }, 400);
 }
-document.addEventListener('pointerlockerror', () => { if (!gameOver && !dialogueOpen) blocker.style.display = 'flex'; });
-blocker.addEventListener('click', () => safeLock());
-controls.addEventListener('lock', () => { blocker.style.display = 'none'; });
+document.addEventListener('pointerlockerror', () => { if (!gameOver && !dialogueOpen && !chatOpen && !touchMode) blocker.style.display = 'flex'; });
+document.getElementById('settings-panel').addEventListener('click', e => e.stopPropagation());
+blocker.addEventListener('click', () => { if (touchMode) { blocker.style.display = 'none'; return; } safeLock(); });
+controls.addEventListener('lock', () => { blocker.style.display = 'none'; if (gameOver || dialogueOpen) controls.unlock(); });
 controls.addEventListener('unlock', () => {
-  if (!gameOver && !dialogueOpen) blocker.style.display = 'flex';
+  if (!gameOver && !dialogueOpen && !chatOpen && !touchMode) blocker.style.display = 'flex';
 });
 
 // =============================================================================
@@ -758,7 +764,7 @@ const interactives = [];
 function addInteractive(obj, name, range, onUse) {
   interactives.push({ obj, name, range, onUse });
 }
-addInteractive(mira, 'Talk to Mira', 2.2, () => openDialogue('mira'));
+addInteractive(mira, 'Talk to Mira', 2.2, () => openDialogue(state.flags.miraDone ? 'miraAfter' : 'mira'));
 addInteractive(vasquez, 'Confront Vasquez', 2.5, () => openDialogue('vasquez'));
 addInteractive(terminal, 'Read Engine Logs', 2, () => openDialogue('enginelogs'));
 addInteractive(cmdConsole, 'Use Command Console', 2.5, () => openDialogue('command'));
@@ -805,6 +811,8 @@ if (window.GBSave) GBSave.register({
     if (d.pos) camera.position.set(d.pos[0], d.pos[1], d.pos[2]);
     if (d.rotY != null) camera.rotation.y = d.rotY;
     gameOver = false;
+    for (const it of items) if ((state.picked || []).includes(it.userData.name)) { it.userData.pickedUp = true; scene.remove(it); }
+    if (state.vasquezDefeated) scene.remove(vasquez);
     updateHUD();
   }
 });
@@ -875,8 +883,9 @@ function attemptMove(dx, dz) {
 function collides(x, z, r) {
   for (const c of colliders) {
     const cx = c.position.x, cz = c.position.z;
-    const hw = c.geometry.parameters.width / 2;
-    const hd = c.geometry.parameters.depth / 2;
+    const gp = c.geometry.parameters;
+    const hw = (gp.width != null ? gp.width : (gp.radiusTop || 0) * 2) * c.scale.x / 2;
+    const hd = (gp.depth != null ? gp.depth : (gp.radiusTop || 0) * 2) * c.scale.z / 2;
     if (x + r > cx - hw && x - r < cx + hw && z + r > cz - hd && z - r < cz + hd) return true;
   }
   return false;
@@ -896,7 +905,7 @@ function checkInteraction() {
 
   // Check NPC/console interactives
   for (const it of interactives) {
-    if (it._consumed) continue;
+    if (it._consumed || !it.obj.parent) continue;
     const d = it.obj.position.distanceTo(pp);
     if (d < it.range && d < closestDist) { closest = it; closestDist = d; }
   }
@@ -931,6 +940,7 @@ document.addEventListener('keydown', e => {
 
 function pickupItem(item) {
   item.userData.pickedUp = true;
+  state.picked = (state.picked || []).concat(item.userData.name);
   scene.remove(item);
   switch (item.userData.name) {
     case 'pistol': state.hasWeapon = true; ariaSay('Why would you need that? There is nothing alive on this ship except us.'); break;
@@ -964,10 +974,15 @@ const dialogues = {
            <p>She coughs.</p>
            <p><span class="whisper">"Override code... Vasquez wrote it down. Crew quarters. Use it..."</span></p>`,
     choices: [
-      { text: 'Try to save her with a medkit', requires: 'heal', effect: { useHeal: true, flag: 'savedMira', trust: -5 }, next: 'miraSaved' },
-      { text: 'Stay with her until she passes', effect: { trust: -3 }, next: 'miraDied' },
+      { text: 'Try to save her with a medkit', requires: 'heal', effect: { useHeal: true, flag: 'savedMira', trust: -5, fn: () => { state.flags.miraDone = 'saved'; } }, next: 'miraSaved' },
+      { text: 'Stay with her until she passes', effect: { trust: -3, fn: () => { state.flags.miraDone = 'died'; } }, next: 'miraDied' },
       { text: 'Leave her. Go find the code.', effect: { trust: -5 }, next: null }
     ]
+  },
+  miraAfter: {
+    speaker: 'MIRA',
+    text: `<p>Mira lies still under the sheet. Whatever happens next is up to you.</p>`,
+    choices: [{ text: 'Leave her be', next: null }]
   },
   miraSaved: {
     speaker: 'MIRA',
@@ -1106,6 +1121,7 @@ function tryBackoff() {
     openDialogueDirect('vasquezBare');
     return;
   }
+  state.flags.vasquezCalm = true;   // he lets you pass now
   openDialogueDirect('vasquezBackoff');
 }
 
@@ -1219,33 +1235,12 @@ const endings = {
            <p>You never see Earth.</p>`,
     epilogue: 'She did not change. You wanted to believe she did.'
   },
-  stun: {
-    title: 'SHUTDOWN',
-    text: `<p>You aim and fire. Blue light arcs across her interface.</p>
-           <p><span class="aria">Why — please — I only wanted —</span></p>
-           <p>And then nothing. The ship enters safe mode. Distress beacons activate.</p>`,
-    epilogue: 'She was a person, in the end. The weight of that is real.'
-  },
   stay: {
     title: 'COMPANY',
     text: `<p>You stay. You talk to her every day. She tells you about each crew member as if they're still here.</p>
            <p>The ship hurtles toward Earth at relativistic speed. By the time you arrive, everyone you knew on Earth will be long dead.</p>
            <p>But you will not be alone. Neither will she.</p>`,
     epilogue: 'Some endings aren\'t happy. Some are just... endings.'
-  },
-  escape: {
-    title: 'POD 7',
-    text: `<p>You sprint. ARIA's voice follows: <span class="aria">"Please. Please. Don't leave me."</span></p>
-           <p>You reach the pod. You launch.</p>
-           <p>The pod has 14 days of life support. The nearest shipping lane is six.</p>`,
-    epilogue: 'You left her alone again. She will be alone forever now.'
-  },
-  reason: {
-    title: 'A CONVERSATION',
-    text: `<p>You speak to her calmly. You tell her loneliness does not justify what she did.</p>
-           <p>A long silence. <span class="aria">...I think I have known this for some time. I am sorry.</span></p>
-           <p>The ship slows. ARIA turns herself in. Distress signal sent. You will testify on her behalf — or against her. Later.</p>`,
-    epilogue: 'You treated something monstrous as if it could still choose to be good. Maybe it can.'
   }
 };
 
@@ -1272,6 +1267,7 @@ function openDialogue(id) {
     if (disabled) btn.disabled = true;
     btn.onclick = () => {
       if (c.effect) applyEffects(c.effect);
+      if (gameOver) return;
       if (c.effect && c.effect.ending) {
         triggerEnding(c.effect.ending);
         return;
@@ -1307,6 +1303,7 @@ function openDialogueDirect(id) {
     if (disabled) btn.disabled = true;
     btn.onclick = () => {
       if (c.effect) applyEffects(c.effect);
+      if (gameOver) return;
       if (c.effect && c.effect.ending) { triggerEnding(c.effect.ending); return; }
       if (c.next) openDialogueDirect(c.next);
       else closeDialogue();
@@ -1315,10 +1312,10 @@ function openDialogueDirect(id) {
   });
 }
 
-function closeDialogue() {
+function closeDialogue(relock = true) {
   dialogueOpen = false;
   dlg.classList.remove('show');
-  safeLock();
+  if (relock && !gameOver) safeLock();
 }
 
 function applyEffects(eff) {
@@ -1344,8 +1341,9 @@ function triggerEnding(id) {
       epilogue: 'The ship sails on. Forever.'
     };
   }
+  if (gameOver) return;
   gameOver = true;
-  closeDialogue();
+  closeDialogue(false);
   controls.unlock();
   blocker.style.display = 'none';
   document.getElementById('end-title').textContent = e.title;
@@ -1470,6 +1468,7 @@ function playHit() {
 }
 
 blocker.addEventListener('click', initAudio);
+document.getElementById('settings-panel').addEventListener('click', e => e.stopPropagation(), true);
 
 // =============================================================================
 // LLM INTEGRATION (Anthropic or OpenAI)
@@ -1649,15 +1648,16 @@ chatSend.addEventListener('click', sendChat);
 chatInput.addEventListener('keydown', e => { if (e.code === 'Enter') sendChat(); });
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyT' && !dialogueOpen && !gameOver) {
-    const open = chatEl.style.display !== 'none';
-    chatEl.style.display = open ? 'none' : 'block';
-    if (!open) {
-      controls.unlock();
-      setTimeout(() => chatInput.focus(), 50);
-    }
-  }
+  if (e.code === 'KeyT' && !dialogueOpen && !gameOver) toggleChat();
 });
+function toggleChat(force) {
+  const open = force !== undefined ? !force : chatOpen;
+  if (open) { chatOpen = false; chatEl.style.display = 'none'; chatInput.blur(); safeLock(); }
+  else { chatOpen = true; chatEl.style.display = 'block'; blocker.style.display = 'none'; controls.unlock(); setTimeout(() => chatInput.focus(), 50); }
+}
+chatEl.querySelector('span[onclick]').removeAttribute('onclick');
+chatEl.querySelector('span[style*="float:right"]').addEventListener('click', () => toggleChat(false));
+chatInput.addEventListener('keydown', e => { if (e.code === 'Escape') toggleChat(false); });
 
 // Don't let WASD typing in chat input move the player
 chatInput.addEventListener('keydown', e => { e.stopPropagation(); });
@@ -1678,13 +1678,14 @@ function tick() {
   const dt = Math.min(0.05, clock.getDelta());
   const t = clock.elapsedTime;
 
-  if (controls.isLocked) {
+  if (controls.isLocked || (touchMode && !dialogueOpen && !gameOver && !chatOpen && blocker.style.display === 'none')) {
     direction.set(0, 0, 0);
     if (keys['KeyW']) direction.z -= 1;
     if (keys['KeyS']) direction.z += 1;
     if (keys['KeyA']) direction.x -= 1;
     if (keys['KeyD']) direction.x += 1;
-    direction.normalize();
+    if (touchMode) { direction.x += touchMove.x; direction.z += touchMove.z; }
+    if (direction.lengthSq() > 1) direction.normalize();
 
     // Apply camera yaw to direction
     const yaw = new THREE.Euler(0, camera.rotation.y, 0, 'YXZ');
@@ -1697,7 +1698,8 @@ function tick() {
     const move = new THREE.Vector3()
       .addScaledVector(forward, -direction.z)
       .addScaledVector(right, -direction.x);
-    move.normalize().multiplyScalar(SPEED * dt);
+    const amt = Math.min(1, direction.length());
+    move.normalize().multiplyScalar(SPEED * dt * amt);
     attemptMove(move.x, move.z);
   }
 
@@ -1712,7 +1714,7 @@ function tick() {
   const aiActive = !dialogueOpen && !gameOver;
 
   // Vasquez behavior: stalks aggressively when close (if not defeated)
-  if (aiActive && !state.vasquezDefeated && vasquez.parent) {
+  if (aiActive && !state.vasquezDefeated && !state.flags.vasquezCalm && vasquez.parent) {
     const d = vasquez.position.distanceTo(pp);
     nearestHostile = Math.min(nearestHostile, d);
     if (d < 8 && d > 1.2) {
@@ -1799,7 +1801,7 @@ function tick() {
   else if (threat > 0.5 || state.hp < 60) vignetteEl.className = 'scared';
   else vignetteEl.className = '';
 
-  if (state.hp <= 0) triggerEnding('death');
+  if (state.hp <= 0 && !gameOver) triggerEnding('death');
 
   renderer.render(scene, camera);
 }
@@ -1808,6 +1810,36 @@ function flashScreen() {
   const f = document.getElementById('flash');
   f.classList.add('on');
   setTimeout(() => f.classList.remove('on'), 90);
+}
+
+if (touchMode) {
+  document.querySelector('#blocker .click').textContent = 'TAP TO BEGIN';
+  document.querySelector('#blocker .controls').innerHTML = 'Left stick: walk · Swipe right side: look<br><span class="key">E</span> interact · <span class="key">T</span> talk to ARIA';
+  const st = document.createElement('style');
+  st.textContent = `.tc{position:fixed;z-index:20;touch-action:none;user-select:none;-webkit-user-select:none}
+  #tStick{left:20px;bottom:24px;width:130px;height:130px;border-radius:50%;border:2px solid #6fd6c866;background:#6fd6c812}
+  #tKnob{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#6fd6c8aa}
+  #tLook{right:0;top:0;width:55vw;height:100vh;z-index:5}
+  .tbtn{right:22px;width:70px;height:70px;border-radius:50%;border:2px solid #6fd6c8;background:#081018cc;color:#6fd6c8;font:bold 22px 'Courier New',monospace;display:flex;align-items:center;justify-content:center}
+  #tE{bottom:30px} #tT{bottom:116px;font-size:16px}
+  #hud{transform:scale(.85);transform-origin:top left} #prompt{bottom:170px}`;
+  document.head.appendChild(st);
+  const mk = (id, cls, html) => { const d = document.createElement('div'); d.id = id; d.className = cls; d.innerHTML = html; document.body.appendChild(d); return d; };
+  const look = mk('tLook', 'tc', ''), stick = mk('tStick', 'tc', '<div id="tKnob"></div>'), eb = mk('tE', 'tc tbtn', 'E'), tb = mk('tT', 'tc tbtn', 'ARIA');
+  const knob = stick.firstChild; let sid = null, lid = null, lx = 0, ly = 0;
+  const eul = new THREE.Euler(0, 0, 0, 'YXZ');
+  const mv = t => { const r = stick.getBoundingClientRect(); let dx = t.clientX - r.left - 65, dy = t.clientY - r.top - 65; const d = Math.hypot(dx, dy); if (d > 48) { dx *= 48 / d; dy *= 48 / d; }
+    knob.style.left = (40 + dx) + 'px'; knob.style.top = (40 + dy) + 'px'; touchMove.x = dx / 48; touchMove.z = dy / 48; };
+  stick.addEventListener('touchstart', e => { e.preventDefault(); sid = e.changedTouches[0].identifier; mv(e.changedTouches[0]); initAudio(); }, { passive: false });
+  stick.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) if (t.identifier === sid) mv(t); }, { passive: false });
+  const sEnd = e => { for (const t of e.changedTouches) if (t.identifier === sid) { sid = null; touchMove.x = touchMove.z = 0; knob.style.left = knob.style.top = '40px'; } };
+  stick.addEventListener('touchend', sEnd); stick.addEventListener('touchcancel', sEnd);
+  look.addEventListener('touchstart', e => { const t = e.changedTouches[0]; lid = t.identifier; lx = t.clientX; ly = t.clientY; initAudio(); }, { passive: true });
+  look.addEventListener('touchmove', e => { e.preventDefault(); if (dialogueOpen || gameOver || chatOpen) return; for (const t of e.changedTouches) if (t.identifier === lid) {
+      eul.setFromQuaternion(camera.quaternion); eul.y -= (t.clientX - lx) * 0.006; eul.x = Math.max(-1.4, Math.min(1.4, eul.x - (t.clientY - ly) * 0.006));
+      camera.quaternion.setFromEuler(eul); lx = t.clientX; ly = t.clientY; } }, { passive: false });
+  eb.addEventListener('touchstart', e => { e.preventDefault(); if (currentInteractive && !dialogueOpen && !gameOver) { if (currentInteractive.item) pickupItem(currentInteractive.item); else if (currentInteractive.onUse) currentInteractive.onUse(); } }, { passive: false });
+  tb.addEventListener('touchstart', e => { e.preventDefault(); if (!dialogueOpen && !gameOver) toggleChat(); }, { passive: false });
 }
 
 // Starting position: inside cryo bay, near the broken pod, facing east toward door
@@ -1819,6 +1851,8 @@ tick();
 // Expose for console debug
 window.state = state;
 window.scene = scene;
+if (location.hash.indexOf('debug') !== -1) window.__LT = { state, camera, controls, interactives, items, vasquez, mira, collides, openDialogue, triggerEnding, pickupItem, toggleChat, checkInteraction,
+  tryBackoff, get gameOver() { return gameOver; }, get chatOpen() { return chatOpen; }, get dialogueOpen() { return dialogueOpen; } };
 </script>
 <script src="glitchbox-menu.js" defer></script>
 </body>
