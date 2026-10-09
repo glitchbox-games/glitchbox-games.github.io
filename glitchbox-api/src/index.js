@@ -207,6 +207,15 @@ export class Hub extends DurableObject {
       // Best score per player per game, for games that report one. `low` = lower is better (golf).
       this.sql.exec(`CREATE TABLE IF NOT EXISTS scores (
         game TEXT, sub TEXT, score REAL, low INTEGER, at INTEGER, PRIMARY KEY (game, sub))`);
+      // Owner-run contests. kind "score" = best GLITCHBOX.score() posted inside the window;
+      // kind "time" = most minutes played (game "*" = anywhere in the arcade). When one ends,
+      // settleContests() pays the prizes through the gifts table and records the winners.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS contests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, game TEXT, kind TEXT, low INTEGER,
+        starts INTEGER, ends INTEGER, prizes TEXT, prize_game TEXT, note TEXT,
+        status TEXT, winners TEXT, created INTEGER)`);
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS contest_scores (
+        cid INTEGER, sub TEXT, score REAL, at INTEGER, PRIMARY KEY (cid, sub))`);
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
       if (!row) {
@@ -575,6 +584,7 @@ export class Hub extends DurableObject {
   }
 
   async state(token, ip) {
+    this.settleContests();
     const me = await this.verifySession(token);
     const now = Date.now();
     if (!this.isOwnerSub(me)) { const nb = this.ipBan(ip); if (nb) throw new HttpError(403, nb); }
@@ -847,7 +857,7 @@ export class Hub extends DurableObject {
       "DELETE FROM invites WHERE from_sub = ? OR to_sub = ?",
       "DELETE FROM reports WHERE reporter = ? OR reported = ?",
     ]) this.sql.exec(q, sub, sub);
-    for (const q of ["DELETE FROM saves WHERE sub = ?", "DELETE FROM gifts WHERE sub = ?", "DELETE FROM scores WHERE sub = ?"])
+    for (const q of ["DELETE FROM saves WHERE sub = ?", "DELETE FROM gifts WHERE sub = ?", "DELETE FROM scores WHERE sub = ?", "DELETE FROM contest_scores WHERE sub = ?"])
       this.sql.exec(q, sub);
     this.sql.exec("DELETE FROM activity WHERE who = ?", "u:" + sub);
     this.sql.exec("DELETE FROM pending WHERE who = ?", "u:" + sub);
@@ -1318,6 +1328,15 @@ export class Hub extends DurableObject {
       `INSERT INTO scores (game, sub, score, low, at) VALUES (?, ?, ?, ?, ?)
        ON CONFLICT(game, sub) DO UPDATE SET score = excluded.score, low = excluded.low, at = excluded.at`,
       g, me, n, low ? 1 : 0, Date.now());
+    const now = Date.now();
+    for (const c of this.sql.exec("SELECT id, low FROM contests WHERE status = 'live' AND kind = 'score' AND game = ? AND starts <= ? AND ends > ?", g, now, now).toArray()) {
+      const cl = !!c.low;
+      if (!!low !== cl) continue;   // a game reporting the other direction isn't this contest's score
+      const ce = this.sql.exec("SELECT score FROM contest_scores WHERE cid = ? AND sub = ?", c.id, me).toArray()[0];
+      if (!ce || (cl ? n < ce.score : n > ce.score))
+        this.sql.exec(`INSERT INTO contest_scores (cid, sub, score, at) VALUES (?, ?, ?, ?)
+          ON CONFLICT(cid, sub) DO UPDATE SET score = excluded.score, at = excluded.at`, c.id, me, n, now);
+    }
     return { ok: true, best: better ? n : cur.score, newBest: better };
   }
   // Who has played `game` the most this week (or the whole arcade with "*"), plus high
@@ -1345,6 +1364,107 @@ export class Hub extends DurableObject {
       return { game: g, time, scores, low: !!low };
     }
     return { game: g, time, scores };
+  }
+
+  // ── contests ──
+  contestRow(c) {
+    return { id: c.id, title: c.title, game: c.game, kind: c.kind, low: !!c.low, starts: c.starts, ends: c.ends,
+             prizes: JSON.parse(c.prizes || "[]"), prizeGame: c.prize_game || "", note: c.note || "", status: c.status,
+             winners: c.winners ? JSON.parse(c.winners) : null };
+  }
+  // Ranked entrants (best first). Banned players and the owner never place.
+  standings(c, limit) {
+    const now = Date.now(), end = Math.min(now, c.ends);
+    let list;
+    if (c.kind === "score") {
+      list = this.sql.exec(`SELECT sub, score, at FROM contest_scores WHERE cid = ? ORDER BY score ${c.low ? "ASC" : "DESC"}, at ASC`, c.id).toArray();
+    } else {
+      const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE at < ? AND who LIKE 'u:%' ORDER BY who, at", end).toArray();
+      const per = {};
+      for (const sg of segments(rows, this.lastSeenMap(), end, c.starts)) {
+        if (c.game !== "*" && sg.game !== c.game) continue;
+        const st = Math.max(sg.at, c.starts), ms = Math.min(st + sg.ms, end) - st;
+        if (ms > 0) per[sg.who.slice(2)] = (per[sg.who.slice(2)] || 0) + ms;
+      }
+      list = Object.keys(per).map(sub => ({ sub, score: Math.floor(per[sub] / 60000) })).filter(x => x.score >= 1)
+        .sort((a, b) => b.score - a.score);
+    }
+    const out = [];
+    for (const x of list) {
+      const u = this.userOf(x.sub);
+      if (!u || u.banned || this.isOwnerSub(x.sub)) continue;
+      out.push({ sub: x.sub, name: shortName(u.name), picture: u.picture, score: x.score });
+      if (out.length >= (limit || 10)) break;
+    }
+    return out;
+  }
+  // Pay out every contest whose clock ran out. Called from /api/me and /api/contests,
+  // so it runs within seconds of the end as long as anyone has the hub open.
+  settleContests() {
+    const now = Date.now();
+    for (const c of this.sql.exec("SELECT * FROM contests WHERE status = 'live' AND ends <= ?", now).toArray()) this.awardContest(c);
+  }
+  awardContest(c) {
+    const prizes = JSON.parse(c.prizes || "[]");
+    const top = this.standings(c, Math.max(1, prizes.length));
+    const places = ["1st", "2nd", "3rd", "4th", "5th"];
+    const winners = top.slice(0, prizes.length).map((w, i) => ({ ...w, place: i + 1, tokens: prizes[i] || 0, game: i === 0 ? (c.prize_game || "") : "" }));
+    for (const w of winners)
+      this.sql.exec("INSERT INTO gifts (sub, tokens, games, icons, note, created) VALUES (?, ?, ?, ?, ?, ?)",
+        w.sub, w.tokens, JSON.stringify(w.game ? [w.game] : []), "[]",
+        ("🏆 " + places[w.place - 1] + " place — " + c.title).slice(0, 120), Date.now());
+    this.sql.exec("UPDATE contests SET status = 'done', winners = ?, ends = MIN(ends, ?) WHERE id = ?", JSON.stringify(winners), Date.now(), c.id);
+    this.log("contest-end", "", c.title + (winners.length ? " — won by " + winners.map(w => w.name).join(", ") : " — no entries"), "");
+    return winners;
+  }
+  // Public list: live contests with standings (and where you stand), plus recent results.
+  async contests(token) {
+    this.settleContests();
+    let me = "";
+    if (token) { try { me = await this.verifySession(token); } catch (e) { me = ""; } }
+    const live = this.sql.exec("SELECT * FROM contests WHERE status = 'live' ORDER BY ends").toArray().map(c => {
+      const all = this.standings(c, 200);
+      const i = all.findIndex(x => x.sub === me);
+      return { ...this.contestRow(c), standings: all.slice(0, 10), entrants: all.length,
+               mine: i === -1 ? null : { rank: i + 1, score: all[i].score } };
+    });
+    const past = this.sql.exec("SELECT * FROM contests WHERE status = 'done' ORDER BY ends DESC LIMIT 10").toArray().map(c => this.contestRow(c));
+    return { live, past, now: Date.now() };
+  }
+  async adminContestCreate(token, b) {
+    await this.requireOwner(token);
+    b = b || {};
+    const title = String(b.title || "").trim().slice(0, 80);
+    if (!title) throw new HttpError(400, "give the contest a name");
+    const kind = b.kind === "time" ? "time" : "score";
+    const game = String(b.game || "");
+    if (!(kind === "time" && game === "*") && !GAME_RE.test(game)) throw new HttpError(400, "pick a game");
+    const hours = Number(b.hours);
+    if (!(hours >= 0.05 && hours <= 24 * 30)) throw new HttpError(400, "a contest runs between 3 minutes and 30 days");
+    const prizes = (Array.isArray(b.prizes) ? b.prizes : []).slice(0, 5).map(x => Math.max(0, Math.min(100000, Math.trunc(Number(x) || 0))));
+    while (prizes.length && !prizes[prizes.length - 1]) prizes.pop();
+    const pg = String(b.prizeGame || "");
+    if (!prizes.length && !pg) throw new HttpError(400, "add a prize");
+    if (!prizes.length) prizes.push(0);
+    if (pg && !GAME_RE.test(pg)) throw new HttpError(400, "unknown prize game");
+    const now = Date.now();
+    this.sql.exec(`INSERT INTO contests (title, game, kind, low, starts, ends, prizes, prize_game, note, status, created)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'live', ?)`, title, game, kind, kind === "score" && b.low ? 1 : 0,
+      now, now + hours * 3600000, JSON.stringify(prizes), pg || null, String(b.note || "").trim().slice(0, 200), now);
+    this.log("contest", "", title + " · " + (kind === "time" ? "most played" : "best score") + " · " + game + " · " + hours + "h · prizes " + prizes.join("/"), "");
+    return { ok: true, ...(await this.contests(token)) };
+  }
+  // End now (pays out) or cancel (nobody wins).
+  async adminContestEnd(token, id, cancel) {
+    await this.requireOwner(token);
+    const c = this.sql.exec("SELECT * FROM contests WHERE id = ? AND status = 'live'", Number(id) || 0).toArray()[0];
+    if (!c) throw new HttpError(404, "that contest isn't running");
+    if (cancel) {
+      this.sql.exec("DELETE FROM contests WHERE id = ?", c.id);
+      this.sql.exec("DELETE FROM contest_scores WHERE cid = ?", c.id);
+      this.log("contest-cancel", "", c.title, "");
+    } else this.awardContest(c);
+    return { ok: true, ...(await this.contests(token)) };
   }
 
   // ── your data ── everything GLITCHBOX keeps about you, and a way to erase it.
@@ -1664,6 +1784,7 @@ export default {
       if (path === "/api/ping") return json(await stub.ping(auth, url.searchParams.get("game"),
         url.searchParams.get("gid"), ip, request.headers.get("User-Agent"), url.searchParams.get("tos"), url.searchParams.get("room")), 200, origin);
       if (path === "/api/profile") return json(await stub.profile(auth, url.searchParams.get("sub")), 200, origin);
+      if (path === "/api/contests") return json(await stub.contests(auth), 200, origin);
       if (path === "/api/leaderboard") return json(await stub.leaderboard(url.searchParams.get("game")), 200, origin);
       if (path === "/api/my-data") return json(await stub.myData(auth), 200, origin);
       if (path === "/api/guest-data") return json(await stub.guestData(url.searchParams.get("gid")), 200, origin);
@@ -1712,6 +1833,8 @@ export default {
         if (path === "/api/admin/ip-ban")      return json(await stub.adminIpBan(auth, body.ip, body.banned, body.reason, body.hours), 200, origin);
         if (path === "/api/admin/kick")        return json(await stub.adminKick(auth, body.target, body.reason), 200, origin);
         if (path === "/api/admin/popup")       return json(await stub.adminPopup(auth, body.target, body.text), 200, origin);
+        if (path === "/api/admin/contest")     return json(await stub.adminContestCreate(auth, body), 200, origin);
+        if (path === "/api/admin/contest-end") return json(await stub.adminContestEnd(auth, body.id, body.cancel), 200, origin);
         if (path === "/api/admin/game-gift")   return json(await stub.adminGameGift(auth, body.target, body.game, body.amount, body.note), 200, origin);
         if (path === "/api/admin/reload-all")  return json(await stub.adminReloadAll(auth), 200, origin);
         if (path === "/api/admin/games")       return json(await stub.adminGames(auth, body.disabled), 200, origin);
