@@ -11,7 +11,7 @@
     font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; user-select:none; }
   canvas { position:fixed; inset:0; display:block; }
   .bar { position:fixed; top:0; left:0; right:0; z-index:5; display:flex; gap:8px; align-items:center;
-    padding:10px 12px; background:linear-gradient(180deg,#160c24ee,#160c2400); }
+    padding:10px 12px 10px 58px; background:linear-gradient(180deg,#160c24ee,#160c2400); }
   .bar h1 { margin:0 10px 0 2px; font-size:18px; letter-spacing:1px; white-space:nowrap;
     text-shadow:0 0 10px var(--neon); }
   .bar input { flex:1; min-width:120px; padding:10px 12px; border-radius:10px; border:1px solid #3a2a55;
@@ -78,25 +78,56 @@ function setStatus(msg, err){ statusEl.textContent = msg||''; statusEl.classList
 
 // ── Audio analysis ──
 let actx, analyser, srcNode, freq, playing = false;
+let elSrc = null, liveStream = null;
+// What the roaches are dancing to: 'none' | 'file' (an <audio> source) | 'mic' | 'tab' | 'yt'
+// ('yt' = an embedded video they can't hear, so they follow a built-in groove).
+let srcKind = 'none';
+function stopStream(){ if (liveStream) { liveStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} }); liveStream = null; } }
 function ensureAudioGraph(mediaEl){
   if (!actx) { actx = new (window.AudioContext||window.webkitAudioContext)(); }
   if (actx.state === 'suspended') actx.resume();
   // The analyser only listens. A media file is also routed to the speakers; a mic or
   // shared-tab stream is NOT — playing those back out caused feedback / a doubled echo.
   if (!analyser) { analyser = actx.createAnalyser(); analyser.fftSize = 1024; analyser.smoothingTimeConstant = 0.78; freq = new Uint8Array(analyser.frequencyBinCount); }
-  if (mediaEl && srcNode && srcNode._el !== mediaEl) { try{srcNode.disconnect();}catch(e){} srcNode = null; }
-  if (mediaEl && !srcNode) { srcNode = actx.createMediaElementSource(mediaEl); srcNode._el = mediaEl; srcNode.connect(analyser); srcNode.connect(actx.destination); }
+  if (mediaEl) {
+    // A media element can only ever be wrapped once — re-wrapping it (file → mic → file)
+    // threw and left the roaches deaf. Keep the one node and just re-plug it.
+    if (srcNode && srcNode !== elSrc) { try{srcNode.disconnect();}catch(e){} }
+    stopStream();
+    if (!elSrc) elSrc = actx.createMediaElementSource(mediaEl);
+    try { elSrc.disconnect(); } catch(e){}
+    elSrc.connect(analyser); elSrc.connect(actx.destination);
+    srcNode = elSrc; srcKind = 'file'; stopEmbedded();
+  }
 }
-function connectStream(stream){
+function connectStream(stream, kind){
   ensureAudioGraph(null);
   if (srcNode) { try{srcNode.disconnect();}catch(e){} }
-  srcNode = actx.createMediaStreamSource(stream); srcNode._el = null; srcNode.connect(analyser); // mic: don't connect to destination (no feedback)
+  if (liveStream && liveStream !== stream) stopStream();
+  liveStream = stream;
+  srcNode = actx.createMediaStreamSource(stream); srcNode.connect(analyser); // mic/tab: don't connect to destination (no feedback)
+  srcKind = kind || 'mic';
+  // if the person stops sharing, fall back to the groove (video) or to idle
+  stream.getAudioTracks().forEach(t => t.addEventListener('ended', () => { if (liveStream === stream) { liveStream = null; srcKind = ytPlaying ? 'yt' : 'none'; playing = ytPlaying; } }));
 }
 
 // Frequency-band energies (0..1)
 let bass=0, mid=0, treble=0, level=0;
 let bassAvg=0, beat=0, beatFlash=0;
+// The built-in groove for a YouTube video playing in the embed: a 120 bpm four-on-the-
+// floor with hats and a little swing, only while the video is actually playing.
+function grooveAudio(){
+  const tt = performance.now()/1000, bpm = 120, beatT = tt*bpm/60, ph = beatT % 1, half = (beatT*2) % 1;
+  const on = ytPlaying ? 1 : 0;
+  bass = on*(0.18 + 0.72*Math.exp(-ph*7));
+  mid = on*(0.32 + 0.18*Math.sin(tt*2.1) + 0.2*Math.exp(-((beatT+0.5)%1)*9));
+  treble = on*(0.22 + 0.45*Math.exp(-half*12));
+  level = on*(0.34 + 0.2*bass);
+  if (on && ph < 0.06 && beat <= 0) { beat = 1; beatFlash = 1; }
+  beat = Math.max(0, beat-0.08); beatFlash = Math.max(0, beatFlash-0.06);
+}
 function readAudio(){
+  if (srcKind === 'yt') { grooveAudio(); return; }
   if (!analyser) { bass*=0.92; mid*=0.92; treble*=0.92; level*=0.92; return; }
   analyser.getByteFrequencyData(freq);
   const n = freq.length;
@@ -256,7 +287,7 @@ function frame(now){
   }
 
   // idle prompt when nothing is playing
-  if (!playing && level < 0.005){
+  if (!playing && level < 0.005 && srcKind !== 'yt'){
     ctx.fillStyle = 'rgba(243,233,255,0.85)'; ctx.textAlign='center';
     // shrink the prompt to fit narrow screens (it ran off both edges on phones)
     let big = 26;
@@ -289,11 +320,48 @@ async function hasAudioServer(){
   catch(_) { serverChecked = false; }
   return serverChecked;
 }
-function playEmbedded(id){
-  const box = document.getElementById('yt'), fr = document.getElementById('ytframe');
-  fr.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+let ytPlayer = null, ytPlaying = false, ytApi = null;
+function loadYtApi(){
+  if (ytApi) return ytApi;
+  ytApi = new Promise(res => {
+    if (window.YT && window.YT.Player) return res();
+    window.onYouTubeIframeAPIReady = () => res();
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = () => res();
+    document.head.appendChild(s);
+  });
+  return ytApi;
+}
+function stopEmbedded(){
+  ytPlaying = false;
+  if (ytPlayer && ytPlayer.stopVideo) { try { ytPlayer.stopVideo(); } catch(e){} }
+  document.getElementById('yt').classList.remove('show');
+}
+async function playEmbedded(id){
+  const box = document.getElementById('yt');
+  if (srcNode === elSrc) { audio.pause(); }
+  stopStream();
   box.classList.add('show');
-  setStatus('▶ The video is playing — press “🔊 Let the roaches hear it” to make them dance.');
+  srcKind = 'yt'; playing = true;
+  setStatus('▶ Loading the video…');
+  await loadYtApi();
+  if (!(window.YT && window.YT.Player)) {
+    // the player API is blocked (school wifi, an ad blocker…): plain embed, groove on
+    const fr = document.getElementById('ytframe');
+    fr.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+    ytPlaying = true;
+    setStatus('🪳 Dancing along! For the real beat, press “🔊 Let the roaches hear it”.');
+    return;
+  }
+  if (ytPlayer && ytPlayer.loadVideoById) { ytPlayer.loadVideoById(id); }
+  else {
+    ytPlayer = new YT.Player('ytframe', { videoId: id, host: 'https://www.youtube-nocookie.com',
+      playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
+      events: {
+        onReady: e => { try { e.target.playVideo(); } catch(_){} },
+        onStateChange: e => { ytPlaying = e.data === 1; if (ytPlaying && srcKind === 'yt') setStatus('🪳 Dancing along! For the real beat, press “🔊 Let the roaches hear it”.'); },
+        onError: () => setStatus('That video can’t be played here — try another link, a 📁 file or 🎤 Mic.', true),
+      } });
+  }
 }
 document.getElementById('hear').onclick = async () => {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { setStatus('This browser can’t share tab sound — use 🎤 Mic with the volume up.', true); return; }
@@ -301,7 +369,7 @@ document.getElementById('hear').onclick = async () => {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video:true, audio:true, preferCurrentTab:true, selfBrowserSurface:'include', systemAudio:'include' });
     stream.getVideoTracks().forEach(t => t.stop());           // only the sound is needed
     if (!stream.getAudioTracks().length) { setStatus('No sound was shared — try again and switch on “Also share tab audio”.', true); return; }
-    audio.pause(); connectStream(stream); playing = true;
+    if (srcNode === elSrc) audio.pause(); connectStream(stream, 'tab'); playing = true;
     setStatus('🪳 Listening to the video. Dance!');
     setTimeout(() => setStatus(''), 2500);
   } catch(e){ setStatus('Sharing was cancelled — or use 🎤 Mic with the volume up.', true); }
@@ -309,6 +377,7 @@ document.getElementById('hear').onclick = async () => {
 async function playYouTube(link){
   if (!link.trim()) { setStatus('Paste a YouTube link first.', true); return; }
   const id = youTubeId(link);
+  if (!id && !(await hasAudioServer())) { setStatus('That doesn’t look like a YouTube link — copy it from the Share button.', true); return; }
   if (id && !(await hasAudioServer())) { playEmbedded(id); return; }
   setStatus('🪳 fetching the audio… (first time can take a few seconds)');
   try {
@@ -334,8 +403,8 @@ document.getElementById('mic').onclick = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
     if (!actx) ensureAudioGraph(null); else if (actx.state==='suspended') actx.resume();
-    audio.pause(); connectStream(stream); playing = true;
-    setStatus('🎤 Listening — play the video out loud and watch them dance.');
+    if (srcNode === elSrc) audio.pause(); stopEmbedded(); connectStream(stream, 'mic'); playing = true;
+    setStatus('🎤 Listening — play music out loud and watch them dance.');
   } catch(e){ setStatus('Mic permission denied.', true); }
 };
 
@@ -358,9 +427,9 @@ addEventListener('drop', async e => {
 });
 
 audio.addEventListener('playing', () => { playing = true; setStatus(''); });
-audio.addEventListener('ended', () => { playing = false; });
+audio.addEventListener('ended', () => { if (srcKind === 'file') playing = false; });
 audio.addEventListener('error', () => { /* surfaced via playYouTube probe */ });
 </script>
-<script src="glitchbox-menu.js" defer></script>
+<script src="glitchbox-menu.js" data-pos="top-left" defer></script>
 </body>
 </html>
