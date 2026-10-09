@@ -351,16 +351,31 @@
         });
     }},
 
-    give: { usage:'give <player|everyone> [tokens] [games|icons|all] [<game>…]',
-            about:'send tokens or unlocks to a player', owner:true, async run(a) {
-      if (a.length < 2) { bad('usage: give <player|everyone> [tokens] [games|icons|all] [<game>…]'); return; }
+    give: { usage:'give <player|everyone> [tokens] [<n> energy] [games|icons|all] [<game>…]',
+            about:'send tokens, Idle Universe energy or unlocks to a player', owner:true, async run(a) {
+      if (a.length < 2) { bad('usage: give <player|everyone> [tokens] [<n> energy] [games|icons|all] [<game>…]   e.g. give dave 5b energy'); return; }
       const paidIcons = () => (typeof ICON_SETS !== 'undefined' && typeof ICON_PRICE !== 'undefined')
         ? ICON_SETS.filter(s => ICON_PRICE[s.cat]).reduce((l, s) => l.concat(s.icons.map(i => i.id)), []) : [];
       const body = { tokens: 0, games: [], icons: [] };
       const paidGames = () => gameList().filter(g => g.price).map(g => g.file);
-      for (const w of a.slice(1)) {
-        const lw = w.toLowerCase();
-        if (/^[+-]?\d+$/.test(w)) body.tokens += parseInt(w, 10);
+      // "5b energy", "energy 5b", or any amount with a suffix/exponent (2.5m, 1e15) is energy.
+      const amt = w => { const m = /^([0-9]*\.?[0-9]+(?:e[+-]?[0-9]+)?)(k|m|b|t|qa|qi)?$/i.exec(String(w || '').replace(/,/g, ''));
+        const n = m ? parseFloat(m[1]) * ({ k:1e3, m:1e6, b:1e9, t:1e12, qa:1e15, qi:1e18 }[(m[2] || '').toLowerCase()] || 1) : 0;
+        return n > 0 && n <= 1e300 ? n : 0; };
+      let energy = 0, lastNum = null;
+      const words = a.slice(1);
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i], lw = w.toLowerCase();
+        if (lw === 'energy' || lw === '⚡') {
+          if (amt(words[i + 1])) { energy += amt(words[++i]); }
+          else if (lastNum !== null) { body.tokens -= lastNum; energy += lastNum; lastNum = null; }
+          else if (i > 0 && amt(words[i - 1])) { /* "5b energy": already counted */ }
+          else { bad('how much energy? e.g. give dave 5b energy'); return; }
+          continue;
+        }
+        lastNum = null;
+        if (/^[+-]?\d+$/.test(w)) { body.tokens += parseInt(w, 10); lastNum = parseInt(w, 10); }
+        else if (amt(w)) energy += amt(w);
         else if (lw === 'games') body.games = body.games.concat(paidGames());
         else if (lw === 'icons') body.icons = paidIcons();
         else if (lw === 'all') { body.games = body.games.concat(paidGames()); body.icons = paidIcons(); }
@@ -372,20 +387,27 @@
       }
       body.games = [...new Set(body.games)];
       const summary = [body.tokens ? body.tokens + ' tokens' : '', body.games.length ? body.games.length + ' game(s)' : '',
-                       body.icons.length ? body.icons.length + ' icon(s)' : ''].filter(Boolean).join(', ');
+                       body.icons.length ? body.icons.length + ' icon(s)' : '', energy ? '⚡ ' + energy.toLocaleString('en-US') + ' energy' : '']
+                       .filter(Boolean).join(', ');
       if (!summary) { bad('nothing to give'); return; }
+      const stuff = body.tokens || body.games.length || body.icons.length;
+      const deliver = async target => {
+        const r = stuff ? await call('/api/admin/gift', { method:'POST', body: Object.assign({ sub: target === '*' ? '*' : target.slice(2) }, body) }) : null;
+        const e = energy ? await call('/api/admin/game-gift', { method:'POST', body:{ target, game:'idle-universe.html', amount: energy } }) : null;
+        return r ? r.players : e ? e.sent : 0;
+      };
       const who = a[0].toLowerCase();
       if (who === 'everyone' || who === 'all' || who === '*') {
-        askConfirm('Give ' + summary + ' to every player?', async () => {
-          const r = await call('/api/admin/gift', { method:'POST', body: Object.assign({ sub:'*' }, body) });
-          ok('gift queued for ' + r.players + ' players: ' + summary);
+        askConfirm('Give ' + summary + ' to every player' + (energy ? ' (energy goes to guests too)' : '') + '?', async () => {
+          const n = await deliver('*');
+          ok('gift queued for ' + n + ' players: ' + summary);
         });
         return;
       }
       const p = await pickPlayer(a[0]);
       if (!p) return;
-      await call('/api/admin/gift', { method:'POST', body: Object.assign({ sub:p.sub }, body) });
-      ok('gift queued for ' + p.name + ': ' + summary + ' — lands on their next check-in');
+      await deliver('u:' + p.sub);
+      ok('gift queued for ' + p.name + ': ' + summary + (energy ? ' — energy lands next time they\'re in Idle Universe' : ' — lands on their next check-in'));
     }},
 
     msg: { usage:'msg <player> <message>', about:'pop a message up on a player\'s screen', owner:true, async run(a) {
@@ -980,6 +1002,14 @@
     seen.length = 0;
     await run('energy 1A2B lots');
     t('a bad amount sends nothing', !seen.some(s => s.path === '/api/admin/game-gift'));
+    seen.length = 0;
+    await run('give dave 5b energy');
+    t('give <n> energy sends only energy', !seen.some(s => s.path === '/api/admin/gift') &&
+      seen.some(s => s.path === '/api/admin/game-gift' && s.body.target === 'u:s1' && s.body.amount === 5e9));
+    seen.length = 0;
+    await run('give dave 100 energy 2m');
+    t('give mixes tokens and energy', seen.some(s => s.path === '/api/admin/gift' && s.body.tokens === 100) &&
+      seen.some(s => s.path === '/api/admin/game-gift' && s.body.amount === 2e6));
     seen.length = 0;
     await run('gban 1A2B net spam');
     const gb = seen.find(s => s.path === '/api/admin/guest-ban');
