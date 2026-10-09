@@ -20,13 +20,10 @@ const GAMES=[
   {name:'Neon Frag',           file:'neon-frag.html',              emoji:'🔫',color:['#05070e','#101b33'],category:'multiplayer',tags:['new','hot','mp']},
   {name:'Mic Drop',            file:'mic-drop.html',               emoji:'🎤',color:['#12061f','#2a0f4a'],category:'multiplayer',tags:['new','mp']},
   {name:'Wet Paint',           file:'wet-paint.html',              emoji:'🎨',color:['#1a0e08','#2e1a10'],category:'adventure',  tags:['new','hot']},
-  {name:'Magic Wand',          file:'magic-wand.html',             emoji:'🪄',color:['#0a0616','#1a0f33'],category:'other',      tags:['new','hot']},
   {name:'Neon Putt',           file:'neon-putt.html',              emoji:'⛳',color:['#04120f','#0a2620'],category:'puzzle',     tags:['new','hot'],price:80},
   {name:'Barrier',             file:'barrier.html',                emoji:'🚧',color:['#02140f','#04241b'],category:'action',     tags:['new','hot']},
   {name:'Quoridor',            file:'quoridor.html',               emoji:'🧱',color:['#0a1428','#12233f'],category:'strategy',   tags:['new','mp']},
   {name:'Pixel War',           file:'pixel-war.html',              emoji:'🪖',color:['#0a1800','#1a3008'],category:'action',     tags:['hot']},
-  {name:'Pixel War Alt',       file:'pixelwar.html',               emoji:'⚔️',color:['#100a20','#201030'],category:'action',     tags:[]},
-  {name:'Pixel War Solo',      file:'pixelwar-solo.html',          emoji:'🚀',color:['#00101a','#001828'],category:'action',     tags:[]},
   {name:'War Combined',        file:'war-combined.html',           emoji:'🛡️',color:['#180000','#300808'],category:'action',     tags:['hot'],blurb:'Two arsenals in one battlefield — subs, carriers, jets and armor'},
   {name:'Nuclear DEFCON',      file:'nuclear.html',                emoji:'☢️',color:['#141000','#242000'],category:'strategy',   tags:['hot']},
   {name:'Spaceship',           file:'spaceship-solo.html',         emoji:'🚀',color:['#020510','#060f28'],category:'action',     tags:['hot']},
@@ -36,19 +33,15 @@ const GAMES=[
   {name:'Untamed',             file:'national-park-tycoon.html',   emoji:'🏞️',color:['#041200','#082400'],category:'simulation', tags:['new']},
   {name:'Park Simulator',      file:'national-park-simulator.html',emoji:'⛺',color:['#060e00','#0e1c00'],category:'simulation', tags:[]},
   {name:'Virus',               file:'virus.html',                  emoji:'🦠',color:['#0a0414','#180828'],category:'strategy',   tags:['hot']},
-  {name:'Pathogen',            file:'pathogen.html',               emoji:'🧬',color:['#041208','#081e0e'],category:'strategy',   tags:[]},
   {name:'Last Transmission',   file:'last-transmission.html',      emoji:'📡',color:['#040a14','#081424'],category:'adventure',  tags:['new']},
   {name:'Last Transmission 3D',file:'last-transmission-3d.html',   emoji:'🌌',color:['#02040e','#060c1e'],category:'adventure',  tags:['new'],blurb:'The deep-space story, rebuilt in 3D'},
   {name:'Cheese Heist 3D',     file:'cheese-heist-3d.html',        emoji:'🧀',color:['#1a1500','#2a2200'],category:'action',     tags:[],blurb:'Full 3D stealth heist — grab the cheese, stay out of sight'},
   {name:'Fib Factory',         file:'fib-factory.html',            emoji:'🎭',color:['#1a001a','#2a002a'],category:'multiplayer',tags:['mp']},
   {name:'Yellowstone Carnage', file:'yellowstone-carnage.html',    emoji:'🌋',color:['#1a0a00','#2a1500'],category:'action',     tags:['new'],blurb:'Supervolcano chaos, no survivors guaranteed'},
   {name:'Speed Stars',         file:'speed-stars.html',            emoji:'🏎️',color:['#000a1a','#001030'],category:'action',     tags:[]},
-  {name:'Hacker',              file:'hacker.html',                 emoji:'💻',color:['#001a00','#003300'],category:'puzzle',     tags:[]},
   {name:'DJ',                  file:'dj.html',                     emoji:'🎧',color:['#0a001a','#15002a'],category:'other',      tags:[]},
-  {name:'Decision Roulette',   file:'decision-roulette.html',      emoji:'🎰',color:['#1a0000','#2a0a00'],category:'other',      tags:[]},
   {name:'Case Board',          file:'case-board.html',             emoji:'🔎',color:['#0a0a0a','#141414'],category:'puzzle',     tags:[]},
   {name:'Roach Rave',          file:'roach-rave.html',             emoji:'🪳',color:['#0d0a00','#1a1400'],category:'other',      tags:[],blurb:'Paste a YouTube link, watch roaches dance to it'},
-  {name:'Nothing',             file:'nothing.html',                emoji:'⬜',color:['#080808','#101010'],category:'other',      tags:[]},
 ];
 
 // ── CANVAS DRAWING HELPERS ──
@@ -538,44 +531,6 @@ const DRAW={
   c.fillText('HIDE BY HAND',196,16);
 },
 
-'magic-wand':(c)=>{
-  _GV(c,0,0,320,200,'#1a0f33','#05030a');
-  // glow behind the tip
-  const g=c.createRadialGradient(96,72,0,96,72,90);
-  g.addColorStop(0,'rgba(255,214,138,0.55)');g.addColorStop(.45,'rgba(199,125,255,0.18)');
-  g.addColorStop(1,'transparent');c.fillStyle=g;c.fillRect(0,0,320,200);
-  // wand, tip upper-left → handle lower-right
-  c.save();c.translate(96,72);c.rotate(0.72);
-  const wg=c.createLinearGradient(0,0,84,0);
-  wg.addColorStop(0,'#6b4a2a');wg.addColorStop(.5,'#3a2515');wg.addColorStop(1,'#1d120a');
-  c.fillStyle=wg;
-  c.beginPath();c.moveTo(2,-3.4);c.lineTo(46,-4.6);c.lineTo(84,-5.6);
-  c.lineTo(84,5.6);c.lineTo(46,4.6);c.lineTo(2,3.4);c.closePath();c.fill();
-  c.fillStyle='#c9a24a';c.fillRect(42,-5.2,5,10.4);c.fillRect(72,-6,6,12);
-  c.restore();
-  // sparkle stars trailing from the tip
-  const star=(x,y,r,col)=>{c.save();c.translate(x,y);c.fillStyle=col;
-    c.shadowColor=col;c.shadowBlur=r*2.4;c.beginPath();
-    for(let i=0;i<8;i++){const a=i*Math.PI/4,rr=(i%2)?r*.2:r;
-      const px=Math.cos(a)*rr,py=Math.sin(a)*rr;i?c.lineTo(px,py):c.moveTo(px,py)}
-    c.closePath();c.fill();c.restore()};
-  star(96,72,15,'#fff6de');
-  [[142,42,6],[168,64,4],[126,26,4],[60,40,5],[42,74,3],[186,36,3],[74,18,3]]
-    .forEach(([x,y,r],i)=>star(x,y,r,i%2?'#ffd48a':'#ff9de0'));
-  // little terminal window getting sped up
-  _F(c,180,104,116,66,'rgba(6,4,12,0.9)');
-  c.strokeStyle='rgba(255,160,90,0.35)';c.lineWidth=1;c.strokeRect(180.5,104.5,115,65);
-  _F(c,180,104,116,11,'rgba(255,255,255,0.07)');
-  _C(c,187,109.5,2.4,'#ff5f57');_C(c,195,109.5,2.4,'#febc2e');_C(c,203,109.5,2.4,'#28c840');
-  ['#ffb37a','#7dffb0','#7dffb0','#b9aee0'].forEach((col,i)=>
-    _F(c,186,122+i*10,[70,54,84,40][i],3,col));
-  _F(c,186,162,8,4,'#ffb37a');
-  // speed bar
-  _F(c,24,182,272,8,'rgba(255,255,255,0.06)');
-  const sg=c.createLinearGradient(24,0,250,0);
-  sg.addColorStop(0,'#6b5cff');sg.addColorStop(.5,'#ff9de0');sg.addColorStop(1,'#ffd48a');
-  c.fillStyle=sg;c.fillRect(24,182,226,8);
-},
 
 'neon-putt':(c)=>{
   _GV(c,0,0,320,200,'#05080f','#080d16');
@@ -625,25 +580,7 @@ const DRAW={
   _SC(c);
 },
 
-'pixelwar':(c)=>{
-  _GV(c,0,0,320,120,'#020408','#040810');_ST(c,25);
-  _GV(c,0,120,320,80,'#0e1800','#0a1200');
-  const tank=(tx,ty,dir,col)=>{_F(c,tx,ty,68,32,col);_F(c,tx+12,ty-16,36,18,col);_F(c,dir>0?tx+42:tx-28,ty-10,32,8,col);_F(c,tx-1,ty+28,70,12,'#050a02');};
-  tank(30,95,1,'#223318');tank(200,95,-1,'#1e3320');tank(115,90,1,'#2a4022');
-  _C(c,200,100,15,'rgba(255,150,0,0.7)');_C(c,200,100,7,'rgba(255,220,0,0.9)');
-  _L(c,200,100,244,98,'rgba(255,200,0,0.5)',2);_SC(c);
-},
 
-'pixelwar-solo':(c)=>{
-  _GV(c,0,0,320,130,'#040a00','#0e1c00');_GV(c,0,130,320,70,'#081400','#050e00');
-  const rx=160,ry=95;
-  c.strokeStyle='rgba(0,255,80,0.7)';c.lineWidth=1.5;c.beginPath();c.arc(rx,ry,42,0,6.28);c.stroke();
-  [[rx-58,ry,rx-46,ry],[rx+46,ry,rx+58,ry],[rx,ry-58,rx,ry-46],[rx,ry+46,rx,ry+58]].forEach(([x1,y1,x2,y2])=>_L(c,x1,y1,x2,y2,'rgba(0,255,80,0.7)',1.5));
-  _C(c,rx,ry,3,'rgba(0,255,80,0.8)');
-  _F(c,143,78,28,13,'#5c3020');_F(c,148,68,16,11,'#402018');
-  _F(c,114,148,68,28,'#4a5a2e');_F(c,127,130,36,18,'#363f22');_F(c,157,136,32,8,'#363f22');
-  _SC(c);
-},
 
 'war-combined':(c)=>{
   _GV(c,0,0,320,90,'#040810','#080f20');_ST(c,15);
@@ -808,20 +745,6 @@ const DRAW={
   c.fillStyle='#80ff80';c.font='bold 8px monospace';c.textAlign='left';c.fillText('INFECTED: 2.4B',10,18);_SC(c);
 },
 
-'pathogen':(c)=>{
-  _GV(c,0,0,320,200,'#02050c','#040c10');_ST(c,15);
-  const cx=160,cy=108;
-  const cg=c.createRadialGradient(cx,cy,50,cx,cy,78);cg.addColorStop(0,'rgba(0,255,136,0)');cg.addColorStop(.8,'rgba(0,255,136,0.1)');cg.addColorStop(1,'rgba(0,255,136,0)');c.fillStyle=cg;c.fillRect(82,30,156,156);
-  c.strokeStyle='rgba(0,255,136,0.6)';c.lineWidth=2;c.shadowColor='#00ff88';c.shadowBlur=10;c.beginPath();c.arc(cx,cy,68,0,6.28);c.stroke();c.shadowBlur=0;
-  c.fillStyle='rgba(0,40,20,0.35)';c.beginPath();c.arc(cx,cy,68,0,6.28);c.fill();
-  c.strokeStyle='rgba(0,200,100,0.5)';c.lineWidth=1.5;c.beginPath();c.arc(cx,cy,26,0,6.28);c.stroke();c.fillStyle='rgba(0,80,40,0.5)';c.beginPath();c.arc(cx,cy,26,0,6.28);c.fill();
-  for(let i=0;i<12;i++){const t=i/12*6.28,hx=cx+Math.cos(t)*14,hy=cy-22+i*3.6;_C(c,hx,hy,2.5,i%2?'#00ff88':'#00ddbb');if(i<11)_L(c,hx,hy,cx+Math.cos((i+1)/12*6.28)*14,cy-22+(i+1)*3.6,'rgba(0,180,100,0.4)',1);}
-  [[240,60],[282,90],[202,172],[98,162],[58,78],[302,142]].forEach(([vx,vy])=>{
-    _C(c,vx,vy,7,'rgba(255,34,0,0.15)');c.strokeStyle='rgba(255,34,0,0.65)';c.lineWidth=1;c.beginPath();c.arc(vx,vy,7,0,6.28);c.stroke();
-    for(let s=0;s<6;s++){const sa=s*Math.PI/3;_L(c,vx+Math.cos(sa)*7,vy+Math.sin(sa)*7,vx+Math.cos(sa)*12,vy+Math.sin(sa)*12,'rgba(255,34,0,0.5)',1);}
-  });
-  _SC(c);
-},
 
 'last-transmission':(c)=>{
   _F(c,0,0,320,200,'#050810');
@@ -919,18 +842,6 @@ const DRAW={
   _SC(c);
 },
 
-'hacker':(c)=>{
-  _F(c,0,0,320,200,'#000000');
-  const lines=['01001000 41 4B 45 52','> BREACH DETECTED...','DECRYPTING AES-256...','[####......] 42%','> ROOT ACCESS: OK','FIREWALL: BYPASSED','DOWNLOADING...........','> sudo rm -rf /logs','TRACE ROUTE: BOUNCE','IDENTITY: MASKED'];
-  lines.forEach((t,i)=>{
-    const alpha=i<2?0.9:i<5?0.7:i<8?0.5:0.3;
-    c.fillStyle=`rgba(0,${i<5?255:180},${i<5?65:50},${alpha})`;
-    c.font=`${i<2?'bold ':''}9px monospace`;c.textAlign='left';c.fillText(t,12,20+i*17);
-  });
-  c.fillStyle='rgba(0,255,65,0.12)';c.fillRect(8,48,114,16);c.strokeStyle='rgba(0,255,65,0.38)';c.lineWidth=1;c.strokeRect(8,48,114,16);
-  _F(c,12,156,8,13,'rgba(0,255,65,0.75)');
-  for(let y=0;y<200;y+=2)_F(c,0,y,320,1,'rgba(0,0,0,0.14)');
-},
 
 'dj':(c)=>{
   _GV(c,0,0,320,200,'#060609','#0a060f');
@@ -950,22 +861,6 @@ const DRAW={
   _SC(c);
 },
 
-'decision-roulette':(c)=>{
-  _GV(c,0,0,320,200,'#0d0010','#180018');
-  const wx=160,wy=108,wr=82;
-  const segs=[['#ff3366','YES'],['#ff6b35','NO'],['#ffd60a','MAYBE'],['#7209b7','HELL YES'],['#3a0ca3','NEVER'],['#4361ee','SURE'],['#4cc9f0','AGAIN?'],['#ff006e','YES!']];
-  segs.forEach(([col,label],i)=>{
-    const a1=i/segs.length*6.28-Math.PI/2,a2=(i+1)/segs.length*6.28-Math.PI/2;
-    c.fillStyle=col+'cc';c.beginPath();c.moveTo(wx,wy);c.arc(wx,wy,wr,a1,a2);c.fill();
-    c.strokeStyle='rgba(0,0,0,0.35)';c.lineWidth=1;c.beginPath();c.moveTo(wx,wy);c.arc(wx,wy,wr,a1,a2);c.stroke();
-    const la=(a1+a2)/2;c.fillStyle='rgba(255,255,255,0.88)';c.font='bold 7px monospace';c.textAlign='center';c.textBaseline='middle';
-    c.fillText(label,wx+Math.cos(la)*wr*.65,wy+Math.sin(la)*wr*.65);
-  });
-  c.strokeStyle='rgba(255,51,102,0.65)';c.lineWidth=3;c.shadowColor='#ff3366';c.shadowBlur=12;c.beginPath();c.arc(wx,wy,wr,0,6.28);c.stroke();c.shadowBlur=0;
-  _C(c,wx,wy,11,'#0d0010');c.strokeStyle='#ff3366';c.lineWidth=2;c.beginPath();c.arc(wx,wy,11,0,6.28);c.stroke();
-  c.fillStyle='#ffffff';c.beginPath();c.moveTo(wx,wy-wr-13);c.lineTo(wx-8,wy-wr+4);c.lineTo(wx+8,wy-wr+4);c.fill();
-  _SC(c);
-},
 
 'case-board':(c)=>{
   _GV(c,0,0,320,200,'#2a1a08','#1e1206');
@@ -991,10 +886,6 @@ const DRAW={
   _SC(c);
 },
 
-'nothing':(c)=>{
-  _F(c,0,0,320,200,'#f0f0f0');
-  c.fillStyle='rgba(180,180,180,0.5)';c.font='12px monospace';c.textAlign='center';c.textBaseline='middle';c.fillText('nothing.',160,100);
-},
 
 'barrier':(c)=>{
   // a runway into the distance: two gates (×3 good, −8 bad) and a numbered wall, a crowd surging forward

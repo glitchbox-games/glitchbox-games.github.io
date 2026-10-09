@@ -2593,7 +2593,7 @@ if(location.hash==='#tokencheck'){
     // guest limits first: no tokens, no daily, no specials, no favorites
     currentUser=null; wipe(); setTokens(0);
     const paidG=GAMES.find(g=>g.price);
-    rewardPlay('nothing.html','Nothing');
+    rewardPlay('dj.html','DJ');
     ok('guest earns nothing for playing', tokens()===0);
     claimDaily();
     ok('guest cannot claim the daily', tokens()===0 && dailyInfo().ready);
@@ -2601,8 +2601,8 @@ if(location.hash==='#tokencheck'){
     ok('guest cannot buy a special game', buyGame(paidG.file)===false && tokens()===paidG.price);
     jsonSet(TOK.own,[paidG.file]);
     ok('special games stay locked for guests', isLocked(paidG));
-    localStorage.setItem(FAV_KEY,JSON.stringify(['nothing.html']));
-    ok('guests have no favorites', !isFav('nothing.html'));
+    localStorage.setItem(FAV_KEY,JSON.stringify(['dj.html']));
+    ok('guests have no favorites', !isFav('dj.html'));
     closeAuth();
     currentUser={ sub:'tokencheck', name:'Test', email:'test@example.com' };   // the wallet tests run signed in
 
@@ -2685,12 +2685,12 @@ if(location.hash==='#tokencheck'){
     ok('a gap resets the streak', dailyInfo().streak===1);
 
     wipe(); setTokens(0);
-    rewardPlay('nothing.html','Nothing');
+    rewardPlay('dj.html','DJ');
     ok('first play pays the bonus', tokens()===FIRST_PLAY);
-    rewardPlay('nothing.html','Nothing');
+    rewardPlay('dj.html','DJ');
     ok('replay is on cooldown', tokens()===FIRST_PLAY);
-    const ts=jsonGet(TOK.ts,{}); ts['nothing.html']=Date.now()-REPLAY_COOL-1000; jsonSet(TOK.ts,ts);
-    rewardPlay('nothing.html','Nothing');
+    const ts=jsonGet(TOK.ts,{}); ts['dj.html']=Date.now()-REPLAY_COOL-1000; jsonSet(TOK.ts,ts);
+    rewardPlay('dj.html','DJ');
     ok('replay pays once past cooldown', tokens()===FIRST_PLAY+REPLAY);
     ok('play toasts are queued for the hub', jsonGet(TOK.queue,[]).length===2);
 
@@ -2776,7 +2776,7 @@ window.addEventListener('load', initGoogleAuth);
 // switched off, not "Nothing"), sent through the normal play flow so the reward,
 // the terms gate and the page transition all still apply.
 function surpriseMe(btn){
-  const pool = GAMES.filter(g => !isLocked(g) && !isOff(g.file) && g.file !== 'nothing.html');
+  const pool = GAMES.filter(g => !isLocked(g) && !isOff(g.file));
   if(!pool.length) return;
   const g = pool[Math.floor(Math.random() * pool.length)];
   btn.classList.remove('rolling'); void btn.offsetWidth; btn.classList.add('rolling');
