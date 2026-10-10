@@ -288,7 +288,7 @@ function newPhone(job){
     sc:{},conn:{},part:{},faults:job.faults.map(k=>({k,paid:true})),
     spots:job.spots.map(s=>({x:s[0],y:s[1],left:1})),lint:job.faults.includes('lint')?1:0,
     segs:Object.fromEntries(SIDES.map(s=>[s,Array(NSEG[s]).fill(0)])),gap:false,snag:false,tore:false,alc:false,gasket:false,opened:false,
-    known:{},meas:{},notes:[],tested:false,portSuspect:false,caused:0,cracks:null,gone:false,said:{}};
+    grime:1,dust:1,smudge:Array.from({length:7},(_,i)=>{const r=rngOf(job.crack+i*31);return[12+r()*76,20+r()*150,6+r()*10,4+r()*6,r()*3]}),known:{},meas:{},notes:[],tested:false,portSuspect:false,caused:0,cracks:null,gone:false,said:{}};
   for(const h of HOLES)P.sc[h.id]=h.part==='case'&&!m.caseScrews?null:Object.assign(holeSpec(h,job.model),{from:P.uid+':'+h.id});
   for(const c of CONN_IDS)P.conn[c]=true;
   for(const t of PART_IDS)P.part[t]={model:job.model,bad:null,orig:true};
@@ -469,7 +469,7 @@ function removePart(t,bent){
   if(bent&&!item.bad){item.bad='battery'}
   if(bent){fx('smoke',50,118);msg('The cell folded as it came free. It\'s hissing faintly.','bad')}
   C.inv.push(item);
-  P.part[t]=null;if(t==='battery')P.alc=false;
+  P.part[t]=null;if(t==='battery')P.alc=false;if(t==='port')P.lint=0;   // the lint leaves with the old port
   for(const c of CONN_IDS)if(CONNS[c].part===t)P.conn[c]=false;
   if(SEL&&!C.inv.some(i=>i.id===SEL))SEL=null;
   sfx('pop');UI();return true;
@@ -507,7 +507,9 @@ function spend(c){if(C===S)S.daySpend+=c;save()}
 function brushDone(i){
   const P=cur;
   if(i===-2){if(!P.open||!P.part.battery)return false;P.alc=true;msg('The alcohol wicks in under the cell.');sfx('click');UI();return true}
-  if(i<0){if(P.lint<=0)return false;P.lint=0;fx('dust',50,P.open?189:194);msg('🧶 A grey wad of pocket lint came out of the port.');sfx('pop')}
+  if(i===-3){fx('dust',50,100);if(P.grime>0){P.grime=0;msg('The glass comes up spotless.')}else msg('Squeaky clean already.');sfx('brush');UI();return true}
+  if(i===-4){fx('dust',50,60);if(P.dust>0){P.dust=0;msg('Years of pocket dust, gone.')}else msg('Nothing left to clean in there.');sfx('brush');UI();return true}
+  if(i<0){fx('dust',50,P.open?189:194);if(P.lint<=0){msg('Nothing comes out — the port is clean.');sfx('brush');return true}P.lint=0;msg('🧶 A grey wad of pocket lint came out of the port.');sfx('pop')}
   else{const s=P.spots[i];if(!s||s.left<=0)return false;s.left=0;fx('dust',s.x,s.y);sfx('click')}
   UI();return true;
 }
@@ -540,6 +542,7 @@ function handBack(){
   const full=P.faults.filter(x=>x.paid).reduce((a,x)=>a+FAULTS[x.k].pay,0);
   const lift=P.opened&&!P.gasket;
   let tip=good&&!lift?Math.round(full*.25*f*(upg('sign')?1.5:1)):0;
+  const shine=P.grime<=0&&w.power;if(shine)tip+=5;
   if(f<=0)pay=Math.round(pay*.85);
   const pen=miss*8+(lift?10:0);
   const total=Math.max(0,pay+tip-pen);
@@ -551,7 +554,7 @@ function handBack(){
   C.cash+=total;P.gone=true;
   C.inv=C.inv.filter(i=>!i.used);SEL=null;
   sfx(good?'cash':'err');
-  return{pay,tip,pen,total,stars,line,good,miss,lift,caused:P.caused,late:f<=0};
+  return{pay,tip,pen,total,stars,line:line+(shine&&good?' And it\'s so clean!':''),good,miss,lift,shine,caused:P.caused,late:f<=0};
 }
 function patience(){return cur.job.pat*(upg('chairs')?1.4:1)}
 
@@ -719,6 +722,8 @@ function press(){
       if(t&&t.k==='spot')HOLD={k:'brush',i:t.i,t:0,need:.6,l};
       else if(t&&(t.k==='port'||t.k==='part'&&t.id==='port'))HOLD={k:'brush',i:-1,t:0,need:.7,l};
       else if(t&&t.k==='part'&&t.id==='battery')HOLD={k:'brush',i:-2,t:0,need:.8,l};
+      else if(t&&!P.open&&(t.k==='phone'||t.k==='screw'))HOLD={k:'brush',i:-3,t:0,need:.9,l};
+      else if(t&&P.open&&(t.k==='part'||t.k==='body'||t.k==='slot'||t.k==='conn'))HOLD={k:'brush',i:-4,t:0,need:.9,l};
       break;
   }
 }
@@ -796,6 +801,8 @@ function drawFront(P,lit){
     for(const pl of P.cracks){ctx.beginPath();pl.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}
     ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1.6;for(const pl of P.cracks.slice(0,3)){ctx.beginPath();pl.slice(0,3).forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}
   }
+  if(P.grime>0&&!lit){ctx.fillStyle='rgba(255,255,255,.045)';for(const m of P.smudge){ctx.beginPath();ctx.ellipse(m[0],m[1],m[2],m[3],m[4],0,6.283);ctx.fill()}
+    ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=.5;for(const m of P.smudge.slice(0,4)){for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(m[0],m[1],m[2]*.3+k*1.2,m[3]*.3+k*1.1,m[4],0,6.283);ctx.stroke()}}}
   ctx.restore();
   // chin: port, speaker grille, case screws
   fillRR(4,186,92,11,4,m.dark);
@@ -921,6 +928,7 @@ function drawInterior(P){
     if(P.lint>0){ctx.fillStyle='#b8b2a6';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(x+6+i*2.4,y+6.5+Math.sin(i*2)*.7,1,0,6.283);ctx.fill()}}
     }
   else slot(R.port,'PORT');
+  if(P.dust>0){ctx.fillStyle='rgba(200,195,185,.35)';for(const m of P.smudge)for(let k=0;k<9;k++)ctx.fillRect((m[0]+k*13.7)%88+6,(m[1]+k*21.3)%186+6,.7,.7)}
   for(const h of HOLES)if(h.part!=='case'&&hostOf(h))drawHole(h);
 }
 function drawPhone(){
@@ -1458,6 +1466,13 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     C.tray=[];P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');C.tray=[];SELSCREW=null;ok(!toggleScrew('b1'),'empty tray → nothing to drive in');buy('kit','pear11');ok(C.tray.length===13,'a screw set has one of every screw');quiet=false;
     C.tray=[];buy('kit','galaxo');ok(C.tray.length===11&&!C.tray.some(s=>s.head==='P'),'Android set has no pentalobes');
     S.upg={mat:1};P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');SELSCREW=null;ok(toggleScrew('b1')&&correct('b1'),'project mat puts the right screw back');quiet=false;S.upg={};
+    // freedom: clean anything, swap parts that aren't broken
+    P=mk(['crack']);quiet=true;ok(brushDone(-1)&&P.lint===0,'brushing a clean port is allowed (no-op)');ok(brushDone(-3)&&P.grime===0,'wiping the glass');quiet=false;
+    P=mk(['speaker']);P.grime=0;r=solve(P);ok(r&&r.good&&r.shine&&/clean/.test(r.line),'a wiped phone earns the clean bonus');
+    P=newPhone(Object.assign(makeJob(rngOf(4),2),{faults:['lint'],model:'pear11',spots:[]}));cur=P;openIt(P);quiet=true;
+    C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');toggleConn('port');toggleScrew('p1');toggleScrew('p2');ok(removePart('port')&&P.caused===0,'a perfectly good port can be pulled anyway');
+    buy('port','pear11');ok(installPart('port'),'…and a new one fitted');ok(P.lint===0,'the lint left with the old port');ok(brushDone(-4)&&P.dust===0,'brushing dust off the board');quiet=false;
+    r=solve(P);ok(r&&r.good,'lint job finished the long way round (new port)');
     // board, water, patience
     C.inv=[];C.cash+=999;P=mk(['board']);r=solve(P);ok(r&&r.good&&P.part.camera&&!P.part.board.orig,'board swap moves the camera over');
     P=newPhone(Object.assign(makeJob(rngOf(3),3),{faults:['water'],spots:[[30,50],[68,46],[48,20]],model:'pixelle'}));cur=P;ok(!works().power,'water = dead');r=solve(P);ok(r&&r.good&&r.pay===75,'water scrubbed, phone lives');
