@@ -25,7 +25,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .side{flex:1;min-width:0}
 .who{display:flex;align-items:center;gap:8px;margin-bottom:4px;font:900 15px Rubik;letter-spacing:.08em;text-shadow:0 2px 0 #000}
 .s1 .who{flex-direction:row-reverse}
-.who .ico{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-size:15px;border:2px solid #000;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.who .ico{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;border:2px solid #000;box-shadow:0 0 0 1px rgba(255,255,255,.25);overflow:hidden;margin:-6px 0 -4px;background:radial-gradient(circle at 50% 35%,var(--c),#111 120%)}
 .who .kd{margin-left:auto;display:flex;gap:3px}.s1 .who .kd{margin-left:0;margin-right:auto}
 .who .kd i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid #000}
 .who .kd i.on{background:var(--red);box-shadow:0 0 6px var(--red)}
@@ -46,13 +46,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .bar.met.full .fl{background:linear-gradient(90deg,#ff6bff,#ffe36b,#6bf0ff,#ff6bff);background-size:300% 100%;animation:shine 1s linear infinite}
 @keyframes shine{to{background-position:300% 0}}
 .stat{margin-top:4px;display:flex;gap:4px;min-height:20px;font-size:14px}.s1 .stat{justify-content:flex-end}
-.stat span{background:rgba(0,0,0,.6);border-radius:5px;padding:0 4px;border:1px solid var(--line)}
+.stat span{background:rgba(0,0,0,.6);border-radius:6px;padding:1px;border:1px solid var(--line);width:24px;height:24px;display:inline-block}
 #clock{width:96px;text-align:center;background:linear-gradient(#1b1b22,#0b0b10);border:2px solid #000;border-radius:0 0 12px 12px;padding:2px 0 6px;box-shadow:0 0 0 1px rgba(255,200,58,.35),0 6px 20px rgba(0,0,0,.6);margin-top:-10px}
 #rndl{font:800 10px Rubik;letter-spacing:.25em;color:var(--gold)}
 #timer{font:400 34px Anton;line-height:1.05;letter-spacing:.04em}
 #timer.low{color:var(--red)}
 #abil{position:absolute;left:18px;bottom:18px;display:flex;gap:10px;align-items:flex-end}
 .ab{position:relative;width:62px;height:62px;border-radius:14px;background:rgba(10,10,14,.8);border:2px solid rgba(255,255,255,.18);display:grid;place-items:center;font-size:28px;overflow:hidden}
+.ab .ic{width:76%;height:76%;display:block}.ab.ult .ic{width:70%;height:70%}
 .ab.ult{width:76px;height:76px;font-size:34px;border-radius:50%}
 .ab .cd{position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.72) var(--p,0%),transparent 0);}
 .ab .cdn{position:absolute;inset:0;display:grid;place-items:center;font:800 18px Rubik;text-shadow:0 2px 4px #000}
@@ -72,6 +73,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 #callout{position:absolute;left:0;right:0;top:15%;text-align:center;font:400 clamp(28px,4.6vw,56px) Anton;letter-spacing:.06em;text-shadow:0 4px 0 #000,0 0 26px currentColor;opacity:0;pointer-events:none}
 #callout.show{animation:callin 1.1s ease-out forwards}
 @keyframes callin{0%{opacity:0;transform:translateY(12px) scale(1.25)}12%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+.port{display:inline-block;width:var(--s);height:var(--s);flex:none;background-repeat:no-repeat;background-size:calc(var(--s) * var(--n)) var(--s);animation:portA 1.37s steps(12) infinite;position:relative;font-style:normal}
+.port.flip{transform:scaleX(-1)}
+.port b{position:absolute;inset:12%;border-radius:50%;background:var(--c);display:grid;place-items:center;font:400 calc(var(--s)*.5) Anton;color:#111;border:2px solid #111}
+@keyframes portA{to{background-position-x:calc(var(--s) * var(--n) * -1)}}
+.isvg{width:100%;height:100%;display:block;overflow:visible}
 #ann.red{color:var(--red)}#ann.gold{color:var(--gold)}
 #sub{position:absolute;left:0;right:0;top:calc(34% + clamp(64px,13vw,150px));text-align:center;font:800 18px Rubik;letter-spacing:.3em;text-shadow:0 2px 0 #000;opacity:0;transition:opacity .3s}
 #mash{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);text-align:center;font:900 18px Rubik;letter-spacing:.12em;text-shadow:0 2px 0 #000}
@@ -132,7 +138,8 @@ input.txt:focus{border-color:var(--gold)}
 .card.sel{border-color:var(--c);box-shadow:0 0 18px var(--c),inset 0 0 18px rgba(255,255,255,.06)}
 .card.opp::after{content:'CPU';position:absolute;top:4px;right:6px;font:900 9px Rubik;letter-spacing:.12em;color:#ff8a8a}
 .card.opp.netopp::after{content:'RIVAL'}
-.card .em{font-size:30px;filter:drop-shadow(0 0 8px var(--c))}
+.card .em{display:flex;justify-content:center;height:64px;margin:-6px 0 0}
+.card .em .port{filter:drop-shadow(0 0 6px var(--c))}
 .card .cn{font:400 18px Anton;letter-spacing:.06em;color:var(--c)}
 .card .lk{position:absolute;inset:0;border-radius:10px;background:rgba(0,0,0,.65);display:grid;place-items:center;font-size:22px}
 .finfo{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
@@ -141,12 +148,14 @@ input.txt:focus{border-color:var(--gold)}
 .sbar{display:flex;align-items:center;gap:8px;font:800 11px Rubik;letter-spacing:.16em;color:var(--dim);margin:3px 0}
 .sbar b{width:92px}.sbar span{flex:1;display:flex;gap:3px}.sbar span i{flex:1;height:8px;border-radius:2px;background:rgba(255,255,255,.1)}.sbar span i.on{background:var(--c)}
 .abl{display:flex;gap:10px;margin-top:9px;align-items:flex-start}
-.abl .ai{width:34px;height:34px;flex:none;border-radius:9px;background:#0b0b10;border:1px solid var(--line);display:grid;place-items:center;font-size:18px;position:relative}
+.abl .ai{width:38px;height:38px;flex:none;border-radius:9px;background:#0b0b10;border:1px solid var(--line);display:grid;place-items:center;font-size:18px;position:relative;padding:3px}
+.abl .ai .port{position:absolute;left:-3px;top:-6px}
 .abl .ai em{position:absolute;bottom:-5px;right:-5px;font:900 9px Rubik;font-style:normal;background:var(--gold);color:#000;border-radius:4px;padding:0 3px}
 .abl .at{font:800 13px Rubik;letter-spacing:.06em}.abl .ad{font:400 12.5px Rubik;color:#c9c3b8;line-height:1.35}
 .seg{display:flex;gap:4px;background:#0b0b10;border:1px solid var(--line);border-radius:10px;padding:3px}
 .seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 4px;font:800 11px Rubik;letter-spacing:.1em;color:var(--dim)}
 .seg button.on{background:var(--gold);color:#000}
+#oppSeg button{display:grid;place-items:center;padding:2px}#oppSeg button .isvg{width:22px;height:22px}#oppSeg button[data-o=random]{display:flex;gap:4px;padding:4px 8px}
 .lbl{font:800 11px Rubik;letter-spacing:.2em;color:var(--dim);margin-top:4px}
 .vsbox{font:400 22px Anton;letter-spacing:.06em;text-align:center;padding:6px;border-radius:10px;background:rgba(0,0,0,.5)}
 .ready{color:#7dff4a}
@@ -165,9 +174,10 @@ input.txt:focus{border-color:var(--gold)}
 .judges div{background:#0b0b10;border:1px solid var(--line);border-radius:10px;padding:6px 10px;font:700 13px Rubik;text-align:center}
 .judges small{display:block;color:var(--dim);font-size:10px;letter-spacing:.16em}
 .lad{display:flex;gap:6px;justify-content:center;margin:14px 0;flex-wrap:wrap}
-.lad div{width:64px;height:76px;border-radius:10px;background:#0b0b10;border:2px solid var(--line);display:grid;place-items:center;font-size:28px;position:relative}
+.lad div{width:76px;height:84px;border-radius:10px;background:#0b0b10;border:2px solid var(--line);display:grid;place-items:center;font-size:28px;position:relative;overflow:hidden}
+.lad div .isvg{width:40px;height:40px}.ttl{display:inline-block;width:1.1em;height:1.1em;vertical-align:-.15em}
 .lad div.done{border-color:#7dff4a;opacity:.6}.lad div.cur{border-color:var(--gold);box-shadow:0 0 16px rgba(255,200,58,.5)}
-.lad div small{position:absolute;bottom:3px;font:900 9px Rubik;letter-spacing:.1em}
+.lad div small{position:absolute;bottom:3px;left:0;right:0;text-align:center;font:900 8px Rubik;letter-spacing:.06em;background:rgba(0,0,0,.65);padding:1px 0}
 .kgrid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;align-items:center}
 .kgrid kbd{font:800 12px Rubik;background:#1d1d24;border:1px solid #3a3a46;border-bottom-width:3px;border-radius:6px;padding:3px 7px;white-space:nowrap;justify-self:end}
 .help h3{margin:14px 0 6px;font:800 12px Rubik;letter-spacing:.24em;color:var(--gold)}
@@ -177,7 +187,7 @@ body.framed #top{top:56px}body.framed #clock{margin-top:0;border-radius:12px}
 body.touch #abil,body.touch #keys{display:none}
 .tb .tcd{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(0,0,0,.75) var(--p,0%),transparent 0);pointer-events:none}
 .tb.rdy{border-color:var(--gold);box-shadow:0 0 12px rgba(255,200,58,.6)}
-.tb .tic{position:relative;font-size:22px}
+.tb .tic{position:relative;width:30px;height:30px;display:block}
 #rotate{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font:800 14px Rubik;letter-spacing:.1em;text-align:center;display:none;pointer-events:none}
 @media (orientation:portrait){body.touch.infight #rotate{display:block}}
 @media (max-height:420px){.finfo .sbar{display:none}.finfo .nick{margin-bottom:2px}.abl .ad{font-size:10.5px;line-height:1.25}.selR .btn{padding:8px 10px}}
@@ -223,7 +233,7 @@ body.touch #abil,body.touch #keys{display:none}
   <div id="keys">WASD move (D = step in) · J jab · K cross · L hook · I uppercut · SPACE block · SHIFT dodge · Q / E abilities · R ultimate · V camera · ESC pause</div>
 </div>
 <div id="floats"></div>
-<div id="rotate">📱↻ TURN YOUR PHONE SIDEWAYS</div>
+<div id="rotate"><span style="display:inline-block;width:40px;height:40px;vertical-align:middle" id="rotIco"></span> TURN YOUR PHONE SIDEWAYS</div>
 <div id="touch" class="hide">
   <div id="stick"><div id="stickBase"></div><div id="stickKnob"></div></div>
   <button class="tb p" data-k="cross" style="right:96px;bottom:150px">CROSS</button>
@@ -355,48 +365,48 @@ const PUNCH={
   upper:{hand:'R',w:.19,a:.11,r:.32,dmg:13,st:12,range:.99,hs:.44,kb:1,  guard:.45,meter:10,gbreak:1,antiDuck:1},
 };
 const FIGHTERS=[
- {id:'blaze',name:'BLAZE',nick:'KID INFERNO',col:'#ff6a1f',em:'🔥',
+ {id:'blaze',name:'BLAZE',nick:'KID INFERNO',col:'#ff6a1f',
   look:{skin:0xb9794f,shorts:0xe0461a,trim:0xffcc33,glove:0xd11f1a,hair:'spikes',hairCol:0xff4a12,glow:0xff5a10},
   size:1,hp:100,pow:1.1,spd:1,reach:1,stats:[4,3,3],
   passive:{name:'Hot Hands',desc:'Every third hit of a combo sets the target on fire.'},
-  q:{name:'Fire Fist',icon:'🔥',cd:9,desc:'Your next 3 punches hit 40% harder and set the target on fire.'},
-  e:{name:'Flame Dash',icon:'☄️',cd:8,desc:'Rocket forward with a flaming straight. Blockable.'},
-  r:{name:'Inferno',icon:'🌋',desc:'A pillar of fire erupts under your opponent after a beat. They have to move or dodge.'}},
- {id:'volt',name:'VOLT',nick:'LIVE WIRE',col:'#3fd4ff',em:'⚡',
+  q:{name:'Fire Fist',cd:9,desc:'Your next 3 punches hit 40% harder and set the target on fire.'},
+  e:{name:'Flame Dash',cd:8,desc:'Rocket forward with a flaming straight. Blockable.'},
+  r:{name:'Inferno',desc:'A pillar of fire erupts under your opponent after a beat. They have to move or dodge.'}},
+ {id:'volt',name:'VOLT',nick:'LIVE WIRE',col:'#3fd4ff',
   look:{skin:0xf0c8a0,shorts:0xffd21f,trim:0x15151a,glove:0x1f6bff,hair:'swept',hairCol:0xffe27a,glow:0x5fdcff},
   size:.97,hp:95,pow:.92,spd:1.12,pspd:1.07,reach:1,stats:[3,5,2],
   passive:{name:'Overclocked',desc:'Moves 12% and punches 7% faster than anyone else.'},
-  q:{name:'Blink',icon:'⚡',cd:7,desc:'Teleport right up to your opponent. Your next punch counts as a counter.'},
-  e:{name:'Shock Jab',icon:'🔌',cd:9,desc:'A long-reach electric jab that stuns for 0.8s. Blocking stops the stun.'},
-  r:{name:'Thunderstrike',icon:'🌩️',desc:'Lightning hits where your opponent stands: big damage and a long stun. Dodge it!'}},
- {id:'titan',name:'TITAN',nick:'THE MOUNTAIN',col:'#9be05a',em:'🗿',
+  q:{name:'Blink',cd:7,desc:'Teleport right up to your opponent. Your next punch counts as a counter.'},
+  e:{name:'Shock Jab',cd:9,desc:'A long-reach electric jab that stuns for 0.8s. Blocking stops the stun.'},
+  r:{name:'Thunderstrike',desc:'Lightning hits where your opponent stands: big damage and a long stun. Dodge it!'}},
+ {id:'titan',name:'TITAN',nick:'THE MOUNTAIN',col:'#9be05a',
   look:{skin:0x5c3a26,shorts:0x3d5a2a,trim:0xd9c27b,glove:0x70757c,hair:'bald',beard:1,hairCol:0x1a1008,glow:0x9be05a},
   size:1.12,hp:135,pow:1.13,spd:.88,pspd:.94,reach:1.06,stats:[5,1,5],
   passive:{name:'Granite Chin',desc:'135 health, and jabs never stagger him.'},
-  q:{name:'Iron Skin',icon:'🛡️',cd:13,desc:'For 4 seconds take half damage and shrug off stagger.'},
-  e:{name:'Ground Pound',icon:'💥',cd:11,desc:'Slam the canvas: a shockwave hits anyone close and throws them back. Dodge it!'},
-  r:{name:'Colossus',icon:'🗿',desc:'Grow huge for 7 seconds: +60% damage, more reach, and nothing staggers you.'}},
- {id:'shade',name:'SHADE',nick:'THE GHOST',col:'#b06bff',em:'👻',
+  q:{name:'Iron Skin',cd:13,desc:'For 4 seconds take half damage and shrug off stagger.'},
+  e:{name:'Ground Pound',cd:11,desc:'Slam the canvas: a shockwave hits anyone close and throws them back. Dodge it!'},
+  r:{name:'Colossus',desc:'Grow huge for 7 seconds: +60% damage, more reach, and nothing staggers you.'}},
+ {id:'shade',name:'SHADE',nick:'THE GHOST',col:'#b06bff',
   look:{skin:0xc9bdd4,shorts:0x4b1f7a,trim:0xb06bff,glove:0x2a1438,hair:'hood',hairCol:0x1c1026,mask:1,glow:0xb06bff},
   size:.98,hp:100,pow:1.04,spd:1.06,reach:1,stats:[3,4,2],
   passive:{name:'Smoke Step',desc:'Dodges recharge twice as fast and give stamina back.'},
-  q:{name:'Phase',icon:'👻',cd:8,desc:'Go intangible for 1.3 seconds. Punches pass straight through you.'},
-  e:{name:'Guard Seal',icon:'⛓️',cd:12,desc:'Chain your opponent\'s gloves: they can\'t block for 3 seconds.'},
-  r:{name:'Thousand Fists',icon:'👊',desc:'A blur of 12 shadow punches. Blocking only stops half of each.'}},
- {id:'frost',name:'FROST',nick:'ICE QUEEN',col:'#9fe6ff',em:'❄️',
+  q:{name:'Phase',cd:8,desc:'Go intangible for 1.3 seconds. Punches pass straight through you.'},
+  e:{name:'Guard Seal',cd:12,desc:'Chain your opponent\'s gloves: they can\'t block for 3 seconds.'},
+  r:{name:'Thousand Fists',desc:'A blur of 12 shadow punches. Blocking only stops half of each.'}},
+ {id:'frost',name:'FROST',nick:'ICE QUEEN',col:'#9fe6ff',
   look:{skin:0xe2bfa5,shorts:0xb9dcf2,trim:0x2f9fe0,glove:0x6fcaf2,hair:'pony',hairCol:0xf2fbff,glow:0x8fe8ff},
   size:.96,hp:100,pow:1,spd:1.02,reach:1,stats:[3,3,3],
   passive:{name:'Frostbite',desc:'Every hit chills the target, slowing them for 1.5 seconds.'},
-  q:{name:'Ice Gauntlet',icon:'🧊',cd:10,desc:'Your next 2 punches freeze the target solid for 0.9 seconds.'},
-  e:{name:'Frost Shield',icon:'❄️',cd:13,desc:'A shell of ice soaks up 25 damage for 4 seconds.'},
-  r:{name:'Absolute Zero',icon:'🌨️',desc:'A freezing blast in front of you. Anyone caught in the cone is frozen for 1.6s.'}},
- {id:'viper',name:'VIPER',nick:'VENOM',col:'#7dff4a',em:'🐍',
+  q:{name:'Ice Gauntlet',cd:10,desc:'Your next 2 punches freeze the target solid for 0.9 seconds.'},
+  e:{name:'Frost Shield',cd:13,desc:'A shell of ice soaks up 25 damage for 4 seconds.'},
+  r:{name:'Absolute Zero',desc:'A freezing blast in front of you. Anyone caught in the cone is frozen for 1.6s.'}},
+ {id:'viper',name:'VIPER',nick:'VENOM',col:'#7dff4a',
   look:{skin:0x9a7a55,shorts:0x1d3a14,trim:0x7dff4a,glove:0x46b318,hair:'mohawk',hairCol:0x2f9d17,glow:0x7dff4a},
   size:1,hp:100,pow:1.04,spd:1.04,reach:1.02,stats:[3,4,3],
   passive:{name:'Toxic',desc:'Hits poison. Every stack burns half a point of health a second.'},
-  q:{name:'Venom Spit',icon:'🐍',cd:6,desc:'Spit poison: 6 damage and 3 poison stacks. Blockable.'},
-  e:{name:'Coil Strike',icon:'🌀',cd:9,desc:'Lunge three metres into a rising uppercut.'},
-  r:{name:'Serpent\'s Kiss',icon:'💚',desc:'For 6 seconds every hit heals you for 60% of its damage.'}},
+  q:{name:'Venom Spit',cd:6,desc:'Spit poison: 6 damage and 3 poison stacks. Blockable.'},
+  e:{name:'Coil Strike',cd:9,desc:'Lunge three metres into a rising uppercut.'},
+  r:{name:'Serpent\'s Kiss',desc:'For 6 seconds every hit heals you for 60% of its damage.'}},
 ];
 const FBY=Object.fromEntries(FIGHTERS.map(f=>[f.id,f]));
 const DIFF={
@@ -1391,6 +1401,97 @@ function decision(){
   return {w,how,rnd:ROUNDS,tl:0,tot};
 }
 
+
+// ════════════════════ ANIMATED ICONS (SVG/SMIL) + LIVE FIGHTER PORTRAITS ════════════════════
+// Every icon is a small cartoon drawing with a black outline (matching the fighters) that animates on its own.
+const K='#111';
+const AT=(type,values,dur,extra='')=>`<animateTransform attributeName="transform" type="${type}" values="${values}" dur="${dur}s" repeatCount="indefinite" additive="sum" ${extra}/>`;
+const AO=(values,dur,begin=0)=>`<animate attributeName="opacity" values="${values}" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>`;
+const SVG=(inner)=>`<svg class="isvg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" stroke-linejoin="round" stroke-linecap="round">${inner}</svg>`;
+const GLOVE=(c,x=0,y=0,s=1)=>`<g transform="translate(${x} ${y}) scale(${s})"><path d="M14 33c-5 0-7-3-7-6s3-6 7-5" fill="${c}" stroke="${K}" stroke-width="2.6"/><path d="M13 21c0-7 5-12 12-12h2c7 0 11 5 11 12v5c0 7-5 11-11 11h-8c-4 0-6-3-6-7z" fill="${c}" stroke="${K}" stroke-width="2.6"/><rect x="16" y="35" width="18" height="8" rx="2" fill="#f4f1ea" stroke="${K}" stroke-width="2.6"/><path d="M20 15h9" stroke="#fff" stroke-opacity=".6" stroke-width="3"/></g>`;
+const FLAME=(x,y,s,c1='#ff7a1a',c2='#ffd23a',dur=.45,delay=0)=>`<g transform="translate(${x} ${y}) scale(${s})"><g>${AT('scale','1 1;1.1 .88;.92 1.12;1 1',dur,`begin="${delay}s"`)}<path d="M0 0c-9 0-13-6-13-12 0-7 6-10 6-17 4 3 5 7 5 9 2-5 5-9 4-15 7 6 11 13 11 22 0 7-5 13-13 13z" fill="${c1}" stroke="${K}" stroke-width="${2.6/s}"/><path d="M0-3c-4 0-6-3-6-6 0-3 3-5 3-8 3 3 4 4 4 6 1-2 2-4 2-6 3 3 4 6 4 9 0 3-3 5-7 5z" fill="${c2}"/></g></g>`;
+const BOLT=(c='#ffe14a',x=0,y=0,s=1)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M27 3 11 27h11l-4 18 19-26H25z" fill="${c}" stroke="${K}" stroke-width="${2.6/s}"/>`;
+const FLAKE=(c='#bff0ff',x=24,y=24,s=1,spin=4)=>`<g transform="translate(${x} ${y}) scale(${s})"><g>${spin?AT('rotate','0;360',spin):''}${[0,60,120].map(a=>`<g transform="rotate(${a})"><path d="M0-17V17M0-11l-5-5M0-11l5-5M0 11l-5 5M0 11l5 5" stroke="${K}" stroke-width="${7/s}"/><path d="M0-17V17M0-11l-5-5M0-11l5-5M0 11l-5 5M0 11l5 5" stroke="${c}" stroke-width="${3.4/s}"/></g>`).join('')}</g></g>`;
+const DROP=(c='#7dff4a',x=24,y=24,s=1)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0-15C6-6 10-1 10 5a10 10 0 0 1-20 0c0-6 4-11 10-20z" fill="${c}" stroke="${K}" stroke-width="${2.6/s}"/>`;
+const HEART=(c='#ff4d6d',x=24,y=25,s=1)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0 14C-17 3-15-12-6-12c3 0 5 2 6 4 1-2 3-4 6-4 9 0 11 15-6 26z" fill="${c}" stroke="${K}" stroke-width="${2.6/s}"/>`;
+const SHIELD=(c='#9aa6b4',hi='#e8eef5')=>`<path d="M24 5 39 10v12c0 10-7 17-15 21C16 39 9 32 9 22V10z" fill="${c}" stroke="${K}" stroke-width="2.6"/><path d="M24 9v30" stroke="${K}" stroke-opacity=".25" stroke-width="2"/><path d="M14 13 20 11" stroke="${hi}" stroke-width="3"><animate attributeName="stroke-opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite"/></path>`;
+const GHOST=(c='#d9c9ff')=>`<g>${AT('translate','0 2;0 -3;0 2',1.6)}<g>${AO('1;.45;1',1.6)}<path d="M10 40V21a14 14 0 0 1 28 0v19l-5-4-5 4-4-4-4 4-5-4z" fill="${c}" stroke="${K}" stroke-width="2.6"/><ellipse cx="19" cy="22" rx="3" ry="4.5" fill="${K}"/><ellipse cx="29" cy="22" rx="3" ry="4.5" fill="${K}"/></g></g>`;
+const CHAIN=(c='#c26bff')=>`<g>${AT('rotate','-8 24 24;8 24 24;-8 24 24',1.2)}<rect x="5" y="17" width="20" height="13" rx="6.5" fill="none" stroke="${K}" stroke-width="7"/><rect x="5" y="17" width="20" height="13" rx="6.5" fill="none" stroke="${c}" stroke-width="3.4"/><rect x="23" y="17" width="20" height="13" rx="6.5" fill="none" stroke="${K}" stroke-width="7"/><rect x="23" y="17" width="20" height="13" rx="6.5" fill="none" stroke="${c}" stroke-width="3.4"/></g>`;
+const STARS=()=>`<g transform="translate(24 24)"><g>${AT('rotate','0;360',1.4)}${[0,120,240].map(a=>`<path transform="rotate(${a}) translate(13 0) scale(.55)" d="M0-11 3-3 11-3 5 2 7 10 0 5-7 10-5 2-11-3-3-3z" fill="#ffe14a" stroke="${K}" stroke-width="3.5"/>`).join('')}</g></g>`;
+const ICONS={
+  firefist:()=>SVG(FLAME(15,20,.45,'#ff7a1a','#ffd23a',.4)+FLAME(36,20,.42,'#ff7a1a','#ffd23a',.42,.2)+`<g>${AT('translate','0 0;0 -1.5;0 0',.4)}${GLOVE('#e2321e',2,4,.88)}</g>`+FLAME(25,15,.5,'#ff7a1a','#ffd23a',.5,.1)),
+  comet:()=>SVG(`<g>${AT('translate','-3 0;3 0;-3 0',.5)}<path d="M4 18h14M2 25h16M6 32h12" stroke="#ffb02e" stroke-width="3.5">${'<animate attributeName="stroke-dashoffset" values="0;-14" dur=".35s" repeatCount="indefinite"/>'}</path><path d="M4 18h14M2 25h16M6 32h12" stroke="${K}" stroke-width="1" stroke-dasharray="6 8" opacity=".5"/><circle cx="30" cy="25" r="11" fill="#ff7a1a" stroke="${K}" stroke-width="2.6"/><circle cx="32" cy="23" r="5" fill="#ffd23a"/></g>`),
+  inferno:()=>SVG(FLAME(12,44,.55,'#ff5a14','#ffb02e',.5,.15)+FLAME(36,44,.55,'#ff5a14','#ffb02e',.45,.3)+FLAME(24,45,1.05,'#ff7a1a','#ffd23a',.55)),
+  blink:()=>SVG(`<g opacity=".45">${AT('translate','-9 0;-6 0;-9 0',.5)}${BOLT('#8fe8ff')}</g><g>${AO('1;.35;1;1',.5)}${BOLT('#ffe14a')}</g>`),
+  shock:()=>SVG(GLOVE('#1f6bff',-2,4,.85)+`<g>${AO('1;0;1;0;1',.6)}<path d="M36 10l5-4-2 7 6-2-6 8" fill="none" stroke="${K}" stroke-width="5"/><path d="M36 10l5-4-2 7 6-2-6 8" fill="none" stroke="#ffe14a" stroke-width="2.4"/></g><g>${AO('0;1;0;1;0',.6)}<path d="M38 26l7 1-5 4 6 3" fill="none" stroke="${K}" stroke-width="5"/><path d="M38 26l7 1-5 4 6 3" fill="none" stroke="#8fe8ff" stroke-width="2.4"/></g>`),
+  thunder:()=>SVG(`<g>${AO('1;1;0;1;1;1',.9)}${BOLT('#ffe14a',8,14,.7)}</g><path d="M11 22a7 7 0 0 1 2-13 10 10 0 0 1 19-2 8 8 0 0 1 6 15z" fill="#7d8aa6" stroke="${K}" stroke-width="2.6"/><path d="M15 12a8 8 0 0 1 14-4" fill="none" stroke="#c3cbe0" stroke-width="2.6"/>`),
+  iron:()=>SVG(SHIELD()),
+  pound:()=>SVG(`<g>${AT('translate','0 -6;0 2;0 2;0 -6',.9)}${GLOVE('#70757c',8,-8,.66)}</g><ellipse cx="24" cy="42" rx="4" ry="1.5" fill="none" stroke="#ffd27a" stroke-width="2.5"><animate attributeName="rx" values="4;21" dur=".9s" repeatCount="indefinite"/><animate attributeName="ry" values="1.5;5" dur=".9s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur=".9s" repeatCount="indefinite"/></ellipse>`),
+  colossus:()=>SVG(`<g>${AT('scale','.92;1.06;.92',1.1)}<g transform="translate(-1 0)">${GLOVE('#70757c',6,6,.8)}</g></g><g>${AT('translate','0 4;0 -4',.8)}${AO('0;1;0',.8)}<path d="M38 18l5-6 5 6" fill="none" stroke="${K}" stroke-width="5"/><path d="M38 18l5-6 5 6" fill="none" stroke="#9be05a" stroke-width="2.4"/></g>`),
+  phase:()=>SVG(GHOST()),
+  seal:()=>SVG(CHAIN()),
+  fists:()=>SVG([0,1,2].map(i=>`<g>${AT('translate',`0 0;${6} 0;0 0`,.36,`begin="${i*.12}s"`)}${GLOVE(['#7a3aff','#b06bff','#2a1438'][i],-4+i*6,-6+i*8,.55)}</g>`).join('')),
+  icefist:()=>SVG(GLOVE('#6fcaf2',1,3,.88)+`<g>${AO('0;1;0',.9)}${FLAKE('#ffffff',36,12,.42,0)}</g><g>${AO('1;0;1',.9)}${FLAKE('#bff0ff',12,12,.34,0)}</g>`),
+  frostshield:()=>SVG(`<path d="M24 4 41 14v20L24 44 7 34V14z" fill="#9fe6ff" fill-opacity=".55" stroke="${K}" stroke-width="2.6"/><path d="M24 4 41 14v20L24 44 7 34V14z" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="10 60"><animate attributeName="stroke-dashoffset" values="0;-70" dur="1.4s" repeatCount="indefinite"/></path>`+FLAKE('#ffffff',24,24,.45,6)),
+  zero:()=>SVG(FLAKE('#bff0ff',24,24,1,4)),
+  spit:()=>SVG(`<g>${AT('translate','0 -6;0 10',.8)}${AO('1;1;0',.8)}${DROP('#7dff4a',24,20,.75)}</g><ellipse cx="24" cy="41" rx="3" ry="1" fill="#46b318" stroke="${K}" stroke-width="1.6"><animate attributeName="rx" values="2;10;2" dur=".8s" repeatCount="indefinite"/></ellipse>`),
+  coil:()=>SVG(`<g>${AT('rotate','0 24 24;360 24 24',1.1)}<path d="M24 24c0-3 4-3 4 0s-5 6-8 1-1-10 6-10 11 8 7 14-15 9-19 1-1-17 9-18" fill="none" stroke="${K}" stroke-width="6.5"/><path d="M24 24c0-3 4-3 4 0s-5 6-8 1-1-10 6-10 11 8 7 14-15 9-19 1-1-17 9-18" fill="none" stroke="#7dff4a" stroke-width="3"/></g>`),
+  kiss:()=>SVG(`<g transform="translate(24 25)"><g>${AT('scale','1;1.15;1;1.1;1',.9)}${HEART('#4dff7a',0,0,1)}</g></g><g>${AT('translate','0 4;0 -6',.9)}${AO('0;1;0',.9)}<path d="M38 12h6M41 9v6" stroke="${K}" stroke-width="5"/><path d="M38 12h6M41 9v6" stroke="#ffffff" stroke-width="2.4"/></g>`),
+  // status chips
+  burn:()=>SVG(FLAME(24,44,.95)), poison:()=>SVG(`<g>${AT('translate','0 -2;0 2;0 -2',.9)}${DROP('#7dff4a',24,26,1.15)}</g>`),
+  slow:()=>SVG(FLAKE('#bff0ff',24,24,1,7)), stun:()=>SVG(STARS()), freeze:()=>SVG(`<rect x="8" y="8" width="32" height="32" rx="5" fill="#9fe6ff" stroke="${K}" stroke-width="2.6"/><path d="M14 14l8 3M14 22l5 1" stroke="#fff" stroke-width="3">${'<animate attributeName="stroke-opacity" values=".2;1;.2" dur="1.2s" repeatCount="indefinite"/>'}</path>`),
+  sealed:()=>SVG(CHAIN()), ghost:()=>SVG(GHOST()), shield:()=>SVG(SHIELD('#9fe6ff','#ffffff')),
+  grow:()=>SVG(`<g>${AT('translate','0 6;0 -6',.8)}${AO('0;1;0',.8)}<path d="M12 30 24 18l12 12" fill="none" stroke="${K}" stroke-width="8"/><path d="M12 30 24 18l12 12" fill="none" stroke="#9be05a" stroke-width="4"/></g>`),
+  heart:()=>SVG(`<g transform="translate(24 25)"><g>${AT('scale','1;1.15;1',.8)}${HEART('#4dff7a',0,0,1)}</g></g>`),
+  // misc
+  trophy:()=>SVG(`<path d="M15 8h18v8c0 8-4 13-9 13s-9-5-9-13z" fill="#ffc83a" stroke="${K}" stroke-width="2.6"/><path d="M15 11H8c0 7 4 9 8 9M33 11h7c0 7-4 9-8 9" fill="none" stroke="${K}" stroke-width="2.6"/><path d="M24 29v6M16 42h16l-2-7H18z" fill="#ffc83a" stroke="${K}" stroke-width="2.6"/><path d="M19 11v8" stroke="#fff" stroke-width="3"><animate attributeName="stroke-opacity" values="0;.9;0" dur="1.6s" repeatCount="indefinite"/></path>`),
+  check:()=>SVG(`<path d="M10 25l9 9 19-20" fill="none" stroke="${K}" stroke-width="9"/><path d="M10 25l9 9 19-20" fill="none" stroke="#7dff4a" stroke-width="4.5"/>`),
+  random:()=>SVG(`<g>${AT('rotate','-10 24 24;10 24 24;-10 24 24',1.2)}<rect x="9" y="9" width="30" height="30" rx="7" fill="#f4f1ea" stroke="${K}" stroke-width="2.6"/><text x="24" y="33" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-size="24" fill="${K}">?</text></g>`),
+  phone:()=>SVG(`<g>${AT('rotate','0 24 24;90 24 24;90 24 24;0 24 24',2.4)}<rect x="15" y="6" width="18" height="36" rx="4" fill="#20232c" stroke="#f4f1ea" stroke-width="2.6"/><circle cx="24" cy="37" r="1.8" fill="#f4f1ea"/></g>`),
+};
+const ABICON={blaze:{q:'firefist',e:'comet',r:'inferno'},volt:{q:'blink',e:'shock',r:'thunder'},titan:{q:'iron',e:'pound',r:'colossus'},
+  shade:{q:'phase',e:'seal',r:'fists'},frost:{q:'icefist',e:'frostshield',r:'zero'},viper:{q:'spit',e:'coil',r:'kiss'}};
+const ICO=(k)=>(ICONS[k]||ICONS.random)();
+const abIcon=(f,k)=>ICO(ABICON[f.id][k]);
+
+// fighter portraits: each fighter's real 3D model, rendered as a looping 12-frame sprite strip (guard bounce + a jab)
+const PORT={},PN_=12,PS=128;
+function portrait(id,size,flip){
+  const f=FBY[id],u=PORT[id];
+  return `<i class="port${flip?' flip':''}" data-f="${id}" style="--s:${size}px;--n:${PN_};${u?`background-image:url(${u});`:''}--c:${f.col}">${u?'':`<b>${f.name[0]}</b>`}</i>`;
+}
+function makePortraits(){
+  if(!GL||SMOKE)return;
+  let pr;try{pr=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true})}catch(e){return}
+  pr.setPixelRatio(1);pr.setSize(PS,PS,false);pr.setClearColor(0x000000,0);pr.toneMapping=THREE.ACESFilmicToneMapping;
+  const ps=new THREE.Scene();ps.add(new THREE.HemisphereLight(0xe6ecff,0x3a2a2a,1.4));
+  const dl=new THREE.DirectionalLight(0xfff0dc,2.4);dl.position.set(1.5,2.5,2.5);ps.add(dl);const rl=new THREE.DirectionalLight(0x9fb8ff,1.2);rl.position.set(-2,1.8,-1.5);ps.add(rl);
+  const pc=new THREE.PerspectiveCamera(28,1,.05,20);
+  const pb=new Boxer(8);scene.remove(pb.root);ps.add(pb.root);
+  const sheet=document.createElement('canvas');sheet.width=PS*PN_;sheet.height=PS;const sx=sheet.getContext('2d');
+  const sv=OUTLINE_U.uRes.value.clone(),sw=OUTLINE_U.uW.value;OUTLINE_U.uRes.value.set(PS,PS);OUTLINE_U.uW.value=2.4;
+  const loop=2*Math.PI/4.6,dt=loop/PN_;
+  try{for(const f of FIGHTERS){
+    pb.build(f);pb.reset();pb.x=0;pb.z=0;pb.yaw=-.32;pb.act=null;pb.anT=0;pb.override=null;
+    // portrait pose: gloves low at the chest so the face reads, then a quick jab across the frame
+    const V=THREE.Vector3,lowL=new V(-.2,1.27,.3),lowR=new V(.21,1.24,.24),jab=new V(-.04,1.5,.78);
+    pb.override=[lowL.clone(),lowR.clone(),0];
+    for(let i=0;i<120;i++)pb.animate(1/60,null);pb.anT=0;
+    const T=new V().copy(pb.headW).lerp(pb.chestW,.3),ws=pb.worldScale/BODY;
+    pc.position.set(T.x+.3*ws,T.y+.08*ws,T.z+1.2*ws);pc.lookAt(T.x,T.y-.02,T.z);
+    sx.clearRect(0,0,sheet.width,PS);
+    for(let i=0;i<PN_;i++){
+      const j=i>=5&&i<=8?Math.sin((i-5)/3*Math.PI):0;pb.override[0].lerpVectors(lowL,jab,j);
+      for(let k=0;k<4;k++)pb.animate(dt/4,null);
+      pr.render(ps,pc);sx.drawImage(pr.domElement,i*PS,0);
+    }
+    PORT[f.id]=sheet.toDataURL('image/png');pb.override=null;
+  }}catch(e){console.warn('portraits',e)}
+  OUTLINE_U.uRes.value.copy(sv);OUTLINE_U.uW.value=sw;
+  ps.remove(pb.root);pb.mats.forEach(m=>m.dispose());pr.dispose();
+  document.querySelectorAll('.port[data-f]').forEach(el=>{const u=PORT[el.dataset.f];if(u){el.style.backgroundImage=`url(${u})`;el.innerHTML=''}});
+}
+
 // ════════════════════ COMBAT VISUALS ════════════════════
 const CUECOL={jab:0xfff1c8,cross:0xfff1c8,hook:0xffe0a0,upper:0xffe0a0,flamedash:0xff6a1f,inferno:0xff5a10,shock:0x5fdcff,bolt:0x9fe8ff,pound:0xd9c27b,seal:0xc26bff,flurry:0xc78bff,zero:0x9fe6ff,spit:0x7dff4a,coil:0x7dff4a};
 const _hp=new THREE.Vector3(),_hd=new THREE.Vector3();
@@ -1728,19 +1829,19 @@ function updateFloats(dt){for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i];
   const sc=f.t<.12?1.5-f.t*4:1;f.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;f.el.style.opacity=f.t>.6?(.95-f.t)/.35:1}}
 
 function togglePause(force){if(G.mode!=='fight')return;const on=force!=null?force:!$('pauseOv').classList.contains('on');if(on){showOv('pauseOv');if(!G.online)G.paused=true}else{hideOv('pauseOv');hideOv('helpOv');G.paused=false}}
-function renderRec(){$('recLine').textContent=(REC.w||REC.l)?`RECORD ${REC.w}–${REC.l} · ${REC.ko} KOs`+(REC.ladders?` · 🏆 ×${REC.ladders}`:''):''}
+function renderRec(){$('recLine').textContent=(REC.w||REC.l)?`RECORD ${REC.w}–${REC.l} · ${REC.ko} KOs`+(REC.ladders?` · ${REC.ladders}× CHAMPION`:''):''}
 const HUDC={};
 function showHUD(on){
   $('hud').classList.toggle('hide',!on);$('touch').classList.toggle('hide',!(on&&TOUCH));document.body.classList.toggle('infight',!!on);
   if(!on)return;
-  G.B.forEach((b,i)=>{const el=$('hb'+i);el.querySelector('.nm').innerHTML=(b.name||b.f.name).replace(/[<>&]/g,'')+(i===G.ME&&!G.attract?' <span style="color:var(--gold);font-size:.75em">YOU</span>':'');const ic=el.querySelector('.ico');ic.textContent=b.f.em;ic.style.background=b.f.col;b.trail=b.hp;b._lastHp=b.hp});
-  const me=G.B[G.ME].f;if(TOUCH)['q','e','r'].forEach(k=>{document.querySelector(`#touch [data-k=${k}]`).innerHTML=`<i class="tcd"></i><span class="tic">${me[k].icon}</span>`});$('abQ').querySelector('.ic').textContent=me.q.icon;$('abE').querySelector('.ic').textContent=me.e.icon;$('abR').querySelector('.ic').textContent=me.r.icon;
+  G.B.forEach((b,i)=>{const el=$('hb'+i);el.querySelector('.nm').innerHTML=(b.name||b.f.name).replace(/[<>&]/g,'')+(i===G.ME&&!G.attract?' <span style="color:var(--gold);font-size:.75em">YOU</span>':'');const ic=el.querySelector('.ico');ic.innerHTML=portrait(b.f.id,46,i===1);ic.style.setProperty('--c',b.f.col);b.trail=b.hp;b._lastHp=b.hp});
+  const me=G.B[G.ME].f;if(TOUCH)['q','e','r'].forEach(k=>{document.querySelector(`#touch [data-k=${k}]`).innerHTML=`<i class="tcd"></i><span class="tic">${abIcon(me,k)}</span>`});$('abQ').querySelector('.ic').innerHTML=abIcon(me,'q');$('abE').querySelector('.ic').innerHTML=abIcon(me,'e');$('abR').querySelector('.ic').innerHTML=abIcon(me,'r');
   ['abQ','abE','abR'].forEach((id,i)=>$(id).title=[me.q,me.e,me.r][i].name);
   $('keys').style.opacity=1;G.keysT=14;$('mashKeys').textContent=TOUCH?'PUNCH':'J / K';
   for(const k in HUDC)delete HUDC[k];
 }
 const setC=(key,el,prop,val)=>{if(HUDC[key]!==val){HUDC[key]=val;if(prop==='text')el.textContent=val;else if(prop==='html')el.innerHTML=val;else if(prop.startsWith('--'))el.style.setProperty(prop,val);else el.style[prop]=val}};
-const STATUS_ICONS=[['burn','🔥'],['poison','☠️'],['slow','🐌'],['stun','💫'],['freeze','🧊'],['sealed','⛓️'],['phase','👻'],['iron','🛡️'],['colossus','🗿'],['firefist','✊'],['icefist','🧤'],['shield','❄️'],['drain','💚']];
+const STATUS_ICONS=[['burn','burn'],['poison','poison'],['slow','slow'],['stun','stun'],['freeze','freeze'],['sealed','sealed'],['phase','ghost'],['iron','iron'],['colossus','grow'],['firefist','firefist'],['icefist','icefist'],['shield','shield'],['drain','heart']];
 function updateHUD(dt){
   if($('hud').classList.contains('hide'))return;
   G.B.forEach((b,i)=>{const el=$('hb'+i);
@@ -1750,7 +1851,7 @@ function updateHUD(dt){
     setC('st'+i,el.querySelector('.sta .fl'),'transform',`scaleX(${(b.sta/100).toFixed(3)})`);const gas=b.sta<20;if(HUDC['gas'+i]!==gas){HUDC['gas'+i]=gas;el.querySelector('.bar.sta').classList.toggle('gas',gas)}
     setC('m'+i,el.querySelector('.met .fl'),'transform',`scaleX(${(b.meter/100).toFixed(3)})`);const full=b.meter>=100;if(HUDC['mf'+i]!==full){HUDC['mf'+i]=full;el.querySelector('.bar.met').classList.toggle('full',full)}
     const kds=el.querySelectorAll('.kd i');kds.forEach((k,j)=>{const on=j<b.kd;if(HUDC['kd'+i+j]!==on){HUDC['kd'+i+j]=on;k.classList.toggle('on',on)}});
-    setC('sx'+i,el.querySelector('.stat'),'html',STATUS_ICONS.filter(([k])=>b.fxBits&FX[k]).map(([,e])=>'<span>'+e+'</span>').join(''));
+    setC('sx'+i,el.querySelector('.stat'),'html',STATUS_ICONS.filter(([k])=>b.fxBits&FX[k]).map(([k,ic])=>'<span title="'+k+'">'+ICO(ic)+'</span>').join(''));
   });
   const t=Math.max(0,Math.ceil(G.tl));setC('tm',$('timer'),'text',G.bag?'∞':Math.floor(t/60)+':'+String(t%60).padStart(2,'0'));
   const lowT=t<=10&&G.phase==='fight'&&!G.bag;if(HUDC.lowT!==lowT){HUDC.lowT=lowT;$('timer').classList.toggle('low',lowT)}
@@ -1782,18 +1883,18 @@ function openSelect(mode){
 }
 function fighterInfo(f){
   const bars=['POWER','SPEED','TOUGHNESS'].map((n,i)=>`<div class="sbar"><b>${n}</b><span>${[0,1,2,3,4].map(j=>`<i class="${j<f.stats[i]?'on':''}"></i>`).join('')}</span></div>`).join('');
-  const ab=(k,o)=>`<div class="abl"><div class="ai">${o.icon||'★'}<em>${k}</em></div><div><div class="at">${o.name}${o.cd?` <span style="color:var(--dim);font-weight:600">· ${o.cd}s</span>`:''}</div><div class="ad">${o.desc}</div></div></div>`;
+  const ab=(k,o)=>`<div class="abl"><div class="ai">${o.html}<em>${k}</em></div><div><div class="at">${o.name}${o.cd?` <span style="color:var(--dim);font-weight:600">· ${o.cd}s</span>`:''}</div><div class="ad">${o.desc}</div></div></div>`;
   return `<div style="--c:${f.col}"><div class="fn" style="color:${f.col}">${f.name}</div><div class="nick">“${f.nick}”</div>${bars}
-    ${ab('PASSIVE',{icon:f.em,name:f.passive.name,desc:f.passive.desc})}${ab('Q',f.q)}${ab('E',f.e)}${ab('R',{icon:f.r.icon,name:f.r.name+' — ULTIMATE',desc:f.r.desc})}</div>`;
+    ${ab('PASSIVE',{html:portrait(f.id,44),name:f.passive.name,desc:f.passive.desc})}${ab('Q',Object.assign({html:abIcon(f,'q')},f.q))}${ab('E',Object.assign({html:abIcon(f,'e')},f.e))}${ab('R',{html:abIcon(f,'r'),name:f.r.name+' — ULTIMATE',desc:f.r.desc})}</div>`;
 }
 function renderSelect(){
   const on=SEL.mode==='online';
   $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':'CHOOSE YOUR FIGHTER';
   $('grid').innerHTML=FIGHTERS.map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
-    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${f.em}</div><div class="cn">${f.name}</div>${SEL.mode==='ladder'&&REC.champ[f.id]?'<div style="position:absolute;top:3px;left:6px">🏆</div>':''}</button>`}).join('');
+    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.name}</div>${SEL.mode==='ladder'&&REC.champ[f.id]?'<div style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
   $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);
   $('oppBox').classList.toggle('hide',SEL.mode!=='quick');
-  $('oppSeg').innerHTML=`<button data-o="random" class="${SEL.opp==='random'?'on':''}">🎲 RANDOM</button>`+FIGHTERS.map(f=>`<button data-o="${f.id}" class="${SEL.opp===f.id?'on':''}" title="${f.name}">${f.em}</button>`).join('');
+  $('oppSeg').innerHTML=`<button data-o="random" class="${SEL.opp==='random'?'on':''}"><span style="width:20px;height:20px;display:block">${ICO('random')}</span>RANDOM</button>`+FIGHTERS.map(f=>`<button data-o="${f.id}" class="${SEL.opp===f.id?'on':''}" title="${f.name}">${portrait(f.id,30)}</button>`).join('');
   $('diffSeg').innerHTML=Object.entries(DIFF).map(([k,d])=>`<button data-d="${k}" class="${SEL.diff===k?'on':''}">${d.name}</button>`).join('');
   $('netBox').classList.toggle('hide',!on);
   if(on){const peer=NET.peer!=null?`${NET.peer||'RIVAL'}: ${NET.peerPick?FBY[NET.peerPick].name:'choosing…'} <span class="${NET.peerReady?'ready':'notready'}">${NET.peerReady?'READY':'NOT READY'}</span>`:`WAITING FOR A RIVAL…<br><span style="font:700 13px Rubik;color:var(--dim)">TELL THEM THE CODE: <b style="color:var(--gold);font-size:18px;letter-spacing:.2em">${NET.code}</b></span>`;
@@ -1849,8 +1950,8 @@ function showLadder(){
   const L=G.ladder;G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;hideAllOv();showOv('ladOv');showHUD(false);REF.b.root.visible=false;
   const done=L.i>=L.opps.length;
   G.B.forEach(b=>{b.down=false;b.act=null;b.fxBits=0;b.P.fall=0});placePreview([L.f,done?null:L.opps[L.i]]);
-  $('ladBody').innerHTML=`<div class="res" style="font-size:48px">${done?'🏆 CHAMPION':'ARCADE LADDER'}</div><div class="how">${done?FBY[L.f].name+' IS THE UNDISPUTED CHAMPION':'FIGHT '+(L.i+1)+' OF 5'}</div>
-    <div class="lad">${L.opps.map((id,i)=>`<div class="${i<L.i?'done':i===L.i?'cur':''}" style="${i===L.i?'border-color:'+FBY[id].col:''}">${i<L.i?'✔':FBY[id].em}<small>${DIFF[LAD_DIFF[i]].name}</small></div>`).join('')}<div style="border-color:var(--gold)">🏆<small>BELT</small></div></div>
+  $('ladBody').innerHTML=`<div class="res" style="font-size:48px">${done?'<span class="ttl">'+ICO('trophy')+'</span> CHAMPION':'ARCADE LADDER'}</div><div class="how">${done?FBY[L.f].name+' IS THE UNDISPUTED CHAMPION':'FIGHT '+(L.i+1)+' OF 5'}</div>
+    <div class="lad">${L.opps.map((id,i)=>`<div class="${i<L.i?'done':i===L.i?'cur':''}" style="${i===L.i?'border-color:'+FBY[id].col:''}">${i<L.i?ICO('check'):portrait(id,58)}<small>${DIFF[LAD_DIFF[i]].name}</small></div>`).join('')}<div style="border-color:var(--gold)">${ICO('trophy')}<small>BELT</small></div></div>
     ${done?'<p class="dimt" style="text-align:center">Five fights, five wins. The belt is yours — try it with another fighter.</p>':`<p class="dimt" style="text-align:center">Next up: <b style="color:${FBY[L.opps[L.i]].col}">${FBY[L.opps[L.i]].name}</b> — “${FBY[L.opps[L.i]].nick}” (${DIFF[LAD_DIFF[L.i]].name})</p>`}
     <div class="menu">${done?'':'<button class="primary" id="ladGo">FIGHT</button>'}<button id="ladMenu">MAIN MENU</button></div>`;
   if(!done)$('ladGo').onclick=()=>startSolo(L.f,L.opps[L.i],LAD_DIFF[L.i]);
@@ -1886,7 +1987,7 @@ function renderEndButtons(){
   const el=$('endBtns');if(!el||!$('endOv').classList.contains('on'))return;const r=G.result||{};
   let h='';
   if(G.online){h=`<button class="primary" id="eRm">${NET.rm?'WAITING FOR RIVAL…':'REMATCH'}${NET.peerRm&&!NET.rm?' · THEY\'RE IN':''}</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">LEAVE</button>`}
-  else if(G.ladder){const done=G.ladder.i>=G.ladder.opps.length;h=r.w===G.ME?`<button class="primary" id="eNext">${done?'CLAIM THE BELT 🏆':'NEXT FIGHT'}</button>`:`<button class="primary" id="eRetry">TRY AGAIN</button>`;h+=`<button class="ghost" id="eMenu">MAIN MENU</button>`}
+  else if(G.ladder){const done=G.ladder.i>=G.ladder.opps.length;h=r.w===G.ME?`<button class="primary" id="eNext">${done?'CLAIM THE BELT':'NEXT FIGHT'}</button>`:`<button class="primary" id="eRetry">TRY AGAIN</button>`;h+=`<button class="ghost" id="eMenu">MAIN MENU</button>`}
   else h=`<button class="primary" id="eRetry">REMATCH</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   el.innerHTML=h;
   const on=(id,f)=>{const b=$(id);if(b)b.onclick=()=>{SFX.ui();f()}};
@@ -2014,11 +2115,12 @@ function init(){
   setupPost();
   PA=new Particles(2600,THREE.AdditiveBlending);PN=new Particles(1200,THREE.NormalBlending);
   buildArena();G.B=[new Boxer(0),new Boxer(1)];buildRef();
-  setupUI();setupTouch();
+  setupUI();setupTouch();$('rotIco').innerHTML=ICO('phone');
+  setTimeout(()=>{try{makePortraits()}catch(e){console.warn(e)}},60);
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG)window.__HM={V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG)window.__HM={PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();
   const h=new URLSearchParams(HASH.replace(/^#/,'').replace(/-?debug$/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
