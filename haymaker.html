@@ -975,6 +975,7 @@ function updateRef(dt){
   if(d>.05){r.x+=dx/d*sp*dt;r.z+=dz/d*sp*dt}
   r.mvx=dx/(d||1)*sp;r.mvz=dz/(d||1)*sp;
   for(const b of G.B){const ex=r.x-b.x,ez=r.z-b.z,ed=Math.hypot(ex,ez);if(ed<.7&&ed>0){r.x=b.x+ex/ed*.7;r.z=b.z+ez/ed*.7}}
+  r.x=clamp(r.x,-RING,RING);r.z=clamp(r.z,-RING,RING);
   r.yaw+=angWrap(face-r.yaw)*damp(6,dt);
   const c=Math.cos(r.yaw),s=Math.sin(r.yaw);r.mvF=(r.mvx*s+r.mvz*c)/2.6;r.mvS=(r.mvx*c-r.mvz*s)/2.6;
   // arms: hands on hips, counting, or raising the winner
@@ -1994,7 +1995,8 @@ function init(){
   setupUI();setupTouch();
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
-  if(DEBUG)window.__HM={CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
+  if(DEBUG)window.__HM={updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();
   const h=new URLSearchParams(HASH.replace(/^#/,'').replace(/-?debug$/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
