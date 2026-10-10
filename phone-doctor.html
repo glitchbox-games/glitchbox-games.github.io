@@ -5,65 +5,68 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Phone Doctor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="glitchbox-config.js"></script>
 <script src="glitchbox-save.js" data-pos="top-left"></script>
 <style>
-:root{--bg:#10151c;--panel:#1b222c;--panel2:#232c38;--line:#2f3a48;--ink:#e6edf5;--dim:#8c9bb0;--cyan:#39d0ff;--green:#3ddc84;--orange:#ff9f3d;--red:#ff4d5e;--gold:#ffd23f}
+:root{--bg:#0e1319;--panel:#19202a;--panel2:#212a36;--line:#2c3746;--ink:#e6edf5;--dim:#8c9bb0;--cyan:#39d0ff;--green:#3ddc84;--orange:#ff9f3d;--red:#ff4d5e;--gold:#ffd23f}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);overflow:hidden}
 body{font-family:Rubik,system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
 button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none}
 #app{height:100dvh;display:flex;flex-direction:column}
-#top{display:flex;align-items:center;gap:10px;padding:7px 12px 7px 112px;background:#0b0f14;border-bottom:1px solid var(--line);min-height:50px}
-#top .logo{font-weight:800;font-size:18px;letter-spacing:.5px;white-space:nowrap}
+#top{display:flex;align-items:center;gap:10px;padding:7px 12px 7px 112px;background:linear-gradient(#0c1117,#090d12);border-bottom:1px solid var(--line);min-height:52px;box-shadow:0 4px 18px rgba(0,0,0,.35);z-index:2}
+#top .logo{font-weight:800;font-size:18px;letter-spacing:.6px;white-space:nowrap}
 #top .logo b{color:var(--cyan)}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 10px;font-weight:700;font-size:15px;white-space:nowrap}
-.stat.cash{color:var(--green)}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 11px;font-weight:700;font-size:15px;white-space:nowrap}
+.stat.cash{color:var(--green)}.stat.cash.neg{color:var(--red)}
 #top .sp{flex:1}
 .ib{width:38px;height:38px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:18px}
-#main{flex:1;min-height:0;display:grid;grid-template-columns:84px 1fr 310px}
-#tools{display:flex;flex-direction:column;gap:5px;padding:8px 6px;background:#0d1218;border-right:1px solid var(--line);overflow:auto}
-.tool{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px 4px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:22px;line-height:1;position:relative;flex:none}
-.tool small{font-size:10.5px;color:var(--dim);font-weight:500;white-space:nowrap}
+#main{flex:1;min-height:0;display:grid;grid-template-columns:86px 1fr 310px}
+#tools{display:flex;flex-direction:column;gap:5px;padding:8px 7px;background:#0b1015;border-right:1px solid var(--line);overflow:auto}
+.tool{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 4px;border-radius:12px;background:linear-gradient(#1c2430,#171e28);border:1px solid var(--line);line-height:1;position:relative;flex:none;transition:background .15s,border-color .15s}
+.tool svg{width:28px;height:28px;display:block}
+.tool small{font-size:10.5px;color:var(--dim);font-weight:600;white-space:nowrap}
 .tool i{position:absolute;top:3px;right:6px;font-size:9px;font-style:normal;color:#5d6b7d}
-.tool.on{background:#123447;border-color:var(--cyan)}
+.tool:hover{border-color:#3d4b5e}
+.tool.on{background:linear-gradient(#143a50,#102c3d);border-color:var(--cyan)}
 .tool.on small{color:var(--cyan)}
-.tool.act{background:#173322;border-color:#2a6b45}
+.tool.act{background:linear-gradient(#183a27,#132e20);border-color:#2a6b45}
 .tool.act small{color:#9ff0c2}
-#stage{position:relative;min-width:0;min-height:0;overflow:hidden}
-#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:#152c3b}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:4;width:min(92%,520px)}
-.tst{background:rgba(12,17,24,.94);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:500;font-size:15px;text-align:center;animation:tin .25s ease-out;transition:opacity .4s}
+.tst{background:rgba(10,14,20,.92);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:500;font-size:15px;text-align:center;animation:tin .25s ease-out;transition:opacity .4s;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .tst.bad{border-color:var(--red);color:#ffc4ca}.tst.good{border-color:var(--green);color:#c8ffe0}
 @keyframes tin{from{transform:translateY(-8px);opacity:0}}
 #chips{position:absolute;left:8px;right:8px;bottom:8px;display:none;gap:6px;flex-wrap:wrap;justify-content:center;z-index:3;pointer-events:none}
 #chips.on{display:flex}
-.chip{background:rgba(12,17,24,.9);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;display:flex;gap:6px;align-items:center}
+.chip{background:rgba(10,14,20,.9);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;display:flex;gap:6px;align-items:center}
 .chip.me{border-color:var(--cyan)}
 .chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
-#tut{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(94%,560px);background:rgba(13,18,24,.96);border:1px solid #3a4757;border-radius:14px;padding:10px 14px;z-index:3;display:none;font-size:14.5px;line-height:1.45}
+#tut{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(94%,580px);background:rgba(10,14,20,.95);backdrop-filter:blur(6px);border:1px solid #3a4757;border-radius:14px;padding:10px 14px;z-index:3;display:none;font-size:14.5px;line-height:1.45;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 #tut.on{display:block}
 #tut b{color:var(--cyan)}
 #tut .th{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:3px}
 #tut button{font-size:11px;color:var(--dim);text-decoration:underline;letter-spacing:0;text-transform:none}
-#side{background:#0d1218;border-left:1px solid var(--line);overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
-.card h3{margin:0 0 6px;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:6px}
+#side{background:#0b1015;border-left:1px solid var(--line);overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.card{background:linear-gradient(#1a212b,#171d26);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.card h3{margin:0 0 7px;font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:6px}
 #cust{display:flex;gap:10px;align-items:flex-start}
-#cust .face{font-size:40px;line-height:1;width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none}
+#cust .face{font-size:38px;line-height:1;width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.3)}
 #cust .who{font-weight:700;font-size:16px}
-#cust .mdl{display:inline-block;margin-top:2px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--cyan);font-weight:700}
-.said{margin-top:8px;background:#f4f1ea;color:#1d2530;border-radius:12px;padding:8px 10px;font-size:14px;position:relative;line-height:1.35}
+#cust .mdl{display:inline-block;margin-top:3px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--cyan);font-weight:700}
+.said{margin-top:9px;background:#f4f1ea;color:#1d2530;border-radius:12px;padding:8px 10px;font-size:14px;position:relative;line-height:1.35}
 .said:before{content:'';position:absolute;top:-8px;left:20px;border:8px solid transparent;border-top:0;border-bottom-color:#f4f1ea}
-.pat{margin-top:8px;height:8px;border-radius:9px;background:#0d1218;overflow:hidden}
+.pat{margin-top:8px;height:7px;border-radius:9px;background:#0b1015;overflow:hidden}
 .pat div{height:100%;background:var(--green);border-radius:9px;transition:background .3s}
-.patl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:3px}
-.notes{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-family:'JetBrains Mono',ui-monospace,monospace}
-.notes div{background:#0d1218;border:1px solid var(--line);border-radius:8px;padding:5px 8px;color:#bfe9ff;line-height:1.35}
+.patl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:4px}
+.notes{display:flex;flex-direction:column;gap:4px;font-size:12px;font-family:'JetBrains Mono',ui-monospace,monospace}
+.notes div{background:#0b1015;border:1px solid var(--line);border-radius:8px;padding:5px 8px;color:#bfe9ff;line-height:1.35}
 .empty{color:var(--dim);font-size:13px}
 .inv,.tray{display:flex;flex-wrap:wrap;gap:6px}
 .it{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:5px 8px;font-size:12.5px;display:flex;gap:5px;align-items:center}
+.it:hover{border-color:#3d4b5e}
 .it.sel{border-color:var(--cyan);background:#123447}
 .it .old{color:var(--dim);font-size:11px}
 .sc{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px}
@@ -75,20 +78,23 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
 .tabs button.on{color:var(--ink);border-color:var(--cyan)}
 .row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px}
 .row span{flex:1}
-.buy{background:#173322;border:1px solid #2a6b45;color:#9ff0c2;border-radius:8px;padding:4px 10px;font-weight:700;font-size:13px}
+.buy{background:#173322;border:1px solid #2a6b45;color:#9ff0c2;border-radius:8px;padding:4px 10px;font-weight:700;font-size:13px;min-width:52px}
+.buy:hover{background:#1d4029}
 .buy:disabled{opacity:.4}
-.ov{position:fixed;inset:0;background:rgba(5,8,12,.78);display:none;align-items:center;justify-content:center;z-index:20;padding:14px}
+.ov{position:fixed;inset:0;background:rgba(5,8,12,.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:20;padding:14px}
 .ov.on{display:flex}
-.box{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;max-width:520px;width:100%;max-height:92vh;overflow:auto;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.box h1{margin:0;font-size:40px;font-weight:800;letter-spacing:1px}
+.box{background:linear-gradient(#1b222c,#161c25);border:1px solid var(--line);border-radius:20px;padding:22px;max-width:520px;width:100%;max-height:92vh;overflow:auto;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.55);animation:pop .22s ease-out}
+@keyframes pop{from{transform:scale(.96);opacity:0}}
+.box h1{margin:0;font-size:42px;font-weight:800;letter-spacing:1px}
 .box h1 b{color:var(--cyan)}
 .box h2{margin:0 0 8px;font-size:24px}
 .box p,.sub{color:var(--dim);font-size:15px;line-height:1.45;margin:8px 0}
-.big{display:block;width:100%;margin-top:10px;padding:13px;border-radius:14px;background:var(--cyan);color:#06222e;font-weight:800;font-size:18px}
-.big.alt{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
-.big.gr{background:var(--green);color:#052615}
+.big{display:block;width:100%;margin-top:10px;padding:13px;border-radius:14px;background:var(--cyan);color:#06222e;font-weight:800;font-size:18px;box-shadow:0 4px 0 #1b8db3}
+.big:active{transform:translateY(2px);box-shadow:0 2px 0 #1b8db3}
+.big.alt{background:var(--panel2);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.big.gr{background:var(--green);color:#052615;box-shadow:0 4px 0 #23985a}
 .big:disabled{opacity:.45}
-.in{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0d1218;color:var(--ink);font:inherit;font-size:18px;text-align:center;margin-top:8px}
+.in{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0b1015;color:var(--ink);font:inherit;font-size:18px;text-align:center;margin-top:8px}
 .code{font-size:46px;font-weight:800;letter-spacing:10px;color:var(--cyan);margin:6px 0}
 .plist{display:flex;flex-direction:column;gap:6px;margin:10px 0;text-align:left}
 .prow{display:flex;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:15px}
@@ -118,7 +124,8 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
   .stat{font-size:13px;padding:3px 7px}
   #main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto minmax(0,34vh)}
   #tools{flex-direction:row;order:2;border:0;border-top:1px solid var(--line);padding:6px;overflow-x:auto}
-  .tool{min-width:52px;flex:1;font-size:20px}
+  .tool{min-width:54px;flex:1}
+  .tool svg{width:24px;height:24px}
   #stage{order:1}
   #side{order:3;border:0;border-top:1px solid var(--line);padding:8px}
 }
@@ -143,7 +150,6 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
 </div>
 
 <div class="ov on" id="titleOv"><div class="box">
-  <div style="font-size:64px;line-height:1">📱🪛</div>
   <h1>PHONE <b>DOCTOR</b></h1>
   <p>You run a phone repair shop. People bring in broken phones. Work out what's wrong, fix it, and get paid — or break it worse.</p>
   <button class="big" id="playBtn">🔧 Open the shop</button>
@@ -164,10 +170,10 @@ let DEMO=false;
 // caseScrews: pentalobes in the bottom edge (Pear) vs glue-only (Android). tabs: stretch-release battery
 // pull tabs. glue: how readily the screen adhesive cuts (lower = tougher). mah: design capacity.
 const MODELS={
-  pear11:{name:'Pear 11',frame:'#d6dbe1',dark:'#9aa3ad',accent:'#7aa7ff',mult:1,cut:'notch',caseScrews:true,tabs:true,glue:1,mah:3110,batHead:'PH'},
-  galaxo:{name:'Galaxo S7',frame:'#3c74de',dark:'#1d4aa8',accent:'#8db4ff',mult:1.1,cut:'hole',caseScrews:false,tabs:false,glue:.55,mah:3000,batHead:'PH'},
-  pixelle:{name:'Pixelle 5',frame:'#efe9df',dark:'#b9b1a3',accent:'#ff8a3d',mult:.9,cut:'hole',caseScrews:false,tabs:false,glue:.7,mah:2800,batHead:'PH'},
-  pear14:{name:'Pear 14 Pro',frame:'#50555e',dark:'#2b2f36',accent:'#c49bff',mult:1.35,cut:'island',caseScrews:true,tabs:true,glue:.85,mah:3200,batHead:'Y'},
+  pear11:{name:'Pear 11',frame:'#d3d8de',accent:'#6f8cff',accent2:'#ff7ad1',mult:1,cut:'notch',caseScrews:true,tabs:true,glue:1,mah:3110,batHead:'PH',mask:'#0f4a36',mid:'#30343a',code:'A2221'},
+  galaxo:{name:'Galaxo S7',frame:'#3a6fd6',accent:'#3fd1ff',accent2:'#3a4dff',mult:1.1,cut:'hole',caseScrews:false,tabs:false,glue:.55,mah:3000,batHead:'PH',mask:'#13304f',mid:'#2c3139',code:'EB-BG930'},
+  pixelle:{name:'Pixelle 5',frame:'#ece6dc',accent:'#ff9a4a',accent2:'#3ddc84',mult:.9,cut:'hole',caseScrews:false,tabs:false,glue:.7,mah:2800,batHead:'PH',mask:'#1a1c20',mid:'#333438',code:'G020I'},
+  pear14:{name:'Pear 14 Pro',frame:'#4c5159',accent:'#b28cff',accent2:'#ffcf6b',mult:1.35,cut:'island',caseScrews:true,tabs:true,glue:.85,mah:3200,batHead:'Y',mask:'#0d3f2f',mid:'#272a2f',code:'A2866'},
 };
 const MODEL_IDS=Object.keys(MODELS);
 const PARTS={screen:{n:'Screen',e:'📺',cost:40},battery:{n:'Battery',e:'🔋',cost:18},port:{n:'Charge port',e:'🔌',cost:14},
@@ -197,15 +203,29 @@ const UPG=[
   {id:'bulk',e:'📦',n:'Bulk supplier',cost:180,d:'All parts 25% cheaper.'},
   {id:'sign',e:'🪧',n:'Neon shop sign',cost:150,d:'Happy customers tip 50% more.'},
 ];
+const CREDIT=-150;   // the supplier lets you run a tab this deep, so a bad day never locks you out of parts
 const TOOLS=[
-  {id:'driver',e:'🪛',n:'Driver',key:'1'},{id:'heat',e:'🔥',n:'Heat',key:'2'},{id:'suction',e:'🪠',n:'Suction',key:'3'},
-  {id:'pick',e:'🔺',n:'Pick',key:'4'},{id:'hand',e:'✋',n:'Hand',key:'5'},{id:'spudger',e:'🥢',n:'Spudger',key:'6'},
-  {id:'meter',e:'📟',n:'Meter',key:'7'},{id:'brush',e:'🪥',n:'IPA',key:'8'},
+  {id:'driver',n:'Driver',key:'1'},{id:'heat',n:'Heat',key:'2'},{id:'suction',n:'Suction',key:'3'},
+  {id:'pick',n:'Pick',key:'4'},{id:'hand',n:'Hand',key:'5'},{id:'spudger',n:'Spudger',key:'6'},
+  {id:'meter',n:'Meter',key:'7'},{id:'brush',n:'IPA',key:'8'},
 ];
+const ICON={
+  driver:'<svg viewBox="0 0 24 24"><g transform="rotate(45 12 12)"><rect x="9" y="1" width="6" height="9" rx="2" fill="#39d0ff"/><rect x="9.6" y="2.5" width="1" height="6" fill="#1b8db3"/><rect x="11.5" y="2.5" width="1" height="6" fill="#1b8db3"/><rect x="13.4" y="2.5" width="1" height="6" fill="#1b8db3"/><rect x="10.5" y="10" width="3" height="1.6" fill="#9aa3ad"/><rect x="11.2" y="11.6" width="1.6" height="9" fill="#d9dee4"/><path d="M11.2 20.6h1.6l-.8 1.8z" fill="#d9dee4"/></g></svg>',
+  heat:'<svg viewBox="0 0 24 24"><path d="M2 6.5h11.5a3.5 3.5 0 0 1 0 7H9.5l-1.2 7.5H4.6l1.2-7.5H2z" fill="#ff8f3a"/><rect x="2" y="7.5" width="2" height="5" fill="#d96d1c"/><rect x="16.5" y="8" width="4.5" height="4" rx=".8" fill="#9aa3ad"/><path d="M22.2 5.5c-.9 1 .9 1.8 0 2.8M22.2 11.7c-.9 1 .9 1.8 0 2.8" stroke="#ff5a3d" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>',
+  suction:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="18.5" rx="9" ry="3.6" fill="#a7b9cc" opacity=".85"/><path d="M7 18c.4-4 9.6-4 10 0" fill="#cfdbe6"/><rect x="10.6" y="7" width="2.8" height="8" rx="1.2" fill="#d94343"/><path d="M7.5 4.6a4.5 3 0 0 1 9 0" stroke="#d94343" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>',
+  pick:'<svg viewBox="0 0 24 24"><path d="M3 21 21 9 9 3z" fill="#39a8ff" opacity=".9"/><path d="M3 21 21 9 9 3z" fill="none" stroke="#a9dcff" stroke-width="1"/></svg>',
+  hand:'<svg viewBox="0 0 24 24"><path d="M8.5 21.5c-2.2-1.8-4.5-5-4.9-7.1-.2-1 .9-1.6 1.7-.9l2.2 2V5a1.4 1.4 0 0 1 2.8 0v6.5V3.6a1.4 1.4 0 0 1 2.8 0v7.9V4.7a1.4 1.4 0 0 1 2.8 0v7.4V7.4a1.4 1.4 0 0 1 2.8 0v7.4c0 4.2-2.3 6.7-6.3 6.7z" fill="#f2c9a0" stroke="#c99a6e" stroke-width=".8"/></svg>',
+  spudger:'<svg viewBox="0 0 24 24"><path d="M4.5 20.5 17 5l2.6 2.1L7.1 22.6z" fill="#2c3138" stroke="#7d8794" stroke-width=".9"/><path d="M17 5l1.4-2.6 2.8 2.2-1.6 2.5z" fill="#4a5059"/></svg>',
+  meter:'<svg viewBox="0 0 24 24"><rect x="4.5" y="1.5" width="15" height="21" rx="3.2" fill="#f2c230"/><rect x="6.5" y="3.5" width="11" height="17" rx="2" fill="#23262b"/><rect x="8" y="5" width="8" height="4.5" rx=".8" fill="#9be7b4"/><circle cx="12" cy="14.5" r="3" fill="#3a3f46"/><path d="M12 14.5 13.8 12.6" stroke="#e6edf5" stroke-width="1"/></svg>',
+  brush:'<svg viewBox="0 0 24 24"><rect x="9.2" y="1.5" width="5.6" height="11" rx="1.6" fill="#39d0ff"/><rect x="8.6" y="12" width="6.8" height="2" fill="#9aa3ad"/><path d="M8.6 14h6.8l1 7.5H7.6z" fill="#e6edf5"/><path d="M9.6 15v6M11.2 15v6.4M12.8 15v6.4M14.4 15v6" stroke="#b9c0c8" stroke-width=".6"/></svg>',
+  power:'<svg viewBox="0 0 24 24"><path d="M13.5 1.5 4 13.5h7l-1.5 9 9.5-12.5h-7z" fill="#ffd23f" stroke="#c9a00f" stroke-width=".7"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#3ddc84"/><path d="M7 12.5l3.2 3.2L17.2 8.6" stroke="#052615" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  close:'<svg viewBox="0 0 24 24"><rect x="3" y="2" width="11" height="20" rx="2.5" fill="#9aa3ad"/><path d="M13 2.4 21 4.5v15L13 21.6z" fill="#3a6fd6"/><path d="M13 2.4 21 4.5v15L13 21.6z" fill="none" stroke="#a9c4ff" stroke-width=".7"/></svg>',
+};
 const BITS=[['P','P2'],['Y','Y000'],['PH','PH000']];
 const HEAD_NAME={P:'Pentalobe',Y:'Tri-point',PH:'Phillips'};
 
-// ── phone geometry (phone-local units: the body is 100 × 200) ──
+// ── phone geometry (phone-local units: the body is 100 × 200; the bottom edge face shows below it) ──
 const R={board:[10,10,80,60],camera:[14,12,20,20],battery:[14,76,72,84],port:[38,183,24,12],speaker:[70,163,20,16],taptic:[13,163,22,16]};
 // board-to-board connectors. br = bracket screws that cover it. tear = what ripping it out live/plugged breaks.
 const CONNS={
@@ -216,11 +236,12 @@ const CONNS={
   bat:{r:[58,58,18,9],br:['bc1','bc2'],part:'battery',tear:null,zap:null},
 };
 const CONN_IDS=['scr','tch','cam','port','bat'];
-const BRACKETS=[{r:[54,11,24,25],sc:['sc1','sc2']},{r:[55,56,24,13],sc:['bc1','bc2']}];
+const LIFT={scr:[7,-2.5],tch:[7,2.5],cam:[0,5.5],port:[-4,4.5],bat:[0,7]};   // where an unplugged plug flips to
+const BRK={scr:{r:[53,10,31,27],sc:['sc1','sc2']},bat:{r:[49,57,37,10],sc:['bc1','bc2']},cam:{r:[12,10,30,35],sc:['c1']}};
 const SCREEN_X=108;
 // Screw holes. Mixed lengths on purpose: a long screw in a short board hole punches through the board.
 const HOLES=[
-  {id:'b1',x:28,y:193,part:'case',head:'P',len:3.4},{id:'b2',x:72,y:193,part:'case',head:'P',len:3.4},
+  {id:'b1',x:30,y:204.2,part:'case',head:'P',len:3.4},{id:'b2',x:70,y:204.2,part:'case',head:'P',len:3.4},
   {id:'bc1',x:52,y:62,part:'batbr',head:'PH',len:1.3},{id:'bc2',x:82,y:62,part:'batbr',head:'PH',len:1.3},
   {id:'sc1',x:80,y:14,part:'scrbr',head:'PH',len:1.2},{id:'sc2',x:80,y:33,part:'scrbr',head:'PH',len:2.4},
   {id:'c1',x:39,y:14,part:'camera',head:'PH',len:1.6},
@@ -233,6 +254,7 @@ const BOARD_HOLE=h=>['batbr','scrbr','camera','board'].includes(h.part);
 const SPOT_POS=[[30,50],[68,46],[48,20],[88,26],[44,44],[72,50],[62,40],[24,46]];
 const SIDES=['bottom','left','top','right'];
 const NSEG={bottom:4,top:4,left:8,right:8};
+const EDGE_PORT=[41,201.2,18,5.4];
 
 // ═══════════════════════ state ═══════════════════════
 const fresh=()=>({v:2,day:1,cash:150,upg:{},inv:[],tray:[],bit:'PH',rates:[],total:0,best:0,jobIdx:0,dayEarn:0,daySpend:0,seed:1+Math.floor(Math.random()*1e6),
@@ -273,29 +295,33 @@ function makeJob(r,lvl){
 }
 function jobsFor(seed,lvl,n){const r=rngOf(seed);return Array.from({length:n},()=>makeJob(r,lvl))}
 
+// a crack: rays from an impact point, rings around it, and a few loose shards
 function makeCracks(seed,ix,iy){
-  const r=rngOf(seed),out=[];
-  const cx=ix!=null?ix:14+r()*72,cy=iy!=null?iy:30+r()*130;
-  const rays=7+Math.floor(r()*5);
-  for(let i=0;i<rays;i++){
-    let a=i/rays*6.283+r()*.5,x=cx,y=cy;const pts=[[x,y]],len=30+r()*90;
-    for(let d=0;d<len;d+=6+r()*8){a+=(r()-.5)*.5;x+=Math.cos(a)*8;y+=Math.sin(a)*8;if(x<4||x>96||y<4||y>184)break;pts.push([x,y])}
-    out.push(pts);
+  const r=rngOf(seed),rays=[],rings=[],shards=[];
+  const cx=ix!=null?ix:16+r()*68,cy=iy!=null?iy:30+r()*130;
+  const n=8+Math.floor(r()*6);
+  for(let i=0;i<n;i++){
+    let a=i/n*6.283+r()*.45,x=cx,y=cy;const pts=[[x,y]],len=30+r()*110;
+    for(let d=0;d<len;d+=5+r()*7){a+=(r()-.5)*.42;x+=Math.cos(a)*7;y+=Math.sin(a)*7;if(x<5||x>95||y<5||y>195)break;pts.push([x,y]);
+      if(r()<.18){let bx=x,by=y,ba=a+(r()<.5?-1:1)*(.5+r()*.6);const br=[[bx,by]];for(let k=0;k<3;k++){bx+=Math.cos(ba)*5;by+=Math.sin(ba)*5;br.push([bx,by])}rays.push({pts:br,w:.32})}}
+    rays.push({pts,w:.5});
   }
-  for(let k=0;k<2;k++){const rad=5+k*7+r()*3,pts=[];for(let i=0;i<=10;i++){const a=i/10*6.283;pts.push([cx+Math.cos(a)*rad*(.8+r()*.4),cy+Math.sin(a)*rad*(.8+r()*.4)])}out.push(pts)}
-  return out;
+  for(let k=0;k<3;k++){const rad=3+k*5.5+r()*2.5,pts=[];for(let i=0;i<=n;i++){const a=i/n*6.283+r()*.12;pts.push([cx+Math.cos(a)*rad*(.85+r()*.3),cy+Math.sin(a)*rad*(.85+r()*.3)])}rings.push(pts)}
+  for(let i=0;i<7;i++){const a=r()*6.283,d=2+r()*10,s=1.2+r()*2.4,px=cx+Math.cos(a)*d,py=cy+Math.sin(a)*d;shards.push([[px,py],[px+s,py+r()*s],[px+r()*s,py+s]])}
+  return{rays,rings,shards,cx,cy};
 }
 function holeSpec(h,model){if(h.part==='batbr'&&MODELS[model].batHead==='Y')return{head:'Y',len:1.1};return{head:h.head,len:h.len}}
 
 function newPhone(job){
   const m=MODELS[job.model];
   const P={uid:uid(),job,model:job.model,open:false,openT:0,heat:0,hot:0,t:0,boot:0,
-    sc:{},conn:{},part:{},faults:job.faults.map(k=>({k,paid:true})),
+    sc:{},conn:{},connA:{},brA:{scr:1,bat:1,cam:1},part:{},faults:job.faults.map(k=>({k,paid:true})),
     spots:job.spots.map(s=>({x:s[0],y:s[1],left:1})),lint:job.faults.includes('lint')?1:0,
-    segs:Object.fromEntries(SIDES.map(s=>[s,Array(NSEG[s]).fill(0)])),gap:false,snag:false,tore:false,alc:false,gasket:false,opened:false,
-    grime:1,dust:1,smudge:Array.from({length:7},(_,i)=>{const r=rngOf(job.crack+i*31);return[12+r()*76,20+r()*150,6+r()*10,4+r()*6,r()*3]}),known:{},meas:{},notes:[],tested:false,portSuspect:false,caused:0,cracks:null,gone:false,said:{}};
+    segs:Object.fromEntries(SIDES.map(s=>[s,Array(NSEG[s]).fill(0)])),gap:false,cup:false,cupT:0,snag:false,tore:false,alc:false,gasket:false,opened:false,
+    grime:1,dust:1,smudge:Array.from({length:6},(_,i)=>{const r=rngOf(job.crack+i*31);return[14+r()*72,24+r()*150,4+r()*4,6+r()*4,r()*3]}),
+    known:{},meas:{},notes:[],tested:false,portSuspect:false,caused:0,cracks:null,gone:false,said:{}};
   for(const h of HOLES)P.sc[h.id]=h.part==='case'&&!m.caseScrews?null:Object.assign(holeSpec(h,job.model),{from:P.uid+':'+h.id});
-  for(const c of CONN_IDS)P.conn[c]=true;
+  for(const c of CONN_IDS){P.conn[c]=true;P.connA[c]=1}
   for(const t of PART_IDS)P.part[t]={model:job.model,bad:null,orig:true};
   for(const k of job.faults){const p=FAULTS[k].part;if(p)P.part[p].bad=k}
   if(P.part.screen.bad==='crack'){P.cracks=makeCracks(job.crack);P.known.crack=1}
@@ -341,6 +367,7 @@ function partCost(t,model){
   const base=t==='gasket'?3:t==='kit'?6:PARTS[t].cost*MODELS[model].mult;
   return Math.max(1,Math.round(base*(upg('bulk')&&t!=='kit'&&t!=='gasket'?.75:1)));
 }
+const canAfford=c=>C.cash-c>=CREDIT;
 function once(key,txt,kind){const P=cur;if(P.said[key])return;P.said[key]=1;msg(txt,kind)}
 
 // every action returns true when it did something. `quiet` skips the effects (bot / tests).
@@ -353,6 +380,7 @@ function toggleScrew(id){
     P.sc[id]=null;
     if(!quiet&&!upg('mat')&&Math.random()<.1)spawnRoll(h.x,h.y,s);
     else C.tray.push(s);
+    if(!quiet)ANIM_S.push({id,x:h.x,y:h.y,s,dir:'out',t:0});
     sfx('screw');
   }else{
     let t=null;
@@ -361,6 +389,7 @@ function toggleScrew(id){
     if(!t){msg(C.tray.length?'No screw picked up from the tray.':'The screw tray is empty.');sfx('err');return false}
     if(C.bit!==t.head){msg('The '+bitName(C.bit)+' bit doesn\'t fit that screw.');sfx('err');return false}
     C.tray.splice(C.tray.indexOf(t),1);P.sc[id]=t;
+    if(!quiet)ANIM_S.push({id,x:h.x,y:h.y,s:t,dir:'in',t:0});
     if(SELSCREW&&!C.tray.some(x=>skey(x)===SELSCREW))SELSCREW=null;
     const sp=holeSpec(h,P.model);
     if(t.len>sp.len+.31&&BOARD_HOLE(h)&&P.part.board){
@@ -380,10 +409,10 @@ function heatTick(dt){
 }
 const tempC=h=>Math.round(22+h*.75);
 function suctionDone(){
-  const P=cur;if(P.open||P.gap)return false;
+  const P=cur;if(P.open||P.cup)return false;
   if(HOLES.some(h=>h.part==='case'&&hostOf(h)&&P.sc[h.id])){msg('The glass won\'t lift — something holds the bottom edge.');sfx('err');return false}
-  if(P.heat<40){msg('The cup pops off with a thwack. The glue is holding firm.');sfx('err');return false}
-  P.gap=true;sfx('pop');UI();return true;
+  if(!P.gap&&P.heat<40){msg('The cup pops off with a thwack. The glue is holding firm.');sfx('err');return false}
+  P.gap=true;P.cup=true;sfx('pop');UI();return true;
 }
 function cutAt(l,dist){
   const P=cur;if(P.open)return;
@@ -409,22 +438,22 @@ function openUp(){
   if(!P.gap){msg('It won\'t budge.');sfx('err');return false}
   const w=req[mins.indexOf(Math.min(...mins))];
   if(Math.random()<.5){
-    if(!P.cracks)P.cracks=makeCracks(Date.now()%1e6,w==='left'?6:50,w==='top'?10:w==='left'?100:184);
+    if(!P.cracks)P.cracks=makeCracks(Date.now()%1e6,w==='left'?8:50,w==='top'?12:w==='left'?100:186);
     if(addFault('crack')){msg('💥 The glass flexed too far and cracked.','bad');sfx('crack')}
     doOpen();return true;
   }
   msg('It won\'t come apart.');sfx('err');return false;
 }
-function doOpen(){const P=cur;P.open=true;P.opened=true;P.heat=0;P.hot=0;P.gasket=false;if(P.job.faults.includes('water'))P.known.water=1;sfx('pop');UI()}
+function doOpen(){const P=cur;P.open=true;P.opened=true;P.cup=false;P.heat=0;P.hot=0;P.gasket=false;if(P.job.faults.includes('water'))P.known.water=1;sfx('pop');UI()}
 function closeUp(){
   const P=cur;if(!P.open)return false;
   if(!P.part.screen){msg('There\'s no screen to close.');sfx('err');return false}
-  P.open=false;
+  P.open=false;P.cup=false;
   if(P.gasket){for(const s of SIDES)P.segs[s].fill(0);P.gap=false}else{for(const s of SIDES)P.segs[s].fill(1);P.gap=true}
   sfx('pop');UI();return true;
 }
 function zap(k,x,y){
-  const P=cur;fx('spark',x,y);sfx('spark');
+  fx('spark',x,y);sfx('spark');
   addFault(k);
   msg('⚡ A spark jumped off the board.','bad');
 }
@@ -450,8 +479,8 @@ function measure(t){
   if(b)P.known[b]=1;
   P.meas[t]=1;
   P.notes=P.notes.filter(n=>n.t!==t);P.notes.push({t,txt});
-  const r=t==='port'&&!P.open?[40,186,20,10]:t==='screen'?[SCREEN_X+10,60,80,40]:R[t];
-  P.read={txt,x:r[0]+r[2]/2,y:r[1],life:5};
+  const r=t==='port'&&!P.open?EDGE_PORT:t==='screen'?[SCREEN_X+10,60,80,40]:R[t];
+  P.read={txt,x:r[0]+r[2]/2,y:r[1],cx:r[0]+r[2]/2,cy:r[1]+r[3]/2,life:6};
   sfx('beep');UI();return true;
 }
 function removePart(t,bent){
@@ -463,19 +492,20 @@ function removePart(t,bent){
   let tore=false;
   for(const c of cs)if(P.conn[c]){
     P.conn[c]=false;tore=true;
-    if(c==='bat')zap('board',67,62)
+    if(c==='bat')zap('board',67,62);
     else{const k=CONNS[c].tear,pt=CONNS[c].part;if(P.part[pt]&&!P.part[pt].bad){P.part[pt].bad=k;P.faults.push({k,paid:false});P.known[k]=1;P.caused++}}
   }
   if(t==='board'&&P.conn.bat){P.conn.bat=false;tore=true;zap('board',67,62)}
   if(tore&&!quiet){msg('Rrrip — a flex cable tore.','bad');sfx('crack')}
-  if((t==='port'||t==='speaker'||t==='camera'||t==='screen')&&powered())zap('board',R[t==='screen'?'board':t][0]+8,R[t==='screen'?'board':t][1]+6);
+  if((t==='port'||t==='speaker'||t==='camera'||t==='screen')&&powered()){const rr=R[t==='screen'?'board':t];zap('board',rr[0]+8,rr[1]+6)}
   if(t==='board'){for(const id of['bc1','bc2','sc1','sc2'])if(P.sc[id]){C.tray.push(P.sc[id]);P.sc[id]=null}}
   const item={id:uid(),type:t,model:p.model,bad:p.bad,orig:p.orig,used:true};
   if(bent&&!item.bad){item.bad='battery'}
   if(bent){fx('smoke',50,118);msg('The cell folded as it came free. It\'s hissing faintly.','bad')}
   C.inv.push(item);
+  if(!quiet)ANIM_P.push({t,model:p.model,bad:p.bad||(bent?'bent':null),dir:'out',k:0});
   P.part[t]=null;if(t==='battery')P.alc=false;if(t==='port')P.lint=0;   // the lint leaves with the old port
-  for(const c of CONN_IDS)if(CONNS[c].part===t)P.conn[c]=false;
+  for(const c of CONN_IDS)if(CONNS[c].part===t){P.conn[c]=false;P.connA[c]=0}
   if(SEL&&!C.inv.some(i=>i.id===SEL))SEL=null;
   sfx('pop');UI();return true;
 }
@@ -488,8 +518,9 @@ function installPart(t){
   if(it.model!==P.model){msg('Wrong shape — that '+PARTS[t].n.toLowerCase()+' is for a '+MODELS[it.model].name+'.');sfx('err');return false}
   C.inv=C.inv.filter(i=>i!==it);if(SEL===it.id)SEL=null;
   P.part[t]={model:it.model,bad:it.bad,orig:!!it.orig};
-  for(const c of CONN_IDS)if(CONNS[c].part===t)P.conn[c]=false;
-  if(t==='board')for(const c of CONN_IDS)P.conn[c]=false;
+  for(const c of CONN_IDS)if(CONNS[c].part===t){P.conn[c]=false;P.connA[c]=0}
+  if(t==='board')for(const c of CONN_IDS){P.conn[c]=false;P.connA[c]=0}
+  if(!quiet)ANIM_P.push({t,model:it.model,bad:it.bad,dir:'in',k:0});
   sfx('click');UI();return true;
 }
 function applyGasket(it){
@@ -502,7 +533,7 @@ function applyGasket(it){
 }
 function buy(t,model){
   const c=partCost(t,model);
-  if(C.cash<c){msg('Not enough cash.','bad');sfx('err');return false}
+  if(!canAfford(c)){msg('The supplier won\'t put any more on your tab.','bad');sfx('err');return false}
   C.cash-=c;spend(c);
   if(t==='kit'){for(const h of HOLES){if(h.part==='case'&&!MODELS[model].caseScrews)continue;C.tray.push(Object.assign(holeSpec(h,model),{from:null}))}}
   else C.inv.push({id:uid(),type:t,model,bad:null,orig:false,used:false});
@@ -514,13 +545,14 @@ function brushDone(i){
   if(i===-2){if(!P.open||!P.part.battery)return false;P.alc=true;msg('The alcohol wicks in under the cell.');sfx('click');UI();return true}
   if(i===-3){fx('dust',50,100);if(P.grime>0){P.grime=0;msg('The glass comes up spotless.')}else msg('Squeaky clean already.');sfx('brush');UI();return true}
   if(i===-4){fx('dust',50,60);if(P.dust>0){P.dust=0;msg('Years of pocket dust, gone.')}else msg('Nothing left to clean in there.');sfx('brush');UI();return true}
-  if(i<0){fx('dust',50,P.open?189:194);if(P.lint<=0){msg('Nothing comes out — the port is clean.');sfx('brush');return true}P.lint=0;msg('🧶 A grey wad of pocket lint came out of the port.');sfx('pop')}
+  if(i<0){fx('dust',50,P.open?189:204);if(P.lint<=0){msg('Nothing comes out — the port is clean.');sfx('brush');return true}P.lint=0;msg('🧶 A grey wad of pocket lint came out of the port.');sfx('pop')}
   else{const s=P.spots[i];if(!s||s.left<=0)return false;s.left=0;fx('dust',s.x,s.y);sfx('click')}
   UI();return true;
 }
+const BOOT=4.2;
 function runTest(){
   const P=cur,w=works(),p=P.part;
-  P.tested=true;P.boot=w.power?2.2:0;
+  P.tested=true;P.boot=w.power?BOOT:0;
   if(w.power){
     for(const t of['screen','battery','speaker','camera'])if(p[t]&&p[t].bad)P.known[p[t].bad]=1;
     if(!w.charging)P.portSuspect=true;
@@ -540,7 +572,8 @@ function runTest(){
 }
 function handBack(){
   const P=cur;if(!P||P.gone)return null;
-  if(P.open||P.openT>.05){msg('It\'s still open on the bench.');sfx('err');return null}
+  if(P.open){msg('It\'s still open on the bench.');sfx('err');return null}
+  P.openT=0;   // a close animation still playing doesn't count as open
   const w=works(),miss=missingScrews(),f=Math.max(0,1-P.t/patience());
   const un=unfixed(),allWork=Object.values(w).every(Boolean),good=allWork&&!un.length;
   let pay=0;if(w.power)for(const x of P.faults)if(x.paid&&isFixed(x))pay+=FAULTS[x.k].pay;
@@ -553,7 +586,7 @@ function handBack(){
   const total=Math.max(0,pay+tip-pen);
   let stars=good?(f>.4&&!miss?5:f>0&&miss<=1?4:3):pay>0?2:1;
   if(lift)stars=Math.min(stars,good?3:stars);
-  const broke=Object.keys(w).filter(k=>!w[k]).map(k=>k==='glass'?'glass':k);
+  const broke=Object.keys(w).filter(k=>!w[k]);
   const line=good?(lift?'It works… but the screen is lifting at the edge?':pick(Math.random,stars===5?['Wow, it\'s like new!','You\'re a wizard. Thank you!!','Perfect. I\'m telling everyone about this place.']:['Works great, thanks!','All good — took a while, but all good.']))
     :!w.power?'It won\'t even turn on! What did you do?!':'Uh… the '+broke.join(' and ')+' still '+(broke.length>1?'don\'t':'doesn\'t')+' work.';
   C.cash+=total;P.gone=true;
@@ -563,7 +596,7 @@ function handBack(){
 }
 function patience(){return cur.job.pat*(upg('chairs')?1.4:1)}
 
-// ═══════════════════════ repair planner — the self-test bot (never shown to the player) ═══════════════════════
+// ═══════════════════════ repair planner — drives the self-tests and the day-1 tutorial text ═══════════════════════
 function advise(){
   const P=cur;if(!P||P.gone)return null;
   const A=(txt,act)=>({txt,act});
@@ -645,14 +678,14 @@ function tutText(){
   const a=h.act,bitFor=id=>{const s=P.sc[id]||holeSpec(HOLE[id],P.model);return bitName(s.head)};
   switch(a.k){
     case'test':return'A customer just handed you their phone. First, press <b>⚡ Power on</b> (or T) to see what still works.';
-    case'screw':{const hh=HOLE[a.id],outq=!!P.sc[a.id],where=hh.part==='case'?'bottom edge':hh.part==='batbr'?'battery connector bracket':hh.part==='scrbr'?'screen connector bracket':PNAME(hh.part==='board'?'board':hh.part);
-      return outq?'Take out the screw on the <b>'+where+'</b>: choose the <b>🪛 Driver</b>, set the <b>'+bitFor(a.id)+'</b> bit (click Driver again or press B), then <b>hold</b> on the screw. Screws go into the tray on the right.'
-        :'Put the screw back in the <b>'+where+'</b>: in the screw tray (right panel) click the <b>'+HEAD_NAME[holeSpec(hh,P.model).head]+' '+holeSpec(hh,P.model).len.toFixed(1)+'mm</b> screws, set the <b>'+bitFor(a.id)+'</b> bit, then hold on the empty hole. Wrong lengths cause damage!'}
+    case'screw':{const hh=HOLE[a.id],outq=!!P.sc[a.id],where=hh.part==='case'?'bottom edge':hh.part==='batbr'?'battery connector bracket':hh.part==='scrbr'?'screen connector bracket':PNAME(hh.part);
+      return outq?'Take out the screw on the <b>'+where+'</b>: choose the <b>🪛 Driver</b>, set the <b>'+bitFor(a.id)+'</b> bit (click Driver again or press B), then <b>hold</b> on the screw. Screws land in your screw tray.'
+        :'Put the screw back in the <b>'+where+'</b>: in the screw tray pick the <b>'+HEAD_NAME[holeSpec(hh,P.model).head]+' '+holeSpec(hh,P.model).len.toFixed(1)+'mm</b> screws, set the <b>'+bitFor(a.id)+'</b> bit, then hold on the empty hole. Wrong lengths cause damage!'}
     case'heat':return'The screen is glued on. Hold the <b>🔥 Heat</b> gun on the phone until the thermometer reads about <b>65–85°C</b>. Much hotter and you\'ll cook the battery.';
     case'suction':return'Now <b>hold</b> the <b>🪠 Suction</b> cup on the glass near the bottom. It lifts the screen and opens a little gap.';
     case'cut':return'Drag the <b>🔺 Pick</b> along the <b>'+a.side+' edge</b> of the phone to slice the glue (hold the mouse and slide). Cut the bottom, left and top. <b>Don\'t</b> dig along the right edge — the screen\'s cables are there.';
     case'open':return'All the glue is cut. Click the phone with the <b>✋ Hand</b> to swing the screen open like a book.';
-    case'meter':return'Something\'s wrong but you don\'t know what yet. Touch the <b>📟 Meter</b> to the <b>'+PNAME(a.part)+'</b> and read the numbers in the bench log. Compare parts — the odd one out is your fault.';
+    case'meter':return'Something\'s wrong but you don\'t know what yet. Touch the <b>📟 Meter</b> to the <b>'+PNAME(a.part)+'</b> and read the numbers. Compare parts — the odd one out is your fault.';
     case'conn':{const c=a.id,on=P.conn[c];const nm={bat:'battery',scr:'display',tch:'touch',cam:'camera',port:'charge port'}[c];
       return on?(c==='bat'?'Before touching anything else: <b>unplug the battery</b>. Click its connector (the plug above the battery) with the <b>🥢 Spudger</b>. Working on a live phone causes sparks.':'Unplug the <b>'+nm+'</b> cable from the board with the <b>🥢 Spudger</b> before pulling that part out, or the cable tears.')
         :'Plug the <b>'+nm+'</b> connector back in with the <b>🥢 Spudger</b>'+(c==='bat'?' — the battery goes last.':'.')}
@@ -674,12 +707,14 @@ function renderTut(){
   el.classList.toggle('on',!!t);
 }
 
-// ═══════════════════════ effects ═══════════════════════
-let FX=[],ROLL=[],FLOAT=[];
+// ═══════════════════════ effects + audio ═══════════════════════
+let FX=[],ROLL=[],FLOAT=[],ANIM_S=[],ANIM_P=[];
 function fx(kind,x,y){
-  const n=kind==='spark'?26:kind==='dust'?14:10;
-  for(let i=0;i<n;i++){const a=Math.random()*6.283,v=kind==='spark'?30+Math.random()*60:8+Math.random()*20;
-    FX.push({kind,x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-(kind==='smoke'?15:0),life:kind==='smoke'?1.6:.6+Math.random()*.4,max:1})}
+  if(quiet)return;
+  const n=kind==='spark'?34:kind==='dust'?16:12;
+  for(let i=0;i<n;i++){const a=Math.random()*6.283,v=kind==='spark'?30+Math.random()*80:6+Math.random()*18;
+    FX.push({kind,x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-(kind==='smoke'?14:0),life:kind==='smoke'?1.8:.45+Math.random()*.45,max:kind==='smoke'?1.8:.9,r:Math.random()})}
+  if(kind==='spark')FX.push({kind:'flash',x,y,vx:0,vy:0,life:.25,max:.25,r:0});
 }
 function spawnRoll(x,y,s){ROLL.push({x,y,s,vx:(Math.random()<.5?-1:1)*(22+Math.random()*14),vy:8+Math.random()*10,life:3.2,rot:0});msg('🔩 A screw bounced off the mat!')}
 function floatText(txt,x,y,col){FLOAT.push({txt,x,y,col:col||'#3ddc84',life:1.6})}
@@ -698,30 +733,34 @@ function msg(t,kind){
   setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),450)},kind==='bad'?4200:2800);
 }
 
-// ═══════════════════════ input ═══════════════════════
+// ═══════════════════════ layout + input ═══════════════════════
 const cv=$('cv'),ctx=cv.getContext('2d');
-let W=0,H=0,DPR=1,U=3,OX=0,OY=0;
+let W=0,H=0,DPR=1,U=3,OX=0,OY=0,PROPS=false,PROPW=0;
+let FINE=matchMedia('(pointer:fine)').matches;
 const PTR={x:-1,y:-1,down:false,in:false};
-let HOLD=null;
+let HOLD=null,TRAY_HIT=[];
 function layout(){
   const st=$('stage');W=st.clientWidth;H=st.clientHeight;DPR=Math.min(2,window.devicePixelRatio||1);
-  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  cv.width=Math.max(1,Math.round(W*DPR));cv.height=Math.max(1,Math.round(H*DPR));
 }
 addEventListener('resize',layout);
 if(window.ResizeObserver)new ResizeObserver(layout).observe($('stage'));
-function geom(){
-  const P=cur,foot=mode==='race'?48:tutOn()?96:16;U=Math.max(.8,Math.min((H-foot-24)/204,(W-24)/222));
-  const t=P?ease(P.openT):0;
-  OX=lerp(W/2-50*U,W/2-104*U,t);OY=12+(H-foot-12-200*U)/2;
-}
 const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function geom(){
+  const P=cur,foot=(mode==='race'?44:0)+(tutOn()?96:0)+14;
+  PROPS=W>=720&&H>=420;PROPW=PROPS?clamp(Math.round(W*.19),150,200):0;
+  const aw=W-PROPW-24,ah=H-foot-24;
+  U=Math.max(.8,Math.min(ah/212,aw/224));
+  const t=P?ease(P.openT):0,cx=PROPW+(W-PROPW)/2;
+  OX=lerp(cx-50*U,cx-104*U,t);OY=12+(ah-210*U)/2;
+}
 const toL=(x,y)=>({x:(x-OX)/U,y:(y-OY)/U});
 const playing=()=>(mode==='solo'||mode==='race')&&cur&&!cur.gone;
 function hitTest(x,y){
   const P=cur;let best=null,bd=8;
   for(const h of HOLES){if(!screwShown(h))continue;const d=Math.hypot(x-h.x,y-h.y);if(d<bd){bd=d;best={k:'screw',id:h.id}}}
   if(best)return best;
-  if(!P.open){if(P.openT>.05)return null;if(inR(x,y,[38,186,24,14]))return{k:'port'};if(inR(x,y,[-12,-12,124,224]))return{k:'phone'};return null}
+  if(!P.open){if(P.openT>.05)return null;if(inR(x,y,EDGE_PORT,3))return{k:'port'};if(inR(x,y,[-12,-12,124,226]))return{k:'phone'};return null}
   if(P.openT<.95)return null;
   if(P.part.board)for(const c of CONN_IDS)if(inR(x,y,CONNS[c].r,1.5))return{k:'conn',id:c};
   if(P.part.board&&P.part.board.orig)for(let i=0;i<P.spots.length;i++){const s=P.spots[i];if(s.left>0&&Math.hypot(x-s.x,y-s.y)<7)return{k:'spot',i}}
@@ -735,13 +774,14 @@ function hitTest(x,y){
   return null;
 }
 function setPtr(e){const r=cv.getBoundingClientRect();PTR.x=e.clientX-r.left;PTR.y=e.clientY-r.top}
-cv.addEventListener('pointerdown',e=>{ac();try{cv.setPointerCapture(e.pointerId)}catch(_){}setPtr(e);PTR.down=true;PTR.in=true;press()});
-cv.addEventListener('pointermove',e=>{setPtr(e);PTR.in=true});
+cv.addEventListener('pointerdown',e=>{ac();if(e.pointerType==='mouse')FINE=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}setPtr(e);PTR.down=true;PTR.in=true;press()});
+cv.addEventListener('pointermove',e=>{setPtr(e);PTR.in=true;if(e.pointerType==='touch')FINE=false});
 const up=()=>{PTR.down=false;HOLD=null};
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')PTR.in=false});
 function press(){
   if(!playing())return;
+  for(const t of TRAY_HIT)if(inR(PTR.x,PTR.y,t.r)){SELSCREW=SELSCREW===t.key?null:t.key;if(SELSCREW)setTool('driver');sfx('click');UI();return}
   const P=cur,l=toL(PTR.x,PTR.y);
   for(let i=0;i<ROLL.length;i++){const r=ROLL[i];if(Math.hypot(l.x-r.x,l.y-r.y)<11){ROLL.splice(i,1);C.tray.push(r.s);msg('🔩 Caught it.');sfx('screw');UI();return}}
   const t=hitTest(l.x,l.y);
@@ -753,7 +793,7 @@ function press(){
     case'hand':
       if(!t)break;
       if(!P.open&&(t.k==='phone'||t.k==='port'||t.k==='screw'))openUp();
-      else if(t.k==='part'){if(t.id==='battery'&&!HOLES.some(h=>h.part==='battery'&&P.sc[h.id])){const tabs=MODELS[P.model].tabs;HOLD={k:'pull',t:0,need:tabs||P.alc?1:1.8,l,bent:!tabs&&!P.alc}}else removePart(t.id)}
+      else if(t.k==='part'){if(t.id==='battery'){const tabs=MODELS[P.model].tabs;HOLD={k:'pull',t:0,need:tabs||P.alc?1:1.8,l,bent:!tabs&&!P.alc}}else removePart(t.id)}
       else if(t.k==='slot')installPart(t.id);
       break;
     case'spudger':if(t&&t.k==='conn')toggleConn(t.id);break;
@@ -773,11 +813,11 @@ function holdTick(dt){
   if(!HOLD)return;
   if(!PTR.down||!playing()){HOLD=null;return}
   const P=cur,l=toL(PTR.x,PTR.y);
-  if(HOLD.k==='heat'){if(!inR(l.x,l.y,[-12,-12,124,224])||P.open)return;heatTick(dt);if(Math.random()<dt*14)sfx('hiss');HOLD.l=l;return}
+  if(HOLD.k==='heat'){if(!inR(l.x,l.y,[-12,-12,124,226])||P.open)return;heatTick(dt);if(Math.random()<dt*14)sfx('hiss');HOLD.l=l;return}
   if(HOLD.k==='pick'){const d=Math.hypot(l.x-HOLD.last.x,l.y-HOLD.last.y);HOLD.last=l;HOLD.l=l;if(d>0&&!P.open){cutAt(l,Math.min(d,12));if(P.gap&&Math.random()<dt*10)sfx('slice')}return}
   if(Math.hypot(l.x-HOLD.l.x,l.y-HOLD.l.y)>14){HOLD=null;return}
   HOLD.t+=dt;
-  if(HOLD.k==='brush'&&Math.random()<dt*12){sfx('brush');FX.push({kind:'dust',x:l.x,y:l.y,vx:(Math.random()-.5)*30,vy:(Math.random()-.5)*30,life:.4,max:1})}
+  if(HOLD.k==='brush'&&Math.random()<dt*12){sfx('brush');FX.push({kind:'dust',x:l.x,y:l.y,vx:(Math.random()-.5)*30,vy:(Math.random()-.5)*30,life:.4,max:.4,r:Math.random()})}
   if(HOLD.k==='brush'&&HOLD.i>=0){const s=P.spots[HOLD.i];if(s)s.left=Math.max(.05,1-HOLD.t/HOLD.need)}
   if(HOLD.t<HOLD.need)return;
   const h=HOLD;HOLD=null;
@@ -789,6 +829,7 @@ function holdTick(dt){
 function cycleBit(){const i=BITS.findIndex(b=>b[0]===C.bit);C.bit=BITS[(i+1)%BITS.length][0];sfx('click');UI();renderToolLabels()}
 addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT')return;
+  if($('sheetOv').classList.contains('on')||$('mpOv').classList.contains('on')||$('titleOv').classList.contains('on'))return;
   const tl=TOOLS.find(t=>t.key===e.key);if(tl){if(tl.id==='driver'&&TOOL==='driver')cycleBit();else setTool(tl.id);return}
   if(e.key==='b'||e.key==='B'){cycleBit();return}
   if(!playing())return;
@@ -797,245 +838,646 @@ addEventListener('keydown',e=>{
   else if(e.key==='Enter'&&!cur.open)handBackBtn();
 });
 
-// ═══════════════════════ rendering ═══════════════════════
-function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
-function fillRR(x,y,w,h,r,c){rr(x,y,w,h,r);ctx.fillStyle=c;ctx.fill()}
-function txt(t,x,y,size,col,w,align){ctx.fillStyle=col;ctx.font=(w||600)+' '+size+'px Rubik,sans-serif';ctx.textAlign=align||'center';ctx.fillText(t,x,y)}
-let TIME=0;
-function drawBench(){
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  const g=ctx.createRadialGradient(W*.5,H*.38,20,W*.5,H*.5,Math.max(W,H)*.75);g.addColorStop(0,'#2a4152');g.addColorStop(1,'#111820');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='rgba(255,255,255,.045)';ctx.lineWidth=1;ctx.beginPath();
-  for(let x=(W/2)%32;x<W;x+=32){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=(H/2)%32;y<H;y+=32){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,.05)';ctx.font='700 11px Rubik,sans-serif';ctx.textAlign='left';ctx.fillText('ESD SAFE  ·  PHONE DOCTOR REPAIR BENCH',10,H-10);
+// ═══════════════════════ rendering toolkit ═══════════════════════
+// Every drawing helper paints into X (the main canvas, or a sprite being baked); XS is that
+// context's pixels-per-unit so shadow blurs come out the same size either way.
+let X=ctx,XS=1;
+function hexRgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255]}
+function shade(h,a){const[r,g,b]=hexRgb(h),f=v=>Math.round(a<0?v*(1+a):v+(255-v)*a);return'rgb('+f(r)+','+f(g)+','+f(b)+')'}
+function rgba(h,a){const[r,g,b]=hexRgb(h);return'rgba('+r+','+g+','+b+','+a+')'}
+function path(x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath()}
+function box(x,y,w,h,r,f){path(x,y,w,h,r);X.fillStyle=f;X.fill()}
+function stops(g,st){st.forEach((c,i)=>Array.isArray(c)?g.addColorStop(c[0],c[1]):g.addColorStop(st.length>1?i/(st.length-1):0,c));return g}
+function lg(x0,y0,x1,y1,...st){return stops(X.createLinearGradient(x0,y0,x1,y1),st)}
+function rg(x,y,r0,r1,...st){return stops(X.createRadialGradient(x,y,r0,x,y,r1),st)}
+function circ(x,y,r,f){X.beginPath();X.arc(x,y,Math.max(0,r),0,6.2832);X.fillStyle=f;X.fill()}
+function ring(x,y,r,col,w){X.beginPath();X.arc(x,y,r,0,6.2832);X.strokeStyle=col;X.lineWidth=w;X.stroke()}
+function T(t,x,y,size,col,wt,al,fam){X.fillStyle=col;X.font=(wt||600)+' '+size+'px '+(fam||'Rubik,system-ui,sans-serif');X.textAlign=al||'center';X.textBaseline='alphabetic';X.fillText(t,x,y)}
+function stroke(col,w){X.strokeStyle=col;X.lineWidth=w;X.stroke()}
+function shadow(blur,oy,col){X.shadowColor=col;X.shadowBlur=blur*XS;X.shadowOffsetX=0;X.shadowOffsetY=oy*XS}
+function noShadow(){X.shadowColor='transparent';X.shadowBlur=0;X.shadowOffsetY=0}
+function poly(pts){X.beginPath();pts.forEach((p,i)=>i?X.lineTo(p[0],p[1]):X.moveTo(p[0],p[1]))}
+
+// ── sprite cache: static parts are baked once per zoom level into offscreen canvases ──
+const SPR=new Map();let SPRK=0;
+function sprite(key,w,h,draw,pad,res){
+  pad=pad==null?4:pad;
+  const K=Math.max(1.5,Math.round(U*DPR*2)/2);
+  if(K!==SPRK){SPR.clear();SPRK=K}
+  const k=K*(res||1);
+  let s=SPR.get(key);if(s)return s;
+  const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil((w+pad*2)*k));c.height=Math.max(1,Math.ceil((h+pad*2)*k));
+  const g=c.getContext('2d');g.setTransform(k,0,0,k,pad*k,pad*k);
+  const pX=X,pS=XS;X=g;XS=k;try{draw()}finally{X=pX;XS=pS}
+  s={c,pad,w,h,k};SPR.set(key,s);return s;
 }
-// screw heads: P = pentalobe, Y = tri-point, PH = Phillips. A wrong-length screw sits proud.
-function drawScrew(x,y,s,ok){
-  if(!s){ctx.fillStyle='#0a0c10';ctx.beginPath();ctx.arc(x,y,2.4,0,6.283);ctx.fill();ctx.strokeStyle='#59626e';ctx.lineWidth=.55;ctx.stroke();return}
-  const proud=ok===false;
-  if(proud){ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.arc(x+1,y+1.3,3.3,0,6.283);ctx.fill();y-=.7}
-  const g=ctx.createRadialGradient(x-1,y-1,.3,x,y,3.6);g.addColorStop(0,s.head==='P'?'#f6f7f9':'#e9eef4');g.addColorStop(1,s.head==='P'?'#8a8f96':'#6f7884');
-  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,3.2,0,6.283);ctx.fill();ctx.strokeStyle='#454c56';ctx.lineWidth=.45;ctx.stroke();
-  ctx.fillStyle='#2c323a';ctx.strokeStyle='#2c323a';
-  if(s.head==='P'){ctx.beginPath();for(let i=0;i<10;i++){const a=i/10*6.283-1.57,r=i%2?.7:1.7;ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r)}ctx.closePath();ctx.fill()}
-  else if(s.head==='Y'){ctx.lineWidth=.65;ctx.beginPath();for(let i=0;i<3;i++){const a=i/3*6.283-1.57;ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*1.9,y+Math.sin(a)*1.9)}ctx.stroke()}
-  else{ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(x-1.8,y);ctx.lineTo(x+1.8,y);ctx.moveTo(x,y-1.8);ctx.lineTo(x,y+1.8);ctx.stroke()}
+function blit(s,x,y){X.drawImage(s.c,x-s.pad,y-s.pad,s.w+s.pad*2,s.h+s.pad*2)}
+
+// brushed-metal texture: fine streaks along x
+function brushed(x,y,w,h,seed,a){const r=rngOf(seed);for(let i=0;i<h*3;i++){const yy=y+r()*h,ww=w*(.2+r()*.8),xx=x+r()*(w-ww);X.fillStyle=r()<.5?'rgba(255,255,255,'+(a*r())+')':'rgba(0,0,0,'+(a*1.4*r())+')';X.fillRect(xx,yy,ww,.18)}}
+function steel(x0,y0,x1,y1){return lg(x0,y0,x1,y1,'#d9dee4','#aab1b9',[.48,'#c9ced5'],[.52,'#9ea6af'],'#cfd4da')}
+
+// ═══════════════════════ sprites: the phone ═══════════════════════
+function sprShadow(){return sprite('shadow',100,208,()=>{shadow(9,4,'rgba(0,0,0,.65)');box(2,3,96,204,14,'#000');noShadow()},26,.34)}
+function sprBody(model){return sprite('body:'+model,100,210,()=>{
+  const m=MODELS[model],f=m.frame;
+  // the bottom edge face, seen just past the frame
+  box(5,186,90,22.5,10,lg(0,196,0,209,shade(f,-.05),shade(f,-.4)));
+  path(5,186,90,22.5,10);stroke('rgba(0,0,0,.35)',.4);
+  X.fillStyle='rgba(255,255,255,.18)';X.fillRect(10,200.4,80,.35);
+  X.fillStyle=rgba('#000000',.28);X.fillRect(16.5,200.5,1.3,8);X.fillRect(82.2,200.5,1.3,8);
+  // side buttons
+  for(const[x,y,h]of[[-1.7,34,7],[-1.7,48,13],[-1.7,64,13],[99.5,52,22]])box(x,y,2.2,h,1,lg(x,0,x+2.2,0,shade(f,-.4),shade(f,.2),shade(f,-.25)));
+  // frame
+  path(0,0,100,200,14);X.fillStyle=lg(0,0,100,0,[0,shade(f,-.42)],[.03,shade(f,.42)],[.08,f],[.5,shade(f,.08)],[.92,f],[.97,shade(f,.34)],[1,shade(f,-.45)]);X.fill();
+  path(0,0,100,200,14);X.fillStyle=lg(0,0,0,200,'rgba(255,255,255,.14)',[.2,'rgba(255,255,255,0)'],[.8,'rgba(0,0,0,0)'],'rgba(0,0,0,.22)');X.fill();
+  path(.6,.6,98.8,198.8,13.4);stroke('rgba(255,255,255,.45)',.4);
+  path(1.4,1.4,97.2,197.2,12.7);stroke('rgba(0,0,0,.4)',.5);
+  X.fillStyle='rgba(0,0,0,.25)';for(const y of[22,178]){X.fillRect(-.2,y,1.5,1);X.fillRect(98.7,y,1.5,1)}
+},6)}
+function cutout(m){
+  if(m.cut==='notch'){
+    X.beginPath();X.moveTo(27,4.3);X.quadraticCurveTo(31.4,4.3,31.8,7.2);X.quadraticCurveTo(32.5,11.8,36.4,11.8);X.lineTo(63.6,11.8);X.quadraticCurveTo(67.5,11.8,68.2,7.2);X.quadraticCurveTo(68.6,4.3,73,4.3);X.closePath();X.fillStyle='#000';X.fill();
+    box(43,5.6,14,1.2,.6,'#14161a');circ(61.5,7.4,1.5,rg(61.2,7.1,.1,1.5,'#3a4d78','#05070b'));circ(38,7.4,.9,'#0d0f13');
+  }else if(m.cut==='island'){box(37.5,7.2,25,7.6,3.8,'#000');circ(56.8,11,1.7,rg(56.4,10.6,.1,1.7,'#3a4d78','#05070b'))}
+  else{circ(50,10.5,2.9,'#000');circ(50,10.5,1.6,rg(49.6,10.1,.1,1.6,'#3a4d78','#05070b'))}
 }
-function drawHole(h){const P=cur;drawScrew(h.x,h.y,P.sc[h.id],P.sc[h.id]?correct(h.id):null)}
-function drawFront(P,lit){
-  const m=MODELS[P.model],sw=swollen();
-  ctx.save();
-  if(sw){ctx.fillStyle='#050608';rr(2,2,96,186,11);ctx.fill();ctx.translate(-1.5,-2.2);ctx.rotate(-.012)}
-  fillRR(3,3,94,183,11,'#07090c');
-  if(lit){
-    const g=ctx.createLinearGradient(0,6,100,186);g.addColorStop(0,m.accent);g.addColorStop(1,'#1b1f3a');
-    ctx.globalAlpha=Math.min(1,lit);fillRR(5,5,90,179,9,g);
-    txt('12:41',50,48,20,'rgba(255,255,255,.92)',700);txt(m.name.toUpperCase(),50,58,6,'rgba(255,255,255,.92)',500);ctx.globalAlpha=1;
-  }else{
-    const g=ctx.createLinearGradient(0,0,100,190);g.addColorStop(0,'rgba(255,255,255,.08)');g.addColorStop(.45,'rgba(255,255,255,0)');ctx.fillStyle=g;rr(5,5,90,179,9);ctx.fill();
+function sprFront(model){return sprite('front:'+model,100,200,()=>{
+  const m=MODELS[model];
+  path(1.2,1.2,97.6,197.6,12.9);X.fillStyle='#030405';X.fill();
+  path(4.4,4.4,91.2,191.2,10.2);X.fillStyle=rg(46,70,10,150,'#0f151e','#04060a');X.fill();
+  cutout(m);
+  path(1.5,1.5,97,197,12.6);stroke('rgba(255,255,255,.17)',.35);
+},2)}
+function sprWall(model){return sprite('wall:'+model,91.2,191.2,()=>{
+  const m=MODELS[model],r=rngOf(model.length*31+7);
+  path(0,0,91.2,191.2,10.2);X.save();X.clip();
+  X.fillStyle=lg(0,0,40,191,shade(m.accent,-.2),shade(m.accent2,-.45),'#090b18');X.fillRect(0,0,92,192);
+  for(let i=0;i<6;i++){const x=r()*91,y=20+r()*150,rad=20+r()*40,c=i%2?m.accent:m.accent2;X.fillStyle=rg(x,y,0,rad,rgba(c,.55),rgba(c,0));X.fillRect(0,0,92,192)}
+  X.fillStyle=lg(0,0,0,191,'rgba(0,0,0,.25)','rgba(0,0,0,0)',[.7,'rgba(0,0,0,0)'],'rgba(0,0,0,.35)');X.fillRect(0,0,92,192);
+  T('9:41',8,7.4,3.6,'#fff',600,'left');
+  for(let i=0;i<4;i++)box(66+i*1.6,7.3-1.2-i*.6,1,1.2+i*.6,.3,'#fff');
+  path(74.5,4.3,7.2,3.4,1);stroke('rgba(255,255,255,.9)',.35);box(75.2,5,5.4,2,.5,'#fff');box(81.8,5.3,.7,1.4,.3,'#fff');
+  T('Friday, October 9',45.6,27,4,'rgba(255,255,255,.85)',500);
+  T('9:41',45.6,52,23,'#fff',600);
+  for(const x of[14,77]){circ(x,170,6.2,'rgba(255,255,255,.16)');circ(x,170,6.2,'rgba(0,0,0,0)')}
+  box(12.6,166.8,2.8,6,1,'rgba(255,255,255,.9)');box(13.3,165.6,1.4,1.4,.4,'rgba(255,255,255,.9)');
+  box(73.8,167.8,6.4,4.6,1,'rgba(255,255,255,.9)');circ(77,170.1,1.3,'#4a4f5a');
+  box(31.6,184.4,28,1.3,.65,'rgba(255,255,255,.9)');
+  X.restore();
+},1)}
+function drawLogo(model,x,y,a){
+  X.save();X.globalAlpha*=a;
+  if(model==='pear11'||model==='pear14'){X.fillStyle='#e9edf2';X.beginPath();X.ellipse(x,y+3,6,6.8,0,0,6.283);X.fill();X.beginPath();X.ellipse(x,y-3.5,4,4.6,0,0,6.283);X.fill();
+    X.beginPath();X.ellipse(x+2.4,y-9.4,2.4,1.1,-.6,0,6.283);X.fill();box(x-.3,y-10,.7,3,.3,'#e9edf2')}
+  else if(model==='galaxo')T('GALAXO',x,y+2,7,'#e9edf2',700);
+  else{const cs=['#4285f4','#ea4335','#fbbc05','#34a853'];X.font='700 10px Rubik,sans-serif';X.textAlign='center';'pixelle'.split('').forEach((ch,i)=>{X.fillStyle=cs[i%4];X.fillText(ch,x-17+i*5.6,y+3)})}
+  X.restore();
+}
+function sprBack(model){return sprite('back:'+model,100,200,()=>{
+  const m=MODELS[model],r=rngOf(model.length*53+3);
+  path(0,0,100,200,14);X.fillStyle='#16191d';X.fill();
+  path(2.6,2.6,94.8,194.8,11.8);X.fillStyle=lg(0,0,100,200,'#a3aab2','#cdd2d8',[.5,'#9aa1aa'],'#c3c9cf','#959ca5');X.fill();
+  X.save();path(2.6,2.6,94.8,194.8,11.8);X.clip();brushed(0,0,100,200,model.length*91,.07);X.restore();
+  // graphite heat spreader
+  box(10,34,80,122,3,'#24272c');X.save();path(10,34,80,122,3);X.clip();X.strokeStyle='rgba(255,255,255,.035)';X.lineWidth=.6;for(let i=-130;i<100;i+=2.4){X.beginPath();X.moveTo(10+i,34);X.lineTo(10+i+122,156);X.stroke()}X.restore();
+  path(10,34,80,122,3);stroke('rgba(255,255,255,.08)',.4);
+  T('LCM ASSY',50,88,4.6,'rgba(235,240,245,.62)',700);T('821-0'+(2400+model.length*37)+'-A',50,94.5,2.8,'rgba(235,240,245,.45)',600,'center','JetBrains Mono,monospace');
+  T('DO NOT PRESS · ESD SENSITIVE',50,100.5,2.3,'rgba(235,240,245,.38)',600);
+  // QR sticker
+  box(60,118,15,15,.6,'#f2f2ee');X.fillStyle='#16181b';for(let i=0;i<11;i++)for(let j=0;j<11;j++)if(r()<.5)X.fillRect(61.2+i*1.15,119.2+j*1.15,1.15,1.15);
+  for(const[qx,qy]of[[61.2,119.2],[70.4,119.2],[61.2,128.4]]){X.fillStyle='#16181b';X.fillRect(qx,qy,3.4,3.4);X.fillStyle='#f2f2ee';X.fillRect(qx+.7,qy+.7,2,2);X.fillStyle='#16181b';X.fillRect(qx+1.2,qy+1.2,1,1)}
+  box(20,120,32,7,.6,'#e8e4da');T('WARRANTY VOID IF REMOVED',36,124.6,1.9,'#8a2b2b',800);
+  // copper EMI tape
+  box(68,162,20,24,1,lg(68,0,88,0,'#b36a2c','#e4a46a','#b0662a'));box(12,166,24,12,1,lg(12,0,36,0,'#b36a2c','#e4a46a','#b0662a'));
+  // earpiece + front camera + sensor assembly
+  box(26,5,48,16,3.4,lg(0,5,0,21,'#16181c','#0c0d10'));box(33,9.4,20,5.2,2.6,'#2a2e34');
+  X.fillStyle='#0d0e10';for(let i=0;i<14;i++)for(let j=0;j<3;j++)X.fillRect(34.5+i*1.25,10.4+j*1.3,.55,.55);
+  circ(63,12.6,3.6,lg(59,9,67,16,'#5a6069','#1a1c20'));circ(63,12.6,2.2,'#05070a');circ(62.4,12,0.7,'rgba(140,170,255,.8)');circ(29.5,12.8,1.3,'#1f2125');
+  // the display + digitizer flex tails at the hinge side
+  box(-3,14,21,10,1.6,lg(0,14,0,24,'#d9922e','#b8731c'));box(11,14.4,6.4,9.2,.8,'#111214');
+  box(-3,27,18,8,1.6,lg(0,27,0,35,'#cf8a2a','#a9681a'));box(9,27.4,5.6,7.2,.8,'#111214');
+  // old adhesive on the rim
+  X.strokeStyle='rgba(245,245,240,.55)';X.lineWidth=1.3;X.setLineDash([3.2,1.2,1.4,2]);path(1.6,1.6,96.8,196.8,12.6);X.stroke();X.setLineDash([]);
+},4)}
+function sprChassis(model){return sprite('chassis:'+model,100,200,()=>{
+  const m=MODELS[model],b=m.mid;
+  path(1.4,1.4,97.2,197.2,12.7);X.fillStyle=lg(0,0,100,200,shade(b,.08),b,shade(b,-.12));X.fill();
+  X.save();path(1.4,1.4,97.2,197.2,12.7);X.clip();brushed(0,0,100,200,model.length*17,.06);X.restore();
+  const pocket=(x,y,w,h,r)=>{box(x,y,w,h,r,'rgba(0,0,0,.26)');path(x,y,w,h,r);stroke('rgba(0,0,0,.45)',.6);path(x+.7,y+.7,w-1.4,h-1.4,r);stroke('rgba(255,255,255,.05)',.5)};
+  pocket(8.4,8.4,83.2,63.2,6);pocket(12,74,76,88,5.5);pocket(9.4,160.6,81.2,35,5);
+  // battery adhesive lane marks
+  X.fillStyle='rgba(255,255,255,.05)';for(const x of[28,48,68])X.fillRect(x,82,4,74);
+  T('BATTERY ADHESIVE ZONE',50,120,2.4,'rgba(255,255,255,.09)',700);
+  // screw bosses for the screws that go into the chassis
+  for(const h of HOLES)if(h.part==='port'||h.part==='speaker'){circ(h.x,h.y,3.8,shade(b,.16));circ(h.x,h.y,3.1,shade(b,-.25));circ(h.x,h.y,1.4,'#0b0c0e')}
+  // frame wall, button flex, SIM tray, antenna splits
+  path(1.4,1.4,97.2,197.2,12.7);stroke(shade(b,.3),1.1);path(3,3,94,194,11.2);stroke('rgba(0,0,0,.5)',.6);
+  box(3.4,30,2,50,.9,'#c27a24');for(const y of[37,52,67])box(3,y,2.8,6,.6,'#121316');
+  box(95,92,2.8,26,1.2,'#141518');box(95.4,94,2,22,.8,shade(b,.2));
+  X.fillStyle='#17181b';for(const y of[22,178]){X.fillRect(1.4,y,2.4,1.1);X.fillRect(96.2,y,2.4,1.1)}
+  T(m.name.toUpperCase(),50,192,2.3,'rgba(255,255,255,.1)',700);
+  circ(50,196,.7,'#0b0c0e');circ(24,196,.6,'#0b0c0e');circ(76,196,.6,'#0b0c0e');
+},2)}
+function smd(x,y,w,h,body,cap){box(x,y,w,h,.08,body);X.fillStyle=cap;if(w>=h){X.fillRect(x,y,w*.24,h);X.fillRect(x+w*.76,y,w*.24,h)}else{X.fillRect(x,y,w,h*.24);X.fillRect(x,y+h*.76,w,h*.24)}}
+function chip(x,y,w,h,label){
+  X.fillStyle='#b9bec5';const n=Math.max(2,Math.floor(w/.8));for(let i=0;i<n;i++){X.fillRect(x+.35+i*(w-.7)/n,y-.35,.3,.35);X.fillRect(x+.35+i*(w-.7)/n,y+h,.3,.35)}
+  box(x,y,w,h,.3,lg(x,y,x,y+h,'#2a2c31','#131417'));circ(x+.6,y+.6,.22,'#3a3d42');
+  if(label)T(label,x+w/2,y+h/2+.6,Math.min(1.8,h*.32),'rgba(220,225,230,.55)',600);
+}
+function shieldCan(x,y,w,h,label){
+  shadow(1.4,.5,'rgba(0,0,0,.55)');box(x,y,w,h,1,steel(x,y,x+w,y+h));noShadow();
+  X.save();path(x,y,w,h,1);X.clip();brushed(x,y,w,h,Math.round(x*7+y),.08);X.restore();
+  path(x+.6,y+.6,w-1.2,h-1.2,.7);stroke('rgba(255,255,255,.55)',.3);
+  X.fillStyle='rgba(0,0,0,.14)';for(let i=1.8;i<w-1;i+=2.3)for(let j=1.8;j<h-1;j+=2.3){X.beginPath();X.arc(x+i,y+j,.32,0,6.283);X.fill()}
+  X.fillStyle='rgba(110,118,128,.9)';for(let i=x+2.5;i<x+w-2.5;i+=5){X.fillRect(i,y-.55,2.2,.6);X.fillRect(i,y+h-.05,2.2,.6)}
+  if(label){box(x+w/2-6,y+h/2-2.8,12,5.6,.6,'rgba(255,255,255,.18)');T(label,x+w/2,y+h/2+1.1,2.8,'rgba(60,66,74,.9)',800)}
+}
+function sprBoard(model){return sprite('board:'+model,80,60,()=>{
+  const m=MODELS[model],mask=m.mask,r=rngOf(model.length*977+13);
+  shadow(1.6,.8,'rgba(0,0,0,.55)');path(0,0,80,60,5);X.fillStyle=mask;X.fill();noShadow();
+  X.save();path(0,0,80,60,5);X.clip();
+  X.fillStyle=lg(0,0,80,60,'rgba(255,255,255,.12)',[.4,'rgba(255,255,255,0)'],[.7,'rgba(0,0,0,0)'],'rgba(0,0,0,.25)');X.fillRect(0,0,80,60);
+  X.strokeStyle=shade(mask,.22);X.lineWidth=.32;X.lineJoin='round';
+  for(let i=0;i<55;i++){X.beginPath();let x=r()*80,y=r()*60;X.moveTo(x,y);for(let k=0;k<3;k++){if(r()<.5)x+=(r()-.5)*28;else y+=(r()-.5)*22;X.lineTo(x,y)}X.stroke()}
+  X.fillStyle='rgba(212,169,64,.6)';for(let i=0;i<220;i++){const x=r()*80,y=r()*60;X.beginPath();X.arc(x,y,.2,0,6.283);X.fill()}
+  X.restore();
+  // board-local keep-outs: camera + bracket, screen-connector bracket, battery bracket, shields, NAND, port socket
+  const keep=[[1,0,33,37],[42,0,30,28],[38,45,38,15],[20,10,26,26],[48,28,20,15],[10,38,13,10],[8,48,20,10]];
+  const holes=HOLES.filter(BOARD_HOLE).map(h=>[h.x-10,h.y-10]);
+  for(let i=0;i<340;i++){const x=1+r()*77,y=1+r()*57;if(keep.some(k=>inR(x,y,k,.6))||holes.some(([hx,hy])=>Math.hypot(x-hx,y-hy)<4.2))continue;const t=r(),rot=r()<.5;
+    if(t<.42)smd(x,y,rot?.55:1.05,rot?1.05:.55,'#b88a54','#dfe3e8');
+    else if(t<.72)smd(x,y,rot?.5:1,rot?1:.5,'#1b1c1f','#dfe3e8');
+    else if(t<.8){box(x,y,2.2,2.2,.2,'#454950');box(x+.3,y+.3,1.6,1.6,.2,'#62676f')}
+    else if(t<.86)chip(x,y,2.8,2);
+    else if(t<.9){box(x,y,1.6,1,.4,'#d9dee4');box(x+.2,y+.15,1.2,.7,.3,'#b9c0c8')}
+    else circ(x,y,.42,'#d4a940');
   }
-  // earpiece slot, sensors
-  fillRR(42,6,16,1.6,.8,'#1a1d22');
-  if(m.cut==='notch')fillRR(32,3,36,8,4,'#000');else if(m.cut==='island')fillRR(38,8,24,7,3.5,'#000');else{ctx.fillStyle='#000';ctx.beginPath();ctx.arc(50,11,3,0,6.283);ctx.fill()}
-  if(P.cracks){
-    ctx.strokeStyle='rgba(235,245,255,.75)';ctx.lineWidth=.55;ctx.lineJoin='round';
-    for(const pl of P.cracks){ctx.beginPath();pl.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}
-    ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1.6;for(const pl of P.cracks.slice(0,3)){ctx.beginPath();pl.slice(0,3).forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}
-  }
-  if(P.grime>0&&!lit){ctx.fillStyle='rgba(255,255,255,.045)';for(const m of P.smudge){ctx.beginPath();ctx.ellipse(m[0],m[1],m[2],m[3],m[4],0,6.283);ctx.fill()}
-    ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=.5;for(const m of P.smudge.slice(0,4)){for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(m[0],m[1],m[2]*.3+k*1.2,m[3]*.3+k*1.1,m[4],0,6.283);ctx.stroke()}}}
-  ctx.restore();
-  // chin: port, speaker grille, case screws
-  fillRR(4,186,92,11,4,m.dark);
-  fillRR(42,190,16,5,2.5,'#0a0c10');
-  ctx.fillStyle='#14171c';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(64+i*3,192.5,.8,0,6.283);ctx.fill();ctx.beginPath();ctx.arc(24+i*3,192.5,.8,0,6.283);ctx.fill()}
-  if(P.lint>0){ctx.fillStyle='#b8b2a6';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(44+i*2.4,192.5+Math.sin(i*2)*.8,1.1,0,6.283);ctx.fill()}}
+  // plated mounting holes for every board screw
+  for(const[hx,hy]of holes){circ(hx,hy,3.6,'#b88e20');circ(hx,hy,3,'#e2be52');circ(hx,hy,2.2,'#101113')}
+  shieldCan(21,11,24,24,'X13');shieldCan(49,29,18,13,'');
+  chip(11,39,10,7.5,'NAND');chip(26,40,5,4);chip(68,46,6,4);
+  T('820-0'+(1500+model.length*11)+'-A',62,58.4,1.8,'rgba(255,255,255,.6)',600,'center','JetBrains Mono,monospace');
+  T('U2700',33,9.2,1.5,'rgba(255,255,255,.45)',600);T('J4100',53,44,1.5,'rgba(255,255,255,.45)',600);T('C4410',4,58.5,1.5,'rgba(255,255,255,.45)',600,'left');
+  path(.35,.35,79.3,59.3,4.8);stroke('rgba(212,169,64,.55)',.4);
+},3)}
+function sprCam(){return sprite('cam',20,20,()=>{
+  shadow(1.2,.6,'rgba(0,0,0,.6)');box(0,0,20,20,3.2,steel(0,0,20,20));noShadow();
+  box(1.1,1.1,17.8,17.8,2.6,lg(0,0,0,20,'#1d1f23','#0d0e10'));
+  circ(10,10,7.6,lg(3,3,17,17,'#4a5059','#121316'));circ(10,10,6.6,'#08090b');
+  circ(10,10,5.6,rg(9,9,.3,5.6,'#26345c','#0d1326','#040509'));
+  ring(10,10,4.4,'rgba(120,90,220,.5)',.35);ring(10,10,3.1,'rgba(70,200,170,.35)',.3);ring(10,10,1.8,'rgba(255,255,255,.12)',.25);
+  X.beginPath();X.arc(10,10,5,3.6,4.8);stroke('rgba(255,255,255,.35)',.5);circ(8,8,.9,'rgba(255,255,255,.8)');circ(12.4,12.2,.5,'rgba(140,255,210,.45)');
+  circ(16.3,3.6,1,'#fff6d6');ring(16.3,3.6,1,'rgba(0,0,0,.3)',.2);
+},2)}
+function sprSpeaker(){return sprite('spk',20,16,()=>{
+  shadow(1,.5,'rgba(0,0,0,.6)');box(0,0,20,16,2.2,lg(0,0,0,16,'#24272c','#121316'));noShadow();
+  box(1.8,1.8,16.4,8.8,1.6,'#2a2e34');X.fillStyle='#0d0e10';for(let i=0;i<12;i++)for(let j=0;j<6;j++)X.fillRect(2.6+i*1.3+(j%2)*.6,2.6+j*1.3,.55,.55);
+  box(13.6,11.8,4.4,2.6,.5,lg(0,11.8,0,14.4,'#f0cd6a','#c39a2e'));box(2.2,12,9,2,.6,'#2c2f35');T('SPK-L',6.7,13.6,1.4,'#7d848d',700);
+},2)}
+function sprTaptic(){return sprite('tap',22,16,()=>{
+  shadow(1,.5,'rgba(0,0,0,.6)');box(0,0,22,16,2.6,steel(0,0,22,16));noShadow();
+  X.save();path(0,0,22,16,2.6);X.clip();brushed(0,0,22,16,77,.1);X.restore();
+  box(3,4,16,8,1,'rgba(0,0,0,.08)');T('HAPTIC',11,8.8,2.6,'#545b64',800);T('LRA-0815',11,11.2,1.4,'#6a717a',600);
+  box(19,6,5,4,.6,'#c27a24');
+},3)}
+function sprPort(){return sprite('port',24,12,()=>{
+  for(const tx of[-9,23]){shadow(.8,.4,'rgba(0,0,0,.5)');box(tx,2.4,10,7.2,2,steel(tx,0,tx+10,0));noShadow();circ(tx===-9?-6:30,6,2.3,'rgba(0,0,0,.25)')}
+  shadow(1,.5,'rgba(0,0,0,.6)');box(0,0,24,12,2.4,steel(0,0,0,12));noShadow();
+  box(2.6,3.2,18.8,5.6,2.8,'#090a0c');box(4,4.3,16,3.4,1.7,'#1c1e22');box(6,5.4,12,1.2,.6,'#d4a940');
+  X.fillStyle='#0b0c0e';for(let i=0;i<3;i++){X.beginPath();X.arc(5+i*1.4,10.4,.35,0,6.283);X.fill();X.beginPath();X.arc(16+i*1.4,10.4,.35,0,6.283);X.fill()}
+},10)}
+function sprBattery(model,sw){return sprite('bat:'+model+(sw?':sw':''),72,84,()=>{
+  const m=MODELS[model],r=rngOf(model.length*13+(sw?7:0));
+  shadow(2,1,'rgba(0,0,0,.6)');path(0,0,72,84,4.5);X.fillStyle=lg(0,0,72,84,'#20232a','#121418',[.7,'#16181d'],'#1c1f24');X.fill();noShadow();
+  X.save();path(0,0,72,84,4.5);X.clip();
+  X.fillStyle=rg(30,36,2,sw?42:58,'rgba(255,255,255,'+(sw?.24:.08)+')','rgba(255,255,255,0)');X.fillRect(0,0,72,84);
+  box(0,0,72,3.4,1.5,'rgba(255,255,255,.06)');X.fillStyle='rgba(255,255,255,.07)';for(let i=2;i<70;i+=1.5)X.fillRect(i,.7,.5,2);
+  X.restore();
+  T('Li-ion Polymer Battery',36,14,3.5,'#eef1f5',700);
+  T('3.85V ⎓ '+m.mah+'mAh  '+(m.mah*3.85/1000).toFixed(2)+'Wh',36,19.4,2.5,'#b9c1cb',500);
+  T('Model '+m.code+'   Made in China',36,23.6,2.1,'#8d96a1',500);
+  box(6,27,60,.35,0,'rgba(255,255,255,.14)');
+  // regulatory marks: crossed bin + recycling
+  X.strokeStyle='#d9dee4';X.lineWidth=.45;X.beginPath();X.rect(15,33,6,7);X.moveTo(14,33);X.lineTo(22,33);X.moveTo(13,31.5);X.lineTo(23,42);X.moveTo(23,31.5);X.lineTo(13,42);X.stroke();
+  X.beginPath();X.moveTo(31,41);X.lineTo(34,35);X.lineTo(37,41);X.closePath();X.stroke();T('Li-ion',34,45,1.8,'#d9dee4',700);
+  box(44,33,14,8,1,'rgba(255,255,255,.08)');T('CE',51,39,4,'#d9dee4',700);
+  T('⚠ Do not puncture, crush, disassemble or heat above 60°C.',36,52,1.7,'#9aa3ad',500);
+  X.fillStyle='#dfe3e8';for(let i=0;i<46;i++)if(r()<.6)X.fillRect(15+i*.92,58,r()<.3?.62:.32,8);
+  T('SN '+String(Math.floor(r()*1e9)).padStart(9,'0'),36,70,1.8,'#8d96a1',600,'center','JetBrains Mono,monospace');
+  if(sw){X.strokeStyle='rgba(255,255,255,.14)';X.lineWidth=.35;for(let i=0;i<6;i++){X.beginPath();const y=20+i*9;X.moveTo(8,y);X.bezierCurveTo(24,y-3,48,y+3,64,y-1);X.stroke()}
+    path(-.8,-.8,73.6,85.6,6);stroke('rgba(255,170,80,.3)',.45)}
+  if(m.tabs)for(const tx of[16,46]){shadow(.6,.3,'rgba(0,0,0,.5)');box(tx,80,10,11,1.2,'#0a0b0d');noShadow();T('PULL',tx+5,86.4,2.1,'#eef1f5',800);X.fillStyle='#eef1f5';poly([[tx+3.6,88],[tx+6.4,88],[tx+5,89.8]]);X.fill()}
+},10)}
+
+// ═══════════════════════ drawing the phone ═══════════════════════
+function drawScrewHead(x,y,s,ok,rot,lift){
+  const r=s.head==='P'?2.3:2.8,dark=s.head==='Y';
+  lift=lift||0;
+  X.save();X.translate(x,y-lift*2.5);
+  if(ok===false||lift){circ(lift*1.2+.6,1+lift*3.2,r,'rgba(0,0,0,'+(.35-.15*lift)+')');if(ok===false)X.translate(0,-.6)}
+  circ(0,0,r+.15,'rgba(0,0,0,.55)');
+  circ(0,0,r,rg(-.8,-.9,.2,r,dark?'#7b8088':'#ffffff',dark?'#2a2d31':'#c3c9d0',dark?'#16181b':'#7d8590'));
+  ring(0,0,r-.15,'rgba(255,255,255,.25)',.18);
+  X.rotate(rot||0);X.fillStyle=dark?'#08090a':'#3a4049';X.strokeStyle=X.fillStyle;
+  if(s.head==='P'){X.beginPath();for(let i=0;i<10;i++){const a=i/10*6.283-1.57,rr=i%2?.55:1.45;X.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}X.closePath();X.fill()}
+  else if(s.head==='Y'){X.lineWidth=.62;X.lineCap='round';X.beginPath();for(let i=0;i<3;i++){const a=i/3*6.283-1.57;X.moveTo(0,0);X.lineTo(Math.cos(a)*1.65,Math.sin(a)*1.65)}X.stroke()}
+  else{X.lineWidth=.62;X.lineCap='round';X.beginPath();X.moveTo(-1.6,0);X.lineTo(1.6,0);X.moveTo(0,-1.6);X.lineTo(0,1.6);X.stroke()}
+  X.restore();
+}
+function drawEmptyHole(x,y,small){circ(x,y,small?1.6:1.9,'#060708');ring(x,y,small?1.6:1.9,'rgba(255,255,255,.12)',.25);ring(x,y,1,'rgba(255,255,255,.06)',.2)}
+function screwAnimating(id){return ANIM_S.some(a=>a.id===id&&a.dir==='in')}
+function drawHole(h){const P=cur,s=P.sc[h.id];if(s&&!screwAnimating(h.id))drawScrewHead(h.x,h.y,s,correct(h.id),h.x*.3);else drawEmptyHole(h.x,h.y,h.part==='case')}
+function drawLint(x,y,w){const r=rngOf(Math.round(x*13+y));X.strokeStyle='rgba(190,184,172,.95)';X.lineWidth=.22;for(let i=0;i<14;i++){X.beginPath();const sx=x-w/2+r()*w,sy=y-1+r()*2;X.moveTo(sx,sy);X.bezierCurveTo(sx+(r()-.5)*3,sy+(r()-.5)*3,sx+(r()-.5)*3,sy+(r()-.5)*3,sx+(r()-.5)*4,sy+(r()-.5)*2);X.stroke()}
+  X.fillStyle='rgba(175,168,155,.85)';for(let i=0;i<5;i++){X.beginPath();X.ellipse(x-w/2+.8+i*(w-1.6)/4,y,1,.7,0,0,6.283);X.fill()}}
+function drawEdge(P){
+  const m=MODELS[P.model],[x,y,w,h]=EDGE_PORT;
+  box(x,y,w,h,h/2,'#050607');box(x+1.2,y+1,w-2.4,h-2,(h-2)/2,lg(0,y+1,0,y+h-1,'#3a3f46','#121418'));box(x+3,y+2.1,w-6,1.2,.6,'#d4a940');
+  if(P.lint>0)drawLint(x+w/2,y+h/2,w-4);
+  for(let i=0;i<6;i++){circ(11.5+i*2.5,204.2,.72,'#08090a');circ(76+i*2.5,204.2,.72,'#08090a')}
   if(m.caseScrews)for(const id of['b1','b2'])drawHole(HOLE[id]);
-  // the adhesive line where the pick has been, and the lifted gap
-  ctx.lineCap='round';
-  for(const s of SIDES)P.segs[s].forEach((v,i)=>{if(v<=.02)return;ctx.strokeStyle='rgba(0,0,0,'+(.25+v*.6)+')';ctx.lineWidth=.6+v*1.2;ctx.beginPath();
-    if(s==='bottom'||s==='top'){const y=s==='top'?2.2:197.8,x=10+i*20;ctx.moveTo(x,y);ctx.lineTo(x+20,y)}else{const x=s==='left'?2.2:97.8,y=14+i*21.5;ctx.moveTo(x,y);ctx.lineTo(x,y+21.5)}ctx.stroke()});
-  ctx.lineCap='butt';
-  if(P.gap&&!P.open){
-    ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(6,184.5,88,1.6);
-    // suction cup stuck to the glass
-    ctx.save();ctx.globalAlpha=.85;const g=ctx.createRadialGradient(50,165,2,50,165,15);g.addColorStop(0,'rgba(200,215,230,.55)');g.addColorStop(1,'rgba(120,140,160,.65)');
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(50,165,14,0,6.283);ctx.fill();ctx.strokeStyle='rgba(230,240,250,.8)';ctx.lineWidth=.8;ctx.stroke();
-    fillRR(46,150,8,15,3,'#c33');fillRR(44,147,12,5,2,'#a22');ctx.restore();
+}
+function drawGlassFX(P,lit){
+  // cracks, smudges, heat, cut seams, suction cup, and the glass sheen
+  X.save();path(1.2,1.2,97.6,197.6,12.9);X.clip();
+  if(P.cracks){const c=P.cracks;
+    X.fillStyle=lit?'rgba(255,255,255,.12)':'rgba(255,255,255,.06)';for(const s of c.shards){poly(s);X.closePath();X.fill()}
+    X.lineJoin='round';X.lineCap='round';
+    for(const ry of c.rays){poly(ry.pts.map(p=>[p[0]+.25,p[1]+.3]));stroke('rgba(0,0,0,.55)',ry.w*1.4);poly(ry.pts);stroke(lit?'rgba(255,255,255,.85)':'rgba(220,232,245,.72)',ry.w)}
+    for(const rg_ of c.rings){poly(rg_);stroke('rgba(225,235,245,.55)',.35)}
+    circ(c.cx,c.cy,1.6,'rgba(255,255,255,.5)');
   }
-  if(P.heat>0){
-    const a=Math.min(.55,P.heat/100*.45);const hx=HOLD&&HOLD.k==='heat'?HOLD.l.x:50,hy=HOLD&&HOLD.k==='heat'?HOLD.l.y:100;
-    const g=ctx.createRadialGradient(hx,hy,2,hx,hy,95);g.addColorStop(0,P.heat>100?'rgba(255,60,40,'+a+')':'rgba(255,140,40,'+a+')');g.addColorStop(1,'rgba(255,120,40,0)');
-    ctx.fillStyle=g;rr(0,0,100,200,13);ctx.fill();
-  }
+  if(P.grime>0&&!lit){for(const m of P.smudge){X.save();X.translate(m[0],m[1]);X.rotate(m[4]);X.fillStyle=rg(0,0,0,m[3]*1.4,'rgba(255,255,255,.05)','rgba(255,255,255,0)');X.fillRect(-12,-14,24,28);
+    X.strokeStyle='rgba(255,255,255,.075)';X.lineWidth=.3;for(let k=0;k<7;k++){X.beginPath();X.ellipse(0,0,m[2]*(.25+k*.12),m[3]*(.25+k*.12),0,k*.7,k*.7+4.6);X.stroke()}X.restore()}}
+  if(P.heat>0){const a=Math.min(.6,P.heat/100*.5),hx=HOLD&&HOLD.k==='heat'?HOLD.l.x:50,hy=HOLD&&HOLD.k==='heat'?HOLD.l.y:100;
+    X.fillStyle=rg(hx,hy,2,110,P.heat>100?'rgba(255,50,30,'+a+')':'rgba(255,130,40,'+a+')','rgba(255,90,30,'+a*.3+')','rgba(255,90,30,0)');X.fillRect(0,0,100,200);
+    if(P.heat>45&&HOLD&&HOLD.k==='heat'){X.strokeStyle='rgba(255,225,190,'+Math.min(.09,(P.heat-45)/500)+')';X.lineWidth=.45;X.lineCap='round';for(let i=0;i<4;i++){X.beginPath();for(let k=0;k<7;k++){const y=hy-14-k*3.2-((TIME*22+i*7)%10);X.lineTo(hx-6+i*4+Math.sin(k*.9+TIME*7+i)*1.4,y)}X.stroke()}}}
+  X.fillStyle=lg(0,0,100,200,'rgba(255,255,255,.075)',[.32,'rgba(255,255,255,.015)'],[.33,'rgba(255,255,255,0)'],'rgba(255,255,255,0)');X.fillRect(0,0,100,200);
+  X.restore();
+  // separation seams where the adhesive has been cut
+  X.lineCap='round';
+  for(const s of SIDES)P.segs[s].forEach((v,i)=>{if(v<=.02)return;X.strokeStyle='rgba(0,0,0,'+(.3+v*.55)+')';X.lineWidth=.35+v*.85;X.beginPath();
+    if(s==='bottom'||s==='top'){const y=s==='top'?1.6:198.4,x=10+i*20;X.moveTo(Math.max(8,x),y);X.lineTo(Math.min(92,x+20),y)}else{const x=s==='left'?1.6:98.4,y=14+i*21.5;X.moveTo(x,y);X.lineTo(x,y+21.5)}X.stroke()});
+  X.lineCap='butt';
+  if(P.gap)X.fillStyle='rgba(0,0,0,.5)',X.fillRect(8,197.6,84,1.1);
+  if(swollen()){   // the cell pushes the glass up: a dark gap opens along the left and bottom, with a lit lip above it
+    X.fillStyle='rgba(0,0,0,.8)';poly([[1.4,50],[1.4,188],[12,198.8],[70,198.8],[70,197.6],[14,195.6],[4.2,186],[3.2,50]]);X.closePath();X.fill();
+    X.strokeStyle='rgba(255,255,255,.35)';X.lineWidth=.35;poly([[3.4,52],[4.4,186],[14,195.4],[70,197.4]]);X.stroke()}
+  if(P.cup||P.cupT>0)drawCup(50,166,P.cupT);
 }
-function drawBack(P){
-  const x=SCREEN_X,m=MODELS[P.model];
-  fillRR(x,0,100,200,13,'#1d2127');
-  fillRR(x+5,5,90,190,9,'#3d434d');
-  // EMI shield + graphite sheet + copper tape
-  fillRR(x+12,40,76,120,3,'#2b2f35');ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=.4;for(let i=0;i<12;i++){ctx.beginPath();ctx.moveTo(x+14,44+i*10);ctx.lineTo(x+86,44+i*10);ctx.stroke()}
-  fillRR(x+70,150,16,30,1,'#b87333');fillRR(x+14,165,22,14,1,'#b87333');
-  txt(m.name.toUpperCase()+' · LCM ASSY',x+50,104,5,'rgba(255,255,255,.35)');txt('DO NOT PRESS',x+50,112,3.6,'rgba(255,255,255,.25)');
-  // earpiece + front camera assembly
-  fillRR(x+30,6,40,14,2,'#15181c');fillRR(x+36,9,18,6,2,'#262a30');ctx.fillStyle='#000';ctx.beginPath();ctx.arc(x+62,12,3,0,6.283);ctx.fill();
-  ctx.fillStyle='#24324d';ctx.beginPath();ctx.arc(x+62,12,1.4,0,6.283);ctx.fill();
-  // the display + digitizer flex tails (they run to the board connectors)
-  fillRR(x+4,14,14,10,1.5,'#d98a2b');fillRR(x+4,27,14,8,1.5,'#c27a24');
-  // old adhesive on the screen rim
-  if(!P.gasket){ctx.strokeStyle='rgba(240,240,235,.5)';ctx.lineWidth=1.4;ctx.setLineDash([3,1.5,1,2]);rr(x+2,2,96,196,11);ctx.stroke();ctx.setLineDash([])}
-  
+function drawCup(x,y,t){
+  const sq=HOLD&&HOLD.k==='suc'?Math.min(1,HOLD.t/HOLD.need):0,a=Math.max(t,sq>0?1:0);
+  X.save();X.globalAlpha=Math.min(1,a+sq);
+  circ(x+1,y+1.6,15,'rgba(0,0,0,.25)');
+  X.beginPath();X.ellipse(x,y,15,15-sq*1.2,0,0,6.283);X.fillStyle=rg(x-3,y-4,1,16,'rgba(210,225,240,.55)','rgba(150,170,190,.45)','rgba(110,130,150,.6)');X.fill();
+  ring(x,y,14.4,'rgba(235,242,250,.75)',.7);ring(x,y,10,'rgba(255,255,255,.18)',.4);
+  box(x-3.4,y-15,6.8,14,2.6,lg(x-3.4,0,x+3.4,0,'#a82d2d','#e05050','#a82d2d'));
+  X.beginPath();X.ellipse(x,y-16,7,4.6,0,3.3,6.12);stroke('#c83c3c',2.2);
+  X.restore();
 }
-function slot(r){fillRR(r[0],r[1],r[2],r[3],3,'rgba(0,0,0,.18)')}
-function flex(pts,w,col){ctx.strokeStyle=col||'#d98a2b';ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
-  ctx.strokeStyle='rgba(255,220,150,.35)';ctx.lineWidth=w*.15;ctx.stroke();ctx.lineCap='butt'}
-// a plug sits in its socket (connected) or is flipped up beside it
-function drawConn(id){
-  const P=cur,c=CONNS[id],r=c.r,on=P.conn[id],has=!!P.part[c.part];
-  fillRR(r[0],r[1],r[2],r[3],1,'#0d0f12');ctx.fillStyle='#d4a940';for(let i=0;i<Math.floor(r[2]/2)-1;i++)ctx.fillRect(r[0]+1.4+i*2,r[1]+r[3]/2-1,1,2);
-  if(!has)return;
-  if(on){fillRR(r[0]+.8,r[1]+.8,r[2]-1.6,r[3]-1.6,1,'#2c3138');ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(r[0]+1.5,r[1]+1.2,r[2]-3,.6)}
-  else fillRR(r[0]+.8,r[1]-r[3]+1,r[2]-1.6,r[3]-1.6,1,'#2c3138')
+function plugPos(c){const P=cur,r=CONNS[c].r,a=P.connA[c],L=LIFT[c];return{x:r[0]+L[0]*(1-a),y:r[1]+L[1]*(1-a),w:r[2],h:r[3],a}}
+function plugCenter(c){const p=plugPos(c);return{x:p.x+p.w/2,y:p.y+p.h/2}}
+function drawSocket(c){const r=CONNS[c].r;box(r[0]-.5,r[1]-.5,r[2]+1,r[3]+1,1,'#17181b');box(r[0]+.4,r[1]+.6,r[2]-.8,r[3]-1.2,.6,'#2a2c31');X.fillStyle='#d4a940';const n=Math.floor(r[2]/1.2);for(let i=0;i<n;i++){X.fillRect(r[0]+.9+i*1.2,r[1]+1.1,.55,r[3]*.3);X.fillRect(r[0]+.9+i*1.2,r[1]+r[3]-1.1-r[3]*.3,.55,r[3]*.3)}}
+function drawPlug(c){
+  const p=plugPos(c),lift=1-p.a;
+  if(lift>0)box(p.x+.6+lift*.8,p.y+1+lift*1.6,p.w,p.h,1,'rgba(0,0,0,'+(.35*lift)+')');
+  box(p.x+.3,p.y+.3,p.w-.6,p.h-.6,.9,lg(0,p.y,0,p.y+p.h,'#2c3036','#131417'));
+  box(p.x+.9,p.y+.9,p.w-1.8,p.h*.42,.5,steel(p.x,p.y,p.x+p.w,p.y+p.h));
+  X.fillStyle='rgba(0,0,0,.25)';X.fillRect(p.x+1.4,p.y+.9+p.h*.42,p.w-2.8,.25);
 }
-let SMD=null;
+function flexPath(pts,w,col){
+  X.lineJoin='round';X.lineCap='round';
+  poly(pts);stroke(col||'#c4801f',w);poly(pts);stroke('rgba(255,210,140,.28)',w*.55);
+  poly(pts);X.setLineDash([.4,.9]);stroke('rgba(120,70,10,.35)',w*.12);X.setLineDash([]);
+  X.lineCap='butt';
+}
+function drawSpots(P){
+  if(!P.part.board||!P.part.board.orig||!P.job.faults.includes('water'))return;
+  for(const s of P.spots){if(s.left<=0)continue;const r=rngOf(Math.round(s.x*100+s.y));X.save();X.globalAlpha=s.left;
+    // a tide-mark stain, then a crust of salt and copper-oxide crystals
+    X.fillStyle=rg(s.x,s.y,0,7.8,'rgba(150,120,60,.45)','rgba(110,120,60,.28)',[.8,'rgba(80,100,60,.12)'],'rgba(60,90,60,0)');X.fillRect(s.x-9,s.y-9,18,18);
+    X.beginPath();for(let i=0;i<=16;i++){const a=i/16*6.283,d=5.6+r()*1.8;X.lineTo(s.x+Math.cos(a)*d,s.y+Math.sin(a)*d)}X.closePath();stroke('rgba(170,140,80,.35)',.3);
+    for(let i=0;i<34;i++){const a=r()*6.283,d=Math.pow(r(),.7)*4.6,x=s.x+Math.cos(a)*d,y=s.y+Math.sin(a)*d,rr=.18+r()*.55;
+      X.fillStyle=['#e9f7ef','#bfe8d4','#8fd0b4','#5fae8f','#d8d2b0'][Math.floor(r()*5)];X.beginPath();for(let k=0;k<5;k++){const aa=k/5*6.283+r();X.lineTo(x+Math.cos(aa)*rr*(.6+r()*.6),y+Math.sin(aa)*rr*(.6+r()*.6))}X.closePath();X.fill()}
+    X.restore()}
+}
+function sprBracket(k){const b=BRK[k],[x,y,w,h]=b.r;return sprite('brk:'+k,w,h,()=>{
+  X.translate(-x,-y);
+  if(k==='cam'){X.beginPath();X.rect(x-20,y-20,w+40,h+40);X.moveTo(24+7.8,22);X.arc(24,22,7.8,0,Math.PI*2);X.clip('evenodd')}
+  shadow(1.2,.6,'rgba(0,0,0,.55)');path(x,y,w,h,2);X.fillStyle=steel(x,y,x+w,y+h);X.fill();noShadow();
+  X.save();path(x,y,w,h,2);X.clip();brushed(x,y,w,h,Math.round(x*3+y),.1);X.restore();
+  path(x+.6,y+.6,w-1.2,h-1.2,1.5);stroke('rgba(255,255,255,.5)',.28);
+  if(k==='cam')ring(24,22,7.8,'rgba(0,0,0,.35)',.4);
+  else{X.fillStyle='rgba(0,0,0,.12)';X.fillRect(x+3,y+h/2-.5,w-12,1);X.fillStyle='rgba(255,255,255,.25)';X.fillRect(x+3,y+h/2+.5,w-12,.3)}
+  for(const id of b.sc){const hh=HOLE[id];circ(hh.x,hh.y,3.4,'rgba(0,0,0,.22)')}
+},4)}
+function drawBracket(P,k){
+  const a=P.brA[k];if(a<=.02)return;
+  if(k==='cam'?!P.part.camera:!P.part.board)return;
+  const b=BRK[k],off=1-a;
+  X.save();X.globalAlpha=Math.min(1,a*1.4);
+  if(off>.01){const[x,y,w,h]=b.r;X.globalAlpha*=.5;box(x+off*2,y+off*3,w,h,2,'rgba(0,0,0,'+(.35*off)+')');X.globalAlpha=Math.min(1,a*1.4)}
+  blit(sprBracket(k),b.r[0]-2*off,b.r[1]-6*off);
+  X.restore();
+}
+function drawBattery(P){
+  const b=P.part.battery,[x,y]=R.battery;let l=0;
+  if(HOLD&&HOLD.k==='pull')l=Math.min(1,HOLD.t/HOLD.need);
+  const pc=plugCenter('bat');
+  flexPath([[64,y+2],[64,y-3],[pc.x,pc.y+3]],6.5);
+  drawPlug('bat');
+  X.save();X.translate(-1.4*l,-2.6*l);
+  if(l>0){X.save();X.globalAlpha=.4*l;box(x+3+l*3,y+4+l*5,72,84,5,'#000');X.restore()}
+  blit(sprBattery(b.model,b.bad==='swollen'),x,y);
+  if(P.alc){X.save();path(x,y,72,84,4.5);X.clip();X.fillStyle=rg(x+36,y+50,2,40,'rgba(170,215,255,.22)','rgba(170,215,255,.08)');X.fillRect(x,y,72,84);X.restore()}
+  X.restore();
+}
+function portFlex(){const pc=plugCenter('port');return[[44,186],[40,183.6],[13,181.4],[11.2,176],[11.2,74],[13,68],[pc.x-4,pc.y+.4],[pc.x,pc.y]]}
+const animIn=t=>ANIM_P.some(a=>a.t===t&&a.dir==='in');
+function drawPartSprite(t,model,bad){
+  if(t==='battery')blit(sprBattery(model,bad==='swollen'),R.battery[0],R.battery[1]);
+  else if(t==='camera')blit(sprCam(),R.camera[0],R.camera[1]);
+  else if(t==='speaker')blit(sprSpeaker(),R.speaker[0],R.speaker[1]);
+  else if(t==='port')blit(sprPort(),R.port[0],R.port[1]);
+  else if(t==='board')blit(sprBoard(model),10,10);
+  else if(t==='screen')blit(sprBack(model),SCREEN_X,0);
+}
+function partRect(t){return t==='screen'?[SCREEN_X,0,100,200]:t==='board'?R.board:R[t]}
 function drawInterior(P){
-  const m=MODELS[P.model];
-  // chassis
-  fillRR(3,3,94,194,11,'#2b3038');
-  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=.6;for(let y=8;y<196;y+=4){ctx.beginPath();ctx.moveTo(6,y);ctx.lineTo(94,y);ctx.stroke()}
-  ctx.fillStyle=m.dark;ctx.fillRect(3,72,94,1.2);ctx.fillRect(3,160,94,1.2);   // antenna splits
-  fillRR(95,90,3,26,1.2,'#1a1d22');                                          // SIM tray
-  // adhesive remnants / fresh gasket on the rim
-  if(P.gasket){ctx.strokeStyle='#0a0a0a';ctx.lineWidth=2;rr(4.5,4.5,91,191,10);ctx.stroke()}
-  else{ctx.strokeStyle='rgba(240,240,235,.55)';ctx.lineWidth=1.3;ctx.setLineDash([4,1.5,1,2.5]);rr(4.5,4.5,91,191,10);ctx.stroke();ctx.setLineDash([])}
   const p=P.part;
-  // port flex runs up the left edge to its board connector
-  if(p.port)flex([[44,183],[11,178],[11,72],[22,68],[28,66]],3);
-  // board
-  if(p.board){
-    const[bx,by,bw,bh]=R.board;fillRR(bx,by,bw,bh,5,'#1d5e3e');fillRR(bx+.8,by+.8,bw-1.6,bh-1.6,4.5,'#1f6b45');
-    ctx.strokeStyle='#2c8a5a';ctx.lineWidth=.45;ctx.beginPath();
-    for(let i=0;i<10;i++){ctx.moveTo(bx+30,by+16+i*4);ctx.lineTo(bx+44,by+16+i*4);ctx.lineTo(bx+48,by+20+i*4)}
-    for(let i=0;i<8;i++){ctx.moveTo(bx+48+i*2.2,by+34);ctx.lineTo(bx+48+i*2.2,by+44)}ctx.stroke();
-    if(!SMD){const r=rngOf(42);SMD=Array.from({length:70},()=>[12+r()*76,12+r()*56,r()<.5?1.6:.9,r()<.5?.8:.5,r()<.3?'#c9a227':r()<.6?'#3a2a1a':'#222'])}
-    for(const s of SMD)if(!inR(s[0],s[1],[12,10,30,35])&&!inR(s[0],s[1],[54,11,24,25])&&!inR(s[0],s[1],[55,56,24,13])){ctx.fillStyle=s[4];ctx.fillRect(s[0],s[1],s[2],s[3])}
-    // SoC under a shield can, PMIC, NAND
-    fillRR(38,24,17,18,1,'#b9c0c8');ctx.fillStyle='rgba(0,0,0,.25)';for(let i=0;i<6;i++)for(let j=0;j<6;j++){ctx.beginPath();ctx.arc(40.5+i*2.5,26.5+j*2.7,.35,0,6.283);ctx.fill()}
-    txt('SoC',46.5,34,3.4,'#5c646e',700);
-    fillRR(62,40,13,10,1,'#121417');txt('PMIC',68.5,46.3,2.8,'#7d848d');
-    fillRR(44,58,10,9,.8,'#121417');txt('NAND',49,63.5,2.4,'#7d848d');
-    fillRR(76,50,10,7,.8,'#121417');
-    ctx.fillStyle='#d4a940';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(26+i*2.8,66,.6,0,6.283);ctx.fill()}   // test points
-    if(p.board.orig&&P.job.faults.includes('water'))for(const s of P.spots){if(s.left<=0)continue;
-      ctx.globalAlpha=s.left;const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,7);g.addColorStop(0,'#7cf2c3');g.addColorStop(.6,'#2fa77e');g.addColorStop(1,'rgba(40,140,110,0)');
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(s.x,s.y,7,0,6.283);ctx.fill();ctx.fillStyle='#e9fff6';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(s.x+Math.cos(i*2.4)*3,s.y+Math.sin(i*2.4)*3,.7,0,6.283);ctx.fill()}ctx.globalAlpha=1}
-    
-    for(const c of CONN_IDS)drawConn(c);
-    // camera module + its flex + its bracket
-    if(p.camera){
-      const[cx,cy,cw,ch]=R.camera;flex([[24,32],[23,37]],5);
-      fillRR(cx,cy,cw,ch,3,'#aab2bc');fillRR(cx+2,cy+2,cw-4,ch-4,2,'#d8dde3');
-      ctx.fillStyle='#0b0d12';ctx.beginPath();ctx.arc(cx+10,cy+10,6.2,0,6.283);ctx.fill();ctx.strokeStyle='#3c4450';ctx.lineWidth=.6;ctx.beginPath();ctx.arc(cx+10,cy+10,4.8,0,6.283);ctx.stroke();
-      ctx.fillStyle='#24324d';ctx.beginPath();ctx.arc(cx+10,cy+10,3.4,0,6.283);ctx.fill();
-      ctx.fillStyle='rgba(140,200,255,.8)';ctx.beginPath();ctx.arc(cx+8.5,cy+8.5,1.1,0,6.283);ctx.fill();
-      if(P.sc.c1){ctx.strokeStyle='#c4ccd6';ctx.lineWidth=1.6;rr(12.5,10.5,29,34,2);ctx.stroke();fillRR(12,39,24,6,1,'#b4bcc6');fillRR(36,10,6,8,1,'#b4bcc6')}
-      
-    }else slot(R.camera,'CAM');
-    for(const b of BRACKETS)if(b.sc.some(s=>P.sc[s])){const r=b.r;ctx.globalAlpha=.94;fillRR(r[0],r[1],r[2],r[3],2,'#b4bcc6');ctx.globalAlpha=1;ctx.strokeStyle='#7d8794';ctx.lineWidth=.5;rr(r[0],r[1],r[2],r[3],2);ctx.stroke();
-      ctx.fillStyle='rgba(0,0,0,.18)';for(let i=0;i<4;i++)ctx.fillRect(r[0]+3+i*5,r[1]+r[3]/2-.4,3,.8)}
-  }else{slot(R.board,'LOGIC BOARD')}
-  // battery + flex to its connector
-  if(p.battery){
-    const[x,y,w,h]=R.battery,bm=MODELS[p.battery.model];
-    flex([[62,77],[66,70],[67,66]],7);
-    fillRR(x,y,w,h,4,'#16181c');
-    if(swollen()){const g=ctx.createRadialGradient(x+w/2,y+h/2,4,x+w/2,y+h/2,46);g.addColorStop(0,'rgba(255,255,255,.22)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;rr(x,y,w,h,4);ctx.fill();
-      ctx.strokeStyle='rgba(255,180,90,.5)';ctx.lineWidth=.6;ctx.beginPath();ctx.ellipse(x+w/2,y+h/2,w/2-4,h/2-6,0,0,6.283);ctx.stroke()}
-    txt('Li-ion Polymer',x+w/2,y+14,5,'#e8ecf1',700);
-    txt(bm.mah+' mAh · 3.85 V · '+(bm.mah*3.85/1000).toFixed(2)+' Wh',x+w/2,y+21,3.4,'#aab2bc',500);
-    fillRR(x+8,y+28,w-16,22,2,bm.accent);txt(bm.name,x+w/2,y+38,6,'#0d0f12',800);txt('A'+(1800+bm.mah%997),x+w/2,y+45,3.6,'#0d0f12',600);
-    ctx.fillStyle='#e8ecf1';for(let i=0;i<22;i++)ctx.fillRect(x+16+i*1.8,y+56,i%3?.5:1,8);
-    txt('⚠ DO NOT PUNCTURE · DO NOT HEAT',x+w/2,y+72,3,'#aab2bc',600);
-    if(P.alc){ctx.fillStyle='rgba(180,220,255,.18)';rr(x,y,w,h,4);ctx.fill()}
-    if(m.tabs||bm.tabs)for(const tx of[x+14,x+w-26])fillRR(tx,y+h-3,12,10,1.5,'#060708');
-    
-  }else slot(R.battery,'BATTERY');
-  // taptic engine (decorative), speaker, port
-  {const[x,y,w,h]=R.taptic;fillRR(x,y,w,h,2,'#9aa3ad');fillRR(x+1,y+1,w-2,h-2,1.5,'#b9c0c8');txt('TAPTIC',x+w/2,y+h/2+1.2,3,'#5c646e',700)}
-  if(p.speaker){const[x,y,w,h]=R.speaker;fillRR(x,y,w,h,2,'#121417');ctx.fillStyle='#3d434c';for(let i=0;i<4;i++)for(let j=0;j<3;j++){ctx.beginPath();ctx.arc(x+4+i*4,y+4+j*4,1,0,6.283);ctx.fill()}fillRR(x+w-5,y+h-4,4,3,.5,'#d4a940');}
-  else slot(R.speaker,'SPK');
-  if(p.port){const[x,y,w,h]=R.port;fillRR(x,y,w,h,2,'#c4ccd6');fillRR(x+4,y+4,w-8,5,2.5,'#0b0d12');
-    ctx.fillStyle='#d4a940';for(let i=0;i<6;i++)ctx.fillRect(x+6+i*2,y+5.6,1,1.8);
-    if(P.lint>0){ctx.fillStyle='#b8b2a6';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(x+6+i*2.4,y+6.5+Math.sin(i*2)*.7,1,0,6.283);ctx.fill()}}
-    }
-  else slot(R.port,'PORT');
-  if(P.dust>0){ctx.fillStyle='rgba(200,195,185,.35)';for(const m of P.smudge)for(let k=0;k<9;k++)ctx.fillRect((m[0]+k*13.7)%88+6,(m[1]+k*21.3)%186+6,.7,.7)}
-  for(const h of HOLES)if(h.part!=='case'&&hostOf(h))drawHole(h);
+  blit(sprChassis(P.model),0,0);
+  if(P.gasket){path(3.1,3.1,93.8,193.8,11.3);stroke('#0c0c0d',1.8);path(3.1,3.1,93.8,193.8,11.3);stroke('rgba(255,255,255,.07)',.3)}
+  else{X.strokeStyle='rgba(245,245,240,.5)';X.lineWidth=1.2;X.setLineDash([3.6,1.1,1.6,2.2]);path(3.1,3.1,93.8,193.8,11.3);X.stroke();X.setLineDash([])}
+  blit(sprTaptic(),R.taptic[0],R.taptic[1]);
+  if(p.board&&!animIn('board')){blit(sprBoard(p.board.model),10,10);for(const c of CONN_IDS)drawSocket(c);drawSpots(P)}
+  if(p.speaker&&!animIn('speaker'))blit(sprSpeaker(),R.speaker[0],R.speaker[1]);
+  if(p.port&&!animIn('port')){flexPath(portFlex(),3);drawPlug('port');blit(sprPort(),R.port[0],R.port[1]);if(P.lint>0)drawLint(50,189.2,10)}
+  if(p.battery&&!animIn('battery'))drawBattery(P);
+  if(p.camera&&!animIn('camera')){const pc=plugCenter('cam');flexPath([[24,30],[24,34],[pc.x,pc.y]],6);drawPlug('cam');blit(sprCam(),R.camera[0],R.camera[1])}
+  drawBracket(P,'cam');drawBracket(P,'bat');
+  for(const h of HOLES)if(h.part!=='case'&&h.part!=='scrbr'&&hostOf(h))drawHole(h);
+  if(P.dust>0){const r=rngOf(P.uid*7+3);X.fillStyle='rgba(215,210,198,.4)';for(let i=0;i<70;i++){const x=6+r()*88,y=6+r()*188,s=.3+r()*.5;X.fillRect(x,y,s,s)}}
+}
+// The screen swinging open: sliced into strips with real perspective so it reads as a 3D flip.
+function drawFlip(P,th){
+  const front=th<Math.PI/2,s=front?sprFront(P.model):sprBack(P.model),k=s.k;
+  const hinge=100+(SCREEN_X-100)*th/Math.PI,D=360,N=Math.max(48,Math.min(90,Math.round(100*U*DPR/7))),sn=Math.sin(th),cs=Math.cos(th);
+  const proj=d=>{const f=D/(D-d*sn);return{x:hinge-d*cs*f,f}};
+  const far=proj(100);
+  X.save();X.globalAlpha=.32*sn;X.fillStyle='#000';poly([[hinge+2,4],[far.x+3+6*sn,100-96*far.f+8*sn],[far.x+3+6*sn,100+96*far.f+8*sn],[hinge+2,200]]);X.closePath();X.fill();X.restore();
+  for(let i=0;i<N;i++){
+    const d0=i*100/N,d1=(i+1)*100/N,a=proj(d0),b=proj(d1),f=(a.f+b.f)/2;
+    const dx=Math.min(a.x,b.x),dw=Math.abs(b.x-a.x)+.12;if(dw<.05)continue;
+    const sx=front?100-d1:d0,dh=200*f;
+    X.drawImage(s.c,(sx+s.pad)*k,s.pad*k,(100/N)*k,200*k,dx,100-dh/2,dw,dh);
+  }
+  const lightA=front?.45*sn:.5*sn;
+  X.save();X.globalAlpha=lightA;X.fillStyle=front?'#000':'#000';poly([[hinge,0],[far.x,100-100*far.f],[far.x,100+100*far.f],[hinge,200]]);X.closePath();X.fill();X.restore();
+}
+function drawRibbons(P){
+  for(const[c,y0,w]of[['scr',19,7],['tch',31,5.2]]){
+    const p=plugPos(c),ex=p.x+p.w-1,ey=p.y+p.h/2;
+    X.lineCap='round';X.beginPath();X.moveTo(SCREEN_X-2,y0);X.bezierCurveTo(SCREEN_X-16,y0,ex+14,ey,ex,ey);stroke('#c4801f',w);
+    X.beginPath();X.moveTo(SCREEN_X-2,y0);X.bezierCurveTo(SCREEN_X-16,y0,ex+14,ey,ex,ey);stroke('rgba(255,210,140,.3)',w*.5);X.lineCap='butt';
+  }
+  drawPlug('scr');drawPlug('tch');
 }
 function drawPhone(){
   const P=cur;
+  X=ctx;XS=U*DPR;
   ctx.setTransform(DPR*U,0,0,DPR*U,DPR*OX,DPR*OY);
-  const m=MODELS[P.model],t=P.openT;
-  ctx.save();ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=18*U*DPR;ctx.shadowOffsetY=6*U*DPR;fillRR(0,0,100,200,13,m.frame);ctx.restore();
-  const fg=ctx.createLinearGradient(0,0,100,0);fg.addColorStop(0,m.frame);fg.addColorStop(.5,'#ffffff22');fg.addColorStop(1,m.frame);
-  fillRR(0,0,100,200,13,m.frame);ctx.fillStyle=fg;ctx.globalAlpha=.25;rr(0,0,100,200,13);ctx.fill();ctx.globalAlpha=1;
-  ctx.fillStyle=m.dark;ctx.fillRect(-1.2,40,1.6,14);ctx.fillRect(-1.2,58,1.6,14);ctx.fillRect(99.6,50,1.6,22);
-  if(t<=0){drawFront(P,P.boot>0?Math.min(1,P.boot*2):0);return}
-  drawInterior(P);
-  ctx.save();ctx.translate(104,0);
-  if(t<.5){ctx.scale(1-2*t,1);ctx.translate(-104,0);if(P.part.screen){fillRR(0,0,100,200,13,m.frame);drawFront(P,0)}}
-  else{ctx.scale(2*t-1,1);ctx.translate(-104,0);
-    if(P.part.screen){ctx.save();ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=12*U*DPR;ctx.shadowOffsetY=4*U*DPR;fillRR(SCREEN_X,0,100,200,13,'#1d2127');ctx.restore();drawBack(P)}
-    else slot([SCREEN_X+6,6,88,188],'SCREEN')}
-  ctx.restore();
-  // display + digitizer flexes from the screen to their connectors, over the board
-  if(t>.9&&P.part.screen&&P.part.board){
-    for(const[id,yy,w,col]of[['scr',19,6,'#d98a2b'],['tch',31,5,'#c27a24']]){
-      const r=CONNS[id].r,on=P.conn[id],ex=r[0]+r[2]/2,ey=r[1]+(on?r[3]/2:-r[3]/2+1);
-      ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(SCREEN_X+11,yy);ctx.bezierCurveTo(100,yy-6,92,ey,ex+5,ey);ctx.stroke();ctx.lineCap='butt';
+  const t=P.openT,th=ease(t)*Math.PI;
+  blit(sprShadow(),0,0);
+  if(t>=.999&&P.part.screen)blit(sprShadow(),SCREEN_X,0);
+  blit(sprBody(P.model),0,0);
+  drawEdge(P);
+  if(t<=0){
+    blit(sprFront(P.model),0,0);
+    const el=BOOT-P.boot,lit=P.boot>0&&works().display;
+    if(lit){const a=Math.min(1,el*5,P.boot/.45);X.save();X.globalAlpha=a;path(4.4,4.4,91.2,191.2,10.2);X.clip();
+      if(el<1.1){X.fillStyle='#000';X.fillRect(4,4,92,192);drawLogo(P.model,50,98,Math.min(1,el*3)*(el>.9?Math.max(0,(1.1-el)*5):1))}
+      else blit(sprWall(P.model),4.4,4.4);
+      X.restore();cutout(MODELS[P.model]);}
+    drawGlassFX(P,lit);
+  }else{
+    drawInterior(P);
+    if(P.part.screen&&!animIn('screen')){
+      if(t>=.999){blit(sprBack(P.model),SCREEN_X,0)}
+      else drawFlip(P,th);
     }
-    for(const id of['scr','tch'])drawConn(id);
-    const b=BRACKETS[0];if(b.sc.some(s=>P.sc[s])){const r=b.r;ctx.globalAlpha=.94;fillRR(r[0],r[1],r[2],r[3],2,'#b4bcc6');ctx.globalAlpha=1;ctx.strokeStyle='#7d8794';ctx.lineWidth=.5;rr(r[0],r[1],r[2],r[3],2);ctx.stroke()}
-    drawHole(HOLE.sc1);drawHole(HOLE.sc2);
+    if(P.part.board){
+      if(P.part.screen&&!animIn('screen')){if(t>.85)drawRibbons(P);else{drawPlug('scr');drawPlug('tch')}}
+      drawBracket(P,'scr');drawHole(HOLE.sc1);drawHole(HOLE.sc2);
+    }
+  }
+  drawAnims(P);
+}
+function drawAnims(P){
+  for(const a of ANIM_P){
+    const r=partRect(a.t),k=ease(Math.min(1,a.k)),out=a.dir==='out',lift=out?k:1-k;
+    X.save();X.globalAlpha=out?1-k:Math.min(1,k*3);
+    const cx=r[0]+r[2]/2,cy=r[1]+r[3]/2,sc=1+.07*lift;
+    X.translate(cx-6*lift,cy-10*lift);X.scale(sc,sc);X.translate(-cx,-cy);
+    box(r[0]+3+lift*4,r[1]+5+lift*7,r[2],r[3],5,'rgba(0,0,0,'+(.35*lift)+')');
+    drawPartSprite(a.t,a.model,a.bad);
+    X.restore();
+  }
+  for(const a of ANIM_S){
+    const k=Math.min(1,a.t/(a.dir==='out'?.4:.28)),lift=a.dir==='out'?k:1-k;
+    X.save();X.globalAlpha=a.dir==='out'?1-k*k:1;
+    drawScrewHead(a.x,a.y,a.s,true,a.t*(a.dir==='out'?-18:18),lift*1.6);
+    X.restore();
   }
 }
-function drawOverlay(){
-  const P=cur;
-  ctx.setTransform(DPR*U,0,0,DPR*U,DPR*OX,DPR*OY);
-  for(const f of FX){const a=f.life/f.max;
-    if(f.kind==='spark'){ctx.strokeStyle='rgba(255,'+(200+Math.random()*55|0)+',90,'+a+')';ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.x-f.vx*.04,f.y-f.vy*.04);ctx.stroke()}
-    else if(f.kind==='smoke'){ctx.fillStyle='rgba(120,120,120,'+a*.4+')';ctx.beginPath();ctx.arc(f.x,f.y,4+(1-a)*10,0,6.283);ctx.fill()}
-    else{ctx.fillStyle='rgba(210,220,230,'+a+')';ctx.fillRect(f.x,f.y,1.2,1.2)}}
-  for(const r of ROLL){ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.rot);drawScrew(0,0,r.s,true);ctx.restore()}
-  if(TOOL==='pick'&&PTR.in&&playing()&&!P.open){const l=toL(PTR.x,PTR.y);ctx.fillStyle='rgba(57,170,255,.85)';ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x+9,l.y+5);ctx.lineTo(l.x+4,l.y+11);ctx.closePath();ctx.fill()}
-  // screen space: meter readout, thermometer, floating text, tool cursor
+
+// ═══════════════════════ the bench: mat, multimeter, screw tray, tools ═══════════════════════
+let BENCH=null;
+function benchCanvas(){
+  const key=W+'x'+H+'@'+DPR+':'+PROPW;
+  if(BENCH&&BENCH.key===key)return BENCH.c;
+  const c=document.createElement('canvas');c.width=Math.max(1,Math.round(W*DPR));c.height=Math.max(1,Math.round(H*DPR));
+  const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);
+  const pX=X,pS=XS;X=g;XS=DPR;
+  try{
+    X.fillStyle=lg(0,0,0,H,'#1f3d51','#173142','#122634');X.fillRect(0,0,W,H);
+    const cx=PROPW+(W-PROPW)/2;
+    X.fillStyle=rg(cx,H*.3,0,Math.max(W,H)*.75,'rgba(255,246,225,.16)','rgba(255,246,225,.04)','rgba(0,0,0,0)');X.fillRect(0,0,W,H);
+    const r=rngOf(5);for(let i=0;i<W*H/22;i++){X.fillStyle=r()<.5?'rgba(255,255,255,.03)':'rgba(0,0,0,.06)';X.fillRect(r()*W,r()*H,1,1)}
+    X.lineWidth=1;for(let x=PROPW+12,i=0;x<W;x+=24,i++){X.strokeStyle='rgba(255,255,255,'+(i%5?.035:.07)+')';X.beginPath();X.moveTo(Math.round(x)+.5,0);X.lineTo(Math.round(x)+.5,H);X.stroke()}
+    for(let y=12,i=0;y<H;y+=24,i++){X.strokeStyle='rgba(255,255,255,'+(i%5?.035:.07)+')';X.beginPath();X.moveTo(PROPW,Math.round(y)+.5);X.lineTo(W,Math.round(y)+.5);X.stroke()}
+    // ruler down the right edge
+    X.fillStyle='rgba(255,255,255,.22)';for(let y=12,i=0;y<H-10;y+=6,i++){const l=i%10===0?10:i%5===0?6:3;X.fillRect(W-4-l,y,l,1)}
+    X.font='600 9px JetBrains Mono,monospace';X.textAlign='right';for(let y=12,i=0;y<H-20;y+=60,i++)X.fillText(String(i),W-17,y+3);
+    // ESD print
+    X.save();X.globalAlpha=.16;X.fillStyle='#e6edf5';X.font='800 11px Rubik,sans-serif';X.textAlign='left';X.fillText('ESD SAFE  ·  HEAT RESISTANT TO 500°C',PROPW+14,H-12);
+    X.beginPath();X.moveTo(PROPW+14,H-26);X.lineTo(PROPW+24,H-44);X.lineTo(PROPW+34,H-26);X.closePath();X.lineWidth=1.6;X.strokeStyle='#e6edf5';X.stroke();X.restore();
+    if(PROPW){X.fillStyle=lg(0,0,PROPW,0,'rgba(0,0,0,.18)','rgba(0,0,0,0)');X.fillRect(0,0,PROPW,H)}
+    X.fillStyle=rg(W/2,H/2,Math.min(W,H)*.35,Math.max(W,H)*.85,'rgba(0,0,0,0)','rgba(0,0,0,.5)');X.fillRect(0,0,W,H);
+  }finally{X=pX;XS=pS}
+  BENCH={key,c};return c;
+}
+function trayGroups(){const g={};for(const s of C.tray){const k=skey(s);g[k]=(g[k]||0)+1}return Object.keys(g).sort().map(k=>[k,g[k]])}
+function propRects(){
+  const x=12,w=PROPW-24,mh=Math.min(w*1.28,H*.42),th=Math.min(H-mh-48,w*1.5);
+  return{meter:[x,12,w,mh],tray:[x,12+mh+14,w,Math.max(120,th)]};
+}
+function drawMeter(r){
+  const[x,y,w,h]=r,s=w/140,P=cur,rd=P&&P.read&&P.read.life>0?P.read:null;
+  X.save();X.translate(x,y);X.scale(s,s);
+  const hh=h/s;
+  X.shadowColor='rgba(0,0,0,.5)';X.shadowBlur=14*DPR;X.shadowOffsetY=6*DPR;box(0,0,140,hh,18,lg(0,0,140,hh,'#f6cc3a','#e2a91d'));noShadow();
+  path(1.5,1.5,137,hh-3,17);stroke('rgba(255,255,255,.35)',1);
+  box(9,9,122,hh-18,12,lg(0,9,0,hh-9,'#2a2e34','#1b1d22'));
+  const lcdH=hh*.3;box(17,18,106,lcdH,6,lg(0,18,0,18+lcdH,'#b6d3aa','#93b48a'));path(17,18,106,lcdH,6);stroke('rgba(0,0,0,.35)',1.2);
+  X.fillStyle='#1b2a1a';
+  if(rd){const parts=rd.txt.split(/\s{2,}/),lab=parts[0],vals=(parts[1]||'').split(' · ');
+    X.font='700 10px JetBrains Mono,monospace';X.textAlign='left';X.fillText(lab,24,32);
+    X.font='700 '+(vals[0].length>11?12:15)+'px JetBrains Mono,monospace';X.fillText(vals[0]||'',24,32+lcdH*.36);
+    X.font='600 9px JetBrains Mono,monospace';X.fillText((vals[1]||'').slice(0,20),24,32+lcdH*.62);
+  }else{X.font='700 22px JetBrains Mono,monospace';X.textAlign='center';X.globalAlpha=.35;X.fillText('-.--',70,18+lcdH*.62);X.globalAlpha=1}
+  T('PROBE-2000',70,18+lcdH+16,9,'#cfd6de',800);
+  const dy=18+lcdH+26+(hh-18-lcdH-26-34)/2+4;
+  circ(70,dy,Math.min(24,(hh-lcdH-80)/2),lg(50,dy-24,90,dy+24,'#4a5059','#1a1c20'));ring(70,dy,Math.min(24,(hh-lcdH-80)/2),'rgba(255,255,255,.18)',1);
+  X.save();X.translate(70,dy);X.rotate(rd?.6:-.9);box(-2,-20,4,16,2,'#e6edf5');X.restore();
+  T('V',40,dy-14,8,'#cfd6de',700);T('Ω',100,dy-14,8,'#cfd6de',700);T('A',36,dy+16,8,'#cfd6de',700);T('OFF',104,dy+16,7,'#cfd6de',700);
+  for(const[jx,col]of[[44,'#c33'],[96,'#222']]){circ(jx,hh-22,7,'#0b0c0e');ring(jx,hh-22,7,col,2.4)}
+  X.restore();
+  return{red:[x+44*s,y+h-22*s],blk:[x+96*s,y+h-22*s]};
+}
+const PROPC={};
+function cachedProp(name,r,fn){
+  const P=cur,rd=P&&P.read&&P.read.life>0?P.read.txt:'';
+  const key=r.join(',')+'@'+DPR+'|'+(name==='meter'?rd:JSON.stringify(trayGroups())+SELSCREW+upg('mat'));
+  let c=PROPC[name];
+  if(!c||c.key!==key){
+    const pad=24,cv2=c&&c.cv||document.createElement('canvas');cv2.width=Math.ceil((r[2]+pad*2)*DPR);cv2.height=Math.ceil((r[3]+pad*2)*DPR);
+    const g=cv2.getContext('2d');g.setTransform(DPR,0,0,DPR,(pad-r[0])*DPR,(pad-r[1])*DPR);
+    const pX=X,pS=XS;X=g;XS=DPR;let out;try{out=fn(r)}finally{X=pX;XS=pS}
+    c=PROPC[name]={key,cv:cv2,pad,out,hit:name==='tray'?TRAY_HIT.slice():null};
+  }
+  if(name==='tray')TRAY_HIT=c.hit;
+  X.drawImage(c.cv,r[0]-c.pad,r[1]-c.pad,r[2]+c.pad*2,r[3]+c.pad*2);
+  return c.out;
+}
+function drawProbes(jacks){
+  const P=cur,rd=P&&P.read&&P.read.life>0?P.read:null;
+  const a=rd?Math.min(1,rd.life*1.5):0;
+  const tgt=rd?{x:OX+rd.cx*U,y:OY+rd.cy*U}:null;
+  for(const[k,col,tip]of[['red','#d33',[0,0]],['blk','#2a2c30',[10,6]]]){
+    const j=jacks[k];X.strokeStyle=col;X.lineWidth=2.4;X.lineCap='round';X.beginPath();X.moveTo(j[0],j[1]);
+    if(tgt&&a>0){const ex=tgt.x+tip[0],ey=tgt.y+tip[1];X.bezierCurveTo(j[0],j[1]+80,ex-60,ey+60,ex,ey);X.globalAlpha=a;X.stroke();X.globalAlpha=1;
+      X.save();X.translate(ex,ey);X.rotate(-.5);X.globalAlpha=a;box(-2.5,0,5,26,2.2,col);box(-.8,-6,1.6,6,.6,'#d9dee4');X.restore()}
+    else{X.bezierCurveTo(j[0],j[1]+40,j[0]+(k==='red'?-18:18),j[1]+60,j[0]+(k==='red'?-10:22),Math.min(H-6,j[1]+70));X.stroke()}
+  }
+}
+function drawTray(r){
+  const[x,y,w,h]=r;TRAY_HIT=[];
+  X.save();X.shadowColor='rgba(0,0,0,.5)';X.shadowBlur=12*DPR;X.shadowOffsetY=5*DPR;box(x,y,w,h,12,lg(x,y,x,y+h,'#2b2f35','#1d2025'));X.restore();
+  path(x+1,y+1,w-2,h-2,11);stroke('rgba(255,255,255,.08)',1);
+  T(upg('mat')?'MAGNETIC PROJECT MAT':'SCREW TRAY',x+w/2,y+15,9.5,'rgba(230,237,245,.45)',800);
+  const gs=trayGroups(),cols=2,rows=4,gx=x+8,gy=y+22,cw=(w-16-6)/cols,ch=(h-30-9*1)/rows-3;
+  for(let i=0;i<cols*rows;i++){
+    const cx=gx+(i%cols)*(cw+6),cy=gy+Math.floor(i/cols)*(ch+3),g=gs[i];
+    box(cx,cy,cw,ch,7,'#15171b');path(cx,cy,cw,ch,7);stroke('rgba(0,0,0,.6)',1);path(cx+.5,cy+1,cw-1,ch-1,7);stroke('rgba(255,255,255,.04)',1);
+    if(!g)continue;
+    const[key,n]=g,[hd,len]=key.split('|');
+    TRAY_HIT.push({key,r:[cx,cy,cw,ch]});
+    if(SELSCREW===key){path(cx,cy,cw,ch,7);stroke('#39d0ff',2)}
+    const sc=Math.min(ch/16,cw/22,2.4),shown=Math.min(n,5);
+    X.save();X.translate(cx+cw/2,cy+ch*.42);X.scale(sc,sc);
+    for(let k=0;k<shown;k++){const ox=(k-(shown-1)/2)*Math.min(6.2,(cw/sc-6)/Math.max(1,shown)),oy=(k%2)*1.5-.7;drawScrewHead(ox,oy,{head:hd},true,k*1.1)}
+    X.restore();
+    X.font='700 '+Math.max(8,Math.min(10,cw/8))+'px JetBrains Mono,monospace';X.textAlign='left';X.fillStyle='#cfe3f5';X.fillText((hd==='PH'?'PH':hd==='P'?'P2':'Y')+' '+(+len).toFixed(1),cx+6,cy+ch-6);
+    X.textAlign='right';X.fillStyle='#8c9bb0';X.fillText('×'+n,cx+cw-6,cy+ch-6);
+  }
+}
+// the tool in your hand, drawn at the pointer (mouse only)
+function drawCursorTool(){
+  if(!(PTR.in&&playing()&&FINE))return;
+  const x=PTR.x,y=PTR.y,hold=!!(HOLD&&PTR.down),s=clamp(U/3,.7,1.25);
+  X.save();X.translate(x,y);X.scale(s,s);
+  X.shadowColor='rgba(0,0,0,.45)';X.shadowBlur=10*DPR;X.shadowOffsetY=6*DPR;X.shadowOffsetX=4*DPR;
+  switch(TOOL){
+    case'driver':{X.rotate(.55);const spin=hold&&HOLD.k==='screw'?TIME*30:0;
+      X.fillStyle='#cfd6de';poly([[-1.4,-5],[1.4,-5],[0,0]]);X.closePath();X.fill();
+      box(-1.5,-34,3,30,1,lg(-1.5,0,1.5,0,'#8d949c','#eef1f4','#9aa1aa'));box(-3,-38,6,5,1,'#9aa3ad');
+      box(-6,-80,12,43,5,lg(-6,0,6,0,'#1b8db3','#5fe0ff','#1b8db3'));noShadow();
+      X.fillStyle='rgba(0,0,0,.28)';for(let i=0;i<5;i++){const o=((i*2.4+spin)%12)-6;X.fillRect(o,-76,1,35)}
+      box(-6,-82,12,5,2.5,'#e6edf5');T(bitName(C.bit),0,-86,8,'#e6edf5',800);break}
+    case'heat':{X.rotate(.65);box(-4.5,-36,9,32,2,lg(-4.5,0,4.5,0,'#6d747d','#c9ced5','#6d747d'));box(-12,-72,24,38,7,lg(-12,0,12,0,'#e07a22','#ffa24d','#d06a1a'));
+      box(-6,-62,30,10,4,'#2b2f35');noShadow();
+      if(hold){X.globalCompositeOperation='lighter';X.fillStyle=rg(0,0,0,26,'rgba(255,170,80,.55)','rgba(255,90,30,0)');X.fillRect(-30,-30,60,60);X.globalCompositeOperation='source-over';
+        X.strokeStyle='rgba(255,220,180,.45)';X.lineWidth=1.2;for(let i=-1;i<=1;i++){X.beginPath();for(let k=0;k<8;k++)X.lineTo(i*5+Math.sin(k+TIME*12+i)*2,-2+k*3);X.stroke()}}
+      box(-3.5,-6,7,3,1,hold?'#ff5a2a':'#3a3f46');break}
+    case'suction':{noShadow();if(!cur.open&&!(HOLD&&HOLD.k==='suc')){X.globalAlpha=.75;const z=U/s;X.beginPath();X.ellipse(0,0,15*z,15*z,0,0,6.283);X.fillStyle='rgba(180,200,220,.35)';X.fill();ring(0,0,14.4*z,'rgba(235,242,250,.8)',1.2);box(-3.4*z,-15*z,6.8*z,14*z,2.6*z,'#c83c3c')}break}
+    case'pick':{X.rotate(-.1);X.fillStyle='rgba(60,170,255,.85)';poly([[0,0],[30,-12],[14,-34]]);X.closePath();X.fill();noShadow();poly([[0,0],[30,-12],[14,-34]]);X.closePath();stroke('rgba(200,235,255,.9)',1.2);break}
+    case'spudger':{X.rotate(.5);X.fillStyle='#22262b';poly([[-1.6,0],[1.6,0],[3.6,-14],[3.6,-80],[-3.6,-80],[-3.6,-14]]);X.closePath();X.fill();noShadow();poly([[-1.6,0],[1.6,0],[3.6,-14],[3.6,-80],[-3.6,-80],[-3.6,-14]]);X.closePath();stroke('rgba(255,255,255,.2)',.8);break}
+    case'meter':{X.rotate(.45);box(-1,-8,2,8,.8,'#d9dee4');box(-3.4,-60,6.8,52,3,lg(-3.4,0,3.4,0,'#a11','#e44','#a11'));box(-4.4,-24,8.8,4,1.5,'#7a0d0d');break}
+    case'brush':{X.rotate(.4);const j=hold?Math.sin(TIME*40)*1.5:0;X.translate(j,0);noShadow();X.strokeStyle='#e8ecf1';X.lineWidth=1;for(let i=-4;i<=4;i+=1.3){X.beginPath();X.moveTo(i*1.1,-2);X.lineTo(i,-16);X.stroke()}
+      X.shadowColor='rgba(0,0,0,.45)';X.shadowBlur=10*DPR;X.shadowOffsetY=6*DPR;box(-5.5,-20,11,5,1,'#9aa3ad');box(-4.5,-72,9,53,4,lg(-4.5,0,4.5,0,'#1b8db3','#5fe0ff','#1b8db3'));break}
+  }
+  X.restore();
+}
+
+// ═══════════════════════ frame: draw ═══════════════════════
+function render(){
+  X=ctx;XS=DPR;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(benchCanvas(),0,0);
   ctx.setTransform(DPR,0,0,DPR,0,0);
-  const sx=x=>OX+x*U,sy=y=>OY+y*U;
-  if(P.read&&P.read.life>0){
-    ctx.font='600 12.5px "JetBrains Mono",ui-monospace,monospace';const tw=ctx.measureText(P.read.txt).width+20;
-    let x=clamp(sx(P.read.x)-tw/2,6,W-tw-6),y=Math.max(6,sy(P.read.y)-36);
-    ctx.globalAlpha=Math.min(1,P.read.life*2);fillRR(x,y,tw,26,6,'#0b1a12');ctx.strokeStyle='#2c6b4a';ctx.lineWidth=1;rr(x,y,tw,26,6);ctx.stroke();
-    ctx.fillStyle='#7dffb2';ctx.textAlign='left';ctx.fillText(P.read.txt,x+10,y+17.5);ctx.globalAlpha=1;
+  let jacks=null;
+  if(PROPS&&(cur||mode==='title')){const pr=propRects();jacks=cachedProp('meter',pr.meter,drawMeter);cachedProp('tray',pr.tray,drawTray)}else TRAY_HIT=[];
+  if(cur)drawPhone();
+  else if(mode==='title'||mode==='mphome'||mode==='lobby')drawShowcase();
+  X=ctx;XS=DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(cur){
+    // particles + rolling screws, in phone space
+    ctx.setTransform(DPR*U,0,0,DPR*U,DPR*OX,DPR*OY);XS=U*DPR;
+    for(const f of FX){const a=Math.max(0,f.life/f.max);
+      if(f.kind==='spark'){X.globalCompositeOperation='lighter';X.strokeStyle='rgba(255,'+(190+f.r*65|0)+','+(80+f.r*80|0)+','+a+')';X.lineWidth=.6;X.beginPath();X.moveTo(f.x,f.y);X.lineTo(f.x-f.vx*.05,f.y-f.vy*.05);X.stroke();X.globalCompositeOperation='source-over'}
+      else if(f.kind==='flash'){X.globalCompositeOperation='lighter';circ(f.x,f.y,14*(1-a)+4,'rgba(255,230,160,'+a*.8+')');X.globalCompositeOperation='source-over'}
+      else if(f.kind==='smoke'){circ(f.x,f.y,3+(1-a)*12,'rgba(140,140,140,'+a*.28+')')}
+      else{X.fillStyle='rgba(225,230,236,'+a+')';X.fillRect(f.x,f.y,.6+f.r*.6,.6+f.r*.6)}}
+    for(const r of ROLL)drawScrewHead(r.x,r.y,r.s,true,r.rot);
+    X=ctx;XS=DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
+    if(jacks)drawProbes(jacks);
+    const sx=x=>OX+x*U,sy=y=>OY+y*U,P=cur;
+    if(!PROPS&&P.read&&P.read.life>0){
+      ctx.font='600 12.5px "JetBrains Mono",ui-monospace,monospace';const tw=ctx.measureText(P.read.txt).width+20;
+      const x=clamp(sx(P.read.x)-tw/2,6,W-tw-6),y=Math.max(6,sy(P.read.y)-36);
+      ctx.globalAlpha=Math.min(1,P.read.life*2);box(x,y,tw,26,6,'#0b1a12');path(x,y,tw,26,6);stroke('#2c6b4a',1);
+      ctx.fillStyle='#7dffb2';ctx.textAlign='left';ctx.fillText(P.read.txt,x+10,y+17.5);ctx.globalAlpha=1;
+    }
+    if(!P.open&&P.openT<.05&&(P.heat>1||TOOL==='heat')){
+      const gx=Math.min(W-34,sx(100)+18),gy=sy(30),gh=Math.max(90,140*U*.6);
+      box(gx-3,gy-3,20,gh+6,10,'rgba(10,14,20,.85)');box(gx+3,gy+2,8,gh-4,4,'#0b0f14');
+      const v=clamp(P.heat,0,140)/140;box(gx+4,gy+gh-2-(gh-6)*v,6,Math.max(1,(gh-6)*v),3,lg(0,gy+gh,0,gy,'#ffd06b','#ff4d2e'));
+      circ(gx+7,gy+gh+7,6,P.heat>2?'#ff6a3a':'#3a3f46');
+      T(tempC(P.heat)+'°C',gx+7,gy+gh+26,11,'#cfe3f5',700);
+    }
+    for(const f of FLOAT){ctx.globalAlpha=Math.min(1,f.life);T(f.txt,sx(f.x),sy(f.y)-(1.6-f.life)*30,22,f.col,800)}ctx.globalAlpha=1;
+    drawCursorTool();
   }
-  if(!P.open&&P.openT<.05&&(P.heat>1||TOOL==='heat')){
-    const gx=Math.min(W-30,sx(100)+16),gy=sy(30),gh=Math.max(90,140*U*.6);
-    fillRR(gx,gy,14,gh,7,'#0d1218');ctx.strokeStyle='#2f3a48';ctx.lineWidth=1;rr(gx,gy,14,gh,7);ctx.stroke();
-    ctx.strokeStyle='#3a4757';for(let i=0;i<=6;i++){const yy=gy+gh-gh*i/6;ctx.beginPath();ctx.moveTo(gx+14,yy);ctx.lineTo(gx+18,yy);ctx.stroke()}
-    const v=clamp(P.heat,0,140)/140,g=ctx.createLinearGradient(0,gy+gh,0,gy);g.addColorStop(0,'#ffcf6b');g.addColorStop(1,'#ff4d2e');
-    fillRR(gx+3,gy+gh-gh*v,8,Math.max(1,gh*v-1),4,g);
-    txt(tempC(P.heat)+'°C',gx+7,gy+gh+14,11,'#cfe3f5',700);
-  }
-  for(const f of FLOAT){ctx.globalAlpha=Math.min(1,f.life);txt(f.txt,sx(f.x),sy(f.y)-(1.6-f.life)*30,20,f.col,800)}ctx.globalAlpha=1;
-  if(PTR.in&&playing()&&matchMedia('(pointer:fine)').matches&&TOOL!=='pick'){const tl=TOOLS.find(t=>t.id===TOOL);ctx.font='22px "Apple Color Emoji","Segoe UI Emoji",sans-serif';ctx.textAlign='left';ctx.fillText(tl.e,PTR.x+8,PTR.y+26)}
+  const want=playing()&&FINE?(TOOL==='hand'?(PTR.down?'grabbing':'grab'):'none'):'default';
+  if(cv.style.cursor!==want)cv.style.cursor=want;
+}
+// the title screen: a phone sitting on the bench, screen glowing
+function drawShowcase(){
+  const s=Math.min((H-60)/212,(W-PROPW-60)/110)*.8,cx=PROPW+(W-PROPW)/2,ox=cx-50*s,oy=(H-210*s)/2+Math.sin(TIME*.8)*2;
+  const pU=U;U=s;X=ctx;XS=s*DPR;ctx.setTransform(DPR*s,0,0,DPR*s,DPR*ox,DPR*oy);
+  try{blit(sprShadow(),0,0);blit(sprBody('pear14'),0,0);blit(sprFront('pear14'),0,0);blit(sprWall('pear14'),4.4,4.4);cutout(MODELS.pear14);
+    X.fillStyle=lg(0,0,100,200,'rgba(255,255,255,.08)',[.33,'rgba(255,255,255,0)']);path(1.2,1.2,97.6,197.6,12.9);X.fill();
+    for(let i=0;i<6;i++){circ(11.5+i*2.5,204.2,.72,'#08090a');circ(76+i*2.5,204.2,.72,'#08090a')}
+    drawScrewHead(30,204.2,{head:'P'},true,0);drawScrewHead(70,204.2,{head:'P'},true,1)}
+  finally{U=pU}
 }
 
 // ═══════════════════════ UI (DOM) ═══════════════════════
 let uiDirty=true;
 const UI=()=>{uiDirty=true};
 function buildTools(){
-  $('tools').innerHTML=TOOLS.map(t=>`<button class="tool" data-tool="${t.id}"><i>${t.key}</i>${t.e}<small>${t.n}</small></button>`).join('')+
-    `<button class="tool act" id="bTest">⚡<small>Power on</small></button><button class="tool act" id="bMain">✅<small>Hand back</small></button>`;
+  $('tools').innerHTML=TOOLS.map(t=>`<button class="tool" data-tool="${t.id}"><i>${t.key}</i>${ICON[t.id]}<small>${t.n}</small></button>`).join('')+
+    `<button class="tool act" id="bTest">${ICON.power}<small>Power on</small></button><button class="tool act" id="bMain">${ICON.back}<small>Hand back</small></button>`;
 }
 function renderToolLabels(){const b=document.querySelector('.tool[data-tool="driver"] small');if(b)b.textContent=bitName(C.bit)}
 function setTool(id){TOOL=id;HOLD=null;document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===id))}
@@ -1055,7 +1497,7 @@ function showSheet(html){$('sheet').innerHTML=html;$('sheetOv').classList.add('o
 function hideSheet(){$('sheetOv').classList.remove('on')}
 function renderTop(){
   $('sDay').textContent=mode==='race'&&RACE?'📱 '+Math.min(RACE.i+1,RACE.jobs.length)+'/'+RACE.jobs.length:'Day '+S.day+(DAY?' · '+Math.min(DAY.i+1,DAY.jobs.length)+'/'+DAY.jobs.length:'');
-  $('sCash').textContent=money(C.cash);
+  $('sCash').textContent=money(C.cash);$('sCash').classList.toggle('neg',C.cash<0);
   const rs=S.rates;$('sRate').textContent=mode==='race'?'⏱ '+raceClock():'⭐ '+(rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'–');
   $('bSnd').textContent=S.sound?'🔊':'🔇';
 }
@@ -1064,11 +1506,10 @@ function renderSide(){
   if(!P||!playing()){el.innerHTML='';return}
   const j=P.job,m=MODELS[P.model],tab=TAB||P.model;
   const invHtml=C.inv.length?C.inv.map(i=>`<button class="it${SEL===i.id?' sel':''}" data-inv="${i.id}">${i.type==='gasket'?'⬛':PARTS[i.type].e} ${esc(MODELS[i.model].name)} ${i.type==='gasket'?'gasket':PARTS[i.type].n.toLowerCase()}${i.used?' <span class="old">removed</span>':''}</button>`).join(''):'<div class="empty">Empty.</div>';
-  const groups={};for(const s of C.tray){const k=skey(s);groups[k]=(groups[k]||0)+1}
-  const trayHtml=Object.keys(groups).length?Object.keys(groups).sort().map(k=>{const[h,l]=k.split('|');return`<button class="it sc${SELSCREW===k?' sel':''}" data-scr="${k}">${HEAD_NAME[h]} ${(+l).toFixed(1)}mm ×${groups[k]}</button>`}).join(''):'<div class="empty">No loose screws.</div>';
+  const trayHtml=trayGroups().map(([k,n])=>{const[h,l]=k.split('|');return`<button class="it sc${SELSCREW===k?' sel':''}" data-scr="${k}">${HEAD_NAME[h]} ${(+l).toFixed(1)}mm ×${n}</button>`}).join('')||'<div class="empty">No loose screws.</div>';
   el.innerHTML=`
   <div class="card"><h3>Customer <span>${mode==='race'?'Phone '+(RACE.i+1)+' of '+RACE.jobs.length:'#'+(DAY?DAY.i+1:1)}</span></h3>
-    <div id="cust"><div class="face" style="background:hsl(${j.hue},45%,30%)">${j.face}</div><div><div class="who">${esc(j.name)}</div><span class="mdl">📱 ${esc(m.name)}</span></div></div>
+    <div id="cust"><div class="face" style="background:linear-gradient(145deg,hsl(${j.hue},45%,36%),hsl(${j.hue},45%,22%))">${j.face}</div><div><div class="who">${esc(j.name)}</div><span class="mdl">📱 ${esc(m.name)}</span></div></div>
     <div class="said">“${esc(j.say)}”</div>
     <div class="pat"><div id="patBar"></div></div><div class="patl"><span id="patTxt"></span><span>quoted ${money(P.faults.filter(f=>f.paid).reduce((a,f)=>a+FAULTS[f.k].pay,0))}</span></div>
   </div>
@@ -1077,17 +1518,17 @@ function renderSide(){
     <div class="bits">${BITS.map(([b,n])=>`<button data-bit="${b}" class="${C.bit===b?'on':''}">${n}</button>`).join('')}</div>
     <div class="tray">${trayHtml}</div></div>
   <div class="card"><h3>Parts on the bench</h3><div class="inv">${invHtml}</div></div>
-  <div class="card"><h3>📦 Supplier</h3>
+  <div class="card"><h3>📦 Supplier ${C.cash<0?'<span style="color:var(--red);letter-spacing:0">on tab</span>':''}</h3>
     <div class="tabs">${MODEL_IDS.map(id=>`<button data-tab="${id}" class="${tab===id?'on':''}">${esc(MODELS[id].name)}</button>`).join('')}</div>
-    ${PART_IDS.map(t=>{const c=partCost(t,tab);return`<div class="row">${PARTS[t].e}<span>${PARTS[t].n}</span><button class="buy" data-buy="${t}" data-model="${tab}" ${C.cash<c?'disabled':''}>${money(c)}</button></div>`}).join('')}
-    <div class="row">⬛<span>Adhesive gasket</span><button class="buy" data-buy="gasket" data-model="${tab}" ${C.cash<3?'disabled':''}>$3</button></div>
-    <div class="row">🔩<span>Screw set</span><button class="buy" data-buy="kit" data-model="${tab}" ${C.cash<6?'disabled':''}>$6</button></div>
+    ${PART_IDS.map(t=>{const c=partCost(t,tab);return`<div class="row">${PARTS[t].e}<span>${PARTS[t].n}</span><button class="buy" data-buy="${t}" data-model="${tab}" ${canAfford(c)?'':'disabled'}>${money(c)}</button></div>`}).join('')}
+    <div class="row">⬛<span>Adhesive gasket</span><button class="buy" data-buy="gasket" data-model="${tab}" ${canAfford(3)?'':'disabled'}>$3</button></div>
+    <div class="row">🔩<span>Screw set</span><button class="buy" data-buy="kit" data-model="${tab}" ${canAfford(6)?'':'disabled'}>$6</button></div>
   </div>`;
 }
 function renderTools(){
-  const P=cur;const m=$('bMain');if(!m)return;
-  const want=P&&P.open?'📕<small>Close up</small>':'✅<small>Hand back</small>';
-  if(m.innerHTML!==want)m.innerHTML=want;
+  const P=cur,m=$('bMain');if(!m)return;
+  const want=P&&P.open?ICON.close+'<small>Close up</small>':ICON.back+'<small>Hand back</small>';
+  if(m.dataset.s!==(P&&P.open?'c':'h')){m.dataset.s=P&&P.open?'c':'h';m.innerHTML=want}
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;ac();
@@ -1095,14 +1536,14 @@ document.addEventListener('click',e=>{
   if(b.id==='bTest'){testBtn();return}
   if(b.id==='bMain'){handBackBtn();return}
   if(b.dataset.bit){C.bit=b.dataset.bit;setTool('driver');renderToolLabels();UI();return}
-  if(b.dataset.scr){SELSCREW=SELSCREW===b.dataset.scr?null:b.dataset.scr;if(SELSCREW){setTool('driver')}UI();return}
+  if(b.dataset.scr){SELSCREW=SELSCREW===b.dataset.scr?null:b.dataset.scr;if(SELSCREW)setTool('driver');UI();return}
   if(b.dataset.inv){const id=+b.dataset.inv,it=C.inv.find(i=>i.id===id);
     if(it&&it.type==='gasket'&&playing()&&cur.open){applyGasket(it);return}
     SEL=SEL===id?null:id;if(SEL)setTool('hand');UI();return}
   if(b.dataset.tab){TAB=b.dataset.tab;UI();return}
   if(b.dataset.buy){if(playing())buy(b.dataset.buy,b.dataset.model||cur.model);return}
   if(b.hasAttribute('data-close')){hideSheet();return}
-  if(b.dataset.upg){const u=UPG.find(x=>x.id===b.dataset.upg);if(u&&!S.upg[u.id]&&S.cash>=u.cost){S.cash-=u.cost;S.upg[u.id]=1;save();sfx('cash');showDayEnd(true)}return}
+  if(b.dataset.upg){const u=UPG.find(x=>x.id===b.dataset.upg);if(u&&!S.upg[u.id]&&S.cash>=u.cost){S.cash-=u.cost;S.upg[u.id]=1;save();sfx('cash');showDayEnd()}return}
   if(b.id==='tutSkip'){S.tutOff=true;save();renderTut();return}
   if(b.id==='bSnd'){S.sound=!S.sound;save();renderTop();return}
   if(b.id==='bHelp'||b.id==='howBtn'){showHelp();return}
@@ -1125,6 +1566,7 @@ function showHelp(){
   <p><b>📟 Meter</b> — probe a part, read the numbers.</p>
   <p><b>🪥 IPA</b> — isopropyl alcohol and a brush: cleans, dissolves adhesive.</p>
   <p><b>⚡ Power on</b> — boots the phone and runs through its functions.</p>
+  <p>The supplier lets you run a tab down to ${money(CREDIT)}.</p>
   <p>Keys: <b>1-8</b> tools · <b>B</b> bit · <b>T</b> power on · <b>C</b> close · <b>Enter</b> hand back.</p></div>
   <button class="big" data-close>Close</button>`);
 }
@@ -1136,7 +1578,7 @@ function startDay(){
   DAY={jobs:jobsFor(S.seed*7919+S.day*104729,Math.min(S.day,6),dayJobs()),i:S.jobIdx||0};
   nextJob(true);
 }
-function resetBench(){TAB=null;SEL=null;FX=[];ROLL=[];FLOAT=[];setTool('driver');renderToolLabels()}
+function resetBench(){TAB=null;SEL=null;FX=[];ROLL=[];FLOAT=[];ANIM_S=[];ANIM_P=[];HOLD=null;setTool('driver');renderToolLabels()}
 function nextJob(first){
   if(mode==='race'){raceNext();return}
   if(!first){DAY.i++;S.jobIdx=DAY.i;save()}
@@ -1166,14 +1608,15 @@ function endDay(){
   const profit=S.dayEarn-S.daySpend-rent;S.best=Math.max(S.best,profit);
   save();
   try{if(!DEMO&&window.GLITCHBOX&&GLITCHBOX.score)GLITCHBOX.score(Math.max(0,Math.round(S.total)))}catch(e){}
-  cur=null;mode='sheet';showDayEnd(false);
+  cur=null;mode='sheet';showDayEnd();
 }
 function showDayEnd(){
   const rent=S.dayRent||0,profit=S.dayEarn-S.daySpend-rent;
   showSheet(`<h2>🌙 Day ${S.day} done</h2>
     <div class="tl"><div><span>Repairs + tips</span><b class="p">${money(S.dayEarn)}</b></div><div><span>Parts & supplies</span><b class="f">-${money(S.daySpend)}</b></div>
     <div><span>Shop rent</span><b class="f">-${money(rent)}</b></div><div><span><b>Profit</b></span><b class="${profit>=0?'p':'f'}">${money(profit)}</b></div>
-    <div><span>Cash in the till</span><b>${money(S.cash)}</b></div></div>
+    <div><span>Cash in the till</span><b class="${S.cash<0?'f':''}">${money(S.cash)}</b></div></div>
+    ${S.cash<0?'<p>You\'re running on the supplier\'s tab. A few good repairs will pay it off.</p>':''}
     <h2 style="font-size:18px;margin-top:6px">🛠️ Upgrade the shop</h2>
     <div class="upg">${UPG.map(u=>`<div class="u${S.upg[u.id]?' own':''}"><b>${u.e} ${u.n}</b><div class="d">${u.d}</div>${S.upg[u.id]?'<div style="color:var(--green);margin-top:6px">✓ Owned</div>':`<button class="buy" data-upg="${u.id}" ${S.cash<u.cost?'disabled':''}>${money(u.cost)}</button>`}</div>`).join('')}</div>
     <button class="big gr" id="nextDay">☀️ Open day ${S.day+1}</button><button class="big alt" id="toTitle">🏠 Title screen</button>`);
@@ -1186,31 +1629,36 @@ function goTitle(){
   $('titleOv').classList.add('on');UI();renderTop();
 }
 
-// ═══════════════════════ frame ═══════════════════════
-let last=performance.now();
+// ═══════════════════════ frame: update ═══════════════════════
+let last=performance.now(),TIME=0;
 function frame(now){
-  const dt=Math.min(.05,(now-last)/1000);last=now;TIME+=dt;
+  const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;TIME+=dt;
+  try{step(dt);if(!W)layout();geom();render()}catch(e){console.error(e)}
+  requestAnimationFrame(frame);
+}
+function step(dt){
   if(cur){
     const P=cur;
-    P.openT=clamp(P.openT+(P.open?dt:-dt)*3,0,1);
+    P.openT=P.flipHold!=null?P.flipHold:clamp(P.openT+(P.open?dt:-dt)*1.9,0,1);
     if(P.heatHeld>0)P.heatHeld-=dt;else P.heat=Math.max(0,P.heat-dt*6);
     if(P.heat<=100)P.hot=Math.max(0,P.hot-dt*.5);
-    if(P.boot>0)P.boot-=dt;
+    if(P.boot>0)P.boot=Math.max(0,P.boot-dt);
     if(P.read)P.read.life-=dt;
+    P.cupT=clamp(P.cupT+(P.cup?dt:-dt)*5,0,1);
+    for(const c of CONN_IDS){const tgt=P.conn[c]?1:0;P.connA[c]+=clamp(tgt-P.connA[c],-dt*7,dt*7)}
+    for(const k of Object.keys(BRK)){const tgt=BRK[k].sc.some(s=>P.sc[s])?1:0;P.brA[k]+=clamp(tgt-P.brA[k],-dt*6,dt*6)}
     if(playing()&&!$('sheetOv').classList.contains('on'))P.t+=dt;
     holdTick(dt);
   }
-  for(const f of FX){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=(f.kind==='spark'?80:-6)*dt;f.life-=dt}FX=FX.filter(f=>f.life>0);
+  for(const a of ANIM_S)a.t+=dt;ANIM_S=ANIM_S.filter(a=>a.t<.45);
+  for(const a of ANIM_P)a.k+=dt/(a.dir==='out'?.5:.32);ANIM_P=ANIM_P.filter(a=>a.k<1);
+  for(const f of FX){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=(f.kind==='spark'?90:f.kind==='smoke'?-4:0)*dt;f.vx*=.98;f.life-=dt}FX=FX.filter(f=>f.life>0);
   for(const r of ROLL){r.x+=r.vx*dt;r.y+=r.vy*dt;r.vy*=.96;r.rot+=r.vx*dt*.3;r.life-=dt;if(r.life<=0)msg('🔩 The screw is gone — somewhere under the bench.')}ROLL=ROLL.filter(r=>r.life>0);
   for(const f of FLOAT)f.life-=dt;FLOAT=FLOAT.filter(f=>f.life>0);
   if(uiDirty){uiDirty=false;renderSide();renderTop()}
   renderTools();if(Math.floor(TIME*6)!==Math.floor((TIME-dt)*6))renderTut();
   if(cur&&playing()){const f=Math.max(0,1-cur.t/patience()),pb=$('patBar');if(pb){pb.style.width=(f*100)+'%';pb.style.background=f>.5?'#3ddc84':f>.2?'#ffd23f':'#ff4d5e';$('patTxt').textContent=f>.5?'😊 waiting':f>.2?'😐 checking the time':f>0?'😠 getting annoyed':'😤 fed up'}}
   if(mode==='race'&&Math.floor(TIME*2)!==Math.floor((TIME-dt)*2))renderTop();
-  if(!W)layout();
-  geom();drawBench();
-  if(cur){drawPhone();drawOverlay()}
-  requestAnimationFrame(frame);
 }
 
 // ═══════════════════════ multiplayer: Repair Race ═══════════════════════
@@ -1413,21 +1861,25 @@ if(S.started){$('playBtn').textContent='🔧 Open the shop · Day '+S.day;$('new
 renderTop();
 {const h=new URLSearchParams(HASH.replace(/^#/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
  if(room.length>=3&&room.length<=8){$('titleOv').classList.remove('on');mpHome('');$('mpErr').textContent=h.get('host')?'Making the room…':'Joining…';netConnect(room,h.get('host')?'host':'guest')}}
-if(/debug/.test(location.hash))window.__PD={get cur(){return cur},get C(){return C},get S(){return S},get mode(){return mode},get NET(){return NET},get HS(){return HS},advise,doAct,setTool,hostStart,handBackBtn};
+// test hook: state, plus where things are on screen so a driver can click them like a person
+if(/debug/.test(location.hash))window.__PD={get cur(){return cur},get C(){return C},get S(){return S},get mode(){return mode},get NET(){return NET},get HS(){return HS},get TOOL(){return TOOL},get SELSCREW(){return SELSCREW},get HOLD(){return HOLD},
+  advise,doAct,setTool,hostStart,handBackBtn,startDay,trayGroups,works,unfixed,HOLES,HOLE,CONNS,R,SCREEN_X,EDGE_PORT,
+  scr:(x,y)=>{const r=cv.getBoundingClientRect();return{x:r.left+OX+x*U,y:r.top+OY+y*U}},get trayHit(){const r=cv.getBoundingClientRect();return TRAY_HIT.map(t=>({key:t.key,x:r.left+t.r[0]+t.r[2]/2,y:r.top+t.r[1]+t.r[3]/2}))}};
 requestAnimationFrame(frame);
 
-// screenshots: #demo (closed + suction/pick), #demoopen, #demotest, #demolobby, #demorace, #demoresults, #demoday
+// screenshots: #demo (closed + suction/pick), #demoopen, #demotest, #demoflip, #demolobby, #demorace, #demoresults, #demoday
 if(/^#demo/.test(HASH)){
   DEMO=true;S=fresh();S.day=3;S.started=true;S.cash=264;S.rates=[5,4,5];S.sound=false;S.name='Lev';C=S;
   $('titleOv').classList.remove('on');
   const job=j=>Object.assign(makeJob(rngOf(7),3),j);
   if(HASH==='#demo'){mode='solo';DAY={jobs:[job({})],i:0};cur=newPhone(job({model:'pear11',faults:['crack','speaker'],name:'Maya',face:'👩‍🦰',say:"My little brother sat on it. The screen's smashed. Oh, and… I can't hear anything when I play music."}));
-    C.tray.push(cur.sc.b1,cur.sc.b2);cur.sc.b1=cur.sc.b2=null;cur.heat=72;cur.heatHeld=99;cur.gap=true;cur.segs.bottom.fill(1);cur.segs.left=[1,1,1,.7,.4,0,0,0];setTool('pick');C.bit='P';renderToolLabels();UI()}
-  else if(HASH==='#demoopen'||HASH==='#demotest'){mode='solo';DAY={jobs:[job({})],i:1};cur=newPhone(job({model:'pear14',faults:['water'],spots:[[30,50],[68,46],[48,20]],name:'Jonah',face:'🧔',say:"I dropped it in the bath… it won't turn on."}));
+    C.tray.push(cur.sc.b1,cur.sc.b2);cur.sc.b1=cur.sc.b2=null;cur.heat=72;cur.heatHeld=99;cur.gap=true;cur.cup=true;cur.cupT=1;cur.segs.bottom.fill(1);cur.segs.left=[1,1,1,.7,.4,0,0,0];setTool('pick');C.bit='P';renderToolLabels();UI()}
+  else if(HASH==='#demoopen'||HASH==='#demotest'||HASH==='#demoflip'){mode='solo';DAY={jobs:[job({})],i:1};cur=newPhone(job({model:'pear14',faults:['water'],spots:[[30,50],[68,46],[48,20]],name:'Jonah',face:'🧔',say:"I dropped it in the bath… it won't turn on."}));
     for(const id of['b1','b2','bc1','bc2','sc1'])if(cur.sc[id]){C.tray.push(cur.sc[id]);cur.sc[id]=null}
-    cur.open=true;cur.opened=true;cur.openT=1;cur.known.water=1;cur.conn.bat=false;cur.spots[0].left=0;
+    cur.open=true;cur.opened=true;cur.openT=1;cur.known.water=1;cur.conn.bat=false;cur.connA.bat=0;cur.brA.bat=0;cur.spots[0].left=0;
     C.inv.push({id:uid(),type:'gasket',model:'pear14',bad:null,used:false});SELSCREW='Y|1.1';C.bit='Y';quiet=true;measure('board');quiet=false;cur.read.life=999;setTool('brush');renderToolLabels();UI();
-    if(HASH==='#demotest'){cur.open=false;cur.openT=0;cur.conn.bat=true;cur.spots.forEach(s=>s.left=0);cur.part.speaker.bad='speaker';cur.faults.push({k:'speaker',paid:true});cur.read=null;testBtn()}}
+    if(HASH==='#demoflip'){cur.openT=.62;cur.flipHold=.62}
+    if(HASH==='#demotest'){cur.open=false;cur.openT=0;cur.conn.bat=true;cur.connA.bat=1;cur.spots.forEach(s=>s.left=0);cur.part.speaker.bad='speaker';cur.faults.push({k:'speaker',paid:true});cur.read=null;testBtn();cur.boot=2.5}}
   else if(HASH==='#demoday'){S.dayEarn=388;S.daySpend=74;S.dayRent=25;S.upg={mat:1};mode='sheet';showDayEnd()}
   else if(/^#demo(lobby|race|results)$/.test(HASH)){
     NET.mode='host';NET.code='FIXR';onNet({t:'created'});
@@ -1467,16 +1919,17 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     const mk=(f,model)=>{cur=newPhone(Object.assign(makeJob(rngOf(2),2),{faults:f,model:model||'pear11',spots:[]}));return cur};
     const openIt=P=>{quiet=true;C.bit='P';for(const id of['b1','b2'])if(P.sc[id])toggleScrew(id);P.heat=70;suctionDone();for(const s of['bottom','left','top'])P.segs[s].fill(1);openUp();P.openT=1;quiet=false};
     let P=mk(['speaker']);quiet=true;C.bit='PH';ok(!toggleScrew('b1')&&P.sc.b1,'wrong bit cams out of a pentalobe');C.bit='P';toggleScrew('b1');toggleScrew('b2');
-    P.heat=10;ok(!suctionDone()&&!P.gap,'suction cup pops off cold glue');P.heat=70;ok(suctionDone()&&P.gap,'warm glue lifts');
+    P.heat=10;ok(!suctionDone()&&!P.gap,'suction cup pops off cold glue');P.heat=70;ok(suctionDone()&&P.gap&&P.cup,'warm glue lifts, cup stays on');
     let rs=rnd(.9);ok(!openUp()&&!P.open,'still glued → won\'t open (lucky, no crack)');rs();
     cutAt({x:50,y:199},40);ok(P.segs.bottom[2]>0,'dragging the pick along the bottom slices adhesive');quiet=false;
     P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');toggleScrew('b2');P.heat=70;suctionDone();rs=rnd(.1);openUp();rs();quiet=false;
-    ok(P.open&&P.part.screen.bad==='crack'&&P.caused===1,'forcing it open cracks the glass');
+    ok(P.open&&P.part.screen.bad==='crack'&&P.caused===1&&!P.cup,'forcing it open cracks the glass (cup comes off)');
     P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');toggleScrew('b2');P.heat=70;suctionDone();for(let i=0;i<20;i++)cutAt({x:100,y:30},6);quiet=false;
     ok(P.part.screen.bad==='touch','cutting deep along the cable side tears the digitizer flex');
     P=mk(['speaker'],'galaxo');ok(!HOLES.some(h=>h.part==='case'&&hostOf(h)),'Galaxo has no case screws');
     P=mk(['speaker']);quiet=true;for(let i=0;i<60;i++)heatTick(.1);quiet=false;ok(P.part.battery.bad==='battery','overheating cooks the battery');
     S.upg={gun:1};P=mk(['speaker']);quiet=true;for(let i=0;i<80;i++)heatTick(.1);quiet=false;ok(!P.part.battery.bad&&P.heat<=96,'smart heat gun cuts out');S.upg={};
+    P=mk(['swollen']);ok(P.gap&&!P.cup,'a swollen battery lifts the glass, but there\'s no suction cup on it');
     // 4. inside: live work and cables
     P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('sp1');removePart('speaker');quiet=false;
     ok(P.part.board.bad==='board','pulling a part with the battery connected shorts the board');
@@ -1487,28 +1940,30 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     ok(P.caused===1&&C.inv.some(i=>i.type==='camera'&&i.bad==='camera'),'…but yanked with it plugged in, the flex tears');
     ok(!toggleConn('nope'),'unknown connector ignored');
     P=mk(['speaker']);openIt(P);quiet=true;ok(!toggleConn('bat'),'battery bracket must come off first');quiet=false;
-    // battery removal: tab-less cells bend unless you use alcohol
     C.inv=[];P=mk(['speaker'],'galaxo');quiet=true;P.heat=70;suctionDone();for(const s of['bottom','left','top'])P.segs[s].fill(1);openUp();P.openT=1;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');removePart('battery',true);quiet=false;
     ok(C.inv.some(i=>i.type==='battery'&&i.bad==='battery'),'prying a glued tab-less cell bends it');
-    // screws: long screw in a short board hole
-    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';const s1=P.sc.sc1,s2=P.sc.sc2;toggleScrew('sc1');toggleScrew('sc2');SELSCREW=skey(s2);toggleScrew('sc1');quiet=false;
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';const s2=P.sc.sc2;toggleScrew('sc1');toggleScrew('sc2');SELSCREW=skey(s2);toggleScrew('sc1');quiet=false;
     ok(P.part.board.bad==='board','2.4 mm screw in a 1.2 mm hole punches through the board');
-    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('sp1');toggleScrew('p1');SELSCREW=skey(P.sc.p2||{head:'PH',len:3});SELSCREW='PH|3';toggleScrew('p1');quiet=false;
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('sp1');toggleScrew('p1');SELSCREW='PH|3';toggleScrew('p1');quiet=false;
     ok(!correct('p1')&&P.caused===0,'too-long screw in the chassis just sits proud, no damage');
-    // wrong-model part refused, gasket, missing screws
-    P=mk(['battery']);r=null;C.inv=[];buy('battery','pear14');openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');removePart('battery');C.inv=C.inv.filter(i=>!i.used);
+    P=mk(['battery']);C.inv=[];buy('battery','pear14');openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');removePart('battery');C.inv=C.inv.filter(i=>!i.used);
     ok(!installPart('battery')&&!P.part.battery,'wrong-model part does not fit');buy('battery','pear11');ok(installPart('battery')&&!P.part.battery.bad,'right part fits');ok(!P.conn.bat,'new battery arrives unplugged');
-    toggleConn('bat');SELSCREW='PH|1.3';toggleScrew('bc1');toggleScrew('bc2');closeUp();P.openT=0;C.bit='P';SELSCREW='P|3.4';toggleScrew('b1');quiet=false;
+    toggleConn('bat');SELSCREW='PH|1.3';toggleScrew('bc1');toggleScrew('bc2');closeUp();ok(!P.cup&&P.gap,'closing without a gasket: lifted edge, no suction cup');P.openT=0;C.bit='P';SELSCREW='P|3.4';toggleScrew('b1');quiet=false;
     r=handBack();ok(r&&r.miss===1&&r.lift&&r.pen===18,'one missing screw + no gasket = -$18');
     P=mk(['crack']);openIt(P);ok(handBack()===null&&!P.gone,'cannot hand back an open phone');
     P=mk(['speaker']);r=solve(P);ok(r&&r.good&&!r.lift&&P.gasket,'a proper job reseals with a gasket');
-    // battery left unplugged = dead on hand-back
+    P=mk(['speaker']);r=solve(P);P=mk(['speaker']);openIt(P);quiet=true;closeUp();quiet=false;P.openT=.4;r=handBack();ok(r&&P.gone,'hand back while the close animation plays');
     P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');SELSCREW='PH|1.3';toggleScrew('bc1');toggleScrew('bc2');closeUp();P.openT=0;C.bit='P';SELSCREW='P|3.4';toggleScrew('b1');toggleScrew('b2');quiet=false;
     r=handBack();ok(r&&r.total===0&&r.stars===1,'battery left unplugged = $0');
+    // display only lights when it actually works
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');toggleScrew('sc1');toggleScrew('sc2');toggleConn('scr');toggleConn('bat');quiet=false;
+    ok(works().power&&!works().display,'display unplugged: phone boots but screen stays dark');
     // tray + kit
     C.tray=[];P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');C.tray=[];SELSCREW=null;ok(!toggleScrew('b1'),'empty tray → nothing to drive in');buy('kit','pear11');ok(C.tray.length===13,'a screw set has one of every screw');quiet=false;
     C.tray=[];buy('kit','galaxo');ok(C.tray.length===11&&!C.tray.some(s=>s.head==='P'),'Android set has no pentalobes');
     S.upg={mat:1};P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');SELSCREW=null;ok(toggleScrew('b1')&&correct('b1'),'project mat puts the right screw back');quiet=false;S.upg={};
+    // credit: a broke shop can still buy parts
+    C.cash=10;ok(buy('battery','pear11')&&C.cash<0,'running a tab with the supplier');C.cash=CREDIT+5;ok(!buy('board','pear11'),'…up to the limit');C.cash=999;
     // freedom: clean anything, swap parts that aren't broken
     P=mk(['crack']);quiet=true;ok(brushDone(-1)&&P.lint===0,'brushing a clean port is allowed (no-op)');ok(brushDone(-3)&&P.grime===0,'wiping the glass');quiet=false;
     P=mk(['speaker']);P.grime=0;r=solve(P);ok(r&&r.good&&r.shine&&/clean/.test(r.line),'a wiped phone earns the clean bonus');
@@ -1520,14 +1975,22 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     C.inv=[];C.cash+=999;P=mk(['board']);r=solve(P);ok(r&&r.good&&P.part.camera&&!P.part.board.orig,'board swap moves the camera over');
     P=newPhone(Object.assign(makeJob(rngOf(3),3),{faults:['water'],spots:[[30,50],[68,46],[48,20]],model:'pixelle'}));cur=P;ok(!works().power,'water = dead');r=solve(P);ok(r&&r.good&&r.pay===75,'water scrubbed, phone lives');
     P=mk(['speaker']);r=solve(P);const tipFast=r.tip;P=mk(['speaker']);P.t=1e5;r=solve(P);ok(tipFast>0&&r.tip===0&&r.late,'slow repairs lose the tip');
-    // readings are numbers, not verdicts
     P=mk(['speaker']);openIt(P);quiet=true;measure('speaker');quiet=false;ok(/∞/.test(P.notes[0].txt)&&!/[✓✗]|broken|replace/i.test(P.notes[0].txt),'meter shows raw values');
-    // 5. solo day flow
+    // 5. rendering: every sprite bakes, every state draws without throwing
+    W=W||900;H=H||700;geom();
+    for(const m of MODEL_IDS){sprBody(m);sprFront(m);sprBack(m);sprWall(m);sprChassis(m);sprBoard(m);sprBattery(m,false);sprBattery(m,true)}
+    sprCam();sprSpeaker();sprTaptic();sprPort();sprShadow();
+    let drawn=0;for(const m of MODEL_IDS)for(const ot of[0,.3,.7,1]){P=mk(['crack','water'],m);P.spots=[{x:30,y:50,left:1}];P.openT=ot;P.open=ot>0;P.lint=1;P.heat=60;P.cup=true;P.cupT=1;P.boot=2;
+      if(ot===1){P.conn.bat=false;P.connA.bat=.5;P.brA.bat=.4;ANIM_P.push({t:'battery',model:m,bad:null,dir:'out',k:.5},{t:'screen',model:m,bad:null,dir:'in',k:.3});ANIM_S.push({id:'sp1',x:65,y:170,s:{head:'PH',len:3},dir:'out',t:.1})}
+      mode='solo';geom();render();drawn++;ANIM_P=[];ANIM_S=[]}
+    ok(drawn===16,'all models draw closed, flipping and open (with anims, heat, cup, lint, corrosion)');
+    P=mk(['speaker']);quiet=true;removePart('battery');openIt(P);for(const t of PART_IDS)P.part[t]=null;quiet=false;P.openT=1;render();ok(true,'an empty, gutted chassis draws');
+    // 6. solo day flow
     fresh2();startDay();ok(DAY.jobs.length===3&&cur&&mode==='solo','day 1 has three customers');
     for(let k=0;k<3;k++){C.cash+=500;const r2=solve(cur);ok(r2&&r2.good,'day-1 job '+(k+1)+' solved');nextJob()}
     hideSheet();ok(mode==='sheet'&&!cur,'day ends after the last customer');
     ok(JSON.parse(JSON.stringify(S)).v===2,'save is JSON');
-    // 6. multiplayer host logic
+    // 7. multiplayer host logic
     fresh2();NET.mode='host';onNet({t:'created'});
     hostIn({t:'hi',cid:'g1',name:'Bo',hue:40});hostIn({t:'hi',cid:'g1',name:'Bo',hue:50});ok(HS.players.length===2&&HP('g1').hue===50,'a repeat hello updates, never duplicates');
     for(let i=2;i<=8;i++)hostIn({t:'hi',cid:'g'+i,name:'P'+i,hue:i});ok(HS.players.length===8,'eight players seat');
@@ -1544,11 +2007,12 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     NET.mode='guest';const before=mode;clientState({t:'st',ph:'race',h:'x',seed:5,lvl:1,n:3,pl:[['x','Host',0,0,120,0]]});ok(mode===before,'state before my hello lands is ignored');
     NET.mode='off';HS=null;
     ok(wsURL('ABCD','host').indexOf('glitchbox-api')!==-1&&/room=ABCD&role=host$/.test(wsURL('ABCD','host')),'relay url');
-    ok(!document.getElementById('hintbar')&&!document.getElementById('bHint'),'no hint bar / hint button');
+    // 8. tutorial + no hints
     fresh2();startDay();renderTut();ok($('tut').classList.contains('on')&&/Power on/.test($('tutTxt').textContent),'day 1 shows the tutorial card');
     S.tutOff=true;renderTut();ok(!$('tut').classList.contains('on'),'skip hides it');S.tutOff=false;S.day=2;renderTut();ok(!$('tut').classList.contains('on'),'no tutorial after day 1');
     S.day=1;for(let k=0;k<200;k++){const h=advise();if(!h||h.act.k==='handback')break;if(!tutText()){ok(false,'tutorial has words for '+h.act.k);break}doAct(h.act)}ok(true,'tutorial text covers every step');
     ok(typeof glowRect==='undefined'&&!UPG.some(u=>u.id==='thermal'),'no part glow');
+    ok(!document.getElementById('hintbar')&&!document.getElementById('bHint'),'no hint bar / hint button');
     ok(!!document.querySelector('script[src="glitchbox-menu.js"]'),'quit button script present');
   }catch(e){fail++;out.push('EXCEPTION '+e.message+'\n'+e.stack)}
   quiet=false;
