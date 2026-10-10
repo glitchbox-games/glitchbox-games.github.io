@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Car Mechanic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="glitchbox-config.js"></script>
+<script src="glitchbox-save.js" data-pos="top-left"></script>
+<style>
+:root{--bg:#0f1114;--panel:#1b1e23;--panel2:#24282e;--line:#33383f;--ink:#eceff3;--dim:#959ca6;--acc:#ffb020;--green:#3ddc84;--red:#ff4d5e;--gold:#ffd23f;--cyan:#39d0ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden}
+body{font-family:Rubik,system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none}
+#app{height:100dvh;display:flex;flex-direction:column}
+#top{display:flex;align-items:center;gap:10px;padding:7px 12px 7px 112px;background:linear-gradient(#141619,#0d0f11);border-bottom:1px solid var(--line);min-height:52px;box-shadow:0 4px 18px rgba(0,0,0,.4);z-index:2}
+#top .logo{font-weight:800;font-size:18px;letter-spacing:.6px;white-space:nowrap}
+#top .logo b{color:var(--acc)}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 11px;font-weight:700;font-size:15px;white-space:nowrap}
+.stat.cash{color:var(--green)}.stat.cash.neg{color:var(--red)}
+#top .sp{flex:1}
+.ib{width:38px;height:38px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:18px}
+#main{flex:1;min-height:0;display:grid;grid-template-columns:86px 1fr 310px}
+#tools{display:flex;flex-direction:column;gap:5px;padding:8px 7px;background:#0c0e10;border-right:1px solid var(--line);overflow:auto}
+.tool{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px 4px;border-radius:12px;background:linear-gradient(#20242a,#1a1d22);border:1px solid var(--line);line-height:1;position:relative;flex:none}
+.tool svg{width:26px;height:26px;display:block}
+.tool small{font-size:10.5px;color:var(--dim);font-weight:600;white-space:nowrap}
+.tool i{position:absolute;top:3px;right:6px;font-size:9px;font-style:normal;color:#666e78}
+.tool:hover{border-color:#4a5059}
+.tool.on{background:linear-gradient(#4a3510,#36270c);border-color:var(--acc)}
+.tool.on small{color:var(--acc)}
+.tool.act{background:linear-gradient(#183a27,#132e20);border-color:#2a6b45}
+.tool.act small{color:#9ff0c2}
+.tool.act.run{background:linear-gradient(#4a1616,#361010);border-color:#a33}
+.tool.act.run small{color:#ffb0b0}
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:#1b1d20}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#views{position:absolute;left:10px;top:10px;display:flex;gap:4px;z-index:3;flex-wrap:wrap;max-width:calc(100% - 20px)}
+#views button{padding:6px 10px;border-radius:9px;background:rgba(20,22,26,.9);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--dim)}
+#views button.on{color:var(--ink);border-color:var(--acc);background:rgba(74,53,16,.95)}
+#views button.lift{color:#ffd88a}
+#views .sep{width:6px}
+#toast{position:absolute;left:50%;top:52px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:4;width:min(92%,520px)}
+.tst{background:rgba(12,14,17,.93);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:500;font-size:15px;text-align:center;animation:tin .25s ease-out;transition:opacity .4s;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.tst.bad{border-color:var(--red);color:#ffc4ca}.tst.good{border-color:var(--green);color:#c8ffe0}
+@keyframes tin{from{transform:translateY(-8px);opacity:0}}
+#chips{position:absolute;left:8px;right:8px;bottom:8px;display:none;gap:6px;flex-wrap:wrap;justify-content:center;z-index:3;pointer-events:none}
+#chips.on{display:flex}
+.chip{background:rgba(12,14,17,.9);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;display:flex;gap:6px;align-items:center}
+.chip.me{border-color:var(--acc)}
+.chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+#tut{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(94%,600px);background:rgba(12,14,17,.95);backdrop-filter:blur(6px);border:1px solid #4a4f57;border-radius:14px;padding:10px 14px;z-index:3;display:none;font-size:14.5px;line-height:1.45;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+#tut.on{display:block}
+#tut b{color:var(--acc)}
+#tut .th{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:3px}
+#tut button{font-size:11px;color:var(--dim);text-decoration:underline;letter-spacing:0;text-transform:none}
+#side{background:#0c0e10;border-left:1px solid var(--line);overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.card{background:linear-gradient(#1c1f24,#181a1e);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.card h3{margin:0 0 7px;font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:6px}
+#cust{display:flex;gap:10px;align-items:flex-start}
+#cust .face{font-size:38px;line-height:1;width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.3)}
+#cust .who{font-weight:700;font-size:16px}
+#cust .mdl{display:inline-block;margin-top:3px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--acc);font-weight:700}
+.said{margin-top:9px;background:#f4f1ea;color:#1d2530;border-radius:12px;padding:8px 10px;font-size:14px;position:relative;line-height:1.35}
+.said:before{content:'';position:absolute;top:-8px;left:20px;border:8px solid transparent;border-top:0;border-bottom-color:#f4f1ea}
+.pat{margin-top:8px;height:7px;border-radius:9px;background:#0c0e10;overflow:hidden}
+.pat div{height:100%;background:var(--green);border-radius:9px;transition:background .3s}
+.patl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:4px}
+.notes{display:flex;flex-direction:column;gap:4px;font-size:12px;font-family:'JetBrains Mono',ui-monospace,monospace}
+.notes div{background:#0c0e10;border:1px solid var(--line);border-radius:8px;padding:5px 8px;color:#ffe2a8;line-height:1.35}
+.empty{color:var(--dim);font-size:13px}
+.inv{display:flex;flex-wrap:wrap;gap:6px}
+.it{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:5px 8px;font-size:12.5px;display:flex;gap:5px;align-items:center}
+.it.sel{border-color:var(--acc);background:#3a2a0e}
+.it .old{color:var(--dim);font-size:11px}
+.sockets{display:flex;gap:4px;flex-wrap:wrap}
+.sockets button{flex:1;min-width:38px;font-size:12px;padding:6px 2px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:700}
+.sockets button.on{color:var(--ink);border-color:var(--acc);background:#3a2a0e}
+.fluids{display:flex;gap:10px;margin-top:8px;font-size:13px;color:var(--dim)}
+.fluids b{color:var(--ink)}
+.tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.tabs button{font-size:12px;padding:4px 8px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
+.tabs button.on{color:var(--ink);border-color:var(--acc)}
+.row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px}
+.row span{flex:1}
+.buy{background:#173322;border:1px solid #2a6b45;color:#9ff0c2;border-radius:8px;padding:4px 10px;font-weight:700;font-size:13px;min-width:56px}
+.buy:hover{background:#1d4029}
+.buy:disabled{opacity:.4}
+.ov{position:fixed;inset:0;background:rgba(5,6,8,.74);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:20;padding:14px}
+.ov.on{display:flex}
+.box{background:linear-gradient(#1d2025,#17191d);border:1px solid var(--line);border-radius:20px;padding:22px;max-width:520px;width:100%;max-height:92vh;overflow:auto;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.6);animation:pop .22s ease-out}
+@keyframes pop{from{transform:scale(.96);opacity:0}}
+.box h1{margin:0;font-size:42px;font-weight:800;letter-spacing:1px}
+.box h1 b{color:var(--acc)}
+.box h2{margin:0 0 8px;font-size:24px}
+.box p,.sub{color:var(--dim);font-size:15px;line-height:1.45;margin:8px 0}
+.big{display:block;width:100%;margin-top:10px;padding:13px;border-radius:14px;background:var(--acc);color:#2a1a00;font-weight:800;font-size:18px;box-shadow:0 4px 0 #b97a0a}
+.big:active{transform:translateY(2px);box-shadow:0 2px 0 #b97a0a}
+.big.alt{background:var(--panel2);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.big.gr{background:var(--green);color:#052615;box-shadow:0 4px 0 #23985a}
+.big:disabled{opacity:.45}
+.in{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0c0e10;color:var(--ink);font:inherit;font-size:18px;text-align:center;margin-top:8px}
+.code{font-size:46px;font-weight:800;letter-spacing:10px;color:var(--acc);margin:6px 0}
+.plist{display:flex;flex-direction:column;gap:6px;margin:10px 0;text-align:left}
+.prow{display:flex;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:15px}
+.prow.me{border-color:var(--acc)}
+.prow span{flex:1}
+.prow i{width:12px;height:12px;border-radius:50%}
+.opt{display:flex;gap:6px;justify-content:center;margin:6px 0;flex-wrap:wrap}
+.opt button{padding:7px 12px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:14px}
+.opt button.on{border-color:var(--acc);color:var(--acc);font-weight:700}
+.err{color:var(--red);min-height:20px;margin-top:6px;font-size:14px}
+.or{color:var(--dim);margin:12px 0 0;font-size:13px}
+.tl{text-align:left;display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.tl div{display:flex;justify-content:space-between;gap:10px;background:var(--panel2);border-radius:10px;padding:8px 12px;font-size:15px}
+.tl .f{color:#ffb0b8}.tl .p{color:#a9f3c9}.tl .n{color:#e6e9ee;font-weight:500;text-align:right}
+.upg{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;margin-top:10px}
+.u{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px;font-size:13px}
+.u b{display:block;font-size:14px;margin-bottom:2px}
+.u .d{color:var(--dim);min-height:34px}
+.u button{margin-top:6px;width:100%}
+.u.own{border-color:#2a6b45;opacity:.75}
+.stars{color:var(--gold);font-size:22px;letter-spacing:2px}
+.how{text-align:left;font-size:14px;color:var(--dim);line-height:1.5}
+.how b{color:var(--ink)}
+@media (max-width:820px){
+  #top{padding-left:104px;gap:6px}
+  #top .logo{display:none}
+  .stat{font-size:13px;padding:3px 7px}
+  #main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto minmax(0,32vh)}
+  #tools{flex-direction:row;order:2;border:0;border-top:1px solid var(--line);padding:6px;overflow-x:auto}
+  .tool{min-width:54px;flex:1}
+  .tool svg{width:22px;height:22px}
+  #stage{order:1}
+  #side{order:3;border:0;border-top:1px solid var(--line);padding:8px}
+  #views button{padding:5px 7px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div class="logo">🔧 CAR <b>MECHANIC</b></div>
+    <div class="stat" id="sDay">Day 1</div>
+    <div class="stat cash" id="sCash">$0</div>
+    <div class="stat" id="sRate">⭐ –</div>
+    <div class="sp"></div>
+    <button class="ib" id="bSnd" title="Sound">🔊</button>
+    <button class="ib" id="bHelp" title="Shop manual">📘</button>
+  </div>
+  <div id="main">
+    <div id="tools"></div>
+    <div id="stage"><canvas id="cv"></canvas><div id="views"></div><div id="toast"></div><div id="chips"></div><div id="tut"><div class="th"><span>📘 Day 1 · how the shop works</span><button id="tutSkip">Skip tutorial</button></div><div id="tutTxt"></div></div></div>
+    <div id="side"></div>
+  </div>
+</div>
+
+<div class="ov on" id="titleOv"><div class="box">
+  <h1>CAR <b>MECHANIC</b></h1>
+  <p>You run a garage. Cars roll in with problems. Figure out what's wrong, fix it properly, and get paid — or break it worse.</p>
+  <button class="big" id="playBtn">🔧 Open the garage</button>
+  <button class="big alt" id="raceBtn">👥 Garage Race (online)</button>
+  <button class="big alt" id="newBtn" style="display:none">🗑️ Start a new garage</button>
+  <button class="big alt" id="howBtn">📘 Shop manual</button>
+</div></div>
+<div class="ov" id="mpOv"><div class="box" id="mpCard"></div></div>
+<div class="ov" id="sheetOv"><div class="box" id="sheet"></div></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const HASH=location.hash.replace(/-debug$/,'');   // the terms gate lets *debug hashes through, so screenshots use #demoX-debug
+let DEMO=false;
+
+// ═══════════════════════ data ═══════════════════════
+const CARS={
+  kestrel:{name:'Kestrel Hatch',paint:'#c93b2a',mult:1,bat:'H5 · 600 CCA',qt:4.2,rim:'#c9ced5',caliper:'#c42d2d',code:'K18'},
+  monarch:{name:'Monarch Sedan',paint:'#24477e',mult:1.2,bat:'H6 · 680 CCA',qt:4.8,rim:'#3a3f46',caliper:'#1d1f22',code:'M20'},
+  boulder:{name:'Boulder Pickup',paint:'#5b6b4a',mult:1.4,bat:'H7 · 760 CCA',qt:5.7,rim:'#9aa3ad',caliper:'#2f3b52',code:'B25'},
+};
+const CAR_IDS=Object.keys(CARS);
+const CYL=[1,2,3,4],CX={1:72,2:90,3:108,4:126};
+const CORNERS=['FL','FR','RL','RR'];
+// parts you can buy (per car model). fluids are separate stock.
+const PARTS={battery:{n:'Battery',e:'🔋',cost:95},alternator:{n:'Alternator',e:'⚡',cost:180},belt:{n:'Serpentine belt',e:'➰',cost:35},
+  plug:{n:'Spark plug',e:'🔩',cost:12},coil:{n:'Ignition coil',e:'🧲',cost:60},pads:{n:'Brake pads (one wheel)',e:'🛑',cost:24},
+  filter:{n:'Oil filter',e:'🛢️',cost:9},hose:{n:'Radiator hose',e:'〰️',cost:30},fuse:{n:'Main fuse',e:'🔸',cost:4},washer:{n:'Drain-plug washer',e:'⭕',cost:1}};
+const PART_IDS=Object.keys(PARTS);
+const FLUIDS={oil:{n:'Engine oil (5 qt)',e:'🛢️',cost:28,amt:5},cool:{n:'Coolant (jug)',e:'🟩',cost:18,amt:1}};
+// g = exclusive group; day = first day it shows up; pay = what the customer pays
+const FAULTS={
+  battery:{g:'bat',pay:160,day:1,say:["It won't start. Just clicks.","Dead every morning. Jump starts get me to work."]},
+  belt:{g:'belt',pay:110,day:1,say:["Horrible squealing when I start it.","It screeches like a bird every time I turn the wheel."]},
+  oil:{g:'oil',pay:70,day:1,say:["Just due for an oil change — it's been 9,000 miles.","Oil change please. The sticker says I'm way over."]},
+  plug:{g:'mis',pay:90,day:2,say:["It shakes at idle and the check engine light is flashing.","It stumbles and feels down on power."]},
+  brakes:{g:'brk',pay:220,day:2,say:["Grinding noise when I brake.","The brakes squeal and now they grind."]},
+  coil:{g:'mis',pay:150,day:3,say:["It runs rough and the engine light's blinking.","It's shaking at red lights and the light's flashing."]},
+  hose:{g:'cool',pay:140,day:3,say:["There's a green puddle under it every morning.","The temperature needle keeps creeping up."]},
+  alternator:{g:'bat',pay:320,day:4,say:["The battery light came on and it died on the highway.","New battery last month and it's dead again already."]},
+  fuse:{g:'x',pay:0,day:99,say:[]},
+};
+const NAMES=['Rosa','Dmitri','Kenji','Aaliyah','Brett','Marisol','Tomasz','Imani','Wes','Priya','Hank','Lucia','Obi','Greta','Sal','June','Arjun','Dolores','Rex','Noor'];
+const FACES=['👩','👨','🧑','👵','👴','🧔','👩‍🦰','👨‍🦱','👱','🧑‍🦳','🧑‍💼','👷','🧕','👨‍🦳','👩‍🔧','🤠'];
+const UPG=[
+  {id:'impact',e:'🔫',n:'Impact gun',cost:220,d:'Bolts and lug nuts spin off in a blink.'},
+  {id:'mag',e:'🧲',n:'Magnetic parts tray',cost:60,d:'Bolts never roll off into the shop.'},
+  {id:'lift',e:'🏗️',n:'Fast lift',cost:180,d:'The lift goes up and down in a second.'},
+  {id:'chairs',e:'🛋️',n:'Waiting room',cost:120,d:'Customers wait 40% longer.'},
+  {id:'bulk',e:'📦',n:'Parts account',cost:250,d:'All parts 20% cheaper.'},
+  {id:'sign',e:'🪧',n:'Neon sign',cost:200,d:'Happy customers tip 50% more.'},
+];
+const CREDIT=-300;
+const SOCKETS=[10,13,14,15,16,19];
+const TOOLS=[
+  {id:'ratchet',n:'Ratchet',key:'1'},{id:'torque',n:'Torque',key:'2'},{id:'breaker',n:'Breaker',key:'3'},{id:'hand',n:'Hand',key:'4'},
+  {id:'pliers',n:'Pliers',key:'5'},{id:'meter',n:'Meter',key:'6'},{id:'pan',n:'Drain pan',key:'7'},{id:'pour',n:'Pour',key:'8'},{id:'clamp',n:'C-clamp',key:'9'},
+];
+const ICON={
+  ratchet:'<svg viewBox="0 0 24 24"><g transform="rotate(-40 12 12)"><rect x="3" y="10.5" width="13" height="3" rx="1.5" fill="#c9ced5"/><rect x="5" y="10.9" width="9" height="2.2" rx="1" fill="#e04646"/><circle cx="18" cy="12" r="4" fill="#dfe3e8"/><circle cx="18" cy="12" r="2" fill="#6a717a"/></g></svg>',
+  torque:'<svg viewBox="0 0 24 24"><g transform="rotate(-40 12 12)"><rect x="1" y="10.6" width="15" height="2.8" rx="1.4" fill="#c9ced5"/><rect x="2.5" y="10" width="6" height="4" rx="1.5" fill="#2c3138"/><rect x="9" y="10.3" width="4" height="3.4" fill="#ffb020"/><circle cx="18.5" cy="12" r="3.6" fill="#dfe3e8"/><circle cx="18.5" cy="12" r="1.7" fill="#6a717a"/></g></svg>',
+  breaker:'<svg viewBox="0 0 24 24"><g transform="rotate(-40 12 12)"><rect x="0" y="10.8" width="18" height="2.4" rx="1.2" fill="#9aa3ad"/><rect x="1" y="10.3" width="6" height="3.4" rx="1.4" fill="#2c3138"/><rect x="17" y="8.5" width="3" height="7" rx="1" fill="#dfe3e8"/><rect x="19.5" y="10.5" width="3" height="3" fill="#9aa3ad"/></g></svg>',
+  hand:'<svg viewBox="0 0 24 24"><path d="M8.5 21.5c-2.2-1.8-4.5-5-4.9-7.1-.2-1 .9-1.6 1.7-.9l2.2 2V5a1.4 1.4 0 0 1 2.8 0v6.5V3.6a1.4 1.4 0 0 1 2.8 0v7.9V4.7a1.4 1.4 0 0 1 2.8 0v7.4V7.4a1.4 1.4 0 0 1 2.8 0v7.4c0 4.2-2.3 6.7-6.3 6.7z" fill="#3a6fd6" stroke="#1d4aa8" stroke-width=".8"/></svg>',
+  pliers:'<svg viewBox="0 0 24 24"><path d="M10 13 3 22M14 13l7 9" stroke="#e04646" stroke-width="3" stroke-linecap="round"/><path d="M10 13 12 3l2 10" fill="#c9ced5"/><circle cx="12" cy="12" r="1.6" fill="#6a717a"/></svg>',
+  meter:'<svg viewBox="0 0 24 24"><rect x="4.5" y="1.5" width="15" height="21" rx="3.2" fill="#f2c230"/><rect x="6.5" y="3.5" width="11" height="17" rx="2" fill="#23262b"/><rect x="8" y="5" width="8" height="4.5" rx=".8" fill="#9be7b4"/><circle cx="12" cy="14.5" r="3" fill="#3a3f46"/></svg>',
+  pan:'<svg viewBox="0 0 24 24"><path d="M2 10h20l-2.5 8.5a2 2 0 0 1-1.9 1.5H6.4a2 2 0 0 1-1.9-1.5z" fill="#2c3138" stroke="#6a717a"/><ellipse cx="12" cy="11.5" rx="8" ry="1.6" fill="#141414"/></svg>',
+  pour:'<svg viewBox="0 0 24 24"><path d="M6 5h9l3 4v12H6z" fill="#ffb020"/><rect x="9" y="2" width="4" height="3" fill="#2c3138"/><rect x="8" y="11" width="8" height="5" rx="1" fill="#fff3d0"/><path d="M18 9l3-2" stroke="#ffb020" stroke-width="2"/></svg>',
+  clamp:'<svg viewBox="0 0 24 24"><path d="M5 4h10v4H9v8h6v4H5z" fill="#3a6fd6"/><rect x="15" y="9.5" width="7" height="2" fill="#c9ced5"/><rect x="13" y="7" width="3" height="7" rx=".6" fill="#9aa3ad"/></svg>',
+  engine:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#2c3138" stroke="#9aa3ad"/><circle cx="12" cy="12" r="5" fill="#e04646"/><text x="12" y="14.6" font-size="6.5" font-weight="800" text-anchor="middle" fill="#fff" font-family="Rubik">START</text></svg>',
+  stop:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#2c3138" stroke="#9aa3ad"/><circle cx="12" cy="12" r="5" fill="#ffb020"/><text x="12" y="14.6" font-size="6.5" font-weight="800" text-anchor="middle" fill="#2a1a00" font-family="Rubik">STOP</text></svg>',
+  scan:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="14" rx="2.5" fill="#2c3138" stroke="#9aa3ad"/><rect x="5.5" y="5.5" width="13" height="7" rx="1" fill="#3ddc84"/><text x="12" y="10.8" font-size="4.6" font-weight="800" text-anchor="middle" fill="#0b2b18" font-family="monospace">P0301</text><path d="M12 17v4" stroke="#9aa3ad" stroke-width="2"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#3ddc84"/><path d="M7 12.5l3.2 3.2L17.2 8.6" stroke="#052615" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+// ── geometry: three views, each in its own local units ──
+//   bay   = engine bay from above, 200 × 150   (front of the car at the top)
+//   lift  = underside on the lift, 120 × 240  (front at the top)
+//   wheel = one wheel corner from the side, 160 × 160
+const VIEWS={bay:[200,150],lift:[120,240],wheel:[160,160]};
+const RB={battery:[8,18,40,46],fuse:[8,72,30,28],alternator:[163,38,26,22],res:[112,16,30,24],airbox:[54,18,48,24]};
+const coilR=i=>[CX[i]-5.5,62,11,26];
+const PUL={alt:[175,48,6],idler:[158,64,4],tens:[190,72,4.6],wp:[160,88,6.5],ac:[186,98,7],crank:[170,114,10]};
+const CAPS={oil:[144,95,5],res:[120,22,4.2],rad:[146,10,4.2]};
+const DIP=[54,110,4];
+const RL={pan:[42,60,34,30],filter:[84,62,7],hoseA:[34,18],hoseB:[50,52],tank:[30,150,60,30]};
+const TIRE={FL:[2,34,16,36],FR:[102,34,16,36],RL:[2,176,16,36],RR:[102,176,16,36]};
+const PANSPOT={oil:[59,100],cool:[27,42]};
+const WC=[80,80];   // wheel centre in wheel view
+const LUG=k=>[WC[0]+Math.cos(-Math.PI/2+k*2*Math.PI/5)*15,WC[1]+Math.sin(-Math.PI/2+k*2*Math.PI/5)*15];
+const CAL=[112,50,26,60],HANG=[118,120,32,30],PADS=[100,56,13,48];
+// fasteners: every bolt/nut/clamp. host = the part it belongs to; gone = a part that has to be out of the way first
+const FAST=[
+  {id:'batN',v:'bay',x:17,y:24,mm:10,host:'battery',term:'neg'},{id:'batP',v:'bay',x:39,y:24,mm:10,host:'battery',term:'pos'},
+  {id:'batH',v:'bay',x:28,y:59,mm:13,host:'battery'},
+  ...CYL.map(i=>({id:'coilB'+i,v:'bay',x:CX[i],y:93,mm:10,host:'coil'+i})),
+  ...CYL.map(i=>({id:'plug'+i,v:'bay',x:CX[i],y:76,mm:16,host:'plug'+i,torque:true,gone:'coil'+i,isPlug:true})),
+  {id:'altB1',v:'bay',x:166,y:41,mm:13,host:'alternator'},{id:'altB2',v:'bay',x:186,y:57,mm:13,host:'alternator'},
+  {id:'altBp',v:'bay',x:182,y:42,mm:10,host:'alternator',bplus:true},
+  {id:'drain',v:'lift',x:59,y:86,mm:15,host:null,torque:true},
+  {id:'clampA',v:'lift',x:35,y:21,tool:'pliers',host:'hose'},{id:'clampB',v:'lift',x:49,y:49,tool:'pliers',host:'hose'},
+  ...CORNERS.flatMap(c=>[0,1,2,3,4].map(k=>({id:'L'+k+':'+c,v:'wheel:'+c,x:LUG(k)[0],y:LUG(k)[1],mm:19,host:'wheel:'+c,torque:true,lug:c}))),
+  ...CORNERS.flatMap(c=>[['K1',128,56],['K2',128,104]].map(([k,x,y])=>({id:k+':'+c,v:'wheel:'+c,x,y,mm:14,host:'caliper:'+c,gone:'wheel:'+c}))),
+];
+const FASTBY=Object.fromEntries(FAST.map(f=>[f.id,f]));
+const CONNS={coilC1:{v:'bay',x:CX[1],y:60,host:'coil1'},coilC2:{v:'bay',x:CX[2],y:60,host:'coil2'},coilC3:{v:'bay',x:CX[3],y:60,host:'coil3'},coilC4:{v:'bay',x:CX[4],y:60,host:'coil4'},altC:{v:'bay',x:168,y:56,host:'alternator'}};
+const CONN_IDS=Object.keys(CONNS);
+
+// ═══════════════════════ state ═══════════════════════
+const fresh=()=>({v:1,day:1,cash:400,upg:{},inv:[],fluid:{oil:0,cool:0},sock:10,rates:[],total:0,best:0,jobIdx:0,dayEarn:0,daySpend:0,seed:1+Math.floor(Math.random()*1e6),
+  sound:true,name:'',hue:Math.floor(Math.random()*360),started:false,tutOff:false});
+let S=fresh();
+const SAVE_KEY='carmechanic.v1';
+function save(){if(DEMO)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(d&&d.v===1)S=Object.assign(fresh(),d)}catch(e){}}
+let C=S,mode='title',cur=null,DAY=null,RACE=null,TOOL='ratchet',SEL=null,TAB=null;
+const upg=k=>!!(C.upg&&C.upg[k]);
+let uidN=1;const uid=()=>uidN++;
+function rngOf(seed){let s=seed>>>0||1;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const pick=(r,a)=>a[Math.floor(r()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const inR=(x,y,r,p=0)=>x>=r[0]-p&&x<=r[0]+r[2]+p&&y>=r[1]-p&&y<=r[1]+r[3]+p;
+const dist=(ax,ay,bx,by)=>Math.hypot(ax-bx,ay-by);
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const money=n=>(n<0?'-$':'$')+Math.abs(Math.round(n));
+const ptype=k=>k.replace(/\d$/,'').replace(/:.*$/,'');   // 'coil3' → 'coil', 'pads:FL' → 'pads'
+
+function makeJob(r,lvl){
+  const model=pick(r,lvl<=1?['kestrel','monarch']:CAR_IDS);
+  const pool=Object.keys(FAULTS).filter(k=>FAULTS[k].day<=lvl);
+  const x=r();let n=1;if(lvl>=3&&x<.3)n=2;if(lvl>=5&&x<.12)n=3;
+  const faults=[],gs=new Set();let guard=0;
+  while(faults.length<n&&guard++<80){const k=pick(r,pool);if(gs.has(FAULTS[k].g))continue;gs.add(FAULTS[k].g);faults.push(k)}
+  const say=faults.map((k,i)=>(i?'Oh, and… ':'')+pick(r,FAULTS[k].say)).join(' ');
+  return{model,faults,say,cyl:1+Math.floor(r()*4),name:pick(r,NAMES),face:pick(r,FACES),hue:Math.floor(r()*360),pat:Math.round(320+150*n+(lvl>=4?40:0)),miles:20000+Math.floor(r()*140000),seed:Math.floor(r()*1e6)};
+}
+function jobsFor(seed,lvl,n){const r=rngOf(seed);return Array.from({length:n},()=>makeJob(r,lvl))}
+
+function newCar(job){
+  const P={uid:uid(),t:0,job,model:job.model,view:'bay',run:false,runT:0,lift:false,liftT:0,temp:22,hotT:0,lowOilT:0,crank:0,
+    f:{},conn:{},part:{},faults:job.faults.map(k=>({k,paid:true})),oil:job.faults.includes('oil')?.82:1,oilOld:job.faults.includes('oil'),drained:false,
+    cool:job.faults.includes('hose')?.72:1,pan:null,cap:{oil:false,res:false,rad:false},slack:0,piston:{},oldWasher:false,seized:false,
+    spill:0,damage:[],notes:[],scanned:false,said:{},gone:false,read:null,lastSpill:0};
+  for(const t of['battery','alternator','belt','fuse','filter','hose'])P.part[t]={model:job.model,bad:null,orig:true};
+  for(const i of CYL){P.part['coil'+i]={model:job.model,bad:null,orig:true};P.part['plug'+i]={model:job.model,bad:null,orig:true}}
+  for(const c of CORNERS){P.part['wheel:'+c]={model:job.model,bad:null};P.part['caliper:'+c]={model:job.model,bad:null};P.part['pads:'+c]={model:job.model,bad:null,orig:true};P.piston[c]='out'}
+  for(const f of FAST)P.f[f.id]='tight';
+  for(const c of CONN_IDS)P.conn[c]=true;
+  for(const k of job.faults){
+    if(k==='battery')P.part.battery.bad='battery';
+    if(k==='alternator')P.part.alternator.bad='alternator';
+    if(k==='belt')P.part.belt.bad='belt';
+    if(k==='plug')P.part['plug'+job.cyl].bad='plug';
+    if(k==='coil')P.part['coil'+job.cyl].bad='coil';
+    if(k==='hose')P.part.hose.bad='hose';
+    if(k==='oil')P.part.filter.bad='oil';
+    if(k==='brakes'){P.part['pads:FL'].bad='brakes';P.part['pads:FR'].bad='brakes'}
+  }
+  return P;
+}
+
+// ═══════════════════════ rules ═══════════════════════
+const has=k=>!!cur.part[k];
+const isOut=id=>cur.f[id]==='out'||cur.f[id]==='lost';   // a dropped bolt is just as gone as a removed one
+const caliperOn=c=>!!cur.part['caliper:'+c];
+function fastShown(f){
+  const P=cur;
+  if(f.host&&!P.part[f.host])return false;
+  if(f.gone&&P.part[f.gone])return false;
+  return true;
+}
+function powered(){const P=cur;return has('battery')&&!isOut('batN')&&!isOut('batP')&&has('fuse')&&!P.part.fuse.bad}
+function cylOK(i){const P=cur,c=P.part['coil'+i],p=P.part['plug'+i];return !!(c&&p&&!c.bad&&!p.bad&&P.conn['coilC'+i]&&!isOut('plug'+i)&&!isOut('coilB'+i))}
+function canStart(){
+  const P=cur;
+  if(P.seized)return'seized';
+  if(!powered())return'dead';
+  if(P.part.battery.bad)return'clicks';
+  if(CYL.filter(cylOK).length<3)return'cranks';
+  return'ok';
+}
+function charging(){const P=cur;return has('alternator')&&!P.part.alternator.bad&&has('belt')&&P.conn.altC&&!isOut('altBp')}
+function isFixed(f){
+  const P=cur,p=P.part;
+  switch(f.k){
+    case'battery':return has('battery')&&!p.battery.bad;
+    case'alternator':return has('alternator')&&!p.alternator.bad;
+    case'belt':return has('belt')&&!p.belt.bad;
+    case'plug':return CYL.every(i=>has('plug'+i)&&!p['plug'+i].bad);
+    case'coil':return CYL.every(i=>has('coil'+i)&&!p['coil'+i].bad);
+    case'hose':return has('hose')&&!p.hose.bad&&P.cool>=.9;
+    case'oil':return !P.oilOld&&has('filter')&&!p.filter.bad&&P.oil>=.85&&P.oil<=1.15;
+    case'brakes':return['FL','FR'].every(c=>has('pads:'+c)&&!p['pads:'+c].bad);
+    case'fuse':return has('fuse')&&!p.fuse.bad;
+  }
+  return true;
+}
+const unfixed=()=>cur.faults.filter(f=>!isFixed(f));
+function addFault(k){
+  const P=cur;
+  if(k==='fuse'){if(!has('fuse')||P.part.fuse.bad)return false;P.part.fuse.bad='fuse'}
+  P.faults.push({k,paid:false});P.caused=(P.caused||0)+1;return true;
+}
+function damage(txt,cost){cur.damage.push({txt,cost});msg('💥 '+txt,'bad');sfx('crunch')}
+function partCost(t,model){const base=FLUIDS[t]?FLUIDS[t].cost:PARTS[t].cost*(t==='fuse'||t==='washer'?1:CARS[model].mult);return Math.max(1,Math.round(base*(upg('bulk')&&!FLUIDS[t]?.8:1)))}
+const canAfford=c=>C.cash-c>=CREDIT;
+function once(key,txt,kind){const P=cur;if(P.said[key])return;P.said[key]=1;msg(txt,kind)}
+let quiet=false;
+const busy=()=>cur.run;
+
+// ── fasteners ──
+function fastAct(id,tool){
+  const P=cur,f=FASTBY[id];if(!f||!fastShown(f))return false;
+  const st=P.f[id];
+  if(tool==='pliers'||f.tool==='pliers'){
+    if(tool!=='pliers'){msg('That\'s a spring clamp — it needs pliers.');sfx('err');return false}
+    P.f[id]=st==='out'?'tight':'out';sfx('click');UI();return true;
+  }
+  if(tool==='pliers'){msg('Pliers just slip off a bolt head.');sfx('err');return false}
+  if(P.run&&f.v==='bay'&&!f.term){msg('Not with the engine running.');sfx('err');return false}
+  if(tool==='torque'){
+    if(!f.torque){msg('That one doesn\'t take a torque spec — just snug it with the ratchet.');sfx('err');return false}
+    if(st==='out'){msg('Nothing to torque — it\'s not threaded in.');sfx('err');return false}
+    if(f.lug&&P.lift){msg('The wheel just spins in the air.');sfx('err');return false}
+    if(st==='tight'){msg('Click. Already at spec.');sfx('click');return true}
+    P.f[id]='tight';sfx('click2');UI();return true;
+  }
+  // ratchet
+  if(st==='lost'){C.cash-=2;spend(2);P.f[id]='out';msg('You grab a replacement bolt from the hardware drawer.');return fastAct(id,tool)}
+  if(S_SOCK()!==f.mm){msg(S_SOCK()<f.mm?'The '+S_SOCK()+' mm socket won\'t go over that head.':'The '+S_SOCK()+' mm socket slips and starts rounding the corners.');sfx('err');return false}
+  if(st!=='out'){
+    if(f.lug&&P.lift&&st==='tight'){msg('The wheel just spins in the air.');sfx('err');return false}
+    if(f.term==='pos'&&!isOut('batN')&&Math.random()<.35)zapFuse('The ratchet touched the body while you were on the positive terminal.');
+    if(f.bplus&&powered())zapFuse('That cable is live — straight to ground.');
+    P.f[id]='out';
+    if(f.id==='drain')msg('Oil starts pouring out of the pan.');
+    if(!quiet&&!upg('mag')&&!f.isPlug&&!f.lug&&!f.term&&f.id!=='drain'&&Math.random()<.06){P.f[id]='lost';msg('🔩 The bolt dropped and rolled under the car. Gone.')}
+  }else{
+    if(f.term==='pos'&&!isOut('batN')&&Math.random()<.35)zapFuse('The ratchet touched the body while you were on the positive terminal.');
+    if(f.id==='drain'){const w=C.inv.find(i=>i.type==='washer');if(w){C.inv=C.inv.filter(i=>i!==w);P.oldWasher=false}else P.oldWasher=true}
+    P.f[id]=f.torque?'snug':'tight';
+  }
+  sfx('ratchet');UI();return true;
+}
+const S_SOCK=()=>C.sock;
+function zapFuse(why){fx('spark',cur.view==='bay'?28:60,cur.view==='bay'?26:60);sfx('spark');if(addFault('fuse'))msg('⚡ Bang — a fat spark. '+why+' Everything just went dead.','bad');else msg('⚡ A spark jumped off the terminal.','bad')}
+// ── parts ──
+function partReady(k){
+  const P=cur;
+  const block=f=>f.host===k&&fastShown(f)&&P.f[f.id]!=='out'&&P.f[f.id]!=='lost'&&!(f.isPlug);
+  if(FAST.some(block)){msg('It\'s still bolted down.');sfx('err');return false}
+  return true;
+}
+function removePart(k){
+  const P=cur,p=P.part[k];if(!p)return false;
+  const t=ptype(k),c=k.includes(':')?k.split(':')[1]:null;
+  if(P.run&&!c){msg('Not with the engine running.');sfx('err');return false}
+  if(t==='battery'){if(!isOut('batN')||!isOut('batP')){msg('The cables are still clamped on.');sfx('err');return false}if(P.f.batH!=='out'&&P.f.batH!=='lost'){msg('The hold-down bar is still bolted across it.');sfx('err');return false}}
+  else if(t==='coil'){const i=k.slice(4);if(P.conn['coilC'+i]){msg('It\'s still plugged in.');sfx('err');return false}if(!partReady(k))return false}
+  else if(t==='plug'){const i=k.slice(4);if(P.part['coil'+i]){msg('There\'s a coil sitting on top of it.');sfx('err');return false}if(P.f['plug'+i]!=='out'){msg('It\'s still screwed into the head.');sfx('err');return false}}
+  else if(t==='alternator'){if(has('belt')){msg('The belt is still wrapped around its pulley.');sfx('err');return false}if(P.conn.altC){msg('Its plug is still connected.');sfx('err');return false}if(!partReady(k))return false}
+  else if(t==='belt')return beltAct();
+  else if(t==='fuse'){/* pulls straight out */}
+  else if(t==='filter'){if(!P.lift){msg('You can\'t reach it from up here.');return false}if(P.oil>.1)P.spill+=.15,once('filterspill','Oil glugs out of the filter housing onto the floor.')}
+  else if(t==='hose'){if(P.f.clampA!=='out'||P.f.clampB!=='out'){msg('The clamps are still squeezing it on.');sfx('err');return false}}
+  else if(t==='wheel'){if([0,1,2,3,4].some(n=>P.f['L'+n+':'+c]!=='out'&&P.f['L'+n+':'+c]!=='lost')){msg('Lug nuts are still on.');sfx('err');return false}if(!P.lift){msg('The car is sitting on it.');sfx('err');return false}}
+  else if(t==='caliper'){if(has('wheel:'+c)){msg('The wheel is in the way.');return false}if(!partReady(k))return false}
+  else if(t==='pads'){if(caliperOn(c)){msg('The caliper is clamped over them.');sfx('err');return false}}
+  if(t==='caliper'){P.part[k]=null;P.hang=P.hang||{};P.hang[c]={model:p.model};sfx('pop');UI();return true}
+  if(t==='wheel'){P.part[k]=null;P.wheelOff=P.wheelOff||{};P.wheelOff[c]={model:p.model};sfx('thunk');UI();return true}
+  C.inv.push({id:uid(),type:t,model:p.model,bad:p.bad,used:true,from:k});
+  P.part[k]=null;
+  if(t==='coil'){}
+  if(t==='hose'){msg('Coolant gushes out of the open neck.');}
+  for(const f of FAST)if(f.host===k&&P.f[f.id]==='lost')P.f[f.id]='out';
+  sfx('pop');UI();return true;
+}
+function installPart(k){
+  const P=cur;if(P.part[k])return false;
+  const t=ptype(k),c=k.includes(':')?k.split(':')[1]:null;
+  if(P.run&&!c){msg('Not with the engine running.');sfx('err');return false}
+  if(t==='caliper'){const h=P.hang&&P.hang[c];if(!h)return false;if(has('pads:'+c)&&!P.part['pads:'+c].bad&&P.part['pads:'+c].fresh&&P.piston[c]==='out'){msg('The caliper won\'t fit over the new pads — the piston is sticking out too far.');sfx('err');return false}
+    P.part[k]={model:h.model,bad:null};delete P.hang[c];for(const f of FAST)if(f.host===k)P.f[f.id]='out';if(has('pads:'+c)&&P.part['pads:'+c].fresh)P.piston[c]='set';sfx('thunk');UI();return true}
+  if(t==='wheel'){const h=P.wheelOff&&P.wheelOff[c];if(!h)return false;if(caliperOn(c)===false){msg('The caliper is hanging off — the wheel can\'t go on.');sfx('err');return false}
+    P.part[k]={model:h.model,bad:null};delete P.wheelOff[c];for(const f of FAST)if(f.host===k)P.f[f.id]='out';sfx('thunk');UI();return true}
+  if(t==='coil'){const i=k.slice(4);if(!has('plug'+i)){msg('There\'s no spark plug down that hole.');sfx('err');return false}}
+  if(t==='alternator'&&has('belt')){msg('The belt is in the way.');return false}
+  let it=SEL&&C.inv.find(i=>i.id===SEL&&i.type===t);
+  if(!it)it=C.inv.find(i=>i.type===t&&i.model===P.model&&!i.used)||C.inv.find(i=>i.type===t&&i.model===P.model&&!i.bad&&(i.from===k||t!=='coil'&&t!=='plug'))||C.inv.find(i=>i.type===t&&i.model===P.model&&!i.bad)||C.inv.find(i=>i.type===t&&i.model===P.model);
+  if(!it){const wrong=C.inv.find(i=>i.type===t);msg(wrong?'Your '+PARTS[t].n.toLowerCase()+' is for a '+CARS[wrong.model].name+'.':'You don\'t have a '+PARTS[t].n.toLowerCase()+' for this.');sfx('err');return false}
+  if(it.model!==P.model){msg('Wrong part — that one\'s for a '+CARS[it.model].name+'.');sfx('err');return false}
+  C.inv=C.inv.filter(i=>i!==it);if(SEL===it.id)SEL=null;
+  P.part[k]={model:it.model,bad:it.bad,orig:false,fresh:!it.used};
+  for(const f of FAST)if(f.host===k)P.f[f.id]='out';
+  if(t==='coil')P.conn['coilC'+k.slice(4)]=false;
+  if(t==='alternator')P.conn.altC=false;
+  sfx('thunk');UI();return true;
+}
+function beltAct(){
+  const P=cur;
+  if(P.run){msg('Not with the engine running!');sfx('err');return false}
+  if(P.slack<=0){msg(has('belt')?'It\'s drum-tight. Something is holding tension on it.':'There\'s no slack to route a belt.');sfx('err');return false}
+  if(has('belt')){const p=P.part.belt;C.inv.push({id:uid(),type:'belt',model:p.model,bad:p.bad,used:true});P.part.belt=null;P.slack=0;sfx('pop');UI();return true}
+  if(!has('alternator')){msg('The belt needs every pulley in place.');sfx('err');return false}
+  let it=C.inv.find(i=>i.type==='belt'&&i.model===P.model&&!i.used)||C.inv.find(i=>i.type==='belt'&&i.model===P.model);
+  if(!it){msg('You don\'t have a belt for this.');sfx('err');return false}
+  C.inv=C.inv.filter(i=>i!==it);P.part.belt={model:it.model,bad:it.bad};P.slack=0;sfx('thunk');UI();return true;
+}
+function slackBelt(){const P=cur;if(P.run){msg('Not with the engine running!');sfx('err');return false}P.slack=4;sfx('creak');return true}
+function toggleConn(id){
+  const P=cur,c=CONNS[id];if(!c||!P.part[c.host])return false;
+  if(P.run){msg('Not with the engine running.');sfx('err');return false}
+  P.conn[id]=!P.conn[id];sfx('click');UI();return true;
+}
+function toggleCap(k){
+  const P=cur;
+  if(!P.cap[k]&&(k==='rad'||k==='res')&&P.temp>70){P.cap[k]=true;P.cool=Math.max(0,P.cool-.12);fx('steam',CAPS[k][0],CAPS[k][1]);damage('Pressurised steam blasts out of the cap and scalds your hand.',40);UI();return true}
+  if(P.cap[k]&&k==='oil'&&P.run){}
+  P.cap[k]=!P.cap[k];sfx('click');UI();return true;
+}
+function placePan(spot){const P=cur;if(!P.lift){msg('There\'s no room under the car while it\'s on the ground.');return false}P.pan=P.pan===spot?null:spot;sfx('thunk');UI();return true}
+function pourTick(k,dt){
+  const P=cur;
+  if(k==='oil'){if(!P.cap.oil){once('capoil','The cap is still on.');return false}if(C.fluid.oil<=0){once('nooil','The oil jug is empty.');return false}
+    const q=Math.min(C.fluid.oil,dt*1.1);C.fluid.oil-=q;const frac=q/CARS[P.model].qt;
+    if(P.f.drain==='out'||P.f.drain==='lost'){P.spill+=frac*(P.pan==='oil'?0:1);once('pourout','It runs straight out of the open drain hole.')}else{P.oil+=frac;if(P.drained)P.oilOld=false}
+  }else{if(!P.cap.res&&!P.cap.rad){once('capres','The cap is still on.');return false}if(C.fluid.cool<=0){once('nocool','The coolant jug is empty.');return false}
+    const q=Math.min(C.fluid.cool,dt*.35);C.fluid.cool-=q;
+    if(!has('hose')||P.f.clampA==='out'||P.f.clampB==='out'){P.spill+=q*(P.pan==='cool'?0:1);once('poorout2','It pours straight out underneath.')}else P.cool+=q;
+  }
+  UI();return true;
+}
+function compress(c){const P=cur;if(caliperOn(c)||!(P.hang&&P.hang[c])){msg('Hang the caliper off first.');return false}P.piston[c]='in';sfx('creak');UI();return true}
+function readDip(){
+  const P=cur;const lv=P.oil,txt='DIPSTICK  '+(lv<.05?'dry — nothing on the stick':lv<.85?'below the low mark':lv>1.15?'way over the full mark':'between the marks')+' · '+(P.oilOld?'black and gritty':'clean amber');
+  note('dip',txt);P.read={txt,x:DIP[0],y:DIP[1],v:'bay',life:6};sfx('click');return true;
+}
+function note(k,txt){const P=cur;P.notes=P.notes.filter(n=>n.k!==k);P.notes.push({k,txt});UI()}
+function measure(k){
+  const P=cur;let txt;
+  if(k==='battery'){const v=!has('battery')?null:P.run&&charging()?14.1:P.run?12.2:P.part.battery.bad?11.7:12.6;if(v==null)return false;txt='BATT  '+v.toFixed(1)+' V'+(P.run?' · engine running':' · engine off')}
+  else if(k.startsWith('coil')){const p=P.part[k];if(!p)return false;txt='COIL '+k.slice(4)+'  primary 0.6 Ω · secondary '+(p.bad?'∞ (open)':'6.8 kΩ')}
+  else if(k==='alternator'){if(!has('alternator'))return false;txt='ALT   output '+(P.run&&charging()?'14.1 V':P.run?'0.0 V':'— (engine off)')}
+  else if(k==='fuse'){if(!has('fuse'))return false;txt='FUSE  '+(P.part.fuse.bad?'open circuit':'0.0 Ω')}
+  else return false;
+  note('m:'+k,txt);const r=k==='battery'?RB.battery:k==='fuse'?RB.fuse:k==='alternator'?RB.alternator:coilR(+k.slice(4));
+  P.read={txt,x:r[0]+r[2]/2,y:r[1],cx:r[0]+r[2]/2,cy:r[1]+r[3]/2,v:'bay',life:6};sfx('beep');return true;
+}
+function scan(){
+  const P=cur;
+  if(!powered()){msg('The scan tool won\'t power up — no voltage at the port.');sfx('err');return null}
+  const codes=[];
+  for(const i of CYL)if(!cylOK(i)&&(P.part['coil'+i]||P.part['plug'+i]))codes.push('P030'+i+' cylinder '+i+' misfire');
+  if(P.part.alternator&&P.part.alternator.bad||P.ranNoCharge)codes.push('P0562 system voltage low');
+  if(P.overheated)codes.push('P0217 engine over-temperature');
+  if(P.part.battery.bad)codes.push('U3003 battery voltage low');
+  P.scanned=true;const txt='OBD   '+(codes.length?codes.join(' · '):'no stored codes');note('scan',txt);
+  P.read={txt,x:100,y:140,v:'*',life:6};sfx('beep');return codes;
+}
+function toggleEngine(){
+  const P=cur;
+  if(P.run){P.run=false;sfx('stop');UI();return true}
+  const st=canStart();
+  if(st==='seized'){msg('The starter strains against a locked engine. It isn\'t turning.');sfx('err');return false}
+  if(st==='dead'){msg('You turn the key. Nothing — no lights, no click.');sfx('err');return false}
+  if(st==='clicks'){msg('Click-click-click-click. The starter barely twitches.');sfx('clicks');return false}
+  if(st==='cranks'){msg('It cranks and cranks, but won\'t catch.');sfx('crank');return false}
+  if(P.f.drain==='out'||P.f.drain==='lost'||P.oil<.05){}
+  P.run=true;P.runT=0;sfx('start');
+  if(has('belt')&&P.part.belt.bad)once('squeal','An ear-splitting squeal from the front of the engine.');
+  if(CYL.some(i=>!cylOK(i)))once('rough','It idles rough — the whole engine shudders.');
+  if(!charging())P.ranNoCharge=true;
+  UI();return true;
+}
+function toggleLift(){
+  const P=cur;
+  if(P.run){msg('Shut the engine off first.');sfx('err');return false}
+  if(P.lift){
+    const off=CORNERS.filter(c=>!has('wheel:'+c));
+    if(off.length){damage('CRUNCH. The car came down on a bare brake rotor.',150)}
+  }
+  P.lift=!P.lift;sfx('lift');if(!P.lift&&(P.view==='lift'))P.view='bay';UI();return true;
+}
+function setView(v){const P=cur;if(v==='lift'&&P.liftT<1&&!quiet){msg(P.lift?'The lift is still going up.':'The car is on the ground — raise the lift to get underneath.');return false}P.view=v;HOLD=null;UI();return true}
+function runChecks(){
+  const P=cur,w={};
+  w.starts=canStart()==='ok';
+  w.smooth=w.starts&&CYL.every(cylOK)&&CYL.every(i=>P.f['plug'+i]==='tight');
+  w.charging=w.starts&&charging();
+  w.quiet=w.starts&&has('belt')&&!P.part.belt.bad;
+  w.brakes=CORNERS.every(c=>has('pads:'+c)&&!P.part['pads:'+c].bad&&caliperOn(c)&&has('wheel:'+c));
+  w.oil=P.oil>=.85&&P.oil<=1.15&&!P.oilOld&&has('filter')&&P.f.drain!=='out'&&P.f.drain!=='lost';
+  w.cooling=has('hose')&&!P.part.hose.bad&&P.cool>=.9&&P.f.clampA==='tight'&&P.f.clampB==='tight';
+  return w;
+}
+function looseFasteners(){const P=cur;return FAST.filter(f=>fastShown(f)&&P.f[f.id]!=='tight')}
+function handBack(){
+  const P=cur;if(!P||P.gone)return null;
+  if(P.lift||P.liftT>0){msg('Get it back down on the ground first.');sfx('err');return null}
+  if(CORNERS.some(c=>!has('wheel:'+c))){msg('It\'s missing a wheel!');sfx('err');return null}
+  if(P.run){P.run=false}
+  const w=runChecks(),loose=looseFasteners(),lugLoose=loose.filter(f=>f.lug).length,f=Math.max(0,1-P.t/patience());
+  const un=unfixed();
+  const good=Object.values(w).every(Boolean)&&!un.length&&!P.seized;
+  let pay=0;if(w.starts&&!P.seized)for(const x of P.faults)if(x.paid&&isFixed(x))pay+=FAULTS[x.k].pay;
+  const full=P.faults.filter(x=>x.paid).reduce((a,x)=>a+FAULTS[x.k].pay,0);
+  let tip=good&&!loose.length?Math.round(full*.2*f*(upg('sign')?1.5:1)):0;
+  if(f<=0)pay=Math.round(pay*.85);
+  const caps=Object.values(P.cap).filter(Boolean).length;
+  const pens=[];
+  if(loose.length)pens.push(['Loose bolts ×'+loose.length,loose.length*15]);
+  if(lugLoose)pens.push(['Wheel wobbling on the test drive',60]);
+  if(caps)pens.push(['Caps left off ×'+caps,caps*5]);
+  if(P.oldWasher&&P.f.drain!=='out')pens.push(['Drain plug weeping (old washer)',15]);
+  if(P.oil>1.15)pens.push(['Overfilled oil — blue smoke',30]);
+  if(P.oil<.85&&!P.seized)pens.push(['Oil level low',30]);
+  if(P.cool<.9)pens.push(['Coolant low',30]);
+  if(P.spill>.2)pens.push(['Fluid spill clean-up',25]);
+  for(const d of P.damage)pens.push([d.txt.replace(/^[^ ]* /,''),d.cost]);
+  const pen=pens.reduce((a,p)=>a+p[1],0);
+  const total=pay+tip-pen;
+  let stars=good?(f>.4&&!loose.length&&!P.damage.length?5:f>0&&loose.length<=1?4:3):pay>0?2:1;
+  if(P.seized)stars=1;
+  const broke=[];if(!w.starts)broke.push('it won\'t start');else{if(!w.smooth)broke.push('it still runs rough');if(!w.charging)broke.push('the battery light is on');if(!w.quiet)broke.push('the belt still squeals')}
+  if(!w.brakes)broke.push('the brakes grind');if(!w.cooling)broke.push('it\'s still leaking coolant');if(!w.oil)broke.push('the oil isn\'t right');
+  const line=P.seized?'The engine is… seized?! What did you DO to it?':good?pick(Math.random,stars>=5?['Drives like new. Thank you!','You\'re the only honest mechanic in town.','Smooth as butter. I\'ll tell my friends.']:['Seems good, thanks.','Works — took a while though.']):'Uh… '+broke.join(', ')+'.';
+  C.cash+=total;P.gone=true;C.inv=C.inv.filter(i=>!i.used);SEL=null;
+  sfx(good?'cash':'err');
+  return{pay,tip,pens,pen,total,stars,line,good,caused:P.caused||0,late:f<=0};
+}
+function patience(){return cur.job.pat*(upg('chairs')?1.4:1)}
+
+// ═══════════════════════ repair planner — drives the self-tests and the day-1 tutorial ═══════════════════════
+function advise(){
+  const P=cur;if(!P||P.gone)return null;
+  const A=(txt,act)=>({txt,act});
+  const un=unfixed();
+  const go=v=>P.view!==v?A('view',{k:'view',v}):null;
+  const up=()=>!P.lift?A('lift',{k:'lift'}):P.liftT<1?A('wait',{k:'wait'}):null;
+  const down=()=>P.lift?A('lift',{k:'lift'}):P.liftT>0?A('wait',{k:'wait'}):null;
+  const loosen=id=>{const f=FASTBY[id];return go(f.v)||A('loosen '+id,{k:'ratchet',id})};
+  const removeK=k=>{const v=k.includes(':')?'wheel:'+k.split(':')[1]:k==='filter'||k==='hose'?'lift':'bay';return go(v)||A('remove '+k,{k:'remove',part:k})};
+  const outAll=k=>{for(const f of FAST)if(f.host===k&&fastShown(f)&&P.f[f.id]!=='out'&&P.f[f.id]!=='lost'&&!f.isPlug&&f.tool!=='pliers')return loosen(f.id);return null};
+  if(P.run&&!(P.testing))return A('stop engine',{k:'engine'});
+  const has_=k=>!!P.part[k],bad=k=>P.part[k]&&P.part[k].bad;
+  // ── diagnosis touches (what a careful tech would check) ──
+  if(!P.scanned&&powered())return A('scan',{k:'scan'});
+  // ── work, fault by fault ──
+  const work=un.map(f=>f.k);
+  const W=k=>work.includes(k);
+  if(W('fuse')){const g=go('bay');if(g)return g;if(bad('fuse'))return A('remove fuse',{k:'remove',part:'fuse'});if(!has_('fuse'))return installStep('fuse')}
+  if(W('battery')&&bad('battery')){for(const id of['batN','batP','batH'])if(P.f[id]!=='out'&&P.f[id]!=='lost')return loosen(id);return removeK('battery')}
+  if(W('alternator')&&bad('alternator')){
+    if(!isOut('batN'))return loosen('batN');
+    if(has_('belt'))return beltSteps();
+    const g=go('bay');if(g)return g;
+    if(P.conn.altC)return A('unplug alt',{k:'conn',id:'altC'});
+    const o=outAll('alternator');if(o)return o;return removeK('alternator');
+  }
+  if(W('belt')&&bad('belt'))return beltSteps();
+  for(const i of CYL){
+    if(bad('coil'+i)||bad('plug'+i)){
+      const g=go('bay');if(g)return g;
+      if(has_('coil'+i)){if(P.conn['coilC'+i])return A('unplug coil',{k:'conn',id:'coilC'+i});const o=outAll('coil'+i);if(o)return o;return removeK('coil'+i)}
+      if(bad('plug'+i)){if(P.f['plug'+i]!=='out')return loosen('plug'+i);return removeK('plug'+i)}
+    }
+  }
+  if(W('hose')&&bad('hose')){const u=up();if(u)return u;const g=go('lift');if(g)return g;if(P.pan!=='cool')return A('pan',{k:'pan',spot:'cool'});
+    for(const id of['clampA','clampB'])if(P.f[id]!=='out')return A('clamp off',{k:'pliers',id});return removeK('hose')}
+  if(W('oil')&&(P.oilOld||bad('filter'))){
+    if(!P.drained){const u=up();if(u)return u;const g=go('lift');if(g)return g;if(P.pan!=='oil')return A('pan',{k:'pan',spot:'oil'});if(P.f.drain!=='out')return loosen('drain');return A('drain',{k:'wait',drain:true})}
+    if(bad('filter')){const u=up();if(u)return u;return removeK('filter')}
+  }
+  if(W('brakes')){
+    // crack every lug on both front wheels while the car is still on the ground
+    for(const c of['FL','FR'])if(bad('pads:'+c)&&has_('wheel:'+c)&&[0,1,2,3,4].some(n=>P.f['L'+n+':'+c]==='tight')){
+      if(P.lift&&CORNERS.every(cc=>has_('wheel:'+cc))){const d=down();if(d)return d}
+      if(!P.lift)for(let n=0;n<5;n++)if(P.f['L'+n+':'+c]==='tight')return loosen('L'+n+':'+c);
+    }
+  }
+  if(W('brakes'))for(const c of['FL','FR'])if(bad('pads:'+c)){
+    const wk='wheel:'+c;
+    if(has_(wk)){
+      for(let n=0;n<5;n++)if(P.f['L'+n+':'+c]!=='out'&&P.f['L'+n+':'+c]!=='lost')return loosen('L'+n+':'+c);
+      const u=up();if(u)return u;return removeK(wk);
+    }
+    if(caliperOn(c)){const o=outAll('caliper:'+c);if(o)return o;return removeK('caliper:'+c)}
+    return removeK('pads:'+c);
+  }
+  // ── put everything back ──
+  const order=['fuse','battery','alternator',...CYL.map(i=>'plug'+i),...CYL.map(i=>'coil'+i),'filter','hose'];
+  for(const k of order)if(!has_(k)){
+    if(k==='filter'||k==='hose'){const u=up();if(u)return u}
+    if(k.startsWith('coil')){const i=k.slice(4);const pf='plug'+i;if(P.f[pf]!=='tight'){return P.f[pf]==='out'?loosen(pf):torqueStep(pf)}}
+    if(k==='alternator'&&has_('belt'))return beltSteps();
+    const g=go(k==='filter'||k==='hose'?'lift':'bay');if(g)return g;return installStep(k);
+  }
+  // plugs torqued before anything sits on them
+  for(const i of CYL)if(has_('plug'+i)&&P.f['plug'+i]!=='tight'&&!has_('coil'+i))return P.f['plug'+i]==='out'?loosen('plug'+i):torqueStep('plug'+i);
+  if(!has_('belt'))return beltSteps();
+  for(const c of CORNERS){
+    if(!has_('pads:'+c)){if(P.piston[c]==='out')return go('wheel:'+c)||A('compress',{k:'clamp',c});return go('wheel:'+c)||installStep('pads:'+c)}
+    if(!caliperOn(c)){if(P.part['pads:'+c].fresh&&P.piston[c]==='out')return go('wheel:'+c)||A('compress',{k:'clamp',c});return go('wheel:'+c)||A('caliper on',{k:'install',part:'caliper:'+c})}
+    for(const id of['K1:'+c,'K2:'+c])if(P.f[id]!=='tight')return go('wheel:'+c)||A('bolt',{k:'ratchet',id});
+    if(!has_('wheel:'+c)){const u=up();if(u)return u;return go('wheel:'+c)||A('wheel on',{k:'install',part:'wheel:'+c})}
+    for(let n=0;n<5;n++)if(P.f['L'+n+':'+c]==='out'||P.f['L'+n+':'+c]==='lost')return go('wheel:'+c)||A('lug',{k:'ratchet',id:'L'+n+':'+c});
+  }
+  for(const c of CONN_IDS)if(P.part[CONNS[c].host]&&!P.conn[c])return go('bay')||A('plug in',{k:'conn',id:c});
+  // drain plug back (with a fresh washer)
+  if(P.f.drain==='out'||P.f.drain==='lost'){if(P.oil>.05&&!P.drained)return A('drain',{k:'wait',drain:true});if(!C.inv.some(i=>i.type==='washer'))return A('buy washer',{k:'buy',part:'washer'});const u=up();if(u)return u;return loosen('drain')}
+  for(const id of['clampA','clampB'])if(has_('hose')&&P.f[id]!=='tight'){const u=up();if(u)return u;return go('lift')||A('clamp on',{k:'pliers',id})}
+  // the rest of the bolts (battery: positive before negative), torque everything except lugs
+  for(const id of['batP','batN'])if(has_('battery')&&P.f[id]!=='tight')return go('bay')||A('terminal',{k:'ratchet',id});
+  for(const f of FAST)if(fastShown(f)&&!f.lug&&!f.term&&f.tool!=='pliers'&&P.f[f.id]!=='tight'){if(f.v==='lift'){const u=up();if(u)return u}return P.f[f.id]==='out'||P.f[f.id]==='lost'?loosen(f.id):torqueStep(f.id)}
+  // fluids
+  if(P.oil<.95){if(C.fluid.oil<=0)return A('buy oil',{k:'buy',part:'oil'});const g=go('bay');if(g)return g;if(!P.cap.oil)return A('oil cap',{k:'cap',id:'oil'});return A('pour oil',{k:'pour',f:'oil'})}
+  if(P.cool<.95){if(C.fluid.cool<=0)return A('buy coolant',{k:'buy',part:'cool'});const g=go('bay');if(g)return g;if(!P.cap.res)return A('res cap',{k:'cap',id:'res'});return A('pour coolant',{k:'pour',f:'cool'})}
+  for(const k of['oil','res','rad'])if(P.cap[k])return go('bay')||A('close cap',{k:'cap',id:k});
+  if(P.pan&&P.lift)return go('lift')||A('pan away',{k:'pan',spot:P.pan});
+  { const d=down();if(d)return d }
+  for(const c of CORNERS)for(let n=0;n<5;n++)if(P.f['L'+n+':'+c]!=='tight')return go('wheel:'+c)||torqueStep('L'+n+':'+c);
+  return A('hand back',{k:'handback'});
+}
+function beltSteps(){const P=cur;if(P.view!=='bay')return{txt:'view',act:{k:'view',v:'bay'}};if(!P.part.belt&&!C.inv.some(i=>i.type==='belt'&&i.model===P.model&&!i.bad))return{txt:'buy belt',act:{k:'buy',part:'belt'}};if(P.slack<=0)return{txt:'slack',act:{k:'slack'}};return{txt:'belt',act:{k:'belt'}}}
+function torqueStep(id){const f=FASTBY[id];if(cur.view!==f.v)return{txt:'view',act:{k:'view',v:f.v}};return{txt:'torque '+id,act:{k:'torque',id}}}
+function installStep(k){
+  const P=cur,t=ptype(k);
+  if(t==='caliper'||t==='wheel')return{txt:'install '+k,act:{k:'install',part:k}};
+  const hasIt=C.inv.find(i=>i.type===t&&i.model===P.model&&!i.bad);
+  return hasIt?{txt:'install '+k,act:{k:'install',part:k}}:{txt:'buy '+t,act:{k:'buy',part:t}};
+}
+function doAct(a){
+  const P=cur;quiet=true;let ok=true;
+  try{switch(a.k){
+    case'view':P.view=a.v;break;
+    case'lift':ok=toggleLift();P.liftT=P.lift?1:0;break;
+    case'wait':if(a.drain){if(P.f.drain==='out'||P.f.drain==='lost'){if(P.pan!=='oil')P.spill+=P.oil;P.oil=0;P.drained=true}}else{P.liftT=P.lift?1:0}break;
+    case'engine':ok=toggleEngine();break;
+    case'scan':scan();break;
+    case'ratchet':{const f=FASTBY[a.id];if(f.mm)C.sock=f.mm;ok=fastAct(a.id,'ratchet');break}
+    case'pliers':ok=fastAct(a.id,'pliers');break;
+    case'torque':ok=fastAct(a.id,'torque');break;
+    case'remove':ok=removePart(a.part);if(a.part==='hose'&&ok){if(P.pan!=='cool')P.spill+=P.cool;P.cool=0}break;
+    case'install':ok=installPart(a.part);break;
+    case'conn':ok=toggleConn(a.id);break;
+    case'slack':ok=slackBelt();break;
+    case'belt':ok=beltAct();break;
+    case'pan':ok=placePan(a.spot);break;
+    case'cap':ok=toggleCap(a.id);break;
+    case'pour':{const k=a.f;for(let i=0;i<400;i++){const lv=k==='oil'?P.oil:P.cool;if(lv>=1)break;if(!pourTick(k,.05))break}if(k==='oil'&&P.oil>1)P.oil=1;if(k==='cool'&&P.cool>1)P.cool=1;break}
+    case'clamp':ok=compress(a.c);break;
+    case'buy':ok=buy(a.part,P.model);break;
+    case'handback':return handBack();
+  }}finally{quiet=false}
+  return ok;
+}
+
+// ═══════════════════════ day-1 tutorial (words only — never highlights anything) ═══════════════════════
+const tutOn=()=>mode==='solo'&&C===S&&S.day===1&&!S.tutOff&&playing();
+const NICE={batN:'negative (−) battery terminal',batP:'positive (+) battery terminal',batH:'battery hold-down bolt',drain:'oil drain plug',clampA:'upper hose clamp',clampB:'lower hose clamp'};
+function fname(id){const f=FASTBY[id];if(NICE[id])return NICE[id];if(f.lug)return'lug nut';if(f.isPlug)return'spark plug';if(id.startsWith('coilB'))return'coil bolt';if(id.startsWith('alt'))return'alternator bolt';if(id.startsWith('K'))return'caliper bolt';return'bolt'}
+function tutText(){
+  const P=cur,h=advise();if(!h)return'';
+  const a=h.act;
+  switch(a.k){
+    case'scan':return'A car just rolled in. Click <b>Scan</b> to plug the OBD scan tool in under the dash and read any trouble codes.';
+    case'view':return a.v==='bay'?'Switch to the <b>Hood</b> view (top-left buttons).':a.v==='lift'?'Switch to the <b>Under</b> view to work underneath.':'Open the <b>'+a.v.slice(6)+'</b> wheel view (top-left buttons).';
+    case'lift':return P.lift?'Lower the car with the <b>Lift</b> button.':'Raise the car with the <b>Lift</b> button so you can get under it.';
+    case'wait':return a.drain?'Let the old oil drain into the pan.':'Wait for the lift.';
+    case'engine':return'Turn the engine off with <b>Stop</b> before working on it.';
+    case'ratchet':{const f=FASTBY[a.id],out=cur.f[a.id]!=='out'&&cur.f[a.id]!=='lost';return(out?'Loosen':'Thread in')+' the <b>'+fname(a.id)+'</b>: pick the <b>'+f.mm+' mm</b> socket (Ratchet panel), then <b>hold</b> on it with the <b>Ratchet</b>.'+(a.id==='batN'&&out?' Always take the <b>negative</b> off first.':'')+(a.id==='batP'&&!out?' Positive goes back on first, negative last.':'')}
+    case'torque':return'Final-tighten the <b>'+fname(a.id)+'</b> with the <b>Torque</b> wrench — click it. A yellow paint mark shows it\'s at spec.';
+    case'pliers':return'Squeeze the <b>'+fname(a.id)+'</b> open with the <b>Pliers</b>.';
+    case'remove':return'Lift the <b>'+partName(a.part)+'</b> out with the <b>Hand</b>.';
+    case'install':return'Click the empty spot with the <b>Hand</b> to put the <b>'+partName(a.part)+'</b> in.';
+    case'buy':return'Buy '+(a.part==='oil'?'<b>engine oil</b>':a.part==='cool'?'<b>coolant</b>':'a <b>'+partName(a.part)+'</b>')+' from the Supplier in the right panel.';
+    case'conn':return(cur.conn[a.id]?'Unplug':'Plug in')+' the <b>'+(a.id==='altC'?'alternator':'coil')+' connector</b> with the <b>Hand</b>.';
+    case'slack':return'Put the <b>Breaker bar</b> on the belt tensioner (the small pulley on the far right) and <b>hold</b> to take the tension off.';
+    case'belt':return'While the tension is off, click the <b>belt</b> with the <b>Hand</b>.';
+    case'pan':return cur.pan===a.spot?'Take the <b>drain pan</b> back out.':'Slide the <b>Drain pan</b> under the '+(a.spot==='oil'?'oil pan drain plug':'radiator hose')+' — click there with the pan.';
+    case'cap':return(cur.cap[a.id]?'Put the':'Take off the')+' <b>'+(a.id==='oil'?'oil filler cap':a.id==='res'?'coolant reservoir cap':'radiator cap')+'</b> with the <b>Hand</b>.';
+    case'pour':return'<b>Hold</b> the <b>Pour</b> tool on the open '+(a.f==='oil'?'oil filler':'coolant reservoir')+'. Check the dipstick (Hand) — stop between the marks.';
+    case'clamp':return'Squeeze the caliper piston back with the <b>C-clamp</b> (hold on the hanging caliper).';
+    case'handback':return'All done. Press <b>Hand back</b>. Tip: give it a test start first.';
+  }
+  return'';
+}
+function partName(k){const t=ptype(k);return t==='caliper'?'brake caliper':t==='wheel'?'wheel':PARTS[t]?PARTS[t].n.toLowerCase():t}
+let tutLast='';
+function renderTut(){
+  const el=$('tut');if(!el)return;
+  if(!tutOn()){el.classList.remove('on');tutLast='';return}
+  const t=tutText();if(t!==tutLast){tutLast=t;$('tutTxt').innerHTML=t}
+  el.classList.toggle('on',!!t);
+}
+
+// ═══════════════════════ effects + audio ═══════════════════════
+let FX=[],FLOAT=[];
+function fx(kind,x,y,n){
+  if(quiet)return;
+  n=n||(kind==='spark'?34:kind==='steam'?22:12);
+  for(let i=0;i<n;i++){const a=Math.random()*6.283,v=kind==='spark'?30+Math.random()*80:kind==='steam'?6+Math.random()*12:6+Math.random()*18;
+    FX.push({kind,x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-(kind==='steam'||kind==='smoke'?18:0),life:kind==='steam'||kind==='smoke'?1.6:.5+Math.random()*.4,max:kind==='steam'||kind==='smoke'?1.6:.9,r:Math.random(),v:cur?cur.view:'bay'})}
+}
+function floatText(txt,x,y,col){FLOAT.push({txt,x,y,col:col||'#3ddc84',life:1.6})}
+let AC=null,ENG=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,d,type,v,slide){const a=AC;if(!a||!S.sound||quiet)return;const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),a.currentTime+d);g.gain.setValueAtTime(v||.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+d+.02)}
+function noise(d,v,hp,lp){const a=AC;if(!a||!S.sound||quiet)return;const len=Math.floor(a.sampleRate*d),b=a.createBuffer(1,len,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<len;i++)c[i]=(Math.random()*2-1)*(1-i/len);const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=b;f.type=lp?'lowpass':'highpass';f.frequency.value=lp||hp||1000;g.gain.value=v||.15;s.connect(f).connect(g).connect(a.destination);s.start()}
+const SFXS={ratchet:()=>{for(let i=0;i<4;i++)setTimeout(()=>tone(1800+Math.random()*300,.025,'square',.04),i*45)},click:()=>tone(720,.04,'triangle',.08),click2:()=>{tone(1400,.03,'square',.07);setTimeout(()=>tone(900,.05,'square',.06),35)},
+  pop:()=>tone(240,.16,'triangle',.16,200),thunk:()=>{tone(110,.14,'sine',.25,-40);noise(.06,.1,0,600)},spark:()=>{noise(.3,.3,2500);tone(90,.25,'sawtooth',.12)},crunch:()=>{noise(.35,.4,0,900);tone(70,.3,'sawtooth',.15)},
+  cash:()=>{tone(1320,.08,'square',.07);setTimeout(()=>tone(1760,.22,'square',.07),90)},err:()=>tone(150,.14,'triangle',.08),beep:()=>tone(990,.1,'sine',.1),creak:()=>tone(180,.3,'sawtooth',.05,60),
+  clicks:()=>{for(let i=0;i<5;i++)setTimeout(()=>noise(.03,.2,1500),i*90)},crank:()=>{for(let i=0;i<8;i++)setTimeout(()=>{tone(120,.08,'sawtooth',.08);noise(.06,.05,0,500)},i*110)},
+  start:()=>{for(let i=0;i<4;i++)setTimeout(()=>tone(120,.08,'sawtooth',.08),i*90);setTimeout(()=>tone(90,.5,'sawtooth',.1,40),360)},stop:()=>tone(80,.4,'sawtooth',.1,-40),lift:()=>tone(220,.6,'sawtooth',.03,120),pour:()=>noise(.1,.04,0,700)};
+function sfx(k){if(SFXS[k])SFXS[k]()}
+function engineSound(){
+  const a=AC;if(!a)return;
+  const want=!!(cur&&cur.run&&S.sound&&playing());
+  if(want&&!ENG){const o=a.createOscillator(),o2=a.createOscillator(),f=a.createBiquadFilter(),g=a.createGain(),lfo=a.createOscillator(),lg_=a.createGain();
+    o.type='sawtooth';o.frequency.value=42;o2.type='square';o2.frequency.value=21;f.type='lowpass';f.frequency.value=380;g.gain.value=.0;lfo.frequency.value=7;lg_.gain.value=.02;
+    lfo.connect(lg_).connect(g.gain);o.connect(f);o2.connect(f);f.connect(g).connect(a.destination);o.start();o2.start();lfo.start();
+    const sq=a.createOscillator(),sg=a.createGain();sq.type='sine';sq.frequency.value=2600;sg.gain.value=0;sq.connect(sg).connect(a.destination);sq.start();
+    ENG={o,o2,g,lfo,sq,sg};g.gain.setTargetAtTime(.07,a.currentTime,.1)}
+  if(ENG){
+    if(!want){const e=ENG;ENG=null;e.g.gain.setTargetAtTime(0,a.currentTime,.08);e.sg.gain.setTargetAtTime(0,a.currentTime,.05);setTimeout(()=>{try{e.o.stop();e.o2.stop();e.lfo.stop();e.sq.stop()}catch(_){}},400);return}
+    const rough=CYL.some(i=>!cylOK(i));ENG.lfo.frequency.value=rough?3.2:7;ENG.o.frequency.value=rough?38+Math.random()*6:42;
+    const sq=cur.part.belt&&cur.part.belt.bad;ENG.sg.gain.setTargetAtTime(sq?.018+Math.random()*.01:0,a.currentTime,.05);ENG.sq.frequency.value=2500+Math.sin(TIME*20)*120;
+  }
+}
+function msg(t,kind){
+  if(quiet)return;
+  const el=document.createElement('div');el.className='tst '+(kind||'');el.textContent=t;
+  const box=$('toast');box.appendChild(el);while(box.children.length>3)box.firstChild.remove();
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),450)},kind==='bad'?4200:2800);
+}
+
+// ═══════════════════════ layout + input ═══════════════════════
+const cv=$('cv'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1,U=3,OX=0,OY=0,PROPS=false,PROPW=0;
+let FINE=matchMedia('(pointer:fine)').matches;
+const PTR={x:-1,y:-1,down:false,in:false};
+let HOLD=null,SOCK_HIT=[];
+function layout(){const st=$('stage');W=st.clientWidth;H=st.clientHeight;DPR=Math.min(2,window.devicePixelRatio||1);cv.width=Math.max(1,Math.round(W*DPR));cv.height=Math.max(1,Math.round(H*DPR))}
+addEventListener('resize',layout);
+if(window.ResizeObserver)new ResizeObserver(layout).observe($('stage'));
+const vkind=v=>v.startsWith('wheel')?'wheel':v;
+function geom(){
+  const P=cur,foot=(mode==='race'?44:0)+(tutOn()?100:0)+14,top=48;
+  PROPS=W>=720&&H>=420;PROPW=PROPS?clamp(Math.round(W*.18),150,190):0;
+  const [vw,vh]=VIEWS[vkind(P?P.view:'bay')];
+  const aw=W-PROPW-24,ah=H-foot-top-10;
+  U=Math.max(.6,Math.min(ah/vh,aw/vw));
+  OX=PROPW+(W-PROPW)/2-vw*U/2;OY=top+(ah-vh*U)/2;
+}
+const toL=(x,y)=>({x:(x-OX)/U,y:(y-OY)/U});
+const playing=()=>(mode==='solo'||mode==='race')&&cur&&!cur.gone;
+function beltHull(){if(beltHull.h)return beltHull.h;const pts=[];for(const k in PUL){const[x,y,r]=PUL[k];for(let i=0;i<32;i++){const a=i/32*6.283;pts.push([x+Math.cos(a)*(r+1.4),y+Math.sin(a)*(r+1.4)])}}
+  pts.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);const lo=[],hi=[];
+  for(const p of pts){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)}
+  for(const p of pts.slice().reverse()){while(hi.length>=2&&cr(hi[hi.length-2],hi[hi.length-1],p)<=0)hi.pop();hi.push(p)}
+  return beltHull.h=lo.slice(0,-1).concat(hi.slice(0,-1))}
+function nearBelt(x,y){const h=beltHull();for(let i=0;i<h.length;i++){const a=h[i],b=h[(i+1)%h.length],dx=b[0]-a[0],dy=b[1]-a[1],t=clamp(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy||1),0,1);if(dist(x,y,a[0]+dx*t,a[1]+dy*t)<3.2)return true}return false}
+function hitTest(x,y){
+  const P=cur,v=P.view,k=vkind(v),c=k==='wheel'?v.slice(6):null;
+  let best=null,bd=6.5;
+  for(const f of FAST){if(f.v!==v||!fastShown(f))continue;const d=dist(x,y,f.x,f.y);if(d<bd){bd=d;best={k:'fast',id:f.id}}}
+  if(best)return best;
+  if(k==='bay'){
+    for(const id in CONNS){const cn=CONNS[id];if(P.part[cn.host]&&dist(x,y,cn.x,cn.y)<4.5)return{k:'conn',id}}
+    for(const id in CAPS){const[cx,cy,r]=CAPS[id];if(dist(x,y,cx,cy)<r+2)return{k:'cap',id}}
+    if(dist(x,y,DIP[0],DIP[1])<5)return{k:'dip'};
+    if(dist(x,y,PUL.tens[0],PUL.tens[1])<6)return{k:'tens'};
+    if(P.part.belt&&nearBelt(x,y))return{k:'belt'};
+    if(inR(x,y,[19,78,10,8],1.5))return P.part.fuse?{k:'part',id:'fuse'}:{k:'slot',id:'fuse'};
+    if(inR(x,y,RB.battery))return P.part.battery?{k:'part',id:'battery'}:{k:'slot',id:'battery'};
+    for(const i of CYL){if(inR(x,y,coilR(i))){if(P.part['coil'+i])return{k:'part',id:'coil'+i};if(dist(x,y,CX[i],76)<6)return P.part['plug'+i]?{k:'part',id:'plug'+i}:{k:'slot',id:'plug'+i};return{k:'slot',id:'coil'+i}}}
+    if(inR(x,y,RB.alternator))return P.part.alternator?{k:'part',id:'alternator'}:{k:'slot',id:'alternator'};
+    if(!P.part.belt&&dist(x,y,174,80)<30)return{k:'beltslot'};
+    if(inR(x,y,[0,0,200,150]))return{k:'body'};return null;
+  }
+  if(k==='lift'){
+    if(dist(x,y,RL.filter[0],RL.filter[1])<RL.filter[2]+2)return P.part.filter?{k:'part',id:'filter'}:{k:'slot',id:'filter'};
+    if(distSeg(x,y,RL.hoseA,RL.hoseB)<4)return P.part.hose?{k:'part',id:'hose'}:{k:'slot',id:'hose'};
+    for(const s in PANSPOT){const[px,py]=PANSPOT[s];if(dist(x,y,px,py)<9)return{k:'pan',spot:s}}
+    for(const cn of CORNERS)if(inR(x,y,TIRE[cn]))return{k:'tire',c:cn};
+    if(inR(x,y,[0,0,120,240]))return{k:'body'};return null;
+  }
+  // wheel corner
+  if(P.part['wheel:'+c]){if(dist(x,y,WC[0],WC[1])<68)return{k:'part',id:'wheel:'+c};}
+  else if(P.wheelOff&&P.wheelOff[c]&&dist(x,y,WC[0],WC[1])<20)return{k:'slot',id:'wheel:'+c};
+  if(!P.part['wheel:'+c]){
+    if(caliperOn(c)&&inR(x,y,CAL))return{k:'part',id:'caliper:'+c};
+    if(!caliperOn(c)&&P.hang&&P.hang[c]&&inR(x,y,HANG))return{k:'hang',c};
+    if(!caliperOn(c)&&inR(x,y,PADS))return P.part['pads:'+c]?{k:'part',id:'pads:'+c}:{k:'slot',id:'pads:'+c};
+    if(!caliperOn(c)&&inR(x,y,CAL))return{k:'slot',id:'caliper:'+c};
+    if(dist(x,y,WC[0],WC[1])<70)return{k:'body'};
+  }
+  return null;
+}
+function distSeg(x,y,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=clamp(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1);return dist(x,y,a[0]+dx*t,a[1]+dy*t)}
+function setPtr(e){const r=cv.getBoundingClientRect();PTR.x=e.clientX-r.left;PTR.y=e.clientY-r.top}
+cv.addEventListener('pointerdown',e=>{ac();if(e.pointerType==='mouse')FINE=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}setPtr(e);PTR.down=true;PTR.in=true;press()});
+cv.addEventListener('pointermove',e=>{setPtr(e);PTR.in=true;if(e.pointerType==='touch')FINE=false});
+const up=()=>{PTR.down=false;HOLD=null};
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')PTR.in=false});
+function press(){
+  if(!playing())return;
+  for(const s of SOCK_HIT)if(inR(PTR.x,PTR.y,s.r)){C.sock=s.mm;setTool('ratchet');sfx('click');UI();return}
+  const P=cur,l=toL(PTR.x,PTR.y),t=hitTest(l.x,l.y);if(!t)return;
+  const k=vkind(P.view),c=k==='wheel'?P.view.slice(6):null;
+  switch(TOOL){
+    case'ratchet':if(t.k==='fast'){const f=FASTBY[t.id];if(f.tool==='pliers'){fastAct(t.id,'ratchet');break}HOLD={k:'ratchet',id:t.id,t:0,need:upg('impact')?.08:f.lug?.5:.4,l}}break;
+    case'torque':if(t.k==='fast')fastAct(t.id,'torque');break;
+    case'breaker':if(t.k==='tens')HOLD={k:'slack',t:0,need:.6,l};else if(t.k==='fast')msg('Way too much leverage for that — use the ratchet.');break;
+    case'pliers':if(t.k==='fast')fastAct(t.id,'pliers');break;
+    case'hand':
+      if(t.k==='part'){if(t.id.startsWith('plug')&&P.f[t.id]!=='out'&&!P.part['coil'+t.id.slice(4)]){msg('It\'s still screwed into the head.');sfx('err')}else removePart(t.id)}
+      else if(t.k==='slot')installPart(t.id);
+      else if(t.k==='conn')toggleConn(t.id);
+      else if(t.k==='cap')toggleCap(t.id);
+      else if(t.k==='dip')readDip();
+      else if(t.k==='belt'||t.k==='beltslot')beltAct();
+      else if(t.k==='hang')installPart('caliper:'+t.c);
+      else if(t.k==='tire'){setView('wheel:'+t.c)}
+      else if(t.k==='fast'){const f=FASTBY[t.id];if(f.isPlug&&P.f[t.id]==='out')removePart(t.id);else if(f.isPlug&&!P.part[t.id])installPart(t.id)}
+      break;
+    case'meter':if(t.k==='part'&&(t.id==='battery'||t.id==='alternator'||t.id==='fuse'||t.id.startsWith('coil')))measure(t.id);else if(t.k==='fast'&&FASTBY[t.id].term)measure('battery');else msg('Nothing useful to measure there.');break;
+    case'pan':if(t.k==='pan')placePan(t.spot);else if(k!=='lift')msg('The drain pan goes under the car.');break;
+    case'pour':if(t.k==='cap'&&(t.id==='oil'||t.id==='res'||t.id==='rad'))HOLD={k:'pour',f:t.id==='oil'?'oil':'cool',t:0,need:1e9,l};else msg('Pour it into a filler opening.');break;
+    case'clamp':if(t.k==='hang')HOLD={k:'clamp',c,t:0,need:.8,l};break;
+  }
+}
+function holdTick(dt){
+  if(!HOLD)return;
+  if(!PTR.down||!playing()){HOLD=null;return}
+  const P=cur,l=toL(PTR.x,PTR.y);
+  if(dist(l.x,l.y,HOLD.l.x,HOLD.l.y)>12){HOLD=null;return}
+  HOLD.t+=dt;
+  if(HOLD.k==='pour'){pourTick(HOLD.f,dt);if(Math.random()<dt*8)sfx('pour');return}
+  if(HOLD.t<HOLD.need)return;
+  const h=HOLD;HOLD=null;
+  if(h.k==='ratchet')fastAct(h.id,'ratchet');
+  else if(h.k==='slack')slackBelt();
+  else if(h.k==='clamp')compress(h.c);
+}
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if($('sheetOv').classList.contains('on')||$('mpOv').classList.contains('on')||$('titleOv').classList.contains('on'))return;
+  const tl=TOOLS.find(t=>t.key===e.key);if(tl){setTool(tl.id);return}
+  if(!playing())return;
+  if(e.key==='s'||e.key==='S'){const i=SOCKETS.indexOf(C.sock);C.sock=SOCKETS[(i+1)%SOCKETS.length];setTool('ratchet');UI()}
+  else if(e.key==='e'||e.key==='E')toggleEngine();
+  else if(e.key==='l'||e.key==='L')toggleLift();
+  else if(e.key==='Enter')handBackBtn();
+});
+
+// ═══════════════════════ rendering toolkit ═══════════════════════
+let X=ctx,XS=1;
+function hexRgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255]}
+function shade(h,a){const[r,g,b]=hexRgb(h),f=v=>Math.round(a<0?v*(1+a):v+(255-v)*a);return'rgb('+f(r)+','+f(g)+','+f(b)+')'}
+function rgba(h,a){const[r,g,b]=hexRgb(h);return'rgba('+r+','+g+','+b+','+a+')'}
+function path(x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath()}
+function box(x,y,w,h,r,f){path(x,y,w,h,r);X.fillStyle=f;X.fill()}
+function stops(g,st){st.forEach((c,i)=>Array.isArray(c)?g.addColorStop(c[0],c[1]):g.addColorStop(st.length>1?i/(st.length-1):0,c));return g}
+function lg(x0,y0,x1,y1,...st){return stops(X.createLinearGradient(x0,y0,x1,y1),st)}
+function rg(x,y,r0,r1,...st){return stops(X.createRadialGradient(x,y,r0,x,y,r1),st)}
+function circ(x,y,r,f){X.beginPath();X.arc(x,y,Math.max(0,r),0,Math.PI*2);X.fillStyle=f;X.fill()}
+function ring(x,y,r,col,w){X.beginPath();X.arc(x,y,Math.max(0,r),0,Math.PI*2);X.strokeStyle=col;X.lineWidth=w;X.stroke()}
+function T(t,x,y,size,col,wt,al,fam){X.fillStyle=col;X.font=(wt||600)+' '+size+'px '+(fam||'Rubik,system-ui,sans-serif');X.textAlign=al||'center';X.textBaseline='alphabetic';X.fillText(t,x,y)}
+function stroke(col,w){X.strokeStyle=col;X.lineWidth=w;X.stroke()}
+function shadow(blur,oy,col){X.shadowColor=col;X.shadowBlur=blur*XS;X.shadowOffsetX=0;X.shadowOffsetY=oy*XS}
+function noShadow(){X.shadowColor='transparent';X.shadowBlur=0;X.shadowOffsetY=0}
+function poly(pts){X.beginPath();pts.forEach((p,i)=>i?X.lineTo(p[0],p[1]):X.moveTo(p[0],p[1]))}
+function hexPath(x,y,r,rot){X.beginPath();for(let i=0;i<6;i++){const a=rot+i*Math.PI/3;X.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r)}X.closePath()}
+const SPR=new Map();let SPRK=0;
+function sprite(key,w,h,draw,pad,res){
+  pad=pad==null?4:pad;
+  const K=Math.max(1.5,Math.round(U*DPR*2)/2);
+  if(K!==SPRK){SPR.clear();SPRK=K}
+  const k=K*(res||1);
+  let s=SPR.get(key);if(s)return s;
+  const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil((w+pad*2)*k));c.height=Math.max(1,Math.ceil((h+pad*2)*k));
+  const g=c.getContext('2d');g.setTransform(k,0,0,k,pad*k,pad*k);
+  const pX=X,pS=XS;X=g;XS=k;try{draw()}finally{X=pX;XS=pS}
+  s={c,pad,w,h,k};SPR.set(key,s);return s;
+}
+function blit(s,x,y){X.drawImage(s.c,x-s.pad,y-s.pad,s.w+s.pad*2,s.h+s.pad*2)}
+function brushed(x,y,w,h,seed,a){const r=rngOf(seed);for(let i=0;i<h*2.5;i++){const yy=y+r()*h,ww=w*(.2+r()*.8),xx=x+r()*(w-ww);X.fillStyle=r()<.5?'rgba(255,255,255,'+(a*r())+')':'rgba(0,0,0,'+(a*1.4*r())+')';X.fillRect(xx,yy,ww,.2)}}
+function grain(x,y,w,h,seed,n,a){const r=rngOf(seed);for(let i=0;i<n;i++){X.fillStyle=r()<.5?'rgba(255,255,255,'+a*r()+')':'rgba(0,0,0,'+a*1.5*r()+')';X.fillRect(x+r()*w,y+r()*h,.5+r()*.8,.5+r()*.8)}}
+const steel=(x0,y0,x1,y1)=>lg(x0,y0,x1,y1,'#dfe3e8','#aab1b9',[.48,'#c9ced5'],[.52,'#9ea6af'],'#cfd4da');
+const alu=(x0,y0,x1,y1)=>lg(x0,y0,x1,y1,'#c7ccd2','#9097a0',[.5,'#b5bbc2'],'#8a919a');
+const blackPlastic=(x0,y0,x1,y1)=>lg(x0,y0,x1,y1,'#2b2e33','#1a1c1f','#202326');
+
+// ═══════════════════════ sprites: engine bay ═══════════════════════
+function sprBay(model){return sprite('bay:'+model,200,150,()=>{
+  const m=CARS[model],paint=m.paint;
+  // floor of the bay: dark, oily depth
+  box(0,0,200,150,10,lg(0,0,0,150,'#1f2124','#151719'));grain(0,0,200,150,model.length*7,900,.06);
+  // fenders + cowl in body colour
+  for(const[x,w]of[[0,9],[191,9]]){box(x,0,w,150,4,lg(x,0,x+w,0,shade(paint,-.25),shade(paint,.18),shade(paint,-.15)));}
+  box(0,140,200,10,3,lg(0,140,0,150,'#2a2d31','#141618'));X.fillStyle='rgba(255,255,255,.06)';for(let x=10;x<190;x+=3)X.fillRect(x,143,1.6,5);
+  // radiator support, headlights, radiator core
+  box(9,0,182,6,2,lg(0,0,0,6,'#2b2e33','#1a1c1f'));
+  for(const x of[10,160]){box(x,0,30,8,3,lg(x,0,x+30,8,'#e8eef4','#9aa3ad'));box(x+3,1.5,10,5,2,rg(x+8,4,.5,5,'#ffffff','#b9c7d6'))}
+  box(42,4,116,12,1.5,'#2c3036');X.fillStyle='rgba(160,170,180,.35)';for(let x=43;x<157;x+=1.2)X.fillRect(x,5,.45,10);
+  X.fillStyle='rgba(0,0,0,.35)';for(let y=6;y<16;y+=2)X.fillRect(43,y,114,.35);
+  // strut towers
+  for(const[x,y]of[[22,124]]){circ(x,y,10,lg(x-10,y-10,x+10,y+10,shade(paint,-.1),shade(paint,-.4)));circ(x,y,6,'#2a2d31');for(let i=0;i<3;i++){const a=i*2.094-1.57;hexPath(x+Math.cos(a)*7.6,y+Math.sin(a)*7.6,1.3,0);X.fillStyle='#b9c0c8';X.fill()}circ(x,y,2.4,'#9aa3ad')}
+  // air box + intake tube to the throttle body
+  box(RB.airbox[0],RB.airbox[1],RB.airbox[2],RB.airbox[3],4,blackPlastic(54,18,102,42));
+  path(RB.airbox[0]+2,RB.airbox[1]+2,RB.airbox[2]-4,RB.airbox[3]-4,3);stroke('rgba(255,255,255,.06)',.4);
+  for(const x of[58,98]){box(x-1.5,17,3,3,.6,'#3a3e44');box(x-1.5,40,3,3,.6,'#3a3e44')}
+  T('AIR FILTER',78,32,3.2,'rgba(255,255,255,.22)',800);
+  X.lineCap='round';X.strokeStyle='#1b1d20';X.lineWidth=7;X.beginPath();X.moveTo(102,30);X.bezierCurveTo(112,32,112,44,104,50);X.stroke();
+  X.strokeStyle='rgba(255,255,255,.07)';X.lineWidth=1;for(let i=0;i<6;i++){X.beginPath();X.arc(104+i*.4,40,3.5,-1,1);X.stroke()}
+  // coolant reservoir: translucent white plastic (level drawn live)
+  box(RB.res[0],RB.res[1],RB.res[2],RB.res[3],3,'rgba(232,236,232,.86)');path(RB.res[0],RB.res[1],RB.res[2],RB.res[3],3);stroke('rgba(0,0,0,.25)',.4);
+  X.fillStyle='rgba(0,0,0,.35)';X.fillRect(128,25,12,.4);X.fillRect(128,33,12,.4);T('MAX',134,24.2,2,'rgba(0,0,0,.55)',800);T('MIN',134,32.2,2,'rgba(0,0,0,.55)',800);
+  // engine: valve cover with ribs, intake runners, heat shield
+  box(58,44,94,8,2,lg(0,44,0,52,'#7d848d','#4a5059'));X.fillStyle='rgba(0,0,0,.25)';for(let x=60;x<150;x+=3)X.fillRect(x,45,1.2,6);
+  shadow(2,1,'rgba(0,0,0,.6)');box(58,52,94,52,6,lg(58,52,58,104,'#2c3036','#16181b'));noShadow();
+  X.fillStyle='rgba(255,255,255,.05)';for(let y=56;y<102;y+=4)X.fillRect(62,y,86,.8);
+  box(62,98,86,4,1.5,'#202327');T(m.code+' 2.0 DOHC',105,101.4,2.6,'rgba(255,255,255,.4)',800);
+  for(let i=0;i<4;i++){X.lineCap='round';X.strokeStyle=lg(0,104,0,124,'#2a2d31','#17191c');X.lineWidth=9;X.beginPath();X.moveTo(72+i*18,109);X.lineTo(72+i*18,122);X.stroke()}
+  box(64,118,74,10,3,blackPlastic(64,118,138,128));
+  // fuse box shell + brake fluid + washer reservoirs
+  box(RB.fuse[0],RB.fuse[1],RB.fuse[2],RB.fuse[3],3,blackPlastic(8,72,38,100));T('FUSE',23,96,2.6,'rgba(255,255,255,.3)',800);
+  for(let i=0;i<3;i++)for(let j=0;j<2;j++)box(11+i*8,86+j*4,6,2.6,.4,['#e8c547','#5aa0e8','#e05050'][(i+j)%3]);
+  box(40,118,14,12,2,'rgba(236,222,170,.82)');box(43,115,8,4,1,'#f2d33a');T('BRAKE',47,126,2,'rgba(0,0,0,.5)',800);
+  box(124,128,24,11,3,'rgba(120,170,255,.55)');box(141,125,5,4,1.5,'#3a6fd6');T('WASHER',134,135.4,2.2,'rgba(255,255,255,.65)',800);
+  // wiring loom across the top of the engine
+  X.lineCap='round';X.strokeStyle='#121315';X.lineWidth=2.4;X.beginPath();X.moveTo(40,64);X.bezierCurveTo(55,58,62,58,72,56);X.lineTo(130,56);X.bezierCurveTo(146,56,152,52,164,58);X.stroke();
+  X.strokeStyle='rgba(255,255,255,.08)';X.lineWidth=.4;X.setLineDash([.8,1.2]);X.stroke();X.setLineDash([]);
+  // upper radiator hose (always there)
+  X.strokeStyle='#121315';X.lineWidth=5;X.beginPath();X.moveTo(150,15);X.bezierCurveTo(152,26,146,36,140,46);X.stroke();X.strokeStyle='rgba(255,255,255,.08)';X.lineWidth=1.2;X.stroke();
+  // accessory drive backplate
+  box(152,40,44,82,5,'rgba(0,0,0,.22)');
+  // dipstick tube
+  X.strokeStyle='#8d949c';X.lineWidth=1.6;X.beginPath();X.moveTo(DIP[0],DIP[1]);X.lineTo(DIP[0]+4,DIP[1]-10);X.stroke();
+  // ambient occlusion around the edges
+  path(0,0,200,150,10);X.strokeStyle='rgba(0,0,0,.35)';X.lineWidth=6;X.stroke();
+},2)}
+function sprBattery(model){return sprite('bat:'+model,40,46,()=>{
+  const m=CARS[model];
+  shadow(2,1.2,'rgba(0,0,0,.6)');box(0,0,40,46,3,lg(0,0,40,46,'#2b2e33','#121315'));noShadow();
+  box(1.5,1.5,37,6,2,'#3a3e44');
+  box(5,12,30,20,2,lg(0,12,0,32,'#f2c230','#d9a514'));T('MAXCELL',20,20,4.2,'#1b1d20',900);T('12V · '+m.bat,20,25.6,2.4,'#1b1d20',700);T('SEALED MAINTENANCE FREE',20,29.5,1.5,'#1b1d20',700);
+  X.fillStyle='rgba(255,255,255,.06)';for(let x=3;x<38;x+=3)X.fillRect(x,36,1,8);
+  T('–',9,5.8,5,'#cfd6de',800);T('+',31,5.8,5,'#ff7a7a',800);
+},4)}
+function sprCoil(){return sprite('coil',11,26,()=>{
+  shadow(1.2,.8,'rgba(0,0,0,.6)');box(0,4,11,22,2.6,lg(0,0,11,0,'#1a1c1f','#3a3e44','#1a1c1f'));noShadow();
+  box(1.5,0,8,7,1.5,lg(0,0,0,7,'#5a6069','#33373d'));box(2.5,7.5,6,1.2,.4,'#c9a227');
+  T('IGN',5.5,18,2,'rgba(255,255,255,.3)',800);
+  box(2,24.5,7,4,1,'#2b2e33');
+},2)}
+function sprAlt(){return sprite('alt',26,22,()=>{
+  shadow(1.6,1,'rgba(0,0,0,.6)');box(0,0,26,22,6,alu(0,0,26,22));noShadow();
+  X.save();path(0,0,26,22,6);X.clip();brushed(0,0,26,22,31,.12);X.restore();
+  X.fillStyle='rgba(0,0,0,.45)';for(let i=0;i<7;i++)X.fillRect(3+i*3.1,5,1.4,12);
+  box(2,1,22,2.4,1,'rgba(255,255,255,.15)');T('14V 120A',13,20.6,1.8,'rgba(0,0,0,.45)',800);
+},4)}
+function sprFilter(model){return sprite('filter:'+model,16,16,()=>{
+  const c=model==='monarch'?'#1d4aa8':model==='boulder'?'#e04646':'#2f8f5f';
+  shadow(1.4,.8,'rgba(0,0,0,.6)');circ(8,8,7,lg(1,1,15,15,shade(c,.25),shade(c,-.35)));noShadow();
+  ring(8,8,6.2,'rgba(255,255,255,.18)',.4);X.fillStyle='rgba(0,0,0,.35)';for(let i=0;i<12;i++){const a=i/12*6.283;X.fillRect(8+Math.cos(a)*5-.3,8+Math.sin(a)*5-.3,.6,.6)}
+  circ(8,8,2.6,'#1b1d20');circ(8,8,1.4,'#9aa3ad');
+},3)}
+
+// ═══════════════════════ sprites: underside ═══════════════════════
+function sprUnder(model){return sprite('under:'+model,120,240,()=>{
+  const m=CARS[model],paint=m.paint,stl='#4d525a';
+  // floor pan with undercoating and stamped ribs
+  path(6,0,108,240,16);X.fillStyle=lg(0,0,120,0,'#34373c','#40444a',[.5,'#3a3e43'],'#303337');X.fill();
+  grain(6,0,108,240,model.length*3,2600,.08);
+  path(6,0,108,240,16);stroke(shade(paint,-.15),2.2);path(8,2,104,236,14);stroke('rgba(255,255,255,.06)',.6);
+  for(const[y,h]of[[104,44],[156,28]])for(const x of[16,72]){box(x,y,32,h,4,'rgba(0,0,0,.12)');path(x,y,32,h,4);stroke('rgba(255,255,255,.07)',.6)}
+  box(51,98,18,104,6,'rgba(0,0,0,.22)');   // transmission tunnel
+  // sills + lift pads
+  for(const x of[6,108]){box(x,58,6,124,2,lg(x,0,x+6,0,'#26282c','#3a3d42'));for(const y of[66,166])box(x-2,y,10,8,2,lg(0,y,0,y+8,'#f2c230','#c99a14'))}
+  // brake + fuel lines along the floor
+  X.lineCap='round';for(const[x,c]of[[48,'#c9ced5'],[50,'#9aa3ad'],[72,'#c9ced5']]){X.strokeStyle=c;X.lineWidth=.6;X.beginPath();X.moveTo(x,96);X.lineTo(x,184);X.stroke()}
+  // radiator from below
+  box(20,6,80,10,1.5,'#2c3036');X.fillStyle='rgba(170,180,190,.3)';for(let x=21;x<99;x+=1.4)X.fillRect(x,7,.5,8);
+  // front subframe: a U of box steel around the engine
+  const sub=lg(0,0,0,6,'#5d636b','#3d4249');box(16,20,88,6,2,sub);box(16,20,6,80,2,lg(16,0,22,0,'#5d636b','#3d4249'));box(98,20,6,80,2,lg(98,0,104,0,'#3d4249','#5d636b'));box(16,94,88,7,2,sub);
+  for(const[x,y]of[[19,23],[101,23],[19,97],[101,97]]){hexPath(x,y,1.6,0);X.fillStyle='#c9ced5';X.fill()}
+  // lower control arms + tie rods out to the front wheels
+  for(const s of[1,-1]){const cx=60,x0=cx-s*38,x1=cx-s*52;poly([[x0,40],[x1,50],[x0,64]]);X.closePath();X.fillStyle=lg(0,40,0,64,'#5a6069','#3a3e44');X.fill();stroke('rgba(0,0,0,.4)',.4);circ(x1,50,1.8,'#2b2e33');
+    X.strokeStyle='#8d949c';X.lineWidth=1.2;X.beginPath();X.moveTo(cx-s*30,36);X.lineTo(cx-s*50,40);X.stroke()}
+  // engine + gearbox from below
+  X.shadowColor='rgba(0,0,0,.6)';X.shadowBlur=2*XS;X.shadowOffsetY=XS;box(26,28,70,64,8,lg(26,28,96,92,'#4a4f56','#2c2f34'));noShadow();
+  box(78,34,22,40,6,alu(78,34,100,74));X.save();path(78,34,22,40,6);X.clip();brushed(78,34,22,40,9,.1);X.restore();T('TRANS',89,56,2.6,'rgba(0,0,0,.45)',800);
+  // oil pan: cast aluminium with ribs and its flange bolts
+  X.shadowColor='rgba(0,0,0,.6)';X.shadowBlur=1.4*XS;X.shadowOffsetY=.8*XS;box(RL.pan[0],RL.pan[1],RL.pan[2],RL.pan[3],4,alu(42,60,76,90));noShadow();
+  X.save();path(RL.pan[0],RL.pan[1],RL.pan[2],RL.pan[3],4);X.clip();brushed(42,60,34,30,17,.12);X.fillStyle='rgba(0,0,0,.2)';for(let x=46;x<74;x+=5)X.fillRect(x,61,1,28);X.restore();
+  for(let i=0;i<10;i++){const a=i/9;circ(43.5+a*31,61.6,.7,'#c9ced5');circ(43.5+a*31,88.4,.7,'#c9ced5')}
+  // CV axles
+  for(const[x0,x1]of[[30,16],[96,104]]){X.strokeStyle=lg(0,50,0,55,'#7d848d','#3a3e44');X.lineWidth=3.4;X.beginPath();X.moveTo(x0,52);X.lineTo(x1,52);X.stroke();box(Math.min(x0,x1)+(x0<x1?2:0),48.5,6,7,2.5,'#151618')}
+  // exhaust: down-pipe → catalytic converter → pipe in the tunnel → muffler, with heat shields
+  X.strokeStyle=lg(0,0,8,0,'#7a6655','#a88f78','#665343');X.lineWidth=5;X.beginPath();X.moveTo(60,92);X.bezierCurveTo(58,104,58,112,60,124);X.lineTo(60,186);X.bezierCurveTo(60,196,66,198,72,200);X.stroke();
+  for(const[x,y]of[[60,140],[60,176]]){box(x-4,y-1.5,8,3,1,'#2b2e33')}
+  box(53,118,14,24,5,steel(53,0,67,0));X.fillStyle='rgba(0,0,0,.18)';for(let y=120;y<140;y+=2.5)X.fillRect(53,y,14,.6);
+  box(62,194,38,22,7,lg(0,194,0,216,'#8a7966','#5a4b3e'));X.fillStyle='rgba(255,255,255,.08)';X.fillRect(64,197,34,1);box(98,202,10,6,2,'#3a3530');
+  // fuel tank behind its shield
+  X.shadowColor='rgba(0,0,0,.5)';X.shadowBlur=1.6*XS;X.shadowOffsetY=XS;box(RL.tank[0],RL.tank[1],RL.tank[2],RL.tank[3],6,lg(0,150,0,180,'#26292d','#16181b'));noShadow();
+  X.strokeStyle='rgba(255,255,255,.06)';X.lineWidth=.6;for(let y=153;y<178;y+=4){X.beginPath();X.moveTo(32,y);X.lineTo(88,y);X.stroke()}
+  T('FUEL',60,167,3,'rgba(255,255,255,.2)',800);
+  // rear twist-beam axle with coil springs
+  box(12,188,96,7,3,lg(0,188,0,195,'#5d636b','#3a3e44'));
+  for(const x of[26,94]){circ(x,198,6,'#1d1f22');for(let k=0;k<4;k++)ring(x,198,5.4-k*1.2,k%2?'#c33':'#a22',.8)}
+  // road grime and the odd rust bloom
+  const r=rngOf(model.length*41);for(let i=0;i<46;i++){X.fillStyle='rgba(130,80,35,'+(.05+r()*.12)+')';X.beginPath();X.arc(10+r()*100,10+r()*220,1+r()*3,0,6.283);X.fill()}
+  // work light from below
+  X.fillStyle=rg(60,110,10,140,'rgba(255,245,220,.13)','rgba(255,245,220,0)');X.fillRect(0,0,120,240);
+},3)}
+function sprTire(model,side){return sprite('tire:'+model+side,16,36,()=>{
+  box(0,0,16,36,4,lg(0,0,16,0,'#0b0c0d','#26282b','#0e0f10'));
+  X.fillStyle='rgba(255,255,255,.07)';for(let y=2;y<35;y+=2.4)X.fillRect(2,y,12,1);
+  X.fillStyle='rgba(0,0,0,.4)';X.fillRect(5,0,1,36);X.fillRect(10,0,1,36);
+},2)}
+
+// ═══════════════════════ sprites: wheel corner ═══════════════════════
+function sprWheelBg(model){return sprite('wbg:'+model,160,160,()=>{
+  const m=CARS[model],paint=m.paint;
+  box(0,0,160,160,8,lg(0,0,0,160,'#1b1d20','#111214'));grain(0,0,160,160,7,900,.06);
+  // wheel arch in body colour + inner liner
+  X.beginPath();X.arc(80,86,78,Math.PI*1.06,Math.PI*1.94);X.lineTo(160,0);X.lineTo(0,0);X.closePath();X.fillStyle=lg(0,0,0,40,shade(paint,.15),shade(paint,-.3));X.fill();
+  X.beginPath();X.arc(80,86,74,Math.PI*1.04,Math.PI*1.96);X.strokeStyle='#0a0b0c';X.lineWidth=6;X.stroke();
+  // knuckle + strut
+  box(72,8,16,36,4,lg(72,0,88,0,'#3a3e44','#5a6069','#2b2e33'));box(66,28,28,8,3,'#2b2e33');
+  X.lineCap='round';X.strokeStyle='#e2b11e';X.lineWidth=5;X.beginPath();X.moveTo(80,0);X.lineTo(80,20);X.stroke();
+  // brake hose
+  X.strokeStyle='#121315';X.lineWidth=2;X.beginPath();X.moveTo(96,30);X.bezierCurveTo(118,32,132,40,134,52);X.stroke();
+},2)}
+function sprRotor(worn){return sprite('rotor:'+(worn?1:0),90,90,()=>{
+  const c=45;
+  shadow(2,1.2,'rgba(0,0,0,.6)');circ(c,c,43,lg(0,0,90,90,'#b9c0c8','#7d858e','#a6adb5'));noShadow();
+  X.save();X.beginPath();X.arc(c,c,43,0,6.283);X.clip();
+  const r=rngOf(worn?5:9);for(let i=0;i<60;i++){X.strokeStyle='rgba(255,255,255,'+(r()*.12)+')';X.lineWidth=.3;X.beginPath();X.arc(c,c,22+r()*20,r()*6.283,r()*6.283+.8);X.stroke()}
+  if(worn){for(let i=0;i<12;i++){X.strokeStyle='rgba(60,40,30,'+(.2+r()*.25)+')';X.lineWidth=.6;X.beginPath();X.arc(c,c,26+r()*16,0,6.283);X.stroke()}}
+  X.restore();
+  for(let i=0;i<24;i++){const a=i/24*6.283;circ(c+Math.cos(a)*33,c+Math.sin(a)*33,.9,'rgba(0,0,0,.35)')}
+  circ(c,c,20,lg(25,25,65,65,'#9aa1aa','#5f666f'));ring(c,c,20,'rgba(0,0,0,.4)',.6);circ(c,c,7,'#2b2e33');circ(c,c,4,'#9aa3ad');
+  for(let k=0;k<5;k++){const a=-Math.PI/2+k*2*Math.PI/5;circ(c+Math.cos(a)*15,c+Math.sin(a)*15,2,'#c9ced5');ring(c+Math.cos(a)*15,c+Math.sin(a)*15,2,'rgba(0,0,0,.35)',.3)}
+},4)}
+function sprWheel(model){return sprite('wheel:'+model,140,140,()=>{
+  const m=CARS[model],c=70;
+  shadow(4,2.4,'rgba(0,0,0,.7)');circ(c,c,69,'#0d0e0f');noShadow();
+  circ(c,c,69,rg(c-14,c-16,10,72,'#2a2c30','#141516','#0b0c0d'));
+  X.fillStyle='rgba(255,255,255,.05)';for(let i=0;i<72;i++){const a=i/72*6.283;X.save();X.translate(c+Math.cos(a)*66,c+Math.sin(a)*66);X.rotate(a);X.fillRect(-1.6,-.6,3.2,1.2);X.restore()}
+  X.save();X.fillStyle='rgba(235,240,245,.4)';X.font='800 5.2px Rubik,sans-serif';X.textAlign='center';
+  const txt=(model==='boulder'?'ALL TERRAIN · 265/70 R17':'GRIPMASTER · 205/55 R16');for(let i=0;i<txt.length;i++){const a=-2.4+i*.075;X.save();X.translate(c+Math.cos(a)*57,c+Math.sin(a)*57);X.rotate(a+Math.PI/2);X.fillText(txt[i],0,0);X.restore()}X.restore();
+  // alloy rim: lip, five spokes, centre cap
+  circ(c,c,46,lg(20,20,120,120,shade(m.rim,.3),shade(m.rim,-.25)));ring(c,c,45.5,'rgba(255,255,255,.35)',.6);circ(c,c,41,'#1c1e21');
+  for(let k=0;k<5;k++){const a=-Math.PI/2+Math.PI/5+k*2*Math.PI/5;X.save();X.translate(c,c);X.rotate(a);X.beginPath();X.moveTo(-6,-14);X.lineTo(-9,-41);X.lineTo(9,-41);X.lineTo(6,-14);X.closePath();X.fillStyle=lg(-9,0,9,0,shade(m.rim,-.15),shade(m.rim,.35),shade(m.rim,-.2));X.fill();X.restore()}
+  circ(c,c,22,lg(48,48,92,92,shade(m.rim,.25),shade(m.rim,-.3)));ring(c,c,22,'rgba(0,0,0,.35)',.5);
+  circ(c,c,7,lg(63,63,77,77,'#e6e9ee','#8d949c'));T(model[0].toUpperCase(),c,c+2.2,6,'#3a3e44',900);
+  // the worn pads glint through the spokes as a thin sliver; good pads look the same from outside
+},4)}
+function sprCaliper(model){return sprite('cal:'+model,26,60,()=>{
+  const col=CARS[model].caliper;
+  shadow(2,1.2,'rgba(0,0,0,.65)');path(0,0,26,60,8);X.fillStyle=lg(0,0,26,0,shade(col,-.3),shade(col,.25),shade(col,-.2));X.fill();noShadow();
+  X.fillStyle='rgba(255,255,255,.25)';X.fillRect(4,4,1.2,52);
+  T('BRAKE',13,32,3,'rgba(255,255,255,.55)',900);
+  box(14,8,10,6,2,'rgba(0,0,0,.25)');box(14,46,10,6,2,'rgba(0,0,0,.25)');
+},4)}
+function sprPads(worn){return sprite('pads:'+(worn?1:0),13,48,()=>{
+  box(0,0,13,48,2,lg(0,0,13,0,'#9aa3ad','#6a717a'));
+  const th=worn?2.4:7;box(13-th-1,2,th,44,1.5,lg(0,0,13,0,'#5a4434','#3a2a20'));
+  X.fillStyle='rgba(0,0,0,.25)';X.fillRect(13-th-1,23,th,1);
+  if(worn){box(1,10,3,4,.6,'#c9ced5')}
+},2)}
+
+// ═══════════════════════ drawing the views ═══════════════════════
+function drawBolt(f,st,rot){
+  const P=cur,s=f.mm||10,r=f.lug?3.4:f.isPlug?3:s>=15?2.8:s>=13?2.4:2;
+  if(f.tool==='pliers'){if(st!=='out'){X.save();X.translate(f.x,f.y);ring(0,0,3.6,'#b9c0c8',1.3);box(2.4,-1.4,3,2.8,.6,'#9aa3ad');X.restore()}else{ring(f.x,f.y,3.6,'rgba(185,192,200,.4)',.6)}return}
+  if(f.isPlug&&st==='out'&&cur.part[f.host]){circ(f.x,f.y,r+1.6,'#08090a');X.save();X.translate(f.x-.6,f.y-1.2);circ(.8,1.4,r*.9,'rgba(0,0,0,.5)');box(-1.4,-6,2.8,6,.8,'#e8e4da');hexPath(0,0,r*.9,.3);X.fillStyle=lg(-r,-r,r,r,'#f2f4f6','#8d949c');X.fill();circ(0,0,r*.35,'#cfd4da');X.restore();return}
+  if(st==='out'||st==='lost'){circ(f.x,f.y,r*.6,'#08090a');ring(f.x,f.y,r*.6,'rgba(255,255,255,.12)',.25);return}
+  if(f.isPlug){circ(f.x,f.y,r+1.6,'#08090a');}
+  circ(f.x+.5,f.y+.7,r,'rgba(0,0,0,.45)');
+  X.save();X.translate(f.x,f.y);
+  hexPath(0,0,r,(rot||0)+f.x*.07);X.fillStyle=f.term?'#8d949c':f.lug?lg(-r,-r,r,r,'#ffffff','#9aa3ad'):lg(-r,-r,r,r,'#e6e9ee','#7d858e');X.fill();
+  X.strokeStyle='rgba(0,0,0,.4)';X.lineWidth=.25;X.stroke();
+  circ(0,0,r*.55,f.lug?'#c9ced5':'#9aa1aa');
+  if(f.isPlug){circ(0,0,r*.4,'#e6e9ee')}
+  if(st==='tight'&&f.torque){X.strokeStyle='#ffd23f';X.lineWidth=.6;X.beginPath();X.moveTo(-r*.2,-r*.9);X.lineTo(r*.5,r*.9);X.stroke()}
+  X.restore();
+}
+function drawBay(P){
+  const m=CARS[P.model],run=P.run,shake=run?(CYL.some(i=>!cylOK(i))?.5:.12):0,sx=shake?(Math.random()-.5)*shake:0,sy=shake?(Math.random()-.5)*shake:0;
+  blit(sprBay(P.model),0,0);
+  // reservoir level
+  {const[x,y,w,h]=RB.res,lv=clamp(P.cool,0,1.2),fy=y+h-2-(h-6)*Math.min(1,lv/1.1);X.save();path(x,y,w,h,3);X.clip();X.fillStyle='rgba(60,200,120,.55)';X.fillRect(x,fy,w,y+h-fy);X.fillStyle='rgba(255,255,255,.25)';X.fillRect(x,fy,w,.5);X.restore()}
+  // caps
+  for(const k in CAPS){const[x,y,r]=CAPS[k],open=P.cap[k];
+    if(open){circ(x,y,r*.72,'#050505');ring(x,y,r*.78,'#5a6069',.6);X.save();X.translate(k==='oil'?x-r*2.2:x+r*2,y-r*.4);circ(.5,.7,r,'rgba(0,0,0,.5)');circ(0,0,r,k==='oil'?'#4a5059':'#e2b11e');ring(0,0,r,'rgba(255,255,255,.35)',.35);if(k==='oil')T('OIL',0,r*.32,r*.85,'#ffb020',900);X.restore()}
+    else{circ(x+.5,y+.7,r,'rgba(0,0,0,.5)');circ(x,y,r,k==='oil'?lg(x-r,y-r,x+r,y+r,'#5a6069','#2b2e33'):lg(x-r,y-r,x+r,y+r,'#f2c230','#b88a12'));X.fillStyle=k==='oil'?'#ffb020':'#1b1d20';
+      if(k==='oil'){X.font='800 '+(r*.9)+'px Rubik';X.textAlign='center';X.fillText('OIL',x,y+r*.32)}else{for(let i=0;i<6;i++){const a=i/6*6.283;X.fillRect(x+Math.cos(a)*r*.75-.25,y+Math.sin(a)*r*.75-.25,.5,.5)}}}}
+  // dipstick handle
+  {const[x,y,r]=DIP;circ(x,y,r,'#f2c230');circ(x,y,r*.5,'#1d1f22');}
+  // battery
+  if(P.part.battery){blit(sprBattery(P.model),RB.battery[0],RB.battery[1]);
+    // cables + terminal clamps
+    X.lineCap='round';X.strokeStyle='#121315';X.lineWidth=3;X.beginPath();X.moveTo(17,24);X.bezierCurveTo(10,30,4,40,6,60);X.stroke();
+    X.strokeStyle='#8a1b1b';X.beginPath();X.moveTo(39,24);X.bezierCurveTo(46,30,48,40,46,66);X.stroke();
+    // hold-down bar
+    box(10,57,36,4,1,steel(10,57,46,61));
+    for(const id of['batN','batP']){const f=FASTBY[id],st=P.f[id];const dx=st==='out'?(id==='batN'?-4:4):0,dy=st==='out'?-3:0;box(f.x-4+dx,f.y-3+dy,8,6,1.5,id==='batP'?lg(0,0,8,0,'#c33','#e66'):'#3a3e44')}
+  }else{box(RB.battery[0]+2,RB.battery[1]+2,RB.battery[2]-4,RB.battery[3]-4,3,'rgba(0,0,0,.35)');X.lineCap='round';X.strokeStyle='#121315';X.lineWidth=3;X.beginPath();X.moveTo(10,20);X.bezierCurveTo(6,30,4,40,6,60);X.stroke();X.strokeStyle='#8a1b1b';X.beginPath();X.moveTo(44,18);X.bezierCurveTo(48,30,48,40,46,66);X.stroke()}
+  // main fuse
+  if(P.part.fuse){box(19,78,10,8,1,P.part.fuse.bad?'#5a3a2a':'#e8c547');T('80A',24,83.4,2.6,'#1b1d20',900);if(P.part.fuse.bad){X.strokeStyle='#1b1d20';X.lineWidth=.6;X.beginPath();X.moveTo(20,79);X.lineTo(28,85);X.stroke()}}
+  else box(19,78,10,8,1,'#0b0c0d');
+  // coils + spark plug wells
+  X.save();X.translate(sx,sy);
+  for(const i of CYL){const[x,y,w,h]=coilR(i);
+    circ(CX[i],76,4.8,'#0b0c0d');ring(CX[i],76,4.8,'rgba(255,255,255,.08)',.4);
+    if(P.part['plug'+i]&&!P.part['coil'+i]){drawBolt(FASTBY['plug'+i],P.f['plug'+i]);if(P.part['plug'+i].bad&&P.f['plug'+i]==='out'){circ(CX[i]+2,74,1,'#1b1b1b')}}
+    if(P.part['coil'+i]){blit(sprCoil(),x,y);if(!P.conn['coilC'+i]){box(CX[i]-4,55,8,4,1,'#4a5059')}else box(CX[i]-3.5,58.4,7,3.4,1,'#5a6069')}
+    X.lineCap='round';X.strokeStyle='#121315';X.lineWidth=1.4;X.beginPath();X.moveTo(CX[i],P.part['coil'+i]&&P.conn['coilC'+i]?58:54);X.lineTo(CX[i],56);X.stroke();
+  }
+  X.restore();
+  // accessory drive: pulleys, belt, alternator, tensioner
+  const rot=run?TIME*14:0;
+  if(P.part.alternator)blit(sprAlt(),RB.alternator[0],RB.alternator[1]);
+  else box(RB.alternator[0]+3,RB.alternator[1]+3,RB.alternator[2]-6,RB.alternator[3]-6,3,'rgba(0,0,0,.35)');
+  if(P.part.alternator){const st=P.conn.altC;box(164,st?53:50,8,6,1.2,st?'#3a3e44':'#4a5059');X.lineCap='round';X.strokeStyle='#121315';X.lineWidth=1.6;X.beginPath();X.moveTo(168,st?53:50);X.lineTo(160,46);X.stroke();
+    X.strokeStyle='#8a1b1b';X.lineWidth=2;X.beginPath();X.moveTo(182,42);X.bezierCurveTo(186,34,170,30,150,30);X.stroke()}
+  for(const k in PUL){if(k==='alt'&&!P.part.alternator)continue;const[x,y,r]=PUL[k],slackOff=k==='tens'&&P.slack>0?2.2:0;
+    X.save();X.translate(x+slackOff,y);circ(.6,.8,r,'rgba(0,0,0,.45)');circ(0,0,r,steel(-r,-r,r,r));ring(0,0,r*.72,'rgba(0,0,0,.35)',.4);
+    X.rotate(rot*(k==='crank'?1:k==='alt'?2.4:1.4));for(let i=0;i<(k==='tens'||k==='idler'?0:5);i++){X.rotate(Math.PI*2/5);X.fillStyle='rgba(0,0,0,.25)';X.fillRect(r*.25,-.5,r*.4,1)}
+    circ(0,0,r*.28,'#3a3e44');X.restore()}
+  if(P.part.belt){const h=beltHull(),bad=P.part.belt.bad;X.save();if(P.slack>0)X.translate(.8,0);poly(h);X.closePath();X.lineJoin='round';X.strokeStyle='#121315';X.lineWidth=3;X.stroke();
+    X.setLineDash([1.2,1]);X.lineDashOffset=-TIME*(run?40:0);X.strokeStyle='rgba(255,255,255,.12)';X.lineWidth=2.2;X.stroke();X.setLineDash([]);
+    if(bad){X.strokeStyle='rgba(220,200,180,.5)';X.lineWidth=.25;for(let i=0;i<h.length;i+=2){const p=h[i];X.beginPath();X.moveTo(p[0]-1,p[1]-1);X.lineTo(p[0]+1,p[1]+1);X.stroke()}}X.restore()}
+  // tensioner arm + square drive for the breaker bar
+  {const[x,y]=PUL.tens,o=P.slack>0?2.2:0;box(x-2+o,y+3,4,10,1.5,'#4a5059');box(x-1.6+o,y+9,3.2,3.2,.4,'#121315')}
+  // fasteners
+  for(const f of FAST)if(f.v==='bay'&&fastShown(f)&&!(f.isPlug))drawBolt(f,P.f[f.id]);
+  // reservoir cap spill, steam etc drawn by FX
+  if(P.lift){X.fillStyle='rgba(0,0,0,.35)';X.fillRect(0,0,200,150);T('The car is up on the lift',100,78,7,'rgba(255,255,255,.8)',800)}
+}
+function drawLift(P){
+  const m=CARS[P.model];
+  // shop floor + puddles under the car
+  blit(sprUnder(P.model),0,0);
+  for(const c of CORNERS){const[x,y,w,h]=TIRE[c];if(P.part['wheel:'+c])blit(sprTire(P.model,c[1]),x,y);else{box(x+3,y+6,10,24,3,'#5f666f');circ(x+8,y+18,3,'#2b2e33')}}
+  // oil filter
+  if(P.part.filter){X.save();const old=P.part.filter.bad;blit(sprFilter(P.model),RL.filter[0]-8,RL.filter[1]-8);if(old){X.fillStyle='rgba(30,20,10,.35)';circ(RL.filter[0],RL.filter[1],7,'rgba(30,20,10,.35)')}X.restore()}
+  else{circ(RL.filter[0],RL.filter[1],5,'#2b2e33');ring(RL.filter[0],RL.filter[1],4,'#8d949c',.8)}
+  // lower radiator hose
+  if(P.part.hose){X.lineCap='round';X.strokeStyle='#0e0f10';X.lineWidth=6;X.beginPath();X.moveTo(...RL.hoseA);X.bezierCurveTo(30,34,52,36,RL.hoseB[0],RL.hoseB[1]);X.stroke();X.strokeStyle='rgba(255,255,255,.1)';X.lineWidth=1.5;X.stroke();
+    if(P.part.hose.bad){circ(41,34,2.2,'rgba(60,220,140,.55)');circ(41,37,1.2,'rgba(60,220,140,.7)')}}
+  else{circ(RL.hoseA[0],RL.hoseA[1],2.6,'#0b0c0d');circ(RL.hoseB[0],RL.hoseB[1],2.6,'#0b0c0d')}
+  for(const f of FAST)if(f.v==='lift'&&fastShown(f))drawBolt(f,P.f[f.id]);
+  // drain pan
+  if(P.pan){const[x,y]=PANSPOT[P.pan];X.save();X.globalAlpha=.92;box(x-11,y-7,22,14,4,lg(x-11,0,x+11,0,'#2c3036','#1a1c1f'));box(x-9,y-5,18,10,3,'#0b0b0b');const full=P.pan==='oil'?Math.max(0,1-P.oil)*.9:Math.max(0,1-P.cool)*.9;if(full>.02)box(x-8,y-4,16,8,2.5,P.pan==='oil'?'rgba(40,25,10,'+full+')':'rgba(60,200,120,'+full*.6+')');X.restore()}
+  // flowing fluid from the drain/hose
+  if((P.f.drain==='out'||P.f.drain==='lost')&&P.oil>.01){X.strokeStyle='rgba(50,32,14,.9)';X.lineWidth=1.4;X.setLineDash([2,1]);X.lineDashOffset=-TIME*30;X.beginPath();X.moveTo(59,86);X.lineTo(59,98);X.stroke();X.setLineDash([])}
+  if(!P.part.hose&&P.cool>.01){X.strokeStyle='rgba(60,210,130,.85)';X.lineWidth=1.2;X.setLineDash([2,1]);X.lineDashOffset=-TIME*30;X.beginPath();X.moveTo(RL.hoseA[0],RL.hoseA[1]);X.lineTo(RL.hoseA[0]+2,RL.hoseA[1]+12);X.stroke();X.setLineDash([])}
+  if(P.spill>.05){X.fillStyle='rgba(30,22,12,'+Math.min(.7,P.spill)+')';X.beginPath();X.ellipse(60,108,10+P.spill*14,5+P.spill*6,0,0,6.283);X.fill()}
+}
+function drawWheel(P,c){
+  const m=CARS[P.model];
+  blit(sprWheelBg(P.model),0,0);
+  const pads=P.part['pads:'+c],worn=pads&&pads.bad;
+  blit(sprRotor(worn&&!P.part['wheel:'+c]),35,35);
+  // pads on the bracket (visible with the caliper off)
+  if(!caliperOn(c)){if(pads)blit(sprPads(pads.bad),PADS[0],PADS[1]);else box(PADS[0],PADS[1],PADS[2],PADS[3],2,'rgba(0,0,0,.35)');box(113,48,6,64,2,'#3a3e44')}
+  if(caliperOn(c))blit(sprCaliper(P.model),CAL[0],CAL[1]);
+  else if(P.hang&&P.hang[c]){X.save();X.translate(HANG[0]+16,HANG[1]+12);X.rotate(1.2);blit(sprCaliper(P.model),-13,-18);X.restore();
+    const out=P.piston[c]==='out';circ(HANG[0]+16,HANG[1]+16,out?6:5,steel(HANG[0]+10,0,HANG[0]+22,0));ring(HANG[0]+16,HANG[1]+16,out?6:5,'rgba(0,0,0,.4)',.4);
+    X.strokeStyle='#121315';X.lineWidth=2;X.beginPath();X.moveTo(134,52);X.bezierCurveTo(150,70,148,100,HANG[0]+18,HANG[1]+4);X.stroke()}
+  for(const f of FAST)if(f.v==='wheel:'+c&&f.id.startsWith('K')&&fastShown(f))drawBolt(f,P.f[f.id]);
+  if(P.part['wheel:'+c]){blit(sprWheel(P.model),10,10);for(const f of FAST)if(f.v==='wheel:'+c&&f.lug)drawBolt(f,P.f[f.id])}
+  else if(P.wheelOff&&P.wheelOff[c]){X.save();X.globalAlpha=.9;X.translate(-38,98);X.scale(.42,.42);blit(sprWheel(P.model),10,10);X.restore();T('wheel',0+20,160,5,'rgba(255,255,255,.35)',700,'left')}
+  if(!P.lift&&!P.part['wheel:'+c]){}
+  T(c+(P.lift?' · on the lift':' · on the ground'),80,156,5,'rgba(255,255,255,.4)',700);
+}
+function drawStage(){
+  const P=cur;
+  X=ctx;XS=U*DPR;ctx.setTransform(DPR*U,0,0,DPR*U,DPR*OX,DPR*OY);
+  const v=P.view,k=vkind(v);
+  if(k==='bay')drawBay(P);
+  else if(k==='lift'){
+    const lift=P.liftT;
+    X.save();if(lift<1){X.globalAlpha=lift}drawLift(P);X.restore();
+    if(lift<1){X.fillStyle='rgba(10,11,12,'+(1-lift)*.9+')';X.fillRect(0,0,120,240);T(P.lift?'Raising…':'The car is on the ground.',60,118,7,'rgba(255,255,255,.75)',800)}
+  }else drawWheel(P,v.slice(6));
+  for(const f of FX){if(f.v!==v)continue;const a=Math.max(0,f.life/f.max);
+    if(f.kind==='spark'){X.globalCompositeOperation='lighter';X.strokeStyle='rgba(255,'+(190+f.r*65|0)+','+(80+f.r*80|0)+','+a+')';X.lineWidth=.6;X.beginPath();X.moveTo(f.x,f.y);X.lineTo(f.x-f.vx*.05,f.y-f.vy*.05);X.stroke();X.globalCompositeOperation='source-over'}
+    else if(f.kind==='steam'||f.kind==='smoke')circ(f.x,f.y,3+(1-a)*12,(f.kind==='steam'?'rgba(230,235,240,':'rgba(140,140,150,')+a*.3+')');
+    else{X.fillStyle='rgba(225,230,236,'+a+')';X.fillRect(f.x,f.y,.6+f.r*.6,.6+f.r*.6)}}
+}
+
+// ═══════════════════════ bench props: socket rack + diagnostic screen; tools at the cursor ═══════════════════════
+let BENCH=null;
+function benchCanvas(){
+  const key=W+'x'+H+'@'+DPR+':'+PROPW;
+  if(BENCH&&BENCH.key===key)return BENCH.c;
+  const c=document.createElement('canvas');c.width=Math.max(1,Math.round(W*DPR));c.height=Math.max(1,Math.round(H*DPR));
+  const g=c.getContext('2d');g.setTransform(DPR,0,0,DPR,0,0);
+  const pX=X,pS=XS;X=g;XS=DPR;
+  try{
+    X.fillStyle=lg(0,0,0,H,'#2a2c2f','#1d1f21');X.fillRect(0,0,W,H);
+    const r=rngOf(3);for(let i=0;i<W*H/18;i++){X.fillStyle=r()<.5?'rgba(255,255,255,.025)':'rgba(0,0,0,.07)';X.fillRect(r()*W,r()*H,1.4,1.4)}
+    for(let i=0;i<8;i++){X.fillStyle='rgba(20,14,8,'+(.08+r()*.12)+')';X.beginPath();X.ellipse(PROPW+r()*(W-PROPW),r()*H,20+r()*60,10+r()*30,r()*3,0,6.283);X.fill()}
+    // painted bay lines on the concrete
+    X.strokeStyle='rgba(255,200,40,.18)';X.lineWidth=6;X.setLineDash([30,18]);X.beginPath();X.moveTo(PROPW+14,0);X.lineTo(PROPW+14,H);X.moveTo(W-14,0);X.lineTo(W-14,H);X.stroke();X.setLineDash([]);
+    const cx=PROPW+(W-PROPW)/2;X.fillStyle=rg(cx,H*.35,0,Math.max(W,H)*.8,'rgba(255,240,210,.12)','rgba(0,0,0,0)');X.fillRect(0,0,W,H);
+    if(PROPW){X.fillStyle=lg(0,0,PROPW,0,'rgba(0,0,0,.25)','rgba(0,0,0,0)');X.fillRect(0,0,PROPW,H)}
+    X.fillStyle=rg(W/2,H/2,Math.min(W,H)*.35,Math.max(W,H)*.85,'rgba(0,0,0,0)','rgba(0,0,0,.5)');X.fillRect(0,0,W,H);
+  }finally{X=pX;XS=pS}
+  BENCH={key,c};return c;
+}
+function propRects(){const x=12,w=PROPW-24,dh=Math.min(w*.9,H*.32);return{diag:[x,56,w,dh],rack:[x,56+dh+12,w,Math.min(w*1.05,H-56-dh-30)]}}
+const PROPC={};
+function cachedProp(name,r,fn,key2){
+  const key=r.join(',')+'@'+DPR+'|'+key2;let c=PROPC[name];
+  if(!c||c.key!==key){const pad=24,cv2=c&&c.cv||document.createElement('canvas');cv2.width=Math.ceil((r[2]+pad*2)*DPR);cv2.height=Math.ceil((r[3]+pad*2)*DPR);
+    const g=cv2.getContext('2d');g.setTransform(DPR,0,0,DPR,(pad-r[0])*DPR,(pad-r[1])*DPR);const pX=X,pS=XS;X=g;XS=DPR;let out;try{out=fn(r)}finally{X=pX;XS=pS}
+    c=PROPC[name]={key,cv:cv2,pad,out}}
+  X.drawImage(c.cv,r[0]-c.pad,r[1]-c.pad,r[2]+c.pad*2,r[3]+c.pad*2);return c.out;
+}
+function drawDiag(r){
+  const[x,y,w,h]=r,P=cur,rd=P&&P.read&&P.read.life>0?P.read:null;
+  X.save();X.shadowColor='rgba(0,0,0,.5)';X.shadowBlur=12*DPR;X.shadowOffsetY=5*DPR;box(x,y,w,h,12,lg(x,y,x,y+h,'#33373d','#202327'));X.restore();
+  box(x+8,y+8,w-16,h-34,6,lg(0,y,0,y+h,'#132a1c','#0b1a11'));path(x+8,y+8,w-16,h-34,6);stroke('rgba(0,0,0,.6)',1.2);
+  X.fillStyle='#7dffb2';X.textAlign='left';
+  if(rd){const parts=rd.txt.split(/\s{2,}/),lab=parts[0],vals=(parts[1]||'').split(' · ');X.font='700 10px JetBrains Mono,monospace';X.fillText(lab,x+14,y+24);
+    let yy=y+42;for(const v of vals.slice(0,4)){X.font='700 '+(v.length>16?9:12)+'px JetBrains Mono,monospace';X.fillText(v.slice(0,22),x+14,yy);yy+=15}}
+  else{X.globalAlpha=.4;X.font='700 18px JetBrains Mono,monospace';X.textAlign='center';X.fillText('READY',x+w/2,y+(h-34)/2+14);X.globalAlpha=1}
+  T('DIAG SCANNER',x+w/2,y+h-12,9,'#cfd6de',800);
+}
+function sockHits(r){const[x,y,w,h]=r,cols=3,cw=(w-16)/cols,ch=(h-34)/2;return SOCKETS.map((mm,i)=>{const cx=x+8+(i%cols)*cw+cw/2,cy=y+30+Math.floor(i/cols)*ch+ch/2-4;return{mm,r:[cx-cw/2,cy-ch/2,cw,ch]}})}
+function drawRack(r){
+  const[x,y,w,h]=r;
+  X.save();X.shadowColor='rgba(0,0,0,.5)';X.shadowBlur=12*DPR;X.shadowOffsetY=5*DPR;box(x,y,w,h,10,lg(x,y,x+w,y,'#b8141a','#d9262c','#a51217'));X.restore();
+  T('SOCKETS',x+w/2,y+15,9.5,'rgba(255,255,255,.75)',800);
+  box(x+8,y+22,w-16,4,2,'#9aa3ad');
+  const n=SOCKETS.length,cols=3,cw=(w-16)/cols,ch=(h-34)/2;
+  SOCKETS.forEach((mm,i)=>{const cx=x+8+(i%cols)*cw+cw/2,cy=y+30+Math.floor(i/cols)*ch+ch/2-4,rr=Math.min(cw,ch)*.28+mm*.25;
+    circ(cx+1,cy+2,rr,'rgba(0,0,0,.35)');circ(cx,cy,rr,lg(cx-rr,cy-rr,cx+rr,cy+rr,'#f2f4f6','#8d949c'));circ(cx,cy,rr*.62,'#2b2e33');hexPath(cx,cy,rr*.5,0);X.fillStyle='#121315';X.fill();
+    T(mm+'',cx,cy+rr+11,10,C.sock===mm?'#ffd88a':'#fff',800,'center','JetBrains Mono,monospace');
+    if(C.sock===mm){ring(cx,cy,rr+3,'#ffb020',2)}});
+}
+function drawProbe(){
+  const P=cur;if(!P||!P.read||P.read.life<=0||!PROPS)return;const rd=P.read;if(rd.v!=='*'&&rd.v!==P.view)return;
+  const pr=propRects().diag,a=Math.min(1,rd.life*1.5),sx=pr[0]+pr[2]/2,sy=pr[1]+pr[3];
+  const tx=OX+(rd.cx!=null?rd.cx:rd.x)*U,ty=OY+(rd.cy!=null?rd.cy:rd.y)*U;
+  X.save();X.globalAlpha=a;X.strokeStyle='#d33';X.lineWidth=2.2;X.lineCap='round';X.beginPath();X.moveTo(sx,sy);X.bezierCurveTo(sx,sy+80,tx-60,ty+60,tx,ty);X.stroke();X.restore();
+}
+function drawCursorTool(){
+  if(!(PTR.in&&playing()&&FINE))return;
+  const x=PTR.x,y=PTR.y,hold=!!(HOLD&&PTR.down),s=clamp(U/3,.75,1.3);
+  X.save();X.translate(x,y);X.scale(s,s);
+  X.shadowColor='rgba(0,0,0,.45)';X.shadowBlur=10*DPR;X.shadowOffsetY=6*DPR;X.shadowOffsetX=4*DPR;
+  switch(TOOL){
+    case'ratchet':case'torque':case'breaker':{const spin=hold?Math.sin(TIME*18)*.25:0;X.rotate(.75+spin);
+      const L=TOOL==='breaker'?110:TOOL==='torque'?96:72;box(-6,-6,12,12,3,'#c9ced5');hexPath(0,0,3.6,0);X.fillStyle='#2b2e33';X.fill();
+      box(-2.4,-L,4.8,L-5,2.2,lg(-2.4,0,2.4,0,'#8d949c','#eef1f4','#9aa1aa'));
+      if(TOOL==='ratchet')box(-4,-L,8,30,3.5,'#c33');if(TOOL==='torque'){box(-4,-L,8,24,3.5,'#2b2e33');box(-4,-L+30,8,10,1,'#ffb020')}if(TOOL==='breaker')box(-4,-L,8,20,3,'#2b2e33');
+      if(TOOL==='ratchet'){X.shadowColor='transparent';T(C.sock+'',0,-L-6,11,'#ffd88a',900)}break}
+    case'pliers':{X.rotate(.5);X.strokeStyle='#c33';X.lineWidth=5;X.lineCap='round';X.beginPath();X.moveTo(-2,-14);X.lineTo(-10,-56);X.moveTo(2,-14);X.lineTo(10,-56);X.stroke();X.fillStyle='#c9ced5';poly([[-3,-16],[0,0],[3,-16]]);X.closePath();X.fill();break}
+    case'meter':{X.rotate(.45);box(-1,-8,2,8,.8,'#d9dee4');box(-3.4,-60,6.8,52,3,lg(-3.4,0,3.4,0,'#a11','#e44','#a11'));break}
+    case'pan':{box(-22,-8,44,16,6,'#2c3036');box(-18,-6,36,10,4,'#0b0b0b');break}
+    case'pour':{X.rotate(hold?-1.1:-.4);box(-12,-40,24,34,4,'#ffb020');box(-6,-46,12,7,2,'#2b2e33');box(-8,-30,16,12,2,'#fff3d0');T(TOOL==='pour'?'OIL':'',0,-21,6,'#2a1a00',900);box(10,-38,14,4,2,'#ffb020');
+      if(hold){X.shadowColor='transparent';X.strokeStyle=HOLD&&HOLD.f==='cool'?'rgba(60,210,130,.8)':'rgba(200,140,40,.8)';X.lineWidth=2;X.beginPath();X.moveTo(24,-36);X.quadraticCurveTo(26,-18,0,0);X.stroke()}break}
+    case'clamp':{X.rotate(.3);X.fillStyle='#3a6fd6';X.fillRect(-18,-46,6,46);X.fillRect(-18,-46,30,6);X.fillRect(-18,-6,30,6);box(8,-30,4,22,1,'#c9ced5');break}
+  }
+  X.restore();
+}
+
+// ═══════════════════════ frame: draw ═══════════════════════
+function render(){
+  X=ctx;XS=DPR;ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(benchCanvas(),0,0);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(PROPS&&(cur||mode==='title')){const pr=propRects(),P=cur;cachedProp('diag',pr.diag,drawDiag,P&&P.read&&P.read.life>0?P.read.txt:'');cachedProp('rack',pr.rack,drawRack,C.sock);SOCK_HIT=sockHits(pr.rack)}else SOCK_HIT=[];
+  if(cur)drawStage();
+  else if(mode==='title'||mode==='mphome'||mode==='lobby')drawShowcase();
+  X=ctx;XS=DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(cur){
+    drawProbe();
+    const P=cur,sx=x=>OX+x*U,sy=y=>OY+y*U;
+    if(!PROPS&&P.read&&P.read.life>0){ctx.font='600 12.5px "JetBrains Mono",ui-monospace,monospace';const tw=Math.min(W-12,ctx.measureText(P.read.txt).width+20);const x=clamp(W/2-tw/2,6,W-tw-6),y=H-60;
+      ctx.globalAlpha=Math.min(1,P.read.life*2);box(x,y,tw,26,6,'#0b1a12');ctx.fillStyle='#7dffb2';ctx.textAlign='left';ctx.fillText(P.read.txt,x+10,y+17.5);ctx.globalAlpha=1}
+    // dash gauges: temperature + oil light + battery light while running
+    if(P.run||P.temp>40){const gx=W-130,gy=58;box(gx,gy,118,44,10,'rgba(10,11,12,.85)');
+      const tN=clamp((P.temp-20)/110,0,1);T('TEMP',gx+12,gy+16,9,'#9aa3ad',800,'left');box(gx+44,gy+9,64,6,3,'#2b2e33');box(gx+44,gy+9,64*tN,6,3,P.temp>110?'#ff4d5e':'#ffb020');
+      if(P.run){if(P.oil<.4)T('🛢️ OIL',gx+12,gy+36,10,Math.sin(TIME*10)>0?'#ff4d5e':'#552',800,'left');if(!charging())T('🔋',gx+70,gy+36,11,'#ff4d5e',800,'left');if(CYL.some(i=>!cylOK(i)))T('⚙️',gx+92,gy+36,11,Math.sin(TIME*8)>0?'#ffb020':'#553',800,'left')}}
+    for(const f of FLOAT){ctx.globalAlpha=Math.min(1,f.life);T(f.txt,sx(f.x),sy(f.y)-(1.6-f.life)*30,22,f.col,800)}ctx.globalAlpha=1;
+    drawCursorTool();
+  }
+  const want=playing()&&FINE?(TOOL==='hand'?(PTR.down?'grabbing':'grab'):'none'):'default';
+  if(cv.style.cursor!==want)cv.style.cursor=want;
+}
+function drawShowcase(){
+  const pU=U,s=Math.min((H-80)/150,(W-PROPW-60)/200)*.85,ox=PROPW+(W-PROPW)/2-100*s,oy=(H-150*s)/2;
+  U=s;X=ctx;XS=s*DPR;ctx.setTransform(DPR*s,0,0,DPR*s,DPR*ox,DPR*oy);
+  try{blit(sprBay('kestrel'),0,0);blit(sprBattery('kestrel'),RB.battery[0],RB.battery[1]);blit(sprAlt(),RB.alternator[0],RB.alternator[1]);for(const i of CYL)blit(sprCoil(),coilR(i)[0],coilR(i)[1]);
+    const h=beltHull();poly(h);X.closePath();X.strokeStyle='#121315';X.lineWidth=3;X.stroke();for(const k in PUL){const[x,y,r]=PUL[k];circ(x,y,r,steel(x-r,y-r,x+r,y+r))}}
+  finally{U=pU}
+}
+
+// ═══════════════════════ UI (DOM) ═══════════════════════
+let uiDirty=true;const UI=()=>{uiDirty=true};
+function buildTools(){
+  $('tools').innerHTML=TOOLS.map(t=>`<button class="tool" data-tool="${t.id}"><i>${t.key}</i>${ICON[t.id]}<small>${t.n}</small></button>`).join('')+
+    `<button class="tool act" id="bEng">${ICON.engine}<small>Start</small></button><button class="tool act" id="bScan">${ICON.scan}<small>Scan</small></button><button class="tool act" id="bMain">${ICON.back}<small>Hand back</small></button>`;
+}
+function setTool(id){TOOL=id;HOLD=null;document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===id))}
+function renderViews(){
+  const el=$('views'),P=cur;
+  if(!P||!playing()){if(el.innerHTML){el.innerHTML='';el.dataset.k=''}return}
+  const v=P.view,key=v+'|'+P.lift+'|'+(P.liftT>0&&P.liftT<1);
+  if(el.dataset.k===key)return;el.dataset.k=key;
+  el.innerHTML=`<button data-v="bay" class="${v==='bay'?'on':''}">🚘 Hood</button><button data-v="lift" class="${v==='lift'?'on':''}">⬆️ Under</button>`+
+    CORNERS.map(c=>`<button data-v="wheel:${c}" class="${v==='wheel:'+c?'on':''}">${c}</button>`).join('')+
+    `<span class="sep"></span><button class="lift" id="bLift">${P.lift?'⏬ Lower':'⏫ Lift'}</button>`;
+}
+function handBackBtn(){
+  if(!playing())return;
+  const r=handBack();if(!r)return;afterJob(r);
+}
+function showSheet(html){$('sheet').innerHTML=html;$('sheetOv').classList.add('on')}
+function hideSheet(){$('sheetOv').classList.remove('on')}
+function renderTop(){
+  $('sDay').textContent=mode==='race'&&RACE?'🚗 '+Math.min(RACE.i+1,RACE.jobs.length)+'/'+RACE.jobs.length:'Day '+S.day+(DAY?' · '+Math.min(DAY.i+1,DAY.jobs.length)+'/'+DAY.jobs.length:'');
+  $('sCash').textContent=money(C.cash);$('sCash').classList.toggle('neg',C.cash<0);
+  const rs=S.rates;$('sRate').textContent=mode==='race'?'⏱ '+raceClock():'⭐ '+(rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'–');
+  $('bSnd').textContent=S.sound?'🔊':'🔇';
+}
+function renderSide(){
+  const P=cur,el=$('side');
+  if(!P||!playing()){el.innerHTML='';return}
+  const j=P.job,m=CARS[P.model],tab=TAB||P.model;
+  const invHtml=C.inv.length?C.inv.map(i=>`<button class="it${SEL===i.id?' sel':''}" data-inv="${i.id}">${PARTS[i.type].e} ${i.type==='fuse'||i.type==='washer'?'':esc(CARS[i.model].name)+' '}${PARTS[i.type].n.toLowerCase()}${i.used?' <span class="old">removed</span>':''}</button>`).join(''):'<div class="empty">Empty.</div>';
+  el.innerHTML=`
+  <div class="card"><h3>Customer <span>${mode==='race'?'Car '+(RACE.i+1)+' of '+RACE.jobs.length:'#'+(DAY?DAY.i+1:1)}</span></h3>
+    <div id="cust"><div class="face" style="background:linear-gradient(145deg,hsl(${j.hue},45%,36%),hsl(${j.hue},45%,22%))">${j.face}</div><div><div class="who">${esc(j.name)}</div><span class="mdl">🚗 ${esc(m.name)} · ${j.miles.toLocaleString()} mi</span></div></div>
+    <div class="said">“${esc(j.say)}”</div>
+    <div class="pat"><div id="patBar"></div></div><div class="patl"><span id="patTxt"></span><span>quoted ${money(P.faults.filter(f=>f.paid).reduce((a,f)=>a+FAULTS[f.k].pay,0))}</span></div>
+  </div>
+  <div class="card"><h3>Work order notes</h3><div class="notes">${P.notes.length?P.notes.map(n=>`<div>${esc(n.txt)}</div>`).join(''):'<div class="empty" style="font-family:Rubik">—</div>'}</div></div>
+  <div class="card"><h3>Ratchet socket</h3><div class="sockets">${SOCKETS.map(mm=>`<button data-sock="${mm}" class="${C.sock===mm?'on':''}">${mm}</button>`).join('')}</div>
+    <div class="fluids"><span>🛢️ Oil <b>${C.fluid.oil.toFixed(1)} qt</b></span><span>🟩 Coolant <b>${Math.round(C.fluid.cool*100)}%</b></span></div></div>
+  <div class="card"><h3>Parts on the bench</h3><div class="inv">${invHtml}</div></div>
+  <div class="card"><h3>📦 Supplier ${C.cash<0?'<span style="color:var(--red);letter-spacing:0">on account</span>':''}</h3>
+    <div class="tabs">${CAR_IDS.map(id=>`<button data-tab="${id}" class="${tab===id?'on':''}">${esc(CARS[id].name)}</button>`).join('')}</div>
+    ${PART_IDS.filter(t=>t!=='fuse'&&t!=='washer').map(t=>{const c=partCost(t,tab);return`<div class="row">${PARTS[t].e}<span>${PARTS[t].n}</span><button class="buy" data-buy="${t}" data-model="${tab}" ${canAfford(c)?'':'disabled'}>${money(c)}</button></div>`}).join('')}
+    ${['fuse','washer'].map(t=>`<div class="row">${PARTS[t].e}<span>${PARTS[t].n}</span><button class="buy" data-buy="${t}" data-model="${tab}" ${canAfford(partCost(t,tab))?'':'disabled'}>${money(partCost(t,tab))}</button></div>`).join('')}
+    ${Object.keys(FLUIDS).map(t=>`<div class="row">${FLUIDS[t].e}<span>${FLUIDS[t].n}</span><button class="buy" data-buy="${t}" data-model="${tab}" ${canAfford(partCost(t,tab))?'':'disabled'}>${money(partCost(t,tab))}</button></div>`).join('')}
+  </div>`;
+}
+function renderTools(){
+  const P=cur,b=$('bEng');if(!b)return;
+  const run=!!(P&&P.run),want=run?'r':'s';
+  if(b.dataset.s!==want){b.dataset.s=want;b.innerHTML=(run?ICON.stop:ICON.engine)+'<small>'+(run?'Stop':'Start')+'</small>';b.classList.toggle('run',run)}
+}
+function buy(t,model){
+  const c=partCost(t,model);
+  if(!canAfford(c)){msg('The parts counter won\'t put any more on your account.','bad');sfx('err');return false}
+  C.cash-=c;spend(c);
+  if(FLUIDS[t])C.fluid[t]+=FLUIDS[t].amt;
+  else C.inv.push({id:uid(),type:t,model,bad:null,used:false});
+  sfx('cash');UI();return true;
+}
+function spend(c){if(C===S)S.daySpend+=c;save()}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;ac();
+  if(b.dataset.tool){setTool(b.dataset.tool);return}
+  if(b.id==='bEng'){if(playing())toggleEngine();return}
+  if(b.id==='bScan'){if(playing())scan();return}
+  if(b.id==='bMain'){handBackBtn();return}
+  if(b.id==='bLift'){if(playing())toggleLift();return}
+  if(b.dataset.v){if(playing())setView(b.dataset.v);return}
+  if(b.dataset.sock){C.sock=+b.dataset.sock;setTool('ratchet');UI();return}
+  if(b.dataset.inv){const id=+b.dataset.inv;SEL=SEL===id?null:id;if(SEL)setTool('hand');UI();return}
+  if(b.dataset.tab){TAB=b.dataset.tab;UI();return}
+  if(b.dataset.buy){if(playing())buy(b.dataset.buy,b.dataset.model||cur.model);return}
+  if(b.hasAttribute('data-close')){hideSheet();return}
+  if(b.dataset.upg){const u=UPG.find(x=>x.id===b.dataset.upg);if(u&&!S.upg[u.id]&&S.cash>=u.cost){S.cash-=u.cost;S.upg[u.id]=1;save();sfx('cash');showDayEnd()}return}
+  if(b.id==='tutSkip'){S.tutOff=true;save();renderTut();return}
+  if(b.id==='bSnd'){S.sound=!S.sound;save();renderTop();return}
+  if(b.id==='bHelp'||b.id==='howBtn'){showHelp();return}
+  if(b.id==='playBtn'){$('titleOv').classList.remove('on');startDay();return}
+  if(b.id==='newBtn'){if(confirm('Close your garage and start over from day 1?')){const keep={name:S.name,hue:S.hue,sound:S.sound};S=Object.assign(fresh(),keep);C=S;save();$('titleOv').classList.remove('on');startDay()}return}
+  if(b.id==='raceBtn'){$('titleOv').classList.remove('on');mpHome('');return}
+  if(b.id==='nextJob'){hideSheet();nextJob();return}
+  if(b.id==='nextDay'){hideSheet();S.day++;S.jobIdx=0;S.dayEarn=0;S.daySpend=0;save();startDay();return}
+  if(b.id==='toTitle'){hideSheet();goTitle();return}
+});
+// A reference card for the shop: what each tool is, and real-world specs. Not a walkthrough.
+function showHelp(){
+  showSheet(`<h2>📘 Shop manual</h2><div class="how">
+  <p><b>Ratchet</b> — pick a socket (S cycles). Hold on a bolt to take it out or run it in. Wrong size won't fit or rounds it off.</p>
+  <p><b>Torque wrench</b> — final-tightens spark plugs, the oil drain plug and lug nuts to spec. A torqued fastener gets a yellow paint mark. Lug nuts can't be torqued with the wheel in the air.</p>
+  <p><b>Breaker bar</b> — long lever, e.g. for a belt tensioner.</p>
+  <p><b>Hand</b> — lift parts out/in, connectors, caps, dipstick, belts.</p>
+  <p><b>Pliers</b> — spring hose clamps. <b>Meter</b> — battery, alternator, fuse, ignition coils. <b>Drain pan</b> — catches fluid under the car. <b>Pour</b> — oil or coolant into its filler. <b>C-clamp</b> — pushes a brake caliper piston back.</p>
+  <p><b>Specs:</b> healthy battery ≈ 12.6 V resting; charging system 13.8–14.4 V running. Coil secondary ≈ 6–8 kΩ. Socket sizes on these cars: 10, 13, 14, 15, 16 (spark plugs), 19 (lug nuts).</p>
+  <p>Keys: <b>1-9</b> tools · <b>S</b> socket · <b>E</b> engine · <b>L</b> lift · <b>Enter</b> hand back.</p></div>
+  <button class="big" data-close>Close</button>`);
+}
+
+// ═══════════════════════ solo flow ═══════════════════════
+function dayJobs(){return S.day<=1?3:S.day===2?3:S.day<6?4:5}
+function startDay(){C=S;mode='solo';S.started=true;DAY={jobs:jobsFor(S.seed*7919+S.day*104729,Math.min(S.day,6),dayJobs()),i:S.jobIdx||0};nextJob(true)}
+function resetBench(){TAB=null;SEL=null;FX=[];FLOAT=[];HOLD=null;setTool('ratchet')}
+function nextJob(first){
+  if(mode==='race'){raceNext();return}
+  if(!first){DAY.i++;S.jobIdx=DAY.i;save()}
+  if(DAY.i>=DAY.jobs.length){endDay();return}
+  cur=newCar(DAY.jobs[DAY.i]);resetBench();mode='solo';UI();renderTop();
+}
+function afterJob(r){
+  if(mode==='race'){raceAfter(r);return}
+  S.dayEarn+=r.total;S.total+=r.total;S.rates.push(r.stars);if(S.rates.length>10)S.rates.shift();save();
+  showSheet(`<div style="font-size:52px">${cur.job.face}</div><h2>${esc(cur.job.name)}</h2>
+    <div class="said" style="text-align:left">“${esc(r.line)}”</div>
+    <div class="stars" style="margin-top:10px">${'★'.repeat(r.stars)}<span style="opacity:.25">${'★'.repeat(5-r.stars)}</span></div>
+    <div class="tl"><div><span>Repair</span><b class="p">${money(r.pay)}</b></div>
+    ${r.tip?`<div><span>Tip</span><b class="p">+${money(r.tip)}</b></div>`:''}
+    ${r.pens.map(p=>`<div><span>${esc(p[0])}</span><b class="f">-${money(p[1])}</b></div>`).join('')}
+    ${r.late?'<div><span>Kept them waiting too long</span><b class="f">-15%</b></div>':''}
+    ${r.caused?'<div><span>Damage done in your garage</span><b class="f">unpaid</b></div>':''}
+    <div><span><b>Total</b></span><b class="${r.total>=0?'p':'f'}">${money(r.total)}</b></div></div>
+    <button class="big" id="nextJob">${DAY.i+1>=DAY.jobs.length?'🌙 Close up for the day':'🔔 Next customer'}</button>`);
+  renderTop();
+}
+function endDay(){
+  const rent=40+S.day*15;S.cash-=rent;S.dayRent=rent;const profit=S.dayEarn-S.daySpend-rent;S.best=Math.max(S.best,profit);save();
+  try{if(!DEMO&&window.GLITCHBOX&&GLITCHBOX.score)GLITCHBOX.score(Math.max(0,Math.round(S.total)))}catch(e){}
+  cur=null;mode='sheet';showDayEnd();
+}
+function showDayEnd(){
+  const rent=S.dayRent||0,profit=S.dayEarn-S.daySpend-rent;
+  showSheet(`<h2>🌙 Day ${S.day} done</h2>
+    <div class="tl"><div><span>Repairs + tips</span><b class="p">${money(S.dayEarn)}</b></div><div><span>Parts & fluids</span><b class="f">-${money(S.daySpend)}</b></div>
+    <div><span>Garage rent</span><b class="f">-${money(rent)}</b></div><div><span><b>Profit</b></span><b class="${profit>=0?'p':'f'}">${money(profit)}</b></div>
+    <div><span>Cash in the till</span><b class="${S.cash<0?'f':''}">${money(S.cash)}</b></div></div>
+    ${S.cash<0?'<p>You\'re running on the parts account. Good repairs will pay it off.</p>':''}
+    <h2 style="font-size:18px;margin-top:6px">🛠️ Upgrade the garage</h2>
+    <div class="upg">${UPG.map(u=>`<div class="u${S.upg[u.id]?' own':''}"><b>${u.e} ${u.n}</b><div class="d">${u.d}</div>${S.upg[u.id]?'<div style="color:var(--green);margin-top:6px">✓ Owned</div>':`<button class="buy" data-upg="${u.id}" ${S.cash<u.cost?'disabled':''}>${money(u.cost)}</button>`}</div>`).join('')}</div>
+    <button class="big gr" id="nextDay">☀️ Open day ${S.day+1}</button><button class="big alt" id="toTitle">🏠 Title screen</button>`);
+}
+function goTitle(){
+  if(NET.mode!=='off')mpLeave();
+  cur=null;mode='title';C=S;RACE=null;
+  $('playBtn').textContent=S.started?'🔧 Open the garage · Day '+S.day:'🔧 Open the garage';$('newBtn').style.display=S.started?'':'none';
+  $('titleOv').classList.add('on');UI();renderTop();
+}
+
+// ═══════════════════════ frame: update ═══════════════════════
+let last=performance.now(),TIME=0;
+function frame(now){
+  const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;TIME+=dt;
+  try{step(dt);if(!W)layout();geom();render();engineSound()}catch(e){console.error(e)}
+  requestAnimationFrame(frame);
+}
+function step(dt){
+  if(cur){
+    const P=cur;
+    const ls=upg('lift')?2:.55;P.liftT=clamp(P.liftT+(P.lift?dt:-dt)*ls,0,1);
+    if(P.slack>0)P.slack=Math.max(0,P.slack-dt);
+    if(P.read)P.read.life-=dt;
+    // fluids leaving the car
+    if((P.f.drain==='out'||P.f.drain==='lost')&&P.oil>0){const q=Math.min(P.oil,dt*.28);P.oil-=q;if(P.pan!=='oil'){P.spill+=q;if(P.spill-P.lastSpill>.25&&!quiet){P.lastSpill=P.spill;msg('Oil is running across the shop floor.','bad')}}if(P.oil<.05){P.oil=Math.max(0,P.oil);P.drained=true}}
+    if(!P.part.hose&&P.cool>0){const q=Math.min(P.cool,dt*.4);P.cool-=q;if(P.pan!=='cool')P.spill+=q*.6}
+    // the engine
+    if(P.run){
+      P.runT+=dt;
+      const cooling=P.part.belt&&P.cool>=.7&&P.part.hose;
+      const target=cooling?92:135;P.temp+=(target-P.temp)*dt*(cooling?.12:.06);
+      if(P.temp>118){P.hotT+=dt;if(Math.random()<dt*6)fx('steam',150,10,2);if(P.hotT>4&&!P.seized){P.seized=true;P.run=false;P.overheated=true;damage('Steam everywhere and a horrible knock — you overheated the engine. Head gasket\'s gone.',600)}}
+      if(P.oil<.4){P.lowOilT+=dt;if(P.lowOilT>2.5&&!P.seized){P.seized=true;P.run=false;damage('A loud bang, then silence. With no oil, the engine seized solid.',800)}}else P.lowOilT=Math.max(0,P.lowOilT-dt);
+      if(P.oil>1.2&&Math.random()<dt*3)fx('smoke',100,140,1);
+      if(canStart()!=='ok'){P.run=false;msg('The engine stalls.')}
+    }else{P.temp+=(22-P.temp)*dt*.025;P.hotT=Math.max(0,P.hotT-dt)}
+    if(playing()&&!$('sheetOv').classList.contains('on'))P.t=(P.t||0)+dt;
+    holdTick(dt);
+  }
+  for(const f of FX){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=(f.kind==='spark'?90:0)*dt;f.vx*=.98;f.life-=dt}FX=FX.filter(f=>f.life>0);
+  for(const f of FLOAT)f.life-=dt;FLOAT=FLOAT.filter(f=>f.life>0);
+  if(uiDirty){uiDirty=false;renderSide();renderTop()}
+  renderTools();renderViews();if(Math.floor(TIME*6)!==Math.floor((TIME-dt)*6))renderTut();
+  if(cur&&playing()){const f=Math.max(0,1-(cur.t||0)/patience()),pb=$('patBar');if(pb){pb.style.width=(f*100)+'%';pb.style.background=f>.5?'#3ddc84':f>.2?'#ffd23f':'#ff4d5e';$('patTxt').textContent=f>.5?'😊 waiting':f>.2?'😐 checking the time':f>0?'😠 getting annoyed':'😤 fed up'}}
+  if(mode==='race'&&Math.floor(TIME*2)!==Math.floor((TIME-dt)*2))renderTop();
+}
+
+// ═══════════════════════ multiplayer: Garage Race ═══════════════════════
+// 2-8 players through the arcade's room relay. The host's browser runs the match (HS): everyone
+// gets the same queue of broken cars from the host's seed and works through it in their own bay.
+// Cash at the end wins; first three to finish get a bonus.
+//   guest → host  {t:'hi',cid,name,hue} {t:'hb',cid} {t:'pr',cid,i,cash,fin} {t:'bye',cid}
+//   host  → all   {t:'st',ph:lobby|race|results,h,seed,lvl,n,pro,end,pl:[[cid,name,hue,i,cash,fin]]}
+const MAXP=8,GONE=15000,FIN_BONUS=[120,60,30],START_CASH=300;
+const CODE_A='ABCDEFGHJKMNPQRSTUVWXYZ';
+const rcode=n=>Array.from({length:n},()=>CODE_A[Math.floor(Math.random()*CODE_A.length)]).join('');
+const MY=rcode(8);
+const NET={mode:'off',ws:null,code:'',st:null,lastHost:0,lastHb:0,lastPr:0};
+let HS=null;
+function wsURL(room,role){const b=window.GLITCHBOX_WS&&!/PLACEHOLDER/i.test(window.GLITCHBOX_WS)?window.GLITCHBOX_WS:(location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws';return b+'?room='+encodeURIComponent(room)+'&role='+role}
+function netConnect(room,role){
+  netClose();NET.code=room;NET.mode=role;NET.lastHost=Date.now();
+  let ws;try{ws=new WebSocket(wsURL(room,role))}catch(e){mpHome('Couldn\'t reach the game server.');return}
+  NET.ws=ws;
+  ws.onopen=()=>ws.send(JSON.stringify(role==='host'?{t:'create',code:room,max:MAXP}:{t:'join',code:room}));
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}onNet(m)};
+  ws.onclose=()=>{if(NET.ws===ws){NET.ws=null;if(NET.mode!=='off')mpLost('Lost the connection to the game.')}};
+}
+function netSend(o){if(NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(o))}
+function netClose(){const w=NET.ws;NET.ws=null;if(w){w.onclose=null;try{w.close()}catch(e){}}}
+const myName=()=>(S.name||'Mechanic').slice(0,12);
+function toHost(m){if(NET.mode==='host')hostIn(m);else netSend(m)}
+function onNet(m){
+  if(m.t==='created'){HS={ph:'lobby',players:[],seed:0,lvl:3,n:3,pro:false,end:0,finN:0,seen:{}};hostIn({t:'hi',cid:MY,name:myName(),hue:S.hue});return}
+  if(m.t==='joined'||m.t==='start'){if(NET.mode==='guest')netSend({t:'hi',cid:MY,name:myName(),hue:S.hue});return}
+  if(m.t==='error'){const t=m.msg||'That didn\'t work.';netClose();NET.mode='off';mpHome(t==='No game with that code.'?'No room with that code — check the letters.':t);return}
+  if(m.t==='left')return;
+  if(NET.mode==='host'){hostIn(m);return}
+  if(m.to&&m.to!==MY)return;
+  if(m.t==='st')clientState(m);
+  else if(m.t==='full'){netClose();NET.mode='off';mpHome('That room is full (8 players).')}
+}
+const HP=cid=>HS.players.find(p=>p.cid===cid);
+function hostIn(m){
+  if(!HS)return;
+  if(m.cid)HS.seen[m.cid]=Date.now();
+  if(m.t==='hi'){const p=HP(m.cid);if(p){p.name=String(m.name||p.name).slice(0,12);p.hue=+m.hue||0}
+    else{if(HS.players.length>=MAXP){netSend({t:'full',to:m.cid});return}HS.players.push({cid:m.cid,name:String(m.name||'Mechanic').slice(0,12),hue:+m.hue||0,i:0,cash:START_CASH,fin:0})}
+    hostPush();}
+  else if(m.t==='pr'){const p=HP(m.cid);if(!p||HS.ph!=='race')return;p.i=clamp(m.i|0,0,HS.n);p.cash=clamp(Math.round(+m.cash||0),-9999,99999);if(m.fin&&!p.fin)p.fin=++HS.finN;if(HS.players.every(q=>q.fin))HS.ph='results';hostPush()}
+  else if(m.t==='bye')hostDrop(m.cid);
+}
+function hostDrop(cid){if(cid===MY)return;HS.players=HS.players.filter(p=>p.cid!==cid);if(HS.ph==='race'&&HS.players.length&&HS.players.every(q=>q.fin))HS.ph='results';hostPush()}
+function hostStart(){if(!HS||HS.players.length<2)return false;HS.seed=1+Math.floor(Math.random()*1e6);HS.ph='race';HS.finN=0;HS.end=Date.now()+HS.n*480000;HS.players.forEach(p=>{p.i=0;p.cash=START_CASH;p.fin=0});hostPush();return true}
+function hostTick(){if(NET.mode!=='host'||!HS)return;const now=Date.now();for(const p of HS.players.slice())if(p.cid!==MY&&now-(HS.seen[p.cid]||now)>GONE)hostDrop(p.cid);if(HS.ph==='race'&&now>HS.end){HS.ph='results';hostPush()}if(now-(HS.lastPush||0)>1500)hostPush()}
+function hostPush(){HS.lastPush=Date.now();const st={t:'st',ph:HS.ph,h:MY,seed:HS.seed,lvl:HS.lvl,n:HS.n,pro:HS.pro,end:HS.end,pl:HS.players.map(p=>[p.cid,p.name,p.hue,p.i,p.cash,p.fin])};netSend(st);clientState(st)}
+const PL=a=>({cid:a[0],name:a[1],hue:a[2],i:a[3],cash:a[4],fin:a[5]});
+const scoreOf=p=>p.cash+(p.fin&&p.fin<=3?FIN_BONUS[p.fin-1]:0);
+function raceClock(){const st=NET.st;if(!st||!st.end)return'';const s=Math.max(0,Math.ceil((st.end-Date.now())/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function clientState(m){
+  NET.st=m;NET.lastHost=Date.now();
+  const pl=m.pl.map(PL),me=pl.find(p=>p.cid===MY);
+  if(m.ph==='lobby'){if(mode!=='lobby'){mpReset();mode='lobby'}renderLobby();return}
+  if(!me)return;
+  if(m.ph==='race'){if(!RACE||RACE.seed!==m.seed)startRace(m);else if(mode==='wait')renderWait()}
+  else if(m.ph==='results')showResults();
+  renderChips();
+}
+function startRace(m){
+  hideSheet();$('mpOv').classList.remove('on');$('titleOv').classList.remove('on');
+  RACE={seed:m.seed,jobs:jobsFor(m.seed,m.lvl,m.n),i:0,fin:false};
+  C={cash:START_CASH,upg:m.pro?Object.fromEntries(UPG.map(u=>[u.id,1])):{},inv:[],fluid:{oil:0,cool:0},sock:10};
+  mode='race';raceNext(true);msg('🏁 '+m.n+' cars, the same ones for everyone. Most cash wins.');
+}
+function raceNext(first){
+  if(!first)RACE.i++;
+  if(RACE.i>=RACE.jobs.length){RACE.fin=true;cur=null;mode='wait';sendPr();renderWait();return}
+  cur=newCar(RACE.jobs[RACE.i]);resetBench();mode='race';UI();renderTop();sendPr();
+}
+function sendPr(){NET.lastPr=Date.now();toHost({t:'pr',cid:MY,i:RACE?RACE.i:0,cash:C.cash,fin:RACE&&RACE.fin?1:0})}
+function raceAfter(r){msg(cur.job.face+' “'+r.line+'” '+(r.total>=0?'+':'')+money(r.total),r.good?'good':'bad');mode='sheet';setTimeout(()=>{if(RACE&&mode==='sheet')raceNext()},900)}
+function renderChips(){
+  const st=NET.st,el=$('chips');
+  if(!st||NET.mode==='off'||(mode!=='race'&&mode!=='sheet')||st.ph!=='race'){el.classList.remove('on');return}
+  el.classList.add('on');
+  el.innerHTML=st.pl.map(PL).sort((a,b)=>scoreOf(b)-scoreOf(a)).map(p=>`<div class="chip${p.cid===MY?' me':''}"><i style="background:hsl(${p.hue},70%,60%)"></i>${esc(p.name)} <b>${money(p.cash)}</b> ${p.fin?'🏁':'🚗'+Math.min(p.i+1,st.n)+'/'+st.n}</div>`).join('');
+}
+function mpReset(){cur=null;RACE=null;C=S;hideSheet();$('chips').classList.remove('on');$('titleOv').classList.remove('on')}
+function mpHome(err){
+  mode='mphome';mpReset();
+  $('mpCard').innerHTML=`<h2>👥 Garage Race</h2>
+    <div class="sub" style="margin-top:0">Same broken cars for everyone. Most cash at the end wins.</div>
+    <input class="in" id="myName" maxlength="12" placeholder="Your name" value="${esc(S.name||'')}">
+    <button class="big" id="mkRoom">🏠 Make a room</button>
+    <div class="or">— or join a friend —</div>
+    <input class="in" id="joinCode" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters">
+    <button class="big alt" id="joinRoom">🚪 Join</button>
+    <div class="err" id="mpErr">${esc(err||'')}</div>
+    <button class="big alt" id="mpBack">◀ Back</button>`;
+  $('mpOv').classList.add('on');
+  $('joinCode').oninput=e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z]/g,'')};
+}
+function readName(){const n=($('myName')&&$('myName').value||'').trim().slice(0,12);if(n){S.name=n;save()}return n}
+const LVLS=[[1,'🟢 Easy'],[3,'🟡 Normal'],[5,'🔴 Hard']];
+function renderLobby(){
+  const st=NET.st;if(!st)return;
+  const pl=st.pl.map(PL),host=st.h===MY,need=Math.max(0,2-pl.length);
+  $('mpCard').innerHTML=`<h2>👥 Garage Race</h2><div class="sub" style="margin:0">Room code — tell your friends:</div>
+    <div class="code">${esc(NET.code)}</div>
+    <div class="plist">${pl.map(p=>`<div class="prow${p.cid===MY?' me':''}"><i style="background:hsl(${p.hue},70%,60%)"></i><span>${esc(p.name)}${p.cid===MY?' (you)':''}</span>${p.cid===st.h?'👑':''}</div>`).join('')}</div>
+    ${host?`<div class="opt">${[2,3,5].map(n=>`<button data-n="${n}" class="${st.n===n?'on':''}">🚗 ${n} cars</button>`).join('')}</div>
+      <div class="opt">${LVLS.map(([d,n])=>`<button data-lvl="${d}" class="${st.lvl===d?'on':''}">${n}</button>`).join('')}</div>
+      <div class="opt"><button data-pro="1" class="${st.pro?'on':''}">🧰 Pro tools ${st.pro?'ON':'off'}</button></div>
+      <button class="big gr" id="raceGo" ${need?'disabled':''}>${need?'Waiting for a friend…':'▶ Start the race'}</button>`
+    :`<div class="sub">${st.n} cars · ${(LVLS.find(l=>l[0]===st.lvl)||LVLS[1])[1]}${st.pro?' · 🧰 Pro tools':''}<br>Waiting for ${esc((pl.find(p=>p.cid===st.h)||{}).name||'the host')} to start…</div>`}
+    <button class="big alt" id="mpLeave">🚪 Leave</button>`;
+  $('mpOv').classList.add('on');
+}
+function renderWait(){
+  const st=NET.st;if(!st)return;const pl=st.pl.map(PL).sort((a,b)=>scoreOf(b)-scoreOf(a));
+  $('mpCard').innerHTML=`<h2>🏁 You're done!</h2><div class="sub">Waiting for the others… ⏱ ${raceClock()}</div>
+    <div class="plist">${pl.map(p=>`<div class="prow${p.cid===MY?' me':''}"><i style="background:hsl(${p.hue},70%,60%)"></i><span>${esc(p.name)}</span>${p.fin?'🏁':'🚗 '+Math.min(p.i+1,st.n)+'/'+st.n} · <b>${money(p.cash)}</b></div>`).join('')}</div>
+    <button class="big alt" id="mpLeave">🚪 Leave</button>`;
+  $('mpOv').classList.add('on');
+}
+function showResults(){
+  const st=NET.st,first=mode!=='results';
+  if(first&&RACE&&!RACE.fin&&cur&&!cur.gone){cur=null}
+  mode='results';hideSheet();$('chips').classList.remove('on');
+  const pl=st.pl.map(PL).sort((a,b)=>scoreOf(b)-scoreOf(a));
+  $('mpCard').innerHTML=`<h2>🏆 Garage Race results</h2>
+    <div class="plist">${pl.map((p,k)=>`<div class="prow${p.cid===MY?' me':''}">${['🥇','🥈','🥉'][k]||'🎖️'}<i style="background:hsl(${p.hue},70%,60%)"></i><span>${esc(p.name)}${p.fin&&p.fin<=3?` <small style="color:var(--gold)">+${money(FIN_BONUS[p.fin-1])} finish</small>`:''}</span><b>${money(scoreOf(p))}</b></div>`).join('')}</div>
+    <div class="sub">${esc(pl[0].name)} runs the best garage in town!</div>
+    ${st.h===MY?'<button class="big gr" id="raceAgain">▶ Play again</button>':'<div class="sub">The host can start another race.</div>'}
+    <button class="big alt" id="mpLeave">🚪 Leave</button>`;
+  $('mpOv').classList.add('on');
+  if(first){sfx('cash');const me=pl.find(p=>p.cid===MY);try{if(!DEMO&&me&&window.GLITCHBOX&&GLITCHBOX.score)GLITCHBOX.score(Math.max(0,Math.round(scoreOf(me))))}catch(e){}}
+}
+function mpLeave(){if(NET.mode==='guest')netSend({t:'bye',cid:MY});netClose();NET.mode='off';NET.st=null;HS=null;mpReset();$('mpOv').classList.remove('on');goTitle()}
+function mpLost(t){netClose();NET.mode='off';NET.st=null;HS=null;mpHome(t)}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.id==='mkRoom'){readName();netConnect(rcode(4),'host');$('mpErr').textContent='Making a room…'}
+  else if(t.id==='joinRoom'){const c=$('joinCode').value.trim();if(c.length<4){$('mpErr').textContent='Type the 4-letter code from your friend\'s screen.';return}readName();netConnect(c,'guest');$('mpErr').textContent='Joining…'}
+  else if(t.id==='mpBack'){$('mpOv').classList.remove('on');goTitle()}
+  else if(t.id==='mpLeave')mpLeave();
+  else if(t.id==='raceGo'){if(NET.mode==='host')hostStart()}
+  else if(t.id==='raceAgain'){if(NET.mode==='host'){HS.ph='lobby';HS.players.forEach(p=>{p.i=0;p.cash=START_CASH;p.fin=0});hostPush()}}
+  else if(NET.mode==='host'&&HS&&HS.ph==='lobby'){if(t.dataset.n){HS.n=+t.dataset.n;hostPush()}else if(t.dataset.lvl){HS.lvl=+t.dataset.lvl;hostPush()}else if(t.dataset.pro){HS.pro=!HS.pro;hostPush()}}
+});
+setInterval(()=>{
+  hostTick();const now=Date.now();
+  if(NET.mode==='guest'){if(now-NET.lastHb>4000){NET.lastHb=now;netSend({t:'hb',cid:MY})}if(NET.st&&now-NET.lastHost>GONE)mpLost('The host left the game.')}
+  if(NET.mode!=='off'&&RACE&&now-NET.lastPr>3000)sendPr();
+  if(mode==='wait'&&NET.st)renderWait();
+},250);
+addEventListener('pagehide',()=>{if(NET.mode==='guest')netSend({t:'bye',cid:MY})});
+if(window.GBSave)GBSave.register({save:()=>S.started?S:null,load:d=>{if(d&&d.v===1){S=Object.assign(fresh(),d);C=S;save();if(mode==='title')goTitle()}},autosave:60});
+
+// ═══════════════════════ boot ═══════════════════════
+load();
+buildTools();setTool('ratchet');layout();
+if(S.started){$('playBtn').textContent='🔧 Open the garage · Day '+S.day;$('newBtn').style.display=''}
+renderTop();
+{const h=new URLSearchParams(HASH.replace(/^#/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ if(room.length>=3&&room.length<=8){$('titleOv').classList.remove('on');mpHome('');$('mpErr').textContent=h.get('host')?'Making the room…':'Joining…';netConnect(room,h.get('host')?'host':'guest')}}
+if(/debug/.test(location.hash))window.__CM={get cur(){return cur},get C(){return C},get S(){return S},get mode(){return mode},get HS(){return HS},get TOOL(){return TOOL},get HOLD(){return HOLD},
+  advise,doAct,setTool,hostStart,handBackBtn,startDay,beltPt:()=>beltHull().reduce((a,p)=>p[0]<a[0]?p:a),FAST,FASTBY,CONNS,CAPS,DIP,PUL,RB,RL,TIRE,PANSPOT,CAL,HANG,PADS,WC,coilR,CX,
+  scr:(x,y)=>{const r=cv.getBoundingClientRect();return{x:r.left+OX+x*U,y:r.top+OY+y*U}},get sockHit(){const r=cv.getBoundingClientRect();return SOCK_HIT.map(s=>({mm:s.mm,x:r.left+s.r[0]+s.r[2]/2,y:r.top+s.r[1]+s.r[3]/2}))}};
+requestAnimationFrame(frame);
+
+// screenshots: #demobay, #demorun, #demolift, #demowheel, #demobrake, #demolobby, #demorace, #demoresults, #demoday
+if(/^#demo/.test(HASH)){
+  DEMO=true;S=fresh();S.day=4;S.started=true;S.cash=1240;S.rates=[5,4,5];S.sound=false;S.name='Lev';C=S;
+  $('titleOv').classList.remove('on');
+  const job=j=>Object.assign(makeJob(rngOf(7),4),j);
+  mode='solo';DAY={jobs:[job({})],i:0};
+  if(HASH==='#demobay'||HASH==='#demorun'){cur=newCar(job({model:'kestrel',faults:['coil','belt'],cyl:3,name:'Rosa',face:'👩‍🦰',say:'It shakes at red lights and the light\'s flashing. Oh, and… horrible squealing when I start it.'}));
+    if(HASH==='#demobay'){cur.conn.coilC2=false;cur.f.coilB2='out';C.inv.push({id:uid(),type:'coil',model:'kestrel',bad:null,used:false});cur.part.coil2=null;cur.f.plug2='out';cur.f.batN='out';cur.cap.oil=true;quiet=true;measure('coil3');quiet=false;cur.read.life=999;setTool('ratchet');C.sock=16}
+    else{cur.run=true;cur.temp=88;setTool('meter')}}
+  else if(HASH==='#demolift'){cur=newCar(job({model:'monarch',faults:['oil','hose'],name:'Dmitri',face:'🧔'}));cur.lift=true;cur.liftT=1;cur.view='lift';cur.pan='oil';cur.f.drain='out';cur.oil=.45;cur.spill=.3;setTool('pan')}
+  else if(HASH==='#demowheel'){cur=newCar(job({model:'boulder',faults:['brakes'],name:'Hank',face:'🤠'}));cur.view='wheel:FL';cur.f['L0:FL']='out';setTool('ratchet');C.sock=19}
+  else if(HASH==='#demobrake'){cur=newCar(job({model:'kestrel',faults:['brakes'],name:'Hank',face:'🤠'}));cur.view='wheel:FL';cur.lift=true;cur.liftT=1;cur.part['wheel:FL']=null;cur.wheelOff={FL:{model:'kestrel'}};cur.part['caliper:FL']=null;cur.hang={FL:{model:'kestrel'}};setTool('clamp')}
+  else if(HASH==='#demoday'){S.dayEarn=1180;S.daySpend=310;S.dayRent=100;S.upg={mag:1};mode='sheet';showDayEnd()}
+  else if(/^#demo(lobby|race|results)$/.test(HASH)){
+    NET.mode='host';NET.code='WRCH';onNet({t:'created'});
+    [['g1','Mia',140],['g2','Sam',30],['g3','Zoe',270]].forEach(([cid,name,hue])=>hostIn({t:'hi',cid,name,hue}));
+    if(HASH!=='#demolobby'){hostStart();HS.players[1].i=1;HS.players[1].cash=540;hostPush();if(HASH==='#demoresults'){HS.players.forEach((p,k)=>{p.fin=[2,1,4,3][k];p.cash=[812,905,402,690][k]});HS.ph='results';hostPush()}}}
+  if(cur)UI();
+}
+
+// ═══════════════════════ #smoke self-test ═══════════════════════
+if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
+  DEMO=true;const out=[];let pass=0,fail=0;
+  const ok=(c,n)=>{if(c)pass++;else{fail++;out.push('FAIL '+n)}};
+  const fresh2=()=>{S=fresh();S.sound=false;C=S;mode='solo'};
+  const solve=(P,lim=900)=>{cur=P;let n=0,r=null;while(n++<lim){const h=advise();if(!h)break;const res=doAct(h.act);if(h.act.k==='handback'){r=res;break}if(res===false){out.push('stuck on '+JSON.stringify(h.act)+' '+P.model+' '+P.job.faults+' view='+P.view);break}}if(n>=lim)out.push('loop '+P.job.faults+' last '+JSON.stringify(advise().act));return r};
+  const rnd=v=>{const mr=Math.random;Math.random=()=>v;return()=>{Math.random=mr}};
+  try{
+    let r=null;
+    // 1. every job can be fixed cleanly
+    let done=0,perfect=0;const models=new Set();
+    for(let lvl=1;lvl<=6;lvl++){fresh2();S.day=2;C.cash=99999;
+      for(const j of jobsFor(500+lvl,lvl,30)){const r=solve(newCar(j));done++;models.add(j.model);if(r&&r.good&&!r.pens.length&&!r.caused)perfect++;else out.push('lvl'+lvl+' '+j.faults.join('+')+' '+j.model+' → '+JSON.stringify(r&&{good:r.good,pens:r.pens,line:r.line}))}}
+    ok(perfect===done,'every job can be fixed cleanly ('+perfect+'/'+done+')');
+    ok(models.size===3,'all three models show up');
+    const seen=new Set();for(let lvl=1;lvl<=6;lvl++)jobsFor(500+lvl,lvl,30).forEach(j=>j.faults.forEach(f=>seen.add(f)));
+    ok(['battery','belt','oil','plug','brakes','coil','hose','alternator'].every(k=>seen.has(k)),'all fault types appear by day 6');
+    ok(jobsFor(5,1,40).every(j=>j.faults.length===1&&FAULTS[j.faults[0]].day<=1),'day 1 = one easy fault');
+    ok(JSON.stringify(jobsFor(77,3,5))===JSON.stringify(jobsFor(77,3,5)),'same seed, same cars (race fairness)');
+    // 2. consequences
+    fresh2();S.day=3;C.cash=9999;
+    const mk=(f,model,extra)=>{cur=newCar(Object.assign(makeJob(rngOf(2),3),{faults:f,model:model||'kestrel',cyl:2},extra||{}));return cur};
+    let P=mk(['battery']);quiet=true;C.sock=10;let rs=rnd(.01);fastAct('batP','ratchet');rs();quiet=false;ok(P.part.fuse.bad==='fuse'&&!powered(),'positive off first with the negative on → spark, blown fuse');
+    P=mk(['battery']);quiet=true;C.sock=10;fastAct('batN','ratchet');rs=rnd(.01);fastAct('batP','ratchet');rs();quiet=false;ok(!P.part.fuse.bad,'negative first, then positive → safe');
+    P=mk(['alternator']);quiet=true;C.sock=10;fastAct('altBp','ratchet');quiet=false;ok(P.part.fuse.bad==='fuse','undoing the alternator B+ cable live → spark');
+    P=mk(['battery']);quiet=true;C.sock=13;ok(!fastAct('batN','ratchet'),'wrong socket won\'t fit');C.sock=10;ok(fastAct('batN','ratchet'),'right socket works');quiet=false;
+    P=mk(['belt']);quiet=true;ok(!beltAct()&&P.part.belt,'belt won\'t come off under tension');slackBelt();ok(beltAct()&&!P.part.belt,'tensioner released → belt off');quiet=false;
+    P=mk(['oil']);quiet=true;toggleLift();P.liftT=1;P.view='lift';C.sock=15;fastAct('drain','ratchet');quiet=false;for(let i=0;i<60;i++)step(.1);ok(P.spill>.5&&P.drained,'no drain pan → oil all over the floor');
+    P=mk(['oil']);quiet=true;toggleLift();P.liftT=1;placePan('oil');C.sock=15;fastAct('drain','ratchet');quiet=false;for(let i=0;i<60;i++)step(.1);ok(P.spill<.05&&P.drained,'drain pan catches it');
+    // starting with no oil seizes it
+    P.lift=false;P.liftT=0;quiet=true;fastAct('drain','ratchet');P.f.drain='tight';ok(toggleEngine(),'it starts with an empty sump…');quiet=false;for(let i=0;i<40;i++)step(.1);ok(P.seized&&!P.run,'…and seizes within seconds');
+    quiet=true;ok(!toggleEngine(),'a seized engine won\'t turn');quiet=false;
+    P=mk(['hose']);quiet=true;P.temp=95;toggleCap('rad');quiet=false;ok(P.damage.length===1,'opening a hot radiator cap scalds you');
+    P=mk(['brakes']);quiet=true;toggleLift();P.liftT=1;C.sock=19;ok(!fastAct('L0:FL','ratchet'),'tight lug nut on a lifted wheel just spins');toggleLift();P.liftT=0;ok(fastAct('L0:FL','ratchet'),'cracks loose on the ground');quiet=false;
+    P=mk(['brakes']);quiet=true;C.sock=19;for(let n=0;n<5;n++)fastAct('L'+n+':FL','ratchet');toggleLift();P.liftT=1;removePart('wheel:FL');quiet=false;toggleLift();ok(P.damage.length===1,'lowering with a wheel off drops it on the rotor');
+    P=mk(['brakes']);quiet=true;C.sock=19;for(let n=0;n<5;n++)fastAct('L'+n+':FL','ratchet');toggleLift();P.liftT=1;removePart('wheel:FL');C.sock=14;fastAct('K1:FL','ratchet');fastAct('K2:FL','ratchet');removePart('caliper:FL');removePart('pads:FL');buy('pads','kestrel');installPart('pads:FL');
+    ok(!installPart('caliper:FL'),'new pads + extended piston → caliper won\'t fit');compress('FL');ok(installPart('caliper:FL'),'piston pushed back → fits');quiet=false;
+    P=mk(['plug']);quiet=true;C.sock=10;toggleConn('coilC2');fastAct('coilB2','ratchet');removePart('coil2');C.sock=16;fastAct('plug2','ratchet');removePart('plug2');buy('plug','kestrel');installPart('plug2');fastAct('plug2','ratchet');ok(P.f.plug2==='snug','plug snugged with the ratchet…');
+    fastAct('plug2','torque');ok(P.f.plug2==='tight','…torqued with the torque wrench');quiet=false;
+    P=mk(['battery']);quiet=true;ok(!fastAct('batN','torque'),'torque wrench refuses non-spec bolts');quiet=false;
+    P=mk(['coil']);quiet=true;ok(toggleEngine()&&P.run,'a misfiring engine still runs');ok(!fastAct('coilB1','ratchet'),'can\'t wrench on a running engine');toggleEngine();quiet=false;
+    P=mk(['battery']);quiet=true;ok(!toggleEngine(),'dead battery: clicks, no start');quiet=false;
+    // measurements are numbers
+    P=mk(['alternator']);quiet=true;toggleEngine();measure('battery');ok(/12\.2 V/.test(P.notes.at(-1).txt),'bad alternator → 12.2 V running');toggleEngine();quiet=false;
+    P=mk(['coil'],'kestrel',{cyl:3});quiet=true;measure('coil3');ok(/∞/.test(P.notes.at(-1).txt),'open coil reads ∞');measure('coil1');ok(/6\.8/.test(P.notes.at(-1).txt),'good coil reads 6.8 kΩ');ok(scan().some(c=>/P0303/.test(c)),'scan tool reports the misfiring cylinder');quiet=false;
+    // hand back guards + penalties
+    P=mk(['belt']);quiet=true;toggleLift();quiet=false;ok(handBack()===null,'can\'t hand back while it\'s on the lift');
+    P=mk(['belt']);r=solve(P);ok(r&&r.good,'belt job ok');
+    P=mk(['brakes']);r=null;for(let n=0;n<300;n++){const h=advise();if(h.act.k==='torque'&&FASTBY[h.act.id].lug)break;doAct(h.act)}r=handBack();ok(r&&r.pens.some(p=>/wobbling/.test(p[0])),'untorqued lug nuts → wobbling wheel penalty');
+    // credit
+    C.cash=10;ok(buy('alternator','kestrel')&&C.cash<0,'running a parts account');C.cash=CREDIT+5;ok(!buy('alternator','kestrel'),'…up to the limit');C.cash=9999;
+    // 3. rendering: every view draws for every model in many states
+    W=W||900;H=H||700;let drawn=0;
+    for(const m of CAR_IDS){for(const v of['bay','lift','wheel:FL','wheel:RR']){P=mk(['coil','hose','brakes'].slice(0,3),m);P.view=v;P.run=v==='bay';P.lift=true;P.liftT=1;P.cap.oil=true;P.pan='oil';P.f.drain='out';P.oil=.5;P.spill=.4;P.read={txt:'BATT  12.6 V',x:20,y:20,v:'bay',life:3};
+      if(v==='wheel:FL'){P.part['wheel:FL']=null;P.wheelOff={FL:{model:m}};P.part['caliper:FL']=null;P.hang={FL:{model:m}}}
+      mode='solo';geom();render();drawn++}}
+    ok(drawn===12,'all views draw for all models (engine running, lifted, wheel off, caliper hanging, spill)');
+    P=mk(['battery']);for(const k of Object.keys(P.part))P.part[k]=null;render();ok(true,'a stripped car draws');
+    // 4. solo day flow
+    fresh2();startDay();ok(DAY.jobs.length===3&&cur&&mode==='solo','day 1 has three customers');
+    for(let k=0;k<3;k++){C.cash+=900;const r2=solve(cur);ok(r2&&r2.good,'day-1 job '+(k+1)+' solved');nextJob()}
+    hideSheet();ok(mode==='sheet'&&!cur,'day ends after the last customer');
+    // 5. multiplayer host logic
+    fresh2();NET.mode='host';onNet({t:'created'});
+    hostIn({t:'hi',cid:'g1',name:'Bo',hue:40});hostIn({t:'hi',cid:'g1',name:'Bo',hue:50});ok(HS.players.length===2&&HP('g1').hue===50,'a repeat hello updates, never duplicates');
+    ok(hostStart()&&HS.ph==='race'&&RACE&&RACE.jobs.length===3&&mode==='race','host starts → everyone gets the same cars');
+    ok(C!==S&&C.cash===START_CASH,'race uses its own wallet');
+    hostIn({t:'pr',cid:'g1',i:3,cash:900,fin:1});ok(HP('g1').fin===1,'finisher recorded');
+    while(RACE&&RACE.i<RACE.jobs.length&&mode!=='wait'&&mode!=='results'){C.cash+=900;const r3=solve(cur);ok(r3&&r3.good,'race car '+(RACE.i+1));raceNext()}
+    ok(HS.ph==='results'&&mode==='results','everyone done → results');
+    NET.mode='off';HS=null;
+    // 6. tutorial + no hints
+    fresh2();startDay();renderTut();ok($('tut').classList.contains('on'),'day 1 shows the tutorial card');
+    S.tutOff=true;renderTut();ok(!$('tut').classList.contains('on'),'skip hides it');S.tutOff=false;
+    for(let k=0;k<400;k++){const h=advise();if(!h||h.act.k==='handback')break;if(!tutText()){ok(false,'tutorial has words for '+h.act.k);break}doAct(h.act)}ok(true,'tutorial text covers every step');
+    ok(!!document.querySelector('script[src="glitchbox-menu.js"]'),'quit button script present');
+  }catch(e){fail++;out.push('EXCEPTION '+e.message+'\n'+e.stack)}
+  quiet=false;
+  const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=(fail?'SMOKE FAIL':'SMOKE PASS')+' '+pass+'/'+(pass+fail)+'\n'+out.join('\n');
+  pre.style.cssText='position:fixed;inset:0;z-index:99;background:#000;color:#0f0;margin:0;padding:10px;overflow:auto;font-size:12px';
+  document.body.appendChild(pre);document.title=(fail?'SMOKE FAIL ':'SMOKE PASS ')+pass+'/'+(pass+fail);
+});
+</script>
+<script src="glitchbox-menu.js" data-pos="top-left" defer></script>
+</body>
+</html>

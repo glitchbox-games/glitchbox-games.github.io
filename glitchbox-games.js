@@ -3,7 +3,8 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
-  {name:'Phone Doctor',       file:'phone-doctor.html',           emoji:'📱',color:['#0d1a24','#132a3a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a phone repair shop: unscrew, heat, pry, swap the broken part. Race up to 7 friends on the same phones'},
+  {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil — race up to 7 friends on the same cars'},
+  {name:'Bomb Squad',         file:'bomb-squad.html',             emoji:'💣',color:['#141617','#2a1410'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One of you has the bomb, everyone else has the manual. Talk it through before it blows. 2 to 8 players'},
   {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hungry monsters want snacks! Count, match and serve — race up to 5 friends. Made for younger players'},
   {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
   {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
@@ -273,28 +274,36 @@ const DRAW={
   _SC(c);
 },
 
-'phone-doctor':(c)=>{
-  // a phone opened up on the ESD mat: green board, battery, cracked screen flipped aside, screwdriver
-  _GV(c,0,0,320,200,'#22384a','#0f1820');
-  c.strokeStyle='rgba(255,255,255,.05)';c.lineWidth=1;c.beginPath();for(let x=0;x<320;x+=20){c.moveTo(x,0);c.lineTo(x,200)}for(let y=0;y<200;y+=20){c.moveTo(0,y);c.lineTo(320,y)}c.stroke();
-  const rr=(x,y,w,h,r,f)=>{c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();c.fillStyle=f;c.fill()};
-  // body + interior
-  rr(70,14,86,172,12,'#d6dbe1');rr(74,18,78,164,10,'#2b3038');
-  rr(80,24,66,50,4,'#1d6b45');c.strokeStyle='#2f8f5f';c.lineWidth=1;c.beginPath();for(let i=0;i<5;i++){c.moveTo(84,34+i*8);c.lineTo(104,34+i*8)}c.stroke();
-  rr(108,40,20,14,1,'#121417');rr(84,28,16,16,3,'#c4ccd6');_C(c,92,36,5,'#0b0d12');_C(c,92,36,2.5,'#24324d');
-  rr(84,82,58,70,4,'#16181c');rr(90,104,46,18,2,'#7aa7ff');c.fillStyle='#0d0f12';c.font='800 9px sans-serif';c.textAlign='center';c.fillText('Li-ion',113,116);
-  rr(100,160,26,12,2,'#c4ccd6');rr(104,164,18,5,2.5,'#0b0d12');
-  for(const [x,y] of [[84,78],[142,78],[90,166],[136,166],[146,40]]){_C(c,x,y,3,'#cfd6de');_C(c,x,y,1,'#4b535e')}
-  // screen flipped open, cracked
-  rr(168,14,86,172,12,'#1d2127');rr(172,18,78,164,9,'#0a0c10');
-  c.strokeStyle='rgba(235,245,255,.7)';c.lineWidth=1;c.beginPath();const cx=214,cy=80;for(let i=0;i<9;i++){const a=i/9*6.283;c.moveTo(cx,cy);c.lineTo(cx+Math.cos(a)*22,cy+Math.sin(a)*22);c.lineTo(cx+Math.cos(a+.2)*48,cy+Math.sin(a+.2)*52)}c.stroke();
-  c.beginPath();c.arc(cx,cy,9,0,6.283);c.stroke();
-  c.strokeStyle='#d98a2b';c.lineWidth=6;c.lineCap='round';c.beginPath();c.moveTo(176,30);c.bezierCurveTo(160,20,150,30,138,30);c.stroke();c.lineCap='butt';
-  // screwdriver
-  c.save();c.translate(272,150);c.rotate(-.9);rr(-6,-34,12,34,4,'#39d0ff');rr(-6,-34,12,8,3,'#1a8fb8');c.fillStyle='#cfd6de';c.fillRect(-1.5,0,3,34);c.restore();
-  // a meter reading
-  rr(16,150,92,26,8,'rgba(15,51,36,.92)');c.strokeStyle='#3ddc84';c.lineWidth=1.5;c.stroke();
-  c.fillStyle='#fff';c.font='700 11px sans-serif';c.textAlign='center';c.fillText('🔋 3.9V ✓',62,167);
+'car-mechanic':(c)=>{
+  // an engine bay under a work light: red fenders, valve cover with coils, battery, belt drive, a ratchet resting on the fender
+  _GV(c,0,0,320,200,'#2a2c2f','#151719');
+  c.fillStyle='#b8322a';c.fillRect(18,22,18,166);c.fillRect(284,22,18,166);
+  const g=c.createLinearGradient(0,22,0,188);g.addColorStop(0,'#232528');g.addColorStop(1,'#141618');c.fillStyle=g;c.fillRect(36,22,248,166);
+  c.fillStyle='#2c3036';c.fillRect(70,26,160,16);c.fillStyle='rgba(170,180,190,.35)';for(let x=72;x<228;x+=2)c.fillRect(x,28,1,12);
+  c.fillStyle='#1a1c1f';c.fillRect(100,70,130,64);c.fillStyle='rgba(255,255,255,.06)';for(let y=76;y<130;y+=5)c.fillRect(104,y,122,1);
+  for(let i=0;i<4;i++){c.fillStyle='#2b2e33';c.fillRect(112+i*30,78,14,40);c.fillStyle='#c9a227';c.fillRect(114+i*30,86,10,2);c.fillStyle='#5a6069';c.fillRect(113+i*30,72,12,8)}
+  c.fillStyle='#1b1d20';c.fillRect(44,52,48,58);c.fillStyle='#f2c230';c.fillRect(50,70,36,22);c.fillStyle='#1b1d20';c.font='900 9px sans-serif';c.textAlign='center';c.fillText('12V',68,85);
+  c.fillStyle='#c33';c.fillRect(76,48,10,8);c.fillStyle='#3a3e44';c.fillRect(50,48,10,8);
+  const pul=[[256,72,9],[270,104,8],[248,124,10],[262,148,14]];c.strokeStyle='#0d0e10';c.lineWidth=5;c.beginPath();c.moveTo(256,63);c.lineTo(278,104);c.lineTo(276,148);c.lineTo(262,162);c.lineTo(238,124);c.closePath();c.stroke();
+  for(const[x,y,r]of pul){const pg=c.createRadialGradient(x-r*.3,y-r*.3,1,x,y,r);pg.addColorStop(0,'#eef1f4');pg.addColorStop(1,'#7d858e');c.fillStyle=pg;c.beginPath();c.arc(x,y,r,0,6.283);c.fill();c.fillStyle='#3a3e44';c.beginPath();c.arc(x,y,r*.3,0,6.283);c.fill()}
+  c.fillStyle='#f2c230';c.beginPath();c.arc(150,152,8,0,6.283);c.fill();c.fillStyle='#1b1d20';c.beginPath();c.arc(150,152,4,0,6.283);c.fill();
+  c.save();c.translate(60,160);c.rotate(-.5);c.fillStyle='#c9ced5';c.fillRect(0,-3,70,6);c.fillStyle='#c33';c.fillRect(8,-3.5,34,7);c.beginPath();c.arc(76,0,8,0,6.283);c.fillStyle='#dfe3e8';c.fill();c.restore();
+  const lg2=c.createRadialGradient(160,60,10,160,90,200);lg2.addColorStop(0,'rgba(255,240,210,.18)');lg2.addColorStop(1,'rgba(0,0,0,.35)');c.fillStyle=lg2;c.fillRect(0,0,320,200);
+  _SC(c);
+},
+'bomb-squad':(c)=>{
+  // a bomb case on a table: red seven-segment timer, cut wires, a big button, the manual's corner peeking in
+  _GV(c,0,0,320,200,'#26292c','#121314');
+  c.save();c.translate(196,18);c.rotate(.12);c.fillStyle='#efe7d4';c.fillRect(0,0,120,150);c.fillStyle='#2a2620';c.font='700 10px "Courier New",monospace';c.fillText('BOMB DEFUSAL',10,22);c.fillText('MANUAL',10,36);for(let i=0;i<8;i++)c.fillRect(10,50+i*10,90-((i*17)%40),2);c.restore();
+  c.fillStyle='#000';c.globalAlpha=.5;c.fillRect(22,40,206,142);c.globalAlpha=1;
+  const cg=c.createLinearGradient(0,34,0,176);cg.addColorStop(0,'#4a4f55');cg.addColorStop(1,'#2e3237');c.fillStyle=cg;c.fillRect(16,34,206,142);
+  for(let x=20;x<218;x+=10){c.fillStyle=((x/10)|0)%2?'#e8b923':'#151515';c.fillRect(x,37,8,4);c.fillRect(x,169,8,4)}
+  c.fillStyle='#24282c';c.fillRect(24,48,90,56);c.fillRect(122,48,90,56);c.fillRect(24,110,90,56);c.fillRect(122,110,90,56);
+  c.fillStyle='#090909';c.fillRect(34,58,70,30);c.fillStyle='#ff3b2a';c.font='700 24px "Courier New",monospace';c.textAlign='center';c.shadowColor='#ff3b2a';c.shadowBlur=10;c.fillText('0:42',69,82);c.shadowBlur=0;
+  const cols=['#d8322c','#2d5fd8','#f0c428','#ececec'];cols.forEach((col,i)=>{const y=60+i*11;c.strokeStyle=col;c.lineWidth=4;c.lineCap='round';if(i===1){c.beginPath();c.moveTo(132,y);c.lineTo(160,y+3);c.stroke();c.beginPath();c.moveTo(170,y+3);c.lineTo(202,y);c.stroke()}else{c.beginPath();c.moveTo(132,y);c.quadraticCurveTo(167,y+6,202,y);c.stroke()}});
+  const bg=c.createRadialGradient(62,130,3,69,138,26);bg.addColorStop(0,'#ff8a80');bg.addColorStop(1,'#a51c16');c.fillStyle=bg;c.beginPath();c.arc(69,138,22,0,6.283);c.fill();c.fillStyle='#fff';c.font='900 9px sans-serif';c.fillText('HOLD',69,141);
+  ['#d8322c','#2d5fd8','#2e9e4c','#f0c428'].forEach((col,i)=>{const a=i*Math.PI/2;c.save();c.translate(167+Math.cos(a)*16,138+Math.sin(a)*16);c.rotate(Math.PI/4);c.fillStyle=col;c.fillRect(-8,-8,16,16);c.restore()});
+  c.fillStyle='#3ddc84';c.beginPath();c.arc(206,54,3,0,6.283);c.fill();
   _SC(c);
 },
 'snack-monsters':(c)=>{
