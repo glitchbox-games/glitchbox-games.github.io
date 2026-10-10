@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Phone Doctor',       file:'phone-doctor.html',           emoji:'📱',color:['#0d1a24','#132a3a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a phone repair shop: unscrew, heat, pry, swap the broken part. Race up to 7 friends on the same phones'},
   {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hungry monsters want snacks! Count, match and serve — race up to 5 friends. Made for younger players'},
   {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
   {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
@@ -272,6 +273,30 @@ const DRAW={
   _SC(c);
 },
 
+'phone-doctor':(c)=>{
+  // a phone opened up on the ESD mat: green board, battery, cracked screen flipped aside, screwdriver
+  _GV(c,0,0,320,200,'#22384a','#0f1820');
+  c.strokeStyle='rgba(255,255,255,.05)';c.lineWidth=1;c.beginPath();for(let x=0;x<320;x+=20){c.moveTo(x,0);c.lineTo(x,200)}for(let y=0;y<200;y+=20){c.moveTo(0,y);c.lineTo(320,y)}c.stroke();
+  const rr=(x,y,w,h,r,f)=>{c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();c.fillStyle=f;c.fill()};
+  // body + interior
+  rr(70,14,86,172,12,'#d6dbe1');rr(74,18,78,164,10,'#2b3038');
+  rr(80,24,66,50,4,'#1d6b45');c.strokeStyle='#2f8f5f';c.lineWidth=1;c.beginPath();for(let i=0;i<5;i++){c.moveTo(84,34+i*8);c.lineTo(104,34+i*8)}c.stroke();
+  rr(108,40,20,14,1,'#121417');rr(84,28,16,16,3,'#c4ccd6');_C(c,92,36,5,'#0b0d12');_C(c,92,36,2.5,'#24324d');
+  rr(84,82,58,70,4,'#16181c');rr(90,104,46,18,2,'#7aa7ff');c.fillStyle='#0d0f12';c.font='800 9px sans-serif';c.textAlign='center';c.fillText('Li-ion',113,116);
+  rr(100,160,26,12,2,'#c4ccd6');rr(104,164,18,5,2.5,'#0b0d12');
+  for(const [x,y] of [[84,78],[142,78],[90,166],[136,166],[146,40]]){_C(c,x,y,3,'#cfd6de');_C(c,x,y,1,'#4b535e')}
+  // screen flipped open, cracked
+  rr(168,14,86,172,12,'#1d2127');rr(172,18,78,164,9,'#0a0c10');
+  c.strokeStyle='rgba(235,245,255,.7)';c.lineWidth=1;c.beginPath();const cx=214,cy=80;for(let i=0;i<9;i++){const a=i/9*6.283;c.moveTo(cx,cy);c.lineTo(cx+Math.cos(a)*22,cy+Math.sin(a)*22);c.lineTo(cx+Math.cos(a+.2)*48,cy+Math.sin(a+.2)*52)}c.stroke();
+  c.beginPath();c.arc(cx,cy,9,0,6.283);c.stroke();
+  c.strokeStyle='#d98a2b';c.lineWidth=6;c.lineCap='round';c.beginPath();c.moveTo(176,30);c.bezierCurveTo(160,20,150,30,138,30);c.stroke();c.lineCap='butt';
+  // screwdriver
+  c.save();c.translate(272,150);c.rotate(-.9);rr(-6,-34,12,34,4,'#39d0ff');rr(-6,-34,12,8,3,'#1a8fb8');c.fillStyle='#cfd6de';c.fillRect(-1.5,0,3,34);c.restore();
+  // a meter reading
+  rr(16,150,92,26,8,'rgba(15,51,36,.92)');c.strokeStyle='#3ddc84';c.lineWidth=1.5;c.stroke();
+  c.fillStyle='#fff';c.font='700 11px sans-serif';c.textAlign='center';c.fillText('🔋 3.9V ✓',62,167);
+  _SC(c);
+},
 'snack-monsters':(c)=>{
   // pastel snack counter: a big round monster with its mouth open, an order bubble, snacks on a plate
   _GV(c,0,0,320,200,'#ffe2ee','#fff3dc');

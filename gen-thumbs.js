@@ -50,6 +50,7 @@ const SCENES = {
   'gridlock':            'Two neon light cycles racing head-to-head on an endless glowing grid, cyan and magenta light trails walling off the arena behind them',
   'shape-conquest':      'A flat minimalist world map in muted pastel colours, a golden nation expanding across borders, armies drawn as simple glowing circles, squares, triangles and diamonds',
   'patch-notes':         'A glowing trading card being rewritten mid-air, green terminal glyph energy peeling off it and striking a second identical card, balance scales silhouette behind',
+  'phone-doctor':        'A smartphone opened up on a blue anti-static repair mat under a desk lamp: green logic board, black battery, the cracked screen flipped open beside it on an orange ribbon cable, tiny screws and a precision screwdriver, clean modern game art',
   'snack-monsters':      'A cute round turquoise cartoon monster with a big open smile at a pastel pink snack counter, a speech bubble showing an apple, a cookie and a banana, snacks on a white plate, soft kawaii style',
   'midnight-post':       'A soldier\'s face seen through a rain-streaked guard booth window at night under an orange sodium lamp, eyes glowing faintly in a torch beam, red and white barrier arm',
   'seven-liars':         'Seven noir suspect silhouettes in a dark manor hallway lit by one hanging bulb, one silhouette casting a blood-red shadow',
