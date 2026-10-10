@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Haymaker',           file:'haymaker.html',               emoji:'🥊',color:['#160805','#2e1206'],category:'multiplayer',tags:['new','hot','mp'],blurb:'3D boxing with superpowers. Six fighters — fire fists, lightning, ice, shadow flurries — knock out the CPU or a friend online, 1v1'},
   {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil — race up to 7 friends on the same cars'},
   {name:'Heist Crew',         file:'heist-crew.html',             emoji:'💰',color:['#05070c','#162036'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hacker, locksmith, muscle, lookout. Sneak past guards and cameras, crack the vault, make the van. 1 to 4 players'},
   {name:'Bomb Squad',         file:'bomb-squad.html',             emoji:'💣',color:['#141617','#2a1410'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One of you has the bomb, everyone else has the manual. Talk it through before it blows. 2 to 8 players'},
@@ -290,6 +291,43 @@ const DRAW={
   c.fillStyle='#f2c230';c.beginPath();c.arc(150,152,8,0,6.283);c.fill();c.fillStyle='#1b1d20';c.beginPath();c.arc(150,152,4,0,6.283);c.fill();
   c.save();c.translate(60,160);c.rotate(-.5);c.fillStyle='#c9ced5';c.fillRect(0,-3,70,6);c.fillStyle='#c33';c.fillRect(8,-3.5,34,7);c.beginPath();c.arc(76,0,8,0,6.283);c.fillStyle='#dfe3e8';c.fill();c.restore();
   const lg2=c.createRadialGradient(160,60,10,160,90,200);lg2.addColorStop(0,'rgba(255,240,210,.18)');lg2.addColorStop(1,'rgba(0,0,0,.35)');c.fillStyle=lg2;c.fillRect(0,0,320,200);
+  _SC(c);
+},
+'haymaker':(c)=>{
+  // spotlit ring: Blaze's flaming straight lands on Volt's chin, lightning crackling behind him
+  _GV(c,0,0,320,200,'#1c0d08','#050304');
+  for(let i=0;i<110;i++){c.fillStyle=`rgba(${110+i*37%110},${70+i*53%70},${80+i*29%90},.32)`;c.beginPath();c.arc((i*53+(i>>4)*17)%330-5,28+((i*31)%70),3+(i%3),0,6.3);c.fill()}
+  const sp=c.createRadialGradient(160,20,10,160,130,190);sp.addColorStop(0,'rgba(255,232,190,.42)');sp.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=sp;c.fillRect(0,0,320,200);
+  c.fillStyle='#cdd1d8';c.beginPath();c.moveTo(18,200);c.lineTo(302,200);c.lineTo(262,128);c.lineTo(58,128);c.closePath();c.fill();
+  c.fillStyle='rgba(15,15,25,.85)';c.beginPath();c.ellipse(160,172,70,18,0,0,6.3);c.fill();c.strokeStyle='#ffc83a';c.lineWidth=2.5;c.beginPath();c.ellipse(160,172,64,15,0,0,6.3);c.stroke();
+  c.fillStyle='#b9bec6';c.fillRect(54,86,7,46);c.fillRect(259,86,7,46);c.fillStyle='#d8202a';c.fillRect(52,92,11,34);c.fillStyle='#1f5fd8';c.fillRect(257,92,11,34);
+  [['#e0262f',94],['#f2f2f2',106],['#2f6fe0',118]].forEach(([col,y])=>{c.strokeStyle=col;c.lineWidth=2.5;c.beginPath();c.moveTo(60,y);c.quadraticCurveTo(160,y+5,262,y);c.stroke()});
+  // lightning behind the right boxer
+  c.strokeStyle='#bff4ff';c.shadowColor='#5fdcff';c.shadowBlur=14;c.lineWidth=3;c.beginPath();c.moveTo(250,0);c.lineTo(236,40);c.lineTo(250,52);c.lineTo(232,96);c.lineTo(246,104);c.lineTo(226,150);c.stroke();c.shadowBlur=0;
+  const limb=(x1,y1,x2,y2,w,col)=>{c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()};
+  const glove=(x,y,r,col)=>{const g=c.createRadialGradient(x-r*.35,y-r*.35,1,x,y,r);g.addColorStop(0,'#fff');g.addColorStop(.25,col);g.addColorStop(1,'#000');c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,6.3);c.fill()};
+  // left boxer — Blaze, throwing
+  const sk='#b9794f';limb(103,138,96,186,11,sk);limb(119,138,128,186,11,sk);
+  c.fillStyle='#e0461a';c.fillRect(96,120,32,24);c.fillStyle='#ffcc33';c.fillRect(96,118,32,5);
+  const torso=(x,y,lean,col)=>{c.fillStyle=col;c.beginPath();c.moveTo(x-19+lean,y-20);c.quadraticCurveTo(x+lean,y-26,x+19+lean,y-20);c.lineTo(x+12,y+20);c.lineTo(x-12,y+20);c.closePath();c.fill();c.beginPath();c.arc(x-16+lean,y-17,7,0,6.3);c.arc(x+16+lean,y-17,7,0,6.3);c.fill()};
+  torso(111,102,2,sk);
+  limb(98,88,124,82,8,sk);glove(128,80,9,'#d11f1a');
+  limb(126,86,170,76,9,sk);
+  c.fillStyle=sk;c.fillRect(110,72,8,8);c.beginPath();c.arc(115,67,12,0,6.3);c.fill();
+  c.fillStyle='#ff4a12';for(let i=0;i<6;i++){c.beginPath();c.moveTo(104+i*4,61);c.lineTo(102+i*4.6,46-(i%2)*5);c.lineTo(109+i*4,60);c.fill()}
+  // fire around the punching glove
+  for(let i=0;i<26;i++){const a=i*2.4,r=4+(i*7)%16;c.fillStyle=`rgba(255,${120+(i*23)%120},20,${.7-(r/30)})`;c.beginPath();c.arc(170-Math.cos(a)*r*.9-r*.5,76+Math.sin(a)*r*.6,4+(i%4),0,6.3);c.fill()}
+  glove(180,75,11,'#ff3a1a');
+  // right boxer — Volt, head snapping back
+  const sk2='#f0c8a0';limb(209,140,200,186,11,sk2);limb(227,140,236,186,11,sk2);
+  c.fillStyle='#ffd21f';c.fillRect(202,122,32,24);c.fillStyle='#15151a';c.fillRect(202,120,32,5);
+  torso(217,104,4,sk2);
+  limb(203,88,196,110,8,sk2);glove(194,114,9,'#1f6bff');limb(234,90,248,114,8,sk2);glove(250,118,9,'#1f6bff');
+  c.fillStyle=sk2;c.fillRect(214,74,8,8);c.beginPath();c.arc(222,68,12,0,6.3);c.fill();c.fillStyle='#ffe27a';c.beginPath();c.arc(225,63,11.5,Math.PI*.95,6.35);c.fill();
+  // impact star
+  c.fillStyle='#fff8e0';c.shadowColor='#ffb020';c.shadowBlur=18;c.beginPath();for(let i=0;i<16;i++){const a=i*Math.PI/8,r=i%2?7:19;c.lineTo(194+Math.cos(a)*r,72+Math.sin(a)*r)}c.closePath();c.fill();c.shadowBlur=0;
+  for(let i=0;i<10;i++){c.fillStyle='rgba(220,240,255,.85)';c.beginPath();c.arc(198+i*4.5,62+((i*13)%14)-i*1.5,1.6,0,6.3);c.fill()}
+  const vg=c.createRadialGradient(160,100,60,160,100,210);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.65)');c.fillStyle=vg;c.fillRect(0,0,320,200);
   _SC(c);
 },
 'heist-crew':(c)=>{

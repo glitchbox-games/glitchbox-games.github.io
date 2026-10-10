@@ -47,6 +47,7 @@ const STYLE = 'Moody dark retro-arcade key art, glowing neon on near-black, subt
 
 // One line of scene direction per game — the part that makes each card its own.
 const SCENES = {
+  'haymaker':            'A spotlit boxing ring at a packed night arena: a boxer with flaming red gloves lands a straight on an opponent whose head snaps back, crackling blue lightning behind him, sweat spray and sparks at the impact, red white and blue ropes glowing',
   'gridlock':            'Two neon light cycles racing head-to-head on an endless glowing grid, cyan and magenta light trails walling off the arena behind them',
   'shape-conquest':      'A flat minimalist world map in muted pastel colours, a golden nation expanding across borders, armies drawn as simple glowing circles, squares, triangles and diamonds',
   'patch-notes':         'A glowing trading card being rewritten mid-air, green terminal glyph energy peeling off it and striking a second identical card, balance scales silhouette behind',
