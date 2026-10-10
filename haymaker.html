@@ -167,7 +167,7 @@ input.txt:focus{border-color:var(--gold)}
 .kgrid kbd{font:800 12px Rubik;background:#1d1d24;border:1px solid #3a3a46;border-bottom-width:3px;border-radius:6px;padding:3px 7px;white-space:nowrap;justify-self:end}
 .help h3{margin:14px 0 6px;font:800 12px Rubik;letter-spacing:.24em;color:var(--gold)}
 .help p{margin:4px 0;color:#d9d3c8;font-size:14px;line-height:1.45}
-body.touch #top{left:150px;right:70px}
+body.touch #top{left:196px;right:66px}
 body.framed #top{top:56px}body.framed #clock{margin-top:0;border-radius:12px}
 body.touch #abil,body.touch #keys{display:none}
 .tb .tcd{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(0,0,0,.75) var(--p,0%),transparent 0);pointer-events:none}
@@ -175,6 +175,7 @@ body.touch #abil,body.touch #keys{display:none}
 .tb .tic{position:relative;font-size:22px}
 #rotate{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font:800 14px Rubik;letter-spacing:.1em;text-align:center;display:none;pointer-events:none}
 @media (orientation:portrait){body.touch.infight #rotate{display:block}}
+@media (max-height:420px){.finfo .sbar{display:none}.finfo .nick{margin-bottom:2px}.abl .ad{font-size:10.5px;line-height:1.25}.selR .btn{padding:8px 10px}}
 @media (max-height:520px){
   #selOv{align-items:flex-start;padding-top:52px;gap:10px}
   .selL,.selR{justify-content:flex-start;gap:6px}
@@ -1868,7 +1869,7 @@ function updateCamera(dt){
   camera.position.sub(camOff);
   let k=4;const t=performance.now()/1000;
   if(G.mode==='title'){const a=t*.09;_cp.set(Math.cos(a)*7,2.8+Math.sin(t*.13)*.8,Math.sin(a)*7);_cl.set((G.B[0].x+G.B[1].x)/2,1.15,(G.B[0].z+G.B[1].z)/2);k=2}
-  else if(G.mode==='select'){_cp.set(0,1.48,2.75);_cl.set(0,1.18,-.6);k=4}
+  else if(G.mode==='select'){_cp.set(0,1.62,2.35);_cl.set(0,1.32,-.6);k=4}
   else{
     const me=G.B[G.ME],o=other(me);const dx=o.x-me.x,dz=o.z-me.z,l=Math.hypot(dx,dz)||1,fx=dx/l,fz=dz/l,rx=fz,rz=-fx;
     if(G.phase==='intro'){const q=ease(clamp(G.phT/4.2,0,1));const a0=Math.atan2(-fx,-fz),a=a0+(1-q)*1.25,R=lerp(7.2,3.3,q);_cp.set(me.x+Math.sin(a)*R,lerp(5.2,2.2,q),me.z+Math.cos(a)*R);_cl.set((me.x+o.x)/2,1.2,(me.z+o.z)/2);k=3}
@@ -1878,7 +1879,7 @@ function updateCamera(dt){
     else if(SET.cam==='tv'){
       // three-quarter broadcast angle: you near-left, opponent right, both always in full view
       const ws=Math.max(me.worldScale,o.worldScale)/BODY,mx=(me.x+o.x)/2,mz=(me.z+o.z)/2,side=(3.1+l*.75)*ws,back=(1.05+l*.2)*ws;
-      _cp.set(mx-rx*side-fx*back,(1.95+l*.18)*Math.sqrt(ws),mz-rz*side-fz*back);_cl.set(mx-fx*.05,1.12,mz-fz*.05);k=4.5}
+      const sh=TOUCH?.95:-.05;_cp.set(mx-rx*side-fx*back+fx*(sh+.05)*.6,(1.95+l*.18)*Math.sqrt(ws),mz-rz*side-fz*back+fz*(sh+.05)*.6);_cl.set(mx+fx*sh,1.12,mz+fz*sh);k=4.5}
     else{const ws=me.worldScale/BODY,back=(2.8+Math.max(0,l-1.2)*.5)*ws,side=1.3*ws;_cp.set(me.x-fx*back+rx*side,(2.2+Math.max(0,l-1.2)*.2)*Math.sqrt(ws),me.z-fz*back+rz*side);_cl.set(lerp(me.x,o.x,.85)+rx*.15,1.15,lerp(me.z,o.z,.85)+rz*.15);k=6}
   }
   camera.position.lerp(_cp,damp(k,dt));camLook.lerp(_cl,damp(k*1.4,dt));camera.lookAt(camLook);
