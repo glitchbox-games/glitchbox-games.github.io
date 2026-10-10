@@ -188,7 +188,6 @@ const UPG=[
   {id:'drill',e:'🪛',n:'Electric screwdriver',cost:120,d:'Screws spin in and out in a blink.'},
   {id:'mat',e:'🧲',n:'Magnetic project mat',cost:60,d:'Every screw stays where it came from — and nothing rolls off the bench.'},
   {id:'gun',e:'🌡️',n:'Smart heat gun',cost:110,d:'Heats twice as fast and cuts out before 95°C.'},
-  {id:'thermal',e:'📸',n:'Thermal camera',cost:220,d:'Faulty parts glow once the phone is open.'},
   {id:'chairs',e:'🛋️',n:'Comfy chairs',cost:90,d:'Customers wait 40% longer.'},
   {id:'bulk',e:'📦',n:'Bulk supplier',cost:180,d:'All parts 25% cheaper.'},
   {id:'sign',e:'🪧',n:'Neon shop sign',cost:150,d:'Happy customers tip 50% more.'},
@@ -409,7 +408,7 @@ function openUp(){
     if(addFault('crack')){msg('💥 The glass flexed too far and cracked.','bad');sfx('crack')}
     doOpen();return true;
   }
-  msg('Still glued along the '+w+' edge.');sfx('err');return false;
+  msg('It won\'t come apart.');sfx('err');return false;
 }
 function doOpen(){const P=cur;P.open=true;P.opened=true;P.heat=0;P.hot=0;P.gasket=false;if(P.job.faults.includes('water'))P.known.water=1;sfx('pop');UI()}
 function closeUp(){
@@ -837,11 +836,9 @@ function drawBack(P){
   fillRR(x+4,14,14,10,1.5,'#d98a2b');fillRR(x+4,27,14,8,1.5,'#c27a24');
   // old adhesive on the screen rim
   if(!P.gasket){ctx.strokeStyle='rgba(240,240,235,.5)';ctx.lineWidth=1.4;ctx.setLineDash([3,1.5,1,2]);rr(x+2,2,96,196,11);ctx.stroke();ctx.setLineDash([])}
-  if(P.part.screen.bad&&upg('thermal'))glowRect([x+4,4,92,192]);
+  
 }
-function glowRect(r){const a=.35+.25*Math.sin(TIME*5);ctx.save();ctx.shadowColor='rgba(255,60,60,'+a+')';ctx.shadowBlur=12;ctx.strokeStyle='rgba(255,80,80,'+a+')';ctx.lineWidth=1.5;rr(r[0],r[1],r[2],r[3],4);ctx.stroke();ctx.restore()}
-function slot(r,label){ctx.save();ctx.setLineDash([2.5,2]);ctx.strokeStyle='rgba(140,155,176,.7)';ctx.lineWidth=.7;rr(r[0],r[1],r[2],r[3],3);ctx.stroke();ctx.restore();
-  txt(label,r[0]+r[2]/2,r[1]+r[3]/2+2,Math.min(5.5,r[2]/5),'rgba(140,155,176,.85)')}
+function slot(r){fillRR(r[0],r[1],r[2],r[3],3,'rgba(0,0,0,.18)')}
 function flex(pts,w,col){ctx.strokeStyle=col||'#d98a2b';ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
   ctx.strokeStyle='rgba(255,220,150,.35)';ctx.lineWidth=w*.15;ctx.stroke();ctx.lineCap='butt'}
 // a plug sits in its socket (connected) or is flipped up beside it
@@ -850,7 +847,7 @@ function drawConn(id){
   fillRR(r[0],r[1],r[2],r[3],1,'#0d0f12');ctx.fillStyle='#d4a940';for(let i=0;i<Math.floor(r[2]/2)-1;i++)ctx.fillRect(r[0]+1.4+i*2,r[1]+r[3]/2-1,1,2);
   if(!has)return;
   if(on){fillRR(r[0]+.8,r[1]+.8,r[2]-1.6,r[3]-1.6,1,'#2c3138');ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(r[0]+1.5,r[1]+1.2,r[2]-3,.6)}
-  else{fillRR(r[0]+.8,r[1]-r[3]+1,r[2]-1.6,r[3]-1.6,1,'#2c3138');ctx.strokeStyle='#d98a2b';ctx.lineWidth=.5;rr(r[0]+.8,r[1]-r[3]+1,r[2]-1.6,r[3]-1.6,1);ctx.stroke()}
+  else fillRR(r[0]+.8,r[1]-r[3]+1,r[2]-1.6,r[3]-1.6,1,'#2c3138')
 }
 let SMD=null;
 function drawInterior(P){
@@ -863,7 +860,7 @@ function drawInterior(P){
   // adhesive remnants / fresh gasket on the rim
   if(P.gasket){ctx.strokeStyle='#0a0a0a';ctx.lineWidth=2;rr(4.5,4.5,91,191,10);ctx.stroke()}
   else{ctx.strokeStyle='rgba(240,240,235,.55)';ctx.lineWidth=1.3;ctx.setLineDash([4,1.5,1,2.5]);rr(4.5,4.5,91,191,10);ctx.stroke();ctx.setLineDash([])}
-  const p=P.part,th=upg('thermal');
+  const p=P.part;
   // port flex runs up the left edge to its board connector
   if(p.port)flex([[44,183],[11,178],[11,72],[22,68],[28,66]],3);
   // board
@@ -884,7 +881,7 @@ function drawInterior(P){
     if(p.board.orig&&P.job.faults.includes('water'))for(const s of P.spots){if(s.left<=0)continue;
       ctx.globalAlpha=s.left;const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,7);g.addColorStop(0,'#7cf2c3');g.addColorStop(.6,'#2fa77e');g.addColorStop(1,'rgba(40,140,110,0)');
       ctx.fillStyle=g;ctx.beginPath();ctx.arc(s.x,s.y,7,0,6.283);ctx.fill();ctx.fillStyle='#e9fff6';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(s.x+Math.cos(i*2.4)*3,s.y+Math.sin(i*2.4)*3,.7,0,6.283);ctx.fill()}ctx.globalAlpha=1}
-    if(th&&(p.board.bad||!waterOK()))glowRect(R.board);
+    
     for(const c of CONN_IDS)drawConn(c);
     // camera module + its flex + its bracket
     if(p.camera){
@@ -894,7 +891,7 @@ function drawInterior(P){
       ctx.fillStyle='#24324d';ctx.beginPath();ctx.arc(cx+10,cy+10,3.4,0,6.283);ctx.fill();
       ctx.fillStyle='rgba(140,200,255,.8)';ctx.beginPath();ctx.arc(cx+8.5,cy+8.5,1.1,0,6.283);ctx.fill();
       if(P.sc.c1){ctx.strokeStyle='#c4ccd6';ctx.lineWidth=1.6;rr(12.5,10.5,29,34,2);ctx.stroke();fillRR(12,39,24,6,1,'#b4bcc6');fillRR(36,10,6,8,1,'#b4bcc6')}
-      if(th&&p.camera.bad)glowRect(R.camera);
+      
     }else slot(R.camera,'CAM');
     for(const b of BRACKETS)if(b.sc.some(s=>P.sc[s])){const r=b.r;ctx.globalAlpha=.94;fillRR(r[0],r[1],r[2],r[3],2,'#b4bcc6');ctx.globalAlpha=1;ctx.strokeStyle='#7d8794';ctx.lineWidth=.5;rr(r[0],r[1],r[2],r[3],2);ctx.stroke();
       ctx.fillStyle='rgba(0,0,0,.18)';for(let i=0;i<4;i++)ctx.fillRect(r[0]+3+i*5,r[1]+r[3]/2-.4,3,.8)}
@@ -913,16 +910,16 @@ function drawInterior(P){
     txt('⚠ DO NOT PUNCTURE · DO NOT HEAT',x+w/2,y+72,3,'#aab2bc',600);
     if(P.alc){ctx.fillStyle='rgba(180,220,255,.18)';rr(x,y,w,h,4);ctx.fill()}
     if(m.tabs||bm.tabs)for(const tx of[x+14,x+w-26])fillRR(tx,y+h-3,12,10,1.5,'#060708');
-    if(th&&p.battery.bad)glowRect(R.battery);
+    
   }else slot(R.battery,'BATTERY');
   // taptic engine (decorative), speaker, port
   {const[x,y,w,h]=R.taptic;fillRR(x,y,w,h,2,'#9aa3ad');fillRR(x+1,y+1,w-2,h-2,1.5,'#b9c0c8');txt('TAPTIC',x+w/2,y+h/2+1.2,3,'#5c646e',700)}
-  if(p.speaker){const[x,y,w,h]=R.speaker;fillRR(x,y,w,h,2,'#121417');ctx.fillStyle='#3d434c';for(let i=0;i<4;i++)for(let j=0;j<3;j++){ctx.beginPath();ctx.arc(x+4+i*4,y+4+j*4,1,0,6.283);ctx.fill()}fillRR(x+w-5,y+h-4,4,3,.5,'#d4a940');if(th&&p.speaker.bad)glowRect(R.speaker)}
+  if(p.speaker){const[x,y,w,h]=R.speaker;fillRR(x,y,w,h,2,'#121417');ctx.fillStyle='#3d434c';for(let i=0;i<4;i++)for(let j=0;j<3;j++){ctx.beginPath();ctx.arc(x+4+i*4,y+4+j*4,1,0,6.283);ctx.fill()}fillRR(x+w-5,y+h-4,4,3,.5,'#d4a940');}
   else slot(R.speaker,'SPK');
   if(p.port){const[x,y,w,h]=R.port;fillRR(x,y,w,h,2,'#c4ccd6');fillRR(x+4,y+4,w-8,5,2.5,'#0b0d12');
     ctx.fillStyle='#d4a940';for(let i=0;i<6;i++)ctx.fillRect(x+6+i*2,y+5.6,1,1.8);
     if(P.lint>0){ctx.fillStyle='#b8b2a6';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(x+6+i*2.4,y+6.5+Math.sin(i*2)*.7,1,0,6.283);ctx.fill()}}
-    if(th&&p.port.bad)glowRect(R.port)}
+    }
   else slot(R.port,'PORT');
   for(const h of HOLES)if(h.part!=='case'&&hostOf(h))drawHole(h);
 }
@@ -956,20 +953,11 @@ function drawPhone(){
 function drawOverlay(){
   const P=cur;
   ctx.setTransform(DPR*U,0,0,DPR*U,DPR*OX,DPR*OY);
-  if(PTR.in&&playing()&&!HOLD){
-    const l=toL(PTR.x,PTR.y),t=hitTest(l.x,l.y);
-    if(t){ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=.7;
-      if(t.k==='screw'){const s=HOLE[t.id];ctx.beginPath();ctx.arc(s.x,s.y,5,0,6.283);ctx.stroke()}
-      else if(t.k==='conn'){const r=CONNS[t.id].r;rr(r[0]-1.5,r[1]-1.5,r[2]+3,r[3]+3,2);ctx.stroke()}
-      else if(t.k==='part'||t.k==='slot'){const r=t.id==='screen'?[SCREEN_X,0,100,200]:R[t.id];rr(r[0]-1,r[1]-1,r[2]+2,r[3]+2,4);ctx.stroke()}
-      else if(t.k==='spot'){const s=P.spots[t.i];ctx.beginPath();ctx.arc(s.x,s.y,7.5,0,6.283);ctx.stroke()}}
-  }
   for(const f of FX){const a=f.life/f.max;
     if(f.kind==='spark'){ctx.strokeStyle='rgba(255,'+(200+Math.random()*55|0)+',90,'+a+')';ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.x-f.vx*.04,f.y-f.vy*.04);ctx.stroke()}
     else if(f.kind==='smoke'){ctx.fillStyle='rgba(120,120,120,'+a*.4+')';ctx.beginPath();ctx.arc(f.x,f.y,4+(1-a)*10,0,6.283);ctx.fill()}
     else{ctx.fillStyle='rgba(210,220,230,'+a+')';ctx.fillRect(f.x,f.y,1.2,1.2)}}
   for(const r of ROLL){ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.rot);drawScrew(0,0,r.s,true);ctx.restore()}
-  if(HOLD&&HOLD.k!=='heat'&&HOLD.k!=='pick'){ctx.strokeStyle='rgba(57,208,255,.9)';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(HOLD.l.x,HOLD.l.y,9,-1.57,-1.57+6.283*Math.min(1,HOLD.t/HOLD.need));ctx.stroke()}
   if(TOOL==='pick'&&PTR.in&&playing()&&!P.open){const l=toL(PTR.x,PTR.y);ctx.fillStyle='rgba(57,170,255,.85)';ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x+9,l.y+5);ctx.lineTo(l.x+4,l.y+11);ctx.closePath();ctx.fill()}
   // screen space: meter readout, thermometer, floating text, tool cursor
   ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -1499,6 +1487,7 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     NET.mode='off';HS=null;
     ok(wsURL('ABCD','host').indexOf('glitchbox-api')!==-1&&/room=ABCD&role=host$/.test(wsURL('ABCD','host')),'relay url');
     ok(!document.getElementById('hintbar')&&!document.getElementById('bHint'),'no hint bar / hint button');
+    ok(typeof glowRect==='undefined'&&!UPG.some(u=>u.id==='thermal'),'no part glow');
     ok(!!document.querySelector('script[src="glitchbox-menu.js"]'),'quit button script present');
   }catch(e){fail++;out.push('EXCEPTION '+e.message+'\n'+e.stack)}
   quiet=false;
