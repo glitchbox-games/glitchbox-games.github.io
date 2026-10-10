@@ -69,6 +69,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 #ann.out{animation:annout .3s forwards}
 @keyframes annin{from{opacity:0;transform:scale(1.8)}to{opacity:1;transform:scale(1)}}
 @keyframes annout{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.8)}}
+#callout{position:absolute;left:0;right:0;top:15%;text-align:center;font:400 clamp(28px,4.6vw,56px) Anton;letter-spacing:.06em;text-shadow:0 4px 0 #000,0 0 26px currentColor;opacity:0;pointer-events:none}
+#callout.show{animation:callin 1.1s ease-out forwards}
+@keyframes callin{0%{opacity:0;transform:translateY(12px) scale(1.25)}12%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
 #ann.red{color:var(--red)}#ann.gold{color:var(--gold)}
 #sub{position:absolute;left:0;right:0;top:calc(34% + clamp(64px,13vw,150px));text-align:center;font:800 18px Rubik;letter-spacing:.3em;text-shadow:0 2px 0 #000;opacity:0;transition:opacity .3s}
 #mash{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);text-align:center;font:900 18px Rubik;letter-spacing:.12em;text-shadow:0 2px 0 #000}
@@ -214,6 +217,7 @@ body.touch #abil,body.touch #keys{display:none}
   </div>
   <div id="combo"></div>
   <div id="ann"></div>
+  <div id="callout"></div>
   <div id="sub"></div>
   <div id="mash" class="hide"><div>MASH <b id="mashKeys">J / K</b> TO GET UP!</div><div class="mb"><i id="mashFill"></i></div></div>
   <div id="keys">WASD move (D = step in) · J jab · K cross · L hook · I uppercut · SPACE block · SHIFT dodge · Q / E abilities · R ultimate · V camera · ESC pause</div>
@@ -735,6 +739,9 @@ class Boxer{
   build(f){
     this.f=f;const L=f.look;
     while(this.body.children.length)this.body.remove(this.body.children[0]);
+    // status props hang off the root, not the body — drop the previous fighter's (shield/ice) too
+    for(const o of [this.ice,this.shieldM])if(o){this.root.remove(o);o.geometry.dispose();o.material.dispose()}
+    this._phase=false;this._ph2=false;this.pony=null;
     this.mats.forEach(m=>m.dispose());this.mats=[];
     const mat=(c,o)=>{const m=M(c,o);this.mats.push(m);return m};
     const skin=mat(L.skin,{roughness:.5,envMapIntensity:.4}),
@@ -1160,7 +1167,7 @@ function castAbility(b,key){
   const fn=ABIL[f.id][key];if(!fn)return false;
   cancelPunch(b);
   const ok=fn(b,o);if(ok===false)return false;
-  if(key==='r'){b.meter=0;if(!G.attract){announce(f.r.name.toUpperCase()+'!','gold',.9);SFX.ult()}}else b.cd[key]=f[key].cd;
+  if(key==='r'){b.meter=0;if(!G.attract){callout(f.r.name.toUpperCase()+'!',f.col);SFX.ult()}}else b.cd[key]=f[key].cd;
   b.blocking=false;b.fxBits=fxBitsOf(b);
   return true;
 }
@@ -1276,7 +1283,7 @@ function setPhase(ph,x={}){
   if(x.rnd)G.rnd=x.rnd;if(x.tl!=null)G.tl=x.tl;
   if(ph==='intro'){CAM.shot='intro';CAM.shotT=0;if(!G.attract){showHUD(true);const[A,B]=G.B;say('In the red corner, '+A.f.name.toLowerCase()+'! And in the blue corner, '+B.f.name.toLowerCase()+'!');sub(A.f.name+'  VS  '+B.f.name,3.2)}}
   if(ph==='ready'){
-    CAM.shot=null;clearCombat();
+    CAM.shot=null;clearCombat();clearTimeout(sub.t);$('sub').style.opacity=0;
     for(const b of G.B){if(!owned(b))continue;
       if(G.rnd>1)b.hp=Math.min(b.hpMax,b.hp+(b.hpMax-b.hp)*.35);
       b.sta=100;b.act=null;b.combo=0;b.counterT=0;b.cd.q=b.cd.e=0;b.dash=null;b.kx=b.kz=0;
@@ -1284,6 +1291,7 @@ function setPhase(ph,x={}){
       b.x=b.home[0];b.z=b.home[1];b.yaw=Math.atan2(-b.x,-b.z)}
     hideOv('cardOv');if(!G.attract){announce('ROUND '+G.rnd,'gold',1.4);say(G.rnd===ROUNDS?'Final round!':'Round '+['','one','two','three','four','five'][G.rnd])}
   }
+  if(ph==='fight'){clearTimeout(sub.t);$('sub').style.opacity=0}
   if(ph==='fight'&&!G.attract){announce('FIGHT!','',.8);SFX.bell(G.rnd===1&&G.phT===0?3:1)}
   if(ph==='rest'){clearCombat();if(!G.attract){SFX.bell(1);G.cards=x.cards||G.cards;setTimeout(()=>{if(G.phase==='rest')showRoundCard(x)},900)}}
   if(ph==='end'){clearCombat();G.result=x.result;onEnd(x.result)}
@@ -1390,7 +1398,7 @@ function attackVisual(spec){
     if(!G.attract){if(spec.cue==='inferno')SFX.fire(.5);if(spec.cue==='bolt')SFX.zap(.6);if(spec.cue==='zero')SFX.ice(.5);if(spec.cue==='pound')SFX.roar()}
     if(spec.a!==G.ME&&!G.attract&&spec.shape!=='ring')sub(spec.shape==='cone'?'GET OUT OF THE CONE!':'MOVE!',spec.delay);
   }else if(spec.k==='proj'){
-    const m=new THREE.Mesh(new THREE.SphereGeometry(.09,12,8),new THREE.MeshBasicMaterial({color:0x9dff6a}));m.position.set(spec.x,spec.y,spec.z);scene.add(m);
+    const m=new THREE.Mesh(new THREE.SphereGeometry(.12,14,10),new THREE.MeshBasicMaterial({color:0xb8ff7a}));m.position.set(spec.x,spec.y,spec.z);scene.add(m);
     G.projs.push({spec,x:spec.x,y:spec.y,z:spec.z,vx:spec.vx,vz:spec.vz,t:0,mesh:m});if(!G.attract)SFX.hiss();
   }
 }
@@ -1685,6 +1693,7 @@ function hideAllOv(){document.querySelectorAll('.ov').forEach(o=>o.classList.rem
 function mpErr(t){$('mpErr').textContent=t||''}
 let annT=null;
 function announce(text,cls='',dur=1){if(G.attract)return;const el=$('ann');el.className='';void el.offsetWidth;el.textContent=text;el.className='show '+cls;clearTimeout(annT);annT=setTimeout(()=>{el.className='out '+cls},dur*1000)}
+function callout(text,col){const el=$('callout');el.textContent=text;el.style.color=col||'';el.classList.remove('show');void el.offsetWidth;el.classList.add('show')}
 function sub(text,dur=1){if(G.attract)return;const el=$('sub');el.textContent=text;el.style.opacity=1;clearTimeout(sub.t);sub.t=setTimeout(()=>el.style.opacity=0,dur*1000)}
 function showCombo(n){const el=$('combo');el.innerHTML=n+'<small>HIT COMBO</small>';el.style.opacity=1;clearTimeout(showCombo.t);showCombo.t=setTimeout(()=>el.style.opacity=0,1100)}
 const FLOATS=[],_fp=new THREE.Vector3();
