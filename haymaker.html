@@ -573,7 +573,7 @@ function buildCrowd(){
     vertexShader:`uniform float uT;uniform float uRate;uniform float uPx;attribute float aSeed;varying float vA;
       void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;
         float f=fract(sin(aSeed*12.9898+floor(uT*9.+aSeed)*78.233)*43758.5453);
-        vA=step(1.-.012*uRate,f);gl_PointSize=uPx*.5/-mv.z;}`,
+        vA=step(1.-.012*uRate,f);gl_PointSize=clamp(uPx*.5/max(-mv.z,.05),0.,64.);}`,
     fragmentShader:`varying float vA;void main(){float d=length(gl_PointCoord-.5);if(vA<.5)discard;gl_FragColor=vec4(vec3(1.,.97,.9)*vA*(1.-smoothstep(0.,.5,d))*2.,1.);}`});
   scene.add(new THREE.Points(fg,fm));
 }
@@ -629,7 +629,7 @@ class Particles{
     [this.ap,this.ac,this.as].forEach(a=>a.setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('position',this.ap);g.setAttribute('col',this.ac);g.setAttribute('size',this.as);g.setDrawRange(0,0);
     this.mat=new THREE.ShaderMaterial({uniforms:{uPx:{value:300}},transparent:true,depthWrite:false,blending:blend,
-      vertexShader:`attribute vec4 col;attribute float size;uniform float uPx;varying vec4 vC;void main(){vC=col;vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=size*uPx/-mv.z;}`,
+      vertexShader:`attribute vec4 col;attribute float size;uniform float uPx;varying vec4 vC;void main(){vC=col;vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(size*uPx/max(-mv.z,.05),0.,200.);}`,
       fragmentShader:`varying vec4 vC;void main(){float d=length(gl_PointCoord-.5);float a=1.-smoothstep(.1,.5,d);if(a<.01)discard;gl_FragColor=vec4(vC.rgb,vC.a*a);}`});
     this.pts=new THREE.Points(g,this.mat);this.pts.frustumCulled=false;this.geo=g;scene.add(this.pts);
   }
@@ -1884,7 +1884,13 @@ function updateCamera(dt){
     else if(SET.cam==='tv'){
       // three-quarter broadcast angle: you near-left, opponent right, both always in full view
       const ws=Math.max(me.worldScale,o.worldScale)/BODY,mx=(me.x+o.x)/2,mz=(me.z+o.z)/2,side=(3.1+l*.75)*ws,back=(1.05+l*.2)*ws;
-      const sh=TOUCH?.95:-.05;_cp.set(mx-rx*side-fx*back+fx*(sh+.05)*.6,(1.95+l*.18)*Math.sqrt(ws),mz-rz*side-fz*back+fz*(sh+.05)*.6);_cl.set(mx+fx*sh,1.12,mz+fz*sh);k=4.5}
+      const sh=TOUCH?.95:-.05,ox=-rx*side-fx*back+fx*(sh+.05)*.6,oz=-rz*side-fz*back+fz*(sh+.05)*.6,R=Math.hypot(ox,oz);
+      // orbit (by angle) around the fight so a side-swap swings the camera round the ring instead of through the fighters
+      const cur=Math.atan2(camera.position.x-mx,camera.position.z-mz),tgt=Math.atan2(ox,oz);
+      if(CAM.tvA==null||CAM.tvMode!==G.phase+G.mode)CAM.tvA=cur;CAM.tvMode=G.phase+G.mode;
+      CAM.tvA+=clamp(angWrap(tgt-CAM.tvA)*damp(4,dt),-3.2*dt,3.2*dt);CAM.tvA=angWrap(CAM.tvA);
+      CAM.tvR=lerp(CAM.tvR||R,R,damp(3,dt));
+      _cp.set(mx+Math.sin(CAM.tvA)*CAM.tvR,(1.95+l*.18)*Math.sqrt(ws),mz+Math.cos(CAM.tvA)*CAM.tvR);_cl.set(mx+fx*sh,1.12,mz+fz*sh);k=9}
     else{const ws=me.worldScale/BODY,back=(2.8+Math.max(0,l-1.2)*.5)*ws,side=1.3*ws;_cp.set(me.x-fx*back+rx*side,(2.2+Math.max(0,l-1.2)*.2)*Math.sqrt(ws),me.z-fz*back+rz*side);_cl.set(lerp(me.x,o.x,.85)+rx*.15,1.15,lerp(me.z,o.z,.85)+rz*.15);k=6}
   }
   if(CAM.lock){_cp.fromArray(CAM.lock[0]);_cl.fromArray(CAM.lock[1]);k=50}
