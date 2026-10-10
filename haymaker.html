@@ -1225,7 +1225,7 @@ function startKD(i){
   if(owned(v)&&G.bots[i])v.upAt=botUpAt(v);
   if(!G.attract){
     CAM.slow=.3;CAM.slowT=.55;shake(.7);screenFlash('white',.35);SFX.thud();SFX.cheer(1);ARENA.crowdU.uEx.value=1;
-    announce(v.kd>=3?'T.K.O.!':'DOWN!','red',1.1);say(v.kd>=3?'Technical knockout!':'He is down!');
+    announce(v.kd>=3?'T.K.O.!':'DOWN!','red',1.1);say(v.kd>=3?'Technical knockout!':'Down goes '+v.f.name.toLowerCase()+'!');
   }
 }
 function botUpAt(v){const d=G.bots[v.idx].D||DIFF.contender;const p=d.getup-(v.kd-1)*.28;return Math.random()<p?3+Math.floor(Math.random()*5):99}
@@ -1383,8 +1383,13 @@ function attackVisual(spec){
 function zoneBoom(z){
   const s=z.spec,P=new THREE.Vector3(s.x,.1,s.z);const near=Math.hypot(G.B[G.ME].x-s.x,G.B[G.ME].z-s.z)<3;const q=G.attract;
   if(s.cue==='inferno'){
-    const m=new THREE.Mesh(new THREE.CylinderGeometry(s.r*.75,s.r,6,24,1,true),new THREE.MeshBasicMaterial({color:0xff6a1f,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
-    m.position.set(s.x,3,s.z);fxAdd(m,.7,(o,k)=>{o.material.opacity=(1-k)*.8;o.scale.set(1+k*.3,.4+easeOut(Math.min(1,k*3))*.6,1+k*.3);o.position.y=o.scale.y*3});
+    const fm=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uO:{value:1}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+      vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vV;void main(){vUv=uv;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,
+      fragmentShader:`uniform float uT;uniform float uO;varying vec2 vUv;varying vec3 vN;varying vec3 vV;void main(){float f=pow(clamp(abs(dot(vN,vV)),0.,1.),1.3);float h=clamp(vUv.y,0.,1.);
+        float n=.5+.5*sin(vUv.x*37.7+uT*9.-h*13.)*sin(vUv.x*18.8-uT*6.+h*7.);vec3 c=mix(vec3(1.,.82,.35),vec3(1.,.22,.04),h);
+        float a=uO*f*pow(1.-h,1.4)*(.45+.55*n);gl_FragColor=vec4(c*a*1.5,1.);}`});
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(s.r*.55,s.r*1.05,6,32,1,true),fm);
+    m.position.set(s.x,3,s.z);fxAdd(m,.8,(o,k,dt)=>{o.material.uniforms.uO.value=1-easeIn(k);o.material.uniforms.uT.value+=dt;o.scale.set(1+k*.35,.35+easeOut(Math.min(1,k*3))*.65,1+k*.35);o.position.y=o.scale.y*3});
     for(let i=0;i<70;i++)PA&&PA.emit(s.x+(Math.random()-.5)*s.r*1.4,.1+Math.random()*.5,s.z+(Math.random()-.5)*s.r*1.4,(Math.random()-.5)*1.5,4+Math.random()*6,(Math.random()-.5)*1.5,.9,.32,1,.35+Math.random()*.3,.05,1,2,1.2);
     groundRing(s.x,s.z,s.r*1.6,0xff7a2a,.6,.25);impactFlash(P.setY(1.2),0xff6a1f,3);if(!q){SFX.fire(1.2);SFX.boom();shake(near?.6:.3)}
   }else if(s.cue==='bolt'){
@@ -1749,8 +1754,8 @@ function renderSelect(){
   $('selGo').textContent=on?(NET.myReady?'NOT READY':'READY'):SEL.mode==='ladder'?'START THE LADDER':'FIGHT!';
 }
 const PREV=[[-.72,-.55],[.78,-.75]];
-function placePreview(){
-  const show=[SEL.f,SEL.mode==='quick'&&SEL.opp!=='random'?SEL.opp:SEL.mode==='online'?NET.peerPick:null];
+function placePreview(ids){
+  const show=ids||[SEL.f,SEL.mode==='quick'&&SEL.opp!=='random'?SEL.opp:SEL.mode==='online'?NET.peerPick:null];
   G.B.forEach((b,i)=>{const id=show[i];if(!id){b.root.visible=false;return}if(!b.f||b.f.id!==id)b.build(FBY[id]);b.reset();b.root.visible=true;
     b.x=PREV[i][0];b.z=PREV[i][1];b.yaw=Math.atan2(0-b.x,2.75-b.z)+(i?-.25:.25);b.act=null});
 }
@@ -1795,8 +1800,9 @@ function startSolo(myF,oppF,diff){
 }
 const LAD_DIFF=['rookie','rookie','contender','contender','champion'];
 function showLadder(){
-  const L=G.ladder;G.mode='select';hideAllOv();showOv('ladOv');
+  const L=G.ladder;G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;hideAllOv();showOv('ladOv');showHUD(false);REF.b.root.visible=false;
   const done=L.i>=L.opps.length;
+  G.B.forEach(b=>{b.down=false;b.act=null;b.fxBits=0;b.P.fall=0});placePreview([L.f,done?null:L.opps[L.i]]);
   $('ladBody').innerHTML=`<div class="res" style="font-size:48px">${done?'🏆 CHAMPION':'ARCADE LADDER'}</div><div class="how">${done?FBY[L.f].name+' IS THE UNDISPUTED CHAMPION':'FIGHT '+(L.i+1)+' OF 5'}</div>
     <div class="lad">${L.opps.map((id,i)=>`<div class="${i<L.i?'done':i===L.i?'cur':''}" style="${i===L.i?'border-color:'+FBY[id].col:''}">${i<L.i?'✔':FBY[id].em}<small>${DIFF[LAD_DIFF[i]].name}</small></div>`).join('')}<div style="border-color:var(--gold)">🏆<small>BELT</small></div></div>
     ${done?'<p class="dimt" style="text-align:center">Five fights, five wins. The belt is yours — try it with another fighter.</p>':`<p class="dimt" style="text-align:center">Next up: <b style="color:${FBY[L.opps[L.i]].col}">${FBY[L.opps[L.i]].name}</b> — “${FBY[L.opps[L.i]].nick}” (${DIFF[LAD_DIFF[L.i]].name})</p>`}
@@ -1916,6 +1922,16 @@ function visuals(rdt,adt){
     if(G.B[0].f)redrawTex(ARENA.jumbo)}
   updateCamera(rdt);updateHUD(rdt);updateFloats(rdt);
 }
+// Safety net: if the lit ring in the middle of the screen comes out pure black on HIGH
+// (a GPU that chokes on the HDR/bloom path), fall back to LOW instead of a dead screen.
+const WATCH={t:0,n:0,bad:0},_px=new Uint8Array(4);
+function blackWatch(rdt){
+  if(WATCH.n>=8||SET.q!=='high'||!(G.mode==='fight'||G.mode==='title')||document.hidden)return;
+  WATCH.t+=rdt;if(WATCH.t<1.2)return;WATCH.t=0;WATCH.n++;
+  const gl=renderer.getContext();renderer.setRenderTarget(null);const w=gl.drawingBufferWidth,h=gl.drawingBufferHeight;let dark=0;
+  for(const [u,v] of [[.5,.5],[.4,.45],[.6,.45],[.45,.6],[.55,.6]]){gl.readPixels(u*w|0,v*h|0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,_px);if(_px[0]+_px[1]+_px[2]<6)dark++}
+  if(dark>=4){if(++WATCH.bad>=2){SET.q='low';saveSet();setupPost();$('qBtn').textContent='LOW';sub('GRAPHICS SWITCHED TO LOW FOR YOUR GPU',3)}}else WATCH.bad=0;
+}
 let last=performance.now();const PERF={t:0,n:0,checked:false};
 function frame(now){
   requestAnimationFrame(frame);
@@ -1927,7 +1943,8 @@ function frame(now){
   if(sdt>0){const n=Math.ceil(sdt/(1/60));for(let i=0;i<n;i++)step(sdt/n)}
   visuals(rdt,adt);
   if(renderer&&!NORENDER){const px=renderer.getPixelRatio()*innerHeight*.5/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));PA.mat.uniforms.uPx.value=px;PN.mat.uniforms.uPx.value=px;ARENA.flashU.uPx.value=px*.35;
-    if(composer)composer.render();else renderer.render(scene,camera)}
+    if(composer)composer.render();else renderer.render(scene,camera);
+    blackWatch(rdt)}
 }
 
 // ════════════════════ BOOT ════════════════════
