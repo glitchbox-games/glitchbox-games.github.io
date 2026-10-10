@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Phone Doctor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="glitchbox-config.js"></script>
 <script src="glitchbox-save.js" data-pos="top-left"></script>
 <style>
@@ -22,36 +22,29 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
 .stat.cash{color:var(--green)}
 #top .sp{flex:1}
 .ib{width:38px;height:38px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:18px}
-.ib.on{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
 #main{flex:1;min-height:0;display:grid;grid-template-columns:84px 1fr 310px}
-#tools{display:flex;flex-direction:column;gap:6px;padding:8px 6px;background:#0d1218;border-right:1px solid var(--line);overflow:auto}
-.tool{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 2px 5px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:24px;line-height:1;position:relative}
-.tool small{font-size:10.5px;color:var(--dim);font-weight:500}
+#tools{display:flex;flex-direction:column;gap:5px;padding:8px 6px;background:#0d1218;border-right:1px solid var(--line);overflow:auto}
+.tool{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px 4px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:22px;line-height:1;position:relative;flex:none}
+.tool small{font-size:10.5px;color:var(--dim);font-weight:500;white-space:nowrap}
 .tool i{position:absolute;top:3px;right:6px;font-size:9px;font-style:normal;color:#5d6b7d}
 .tool.on{background:#123447;border-color:var(--cyan)}
 .tool.on small{color:var(--cyan)}
 .tool.act{background:#173322;border-color:#2a6b45}
 .tool.act small{color:#9ff0c2}
-.tool:disabled{opacity:.35}
-.glow{animation:glow 1s infinite}
-@keyframes glow{50%{box-shadow:0 0 0 3px var(--cyan),0 0 18px var(--cyan)}}
 #stage{position:relative;min-width:0;min-height:0;overflow:hidden}
 #cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:4;width:min(92%,520px)}
 .tst{background:rgba(12,17,24,.94);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:500;font-size:15px;text-align:center;animation:tin .25s ease-out;transition:opacity .4s}
-.tst.bad{border-color:var(--red);color:#ffc4ca}.tst.good{border-color:var(--green);color:#c8ffe0}.tst.warn{border-color:var(--orange);color:#ffe0bf}
+.tst.bad{border-color:var(--red);color:#ffc4ca}.tst.good{border-color:var(--green);color:#c8ffe0}
 @keyframes tin{from{transform:translateY(-8px);opacity:0}}
 #chips{position:absolute;left:8px;right:8px;bottom:8px;display:none;gap:6px;flex-wrap:wrap;justify-content:center;z-index:3;pointer-events:none}
 #chips.on{display:flex}
 .chip{background:rgba(12,17,24,.9);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;display:flex;gap:6px;align-items:center}
 .chip.me{border-color:var(--cyan)}
 .chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
-#hintbar{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(18,52,71,.95);border:1px solid var(--cyan);border-radius:12px;padding:8px 14px;font-size:14.5px;max-width:min(94%,560px);text-align:center;z-index:3;display:none;pointer-events:none}
-#hintbar.on{display:block}
-#chips.on~#hintbar{bottom:48px}
 #side{background:#0d1218;border-left:1px solid var(--line);overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
-.card h3{margin:0 0 6px;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card h3{margin:0 0 6px;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:6px}
 #cust{display:flex;gap:10px;align-items:flex-start}
 #cust .face{font-size:40px;line-height:1;width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none}
 #cust .who{font-weight:700;font-size:16px}
@@ -61,24 +54,24 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
 .pat{margin-top:8px;height:8px;border-radius:9px;background:#0d1218;overflow:hidden}
 .pat div{height:100%;background:var(--green);border-radius:9px;transition:background .3s}
 .patl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:3px}
-.notes{display:flex;flex-direction:column;gap:4px;font-size:13px}
-.notes div{background:var(--panel2);border-radius:8px;padding:4px 8px}
-.notes .x{color:#ffb0b8}.notes .ok{color:#a9f3c9}
+.notes{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-family:'JetBrains Mono',ui-monospace,monospace}
+.notes div{background:#0d1218;border:1px solid var(--line);border-radius:8px;padding:5px 8px;color:#bfe9ff;line-height:1.35}
 .empty{color:var(--dim);font-size:13px}
-.inv{display:flex;flex-wrap:wrap;gap:6px}
+.inv,.tray{display:flex;flex-wrap:wrap;gap:6px}
 .it{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:5px 8px;font-size:12.5px;display:flex;gap:5px;align-items:center}
 .it.sel{border-color:var(--cyan);background:#123447}
 .it .old{color:var(--dim);font-size:11px}
-.it .bad{color:var(--red)}
+.sc{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px}
+.bits{display:flex;gap:4px;margin-bottom:8px}
+.bits button{flex:1;font-size:11.5px;padding:5px 2px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);font-family:'JetBrains Mono',ui-monospace,monospace}
+.bits button.on{color:var(--ink);border-color:var(--cyan);background:#123447}
 .tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
 .tabs button{font-size:12px;padding:4px 8px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
 .tabs button.on{color:var(--ink);border-color:var(--cyan)}
-.tabs button.cur{font-weight:700}
 .row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px}
 .row span{flex:1}
 .buy{background:#173322;border:1px solid #2a6b45;color:#9ff0c2;border-radius:8px;padding:4px 10px;font-weight:700;font-size:13px}
 .buy:disabled{opacity:.4}
-.mat{display:flex;align-items:center;gap:8px;font-size:14px}
 .ov{position:fixed;inset:0;background:rgba(5,8,12,.78);display:none;align-items:center;justify-content:center;z-index:20;padding:14px}
 .ov.on{display:flex}
 .box{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;max-width:520px;width:100%;max-height:92vh;overflow:auto;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -103,8 +96,8 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
 .err{color:var(--red);min-height:20px;margin-top:6px;font-size:14px}
 .or{color:var(--dim);margin:12px 0 0;font-size:13px}
 .tl{text-align:left;display:flex;flex-direction:column;gap:6px;margin:12px 0}
-.tl div{display:flex;justify-content:space-between;background:var(--panel2);border-radius:10px;padding:8px 12px;font-size:15px}
-.tl .f{color:#ffb0b8}.tl .p{color:#a9f3c9}
+.tl div{display:flex;justify-content:space-between;gap:10px;background:var(--panel2);border-radius:10px;padding:8px 12px;font-size:15px}
+.tl .f{color:#ffb0b8}.tl .p{color:#a9f3c9}.tl .n{color:#cfe3f5;font-weight:500;text-align:right}
 .upg{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;margin-top:10px}
 .u{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px;font-size:13px}
 .u b{display:block;font-size:14px;margin-bottom:2px}
@@ -120,7 +113,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
   .stat{font-size:13px;padding:3px 7px}
   #main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto minmax(0,34vh)}
   #tools{flex-direction:row;order:2;border:0;border-top:1px solid var(--line);padding:6px;overflow-x:auto}
-  .tool{min-width:54px;flex:1;font-size:21px}
+  .tool{min-width:52px;flex:1;font-size:20px}
   #stage{order:1}
   #side{order:3;border:0;border-top:1px solid var(--line);padding:8px}
 }
@@ -134,13 +127,12 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
     <div class="stat cash" id="sCash">$0</div>
     <div class="stat" id="sRate">⭐ –</div>
     <div class="sp"></div>
-    <button class="ib" id="bHint" title="Hints">💡</button>
     <button class="ib" id="bSnd" title="Sound">🔊</button>
-    <button class="ib" id="bHelp" title="How to play">❓</button>
+    <button class="ib" id="bHelp" title="Bench reference">📘</button>
   </div>
   <div id="main">
     <div id="tools"></div>
-    <div id="stage"><canvas id="cv"></canvas><div id="toast"></div><div id="chips"></div><div id="hintbar"></div></div>
+    <div id="stage"><canvas id="cv"></canvas><div id="toast"></div><div id="chips"></div></div>
     <div id="side"></div>
   </div>
 </div>
@@ -148,11 +140,11 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
 <div class="ov on" id="titleOv"><div class="box">
   <div style="font-size:64px;line-height:1">📱🪛</div>
   <h1>PHONE <b>DOCTOR</b></h1>
-  <p>Run a phone repair shop. Unscrew, heat, pry, meter, swap the bad part — and <b style="color:var(--orange)">never</b> touch anything with the battery still plugged in.</p>
+  <p>You run a phone repair shop. People bring in broken phones. Work out what's wrong, fix it, and get paid — or break it worse.</p>
   <button class="big" id="playBtn">🔧 Open the shop</button>
   <button class="big alt" id="raceBtn">👥 Repair Race (online)</button>
   <button class="big alt" id="newBtn" style="display:none">🗑️ Start a new shop</button>
-  <button class="big alt" id="howBtn">❓ How to play</button>
+  <button class="big alt" id="howBtn">📘 Bench reference</button>
 </div></div>
 <div class="ov" id="mpOv"><div class="box" id="mpCard"></div></div>
 <div class="ov" id="sheetOv"><div class="box" id="sheet"></div></div>
@@ -164,11 +156,13 @@ const HASH=location.hash.replace(/-debug$/,'');   // the terms gate lets *debug 
 let DEMO=false;
 
 // ═══════════════════════ data ═══════════════════════
+// caseScrews: pentalobes in the bottom edge (Pear) vs glue-only (Android). tabs: stretch-release battery
+// pull tabs. glue: how readily the screen adhesive cuts (lower = tougher). mah: design capacity.
 const MODELS={
-  pear11:{name:'Pear 11',frame:'#d6dbe1',dark:'#9aa3ad',accent:'#7aa7ff',mult:1,cut:'notch'},
-  galaxo:{name:'Galaxo S7',frame:'#3c74de',dark:'#1d4aa8',accent:'#8db4ff',mult:1.1,cut:'hole'},
-  pixelle:{name:'Pixelle 5',frame:'#efe9df',dark:'#b9b1a3',accent:'#ff8a3d',mult:.9,cut:'hole'},
-  pear14:{name:'Pear 14 Pro',frame:'#50555e',dark:'#2b2f36',accent:'#c49bff',mult:1.35,cut:'island'},
+  pear11:{name:'Pear 11',frame:'#d6dbe1',dark:'#9aa3ad',accent:'#7aa7ff',mult:1,cut:'notch',caseScrews:true,tabs:true,glue:1,mah:3110,batHead:'PH'},
+  galaxo:{name:'Galaxo S7',frame:'#3c74de',dark:'#1d4aa8',accent:'#8db4ff',mult:1.1,cut:'hole',caseScrews:false,tabs:false,glue:.55,mah:3000,batHead:'PH'},
+  pixelle:{name:'Pixelle 5',frame:'#efe9df',dark:'#b9b1a3',accent:'#ff8a3d',mult:.9,cut:'hole',caseScrews:false,tabs:false,glue:.7,mah:2800,batHead:'PH'},
+  pear14:{name:'Pear 14 Pro',frame:'#50555e',dark:'#2b2f36',accent:'#c49bff',mult:1.35,cut:'island',caseScrews:true,tabs:true,glue:.85,mah:3200,batHead:'Y'},
 };
 const MODEL_IDS=Object.keys(MODELS);
 const PARTS={screen:{n:'Screen',e:'📺',cost:40},battery:{n:'Battery',e:'🔋',cost:18},port:{n:'Charge port',e:'🔌',cost:14},
@@ -191,48 +185,65 @@ const FAULTS={
 const NAMES=['Maya','Jonah','Priya','Leo','Ava','Omar','Chloe','Mateo','Zara','Finn','Ines','Kai','Nora','Ravi','Lena','Theo','Sofia','Dev','Mia','Hugo','Ruby','Sam','Elif','Jude'];
 const FACES=['👩','👨','🧑','👵','👴','👧','🧔','👩‍🦰','👨‍🦱','🧑‍🎤','👩‍🔧','🧕','👱','🧑‍🦳','👦','🧑‍💼'];
 const UPG=[
-  {id:'drill',e:'🪛',n:'Electric screwdriver',cost:120,d:'Screws come out in a blink.'},
-  {id:'mat',e:'🧲',n:'Magnetic screw mat',cost:60,d:'Screws never roll off the bench.'},
-  {id:'gun',e:'🌡️',n:'Smart heat gun',cost:110,d:'Heats twice as fast and never overheats.'},
-  {id:'thermal',e:'📸',n:'Thermal camera',cost:220,d:'Broken parts glow once the phone is open.'},
+  {id:'drill',e:'🪛',n:'Electric screwdriver',cost:120,d:'Screws spin in and out in a blink.'},
+  {id:'mat',e:'🧲',n:'Magnetic project mat',cost:60,d:'Every screw stays where it came from — and nothing rolls off the bench.'},
+  {id:'gun',e:'🌡️',n:'Smart heat gun',cost:110,d:'Heats twice as fast and cuts out before 95°C.'},
+  {id:'thermal',e:'📸',n:'Thermal camera',cost:220,d:'Faulty parts glow once the phone is open.'},
   {id:'chairs',e:'🛋️',n:'Comfy chairs',cost:90,d:'Customers wait 40% longer.'},
   {id:'bulk',e:'📦',n:'Bulk supplier',cost:180,d:'All parts 25% cheaper.'},
   {id:'sign',e:'🪧',n:'Neon shop sign',cost:150,d:'Happy customers tip 50% more.'},
 ];
 const TOOLS=[
-  {id:'driver',e:'🪛',n:'Screw',key:'1'},{id:'heat',e:'🔥',n:'Heat',key:'2'},{id:'hand',e:'✋',n:'Hand',key:'3'},
-  {id:'spudger',e:'🔌',n:'Plug',key:'4'},{id:'meter',e:'🔍',n:'Meter',key:'5'},{id:'brush',e:'🪥',n:'Brush',key:'6'},
+  {id:'driver',e:'🪛',n:'Driver',key:'1'},{id:'heat',e:'🔥',n:'Heat',key:'2'},{id:'suction',e:'🪠',n:'Suction',key:'3'},
+  {id:'pick',e:'🔺',n:'Pick',key:'4'},{id:'hand',e:'✋',n:'Hand',key:'5'},{id:'spudger',e:'🥢',n:'Spudger',key:'6'},
+  {id:'meter',e:'📟',n:'Meter',key:'7'},{id:'brush',e:'🪥',n:'IPA',key:'8'},
 ];
+const BITS=[['P','P2'],['Y','Y000'],['PH','PH000']];
+const HEAD_NAME={P:'Pentalobe',Y:'Tri-point',PH:'Phillips'};
 
 // ── phone geometry (phone-local units: the body is 100 × 200) ──
-const R={board:[10,10,80,60],camera:[14,12,20,20],battery:[14,76,72,84],port:[38,183,24,12],speaker:[70,163,20,16],
-  scrConn:[58,16,18,9],batConn:[58,58,18,9]};
+const R={board:[10,10,80,60],camera:[14,12,20,20],battery:[14,76,72,84],port:[38,183,24,12],speaker:[70,163,20,16],taptic:[13,163,22,16]};
+// board-to-board connectors. br = bracket screws that cover it. tear = what ripping it out live/plugged breaks.
+const CONNS={
+  scr:{r:[57,14,17,8],br:['sc1','sc2'],part:'screen',tear:'backlight',zap:'backlight'},
+  tch:{r:[57,25,17,8],br:['sc1','sc2'],part:'screen',tear:'touch',zap:'board'},
+  cam:{r:[16,36,14,7],br:['c1'],part:'camera',tear:'camera',zap:'board'},
+  port:{r:[20,60,16,7],br:[],part:'port',tear:'port',zap:'board'},
+  bat:{r:[58,58,18,9],br:['bc1','bc2'],part:'battery',tear:null,zap:null},
+};
+const CONN_IDS=['scr','tch','cam','port','bat'];
+const BRACKETS=[{r:[54,11,24,25],sc:['sc1','sc2']},{r:[55,56,24,13],sc:['bc1','bc2']}];
 const SCREEN_X=108;
-const SCREWS=[
-  {id:'b1',x:28,y:193,part:'case'},{id:'b2',x:72,y:193,part:'case'},
-  {id:'bc1',x:53,y:62,part:'batbr'},{id:'bc2',x:81,y:62,part:'batbr'},{id:'sc1',x:81,y:20,part:'scrbr'},
-  {id:'c1',x:39,y:16,part:'camera'},
-  {id:'bd1',x:15,y:65,part:'board'},{id:'bd2',x:86,y:42,part:'board'},{id:'bd3',x:46,y:45,part:'board'},
-  {id:'p1',x:32,y:189,part:'port'},{id:'p2',x:68,y:189,part:'port'},{id:'sp1',x:65,y:170,part:'speaker'},
+// Screw holes. Mixed lengths on purpose: a long screw in a short board hole punches through the board.
+const HOLES=[
+  {id:'b1',x:28,y:193,part:'case',head:'P',len:3.4},{id:'b2',x:72,y:193,part:'case',head:'P',len:3.4},
+  {id:'bc1',x:52,y:62,part:'batbr',head:'PH',len:1.3},{id:'bc2',x:82,y:62,part:'batbr',head:'PH',len:1.3},
+  {id:'sc1',x:80,y:14,part:'scrbr',head:'PH',len:1.2},{id:'sc2',x:80,y:33,part:'scrbr',head:'PH',len:2.4},
+  {id:'c1',x:39,y:14,part:'camera',head:'PH',len:1.6},
+  {id:'bd1',x:13,y:52,part:'board',head:'PH',len:2.4},{id:'bd2',x:86,y:46,part:'board',head:'PH',len:2.4},{id:'bd3',x:46,y:54,part:'board',head:'PH',len:2.4},
+  {id:'p1',x:32,y:189,part:'port',head:'PH',len:1.8},{id:'p2',x:68,y:189,part:'port',head:'PH',len:1.8},
+  {id:'sp1',x:65,y:170,part:'speaker',head:'PH',len:3.0},
 ];
-const SCREW_BY=Object.fromEntries(SCREWS.map(s=>[s.id,s]));
-const SPOT_POS=[[52,34],[24,48],[70,44],[38,60],[80,30],[30,40],[64,32],[46,64]];
+const HOLE=Object.fromEntries(HOLES.map(h=>[h.id,h]));
+const BOARD_HOLE=h=>['batbr','scrbr','camera','board'].includes(h.part);
+const SPOT_POS=[[30,50],[68,46],[48,20],[88,26],[44,44],[72,50],[62,40],[24,46]];
+const SIDES=['bottom','left','top','right'];
+const NSEG={bottom:4,top:4,left:8,right:8};
 
 // ═══════════════════════ state ═══════════════════════
-const fresh=()=>({v:1,day:1,cash:150,upg:{},inv:[],mat:4,rates:[],total:0,best:0,jobIdx:0,dayEarn:0,daySpend:0,seed:1+Math.floor(Math.random()*1e6),
-  hints:true,sound:true,name:'',hue:Math.floor(Math.random()*360),started:false});
+const fresh=()=>({v:2,day:1,cash:150,upg:{},inv:[],tray:[],bit:'PH',rates:[],total:0,best:0,jobIdx:0,dayEarn:0,daySpend:0,seed:1+Math.floor(Math.random()*1e6),
+  sound:true,name:'',hue:Math.floor(Math.random()*360),started:false});
 let S=fresh();
-const SAVE_KEY='phonedoctor.v1';
+const SAVE_KEY='phonedoctor.v2';
 function save(){if(DEMO)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(d&&d.v===1)S=Object.assign(fresh(),d)}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(d&&d.v===2)S=Object.assign(fresh(),d)}catch(e){}}
 // C = whose wallet/tools we're using: the saved shop (solo) or a throwaway race kit.
 let C=S;
 let mode='title';   // title | solo | race | sheet | wait | mphome | lobby | results
 let cur=null;       // the phone on the bench
 let DAY=null, RACE=null;
-let TOOL='driver', SEL=null, TAB=null;
+let TOOL='driver', SEL=null, SELSCREW=null, TAB=null;
 const upg=k=>!!(C.upg&&C.upg[k]);
-const tut=()=>C===S&&S.day===1;
 let uidN=1;const uid=()=>uidN++;
 
 function rngOf(seed){let s=seed>>>0||1;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
@@ -242,6 +253,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const inR=(x,y,r,p=0)=>x>=r[0]-p&&x<=r[0]+r[2]+p&&y>=r[1]-p&&y<=r[1]+r[3]+p;
 function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const money=n=>(n<0?'-$':'$')+Math.abs(Math.round(n));
+const skey=s=>s.head+'|'+s.len;
 
 function makeJob(r,lvl){
   const models=lvl<=1?['pear11','galaxo']:lvl<=2?['pear11','galaxo','pixelle']:MODEL_IDS;
@@ -253,7 +265,7 @@ function makeJob(r,lvl){
   const spots=[];
   if(faults.includes('water')){const c=SPOT_POS.slice(),m=3+Math.floor(r()*2);for(let i=0;i<m;i++)spots.push(c.splice(Math.floor(r()*c.length),1)[0])}
   const say=faults.map((k,i)=>(i?'Oh, and… ':'')+pick(r,FAULTS[k].say)).join(' ');
-  return{model,faults,spots,say,name:pick(r,NAMES),face:pick(r,FACES),hue:Math.floor(r()*360),pat:Math.round(120+60*n+(lvl>=4?15:0)),crack:Math.floor(r()*1e6)};
+  return{model,faults,spots,say,name:pick(r,NAMES),face:pick(r,FACES),hue:Math.floor(r()*360),pat:Math.round(220+90*n+(lvl>=4?20:0)),crack:Math.floor(r()*1e6)};
 }
 function jobsFor(seed,lvl,n){const r=rngOf(seed);return Array.from({length:n},()=>makeJob(r,lvl))}
 
@@ -269,25 +281,29 @@ function makeCracks(seed,ix,iy){
   for(let k=0;k<2;k++){const rad=5+k*7+r()*3,pts=[];for(let i=0;i<=10;i++){const a=i/10*6.283;pts.push([cx+Math.cos(a)*rad*(.8+r()*.4),cy+Math.sin(a)*rad*(.8+r()*.4)])}out.push(pts)}
   return out;
 }
+function holeSpec(h,model){if(h.part==='batbr'&&MODELS[model].batHead==='Y')return{head:'Y',len:1.1};return{head:h.head,len:h.len}}
 
 function newPhone(job){
-  const P={job,model:job.model,open:false,openT:0,heat:0,hot:0,t:0,boot:0,
-    sc:{},conn:{bat:true,scr:true},part:{},faults:job.faults.map(k=>({k,paid:true})),
+  const m=MODELS[job.model];
+  const P={uid:uid(),job,model:job.model,open:false,openT:0,heat:0,hot:0,t:0,boot:0,
+    sc:{},conn:{},part:{},faults:job.faults.map(k=>({k,paid:true})),
     spots:job.spots.map(s=>({x:s[0],y:s[1],left:1})),lint:job.faults.includes('lint')?1:0,
-    known:{},meas:{},notes:[],tested:false,portSuspect:false,caused:0,cracks:null,gone:false};
-  for(const s of SCREWS)P.sc[s.id]=true;
+    segs:Object.fromEntries(SIDES.map(s=>[s,Array(NSEG[s]).fill(0)])),gap:false,snag:false,tore:false,alc:false,gasket:false,opened:false,
+    known:{},meas:{},notes:[],tested:false,portSuspect:false,caused:0,cracks:null,gone:false,said:{}};
+  for(const h of HOLES)P.sc[h.id]=h.part==='case'&&!m.caseScrews?null:Object.assign(holeSpec(h,job.model),{from:P.uid+':'+h.id});
+  for(const c of CONN_IDS)P.conn[c]=true;
   for(const t of PART_IDS)P.part[t]={model:job.model,bad:null,orig:true};
   for(const k of job.faults){const p=FAULTS[k].part;if(p)P.part[p].bad=k}
   if(P.part.screen.bad==='crack'){P.cracks=makeCracks(job.crack);P.known.crack=1}
-  if(P.part.battery.bad==='swollen')P.known.swollen=1;
+  if(P.part.battery.bad==='swollen'){P.known.swollen=1;P.gap=true;for(const s of SIDES)P.segs[s].fill(.5)}
   return P;
 }
 
 // ═══════════════════════ rules ═══════════════════════
-const P_=()=>cur;
 function swollen(){const b=cur.part.battery;return !!(b&&b.bad==='swollen')}
-function hostOf(s){const P=cur;if(s.part==='case')return true;if(s.part==='batbr'||s.part==='scrbr')return !!P.part.board;return !!P.part[s.part]}
-function screwShown(s){const P=cur;if(s.part==='case')return !P.open&&P.openT<.05;return P.open&&P.openT>.95&&hostOf(s)}
+function hostOf(h){const P=cur;if(h.part==='case')return MODELS[P.model].caseScrews;if(h.part==='batbr'||h.part==='scrbr')return !!P.part.board;return !!P.part[h.part]}
+function screwShown(h){const P=cur;if(h.part==='case')return hostOf(h)&&!P.open&&P.openT<.05;return P.open&&P.openT>.95&&hostOf(h)}
+function correct(id){const s=cur.sc[id],sp=holeSpec(HOLE[id],cur.model);return !!s&&Math.abs(s.len-sp.len)<=.31}
 function powered(){const P=cur;return !!(P.part.battery&&P.part.board&&P.conn.bat)}
 function waterOK(){const P=cur,b=P.part.board;return !P.job.faults.includes('water')||!!(b&&(!b.orig||P.spots.every(s=>s.left<=0)))}
 function isFixed(f){
@@ -298,16 +314,18 @@ function isFixed(f){
 }
 const unfixed=()=>cur.faults.filter(f=>!isFixed(f));
 function works(){
-  const P=cur,p=P.part;
+  const P=cur,p=P.part,c=P.conn;
   const power=powered()&&!p.board.bad&&waterOK();
   return{power,
-    screen:power&&!!p.screen&&P.conn.scr&&!p.screen.bad,
+    display:power&&!!p.screen&&c.scr&&p.screen.bad!=='backlight',
+    touch:power&&!!p.screen&&c.tch&&p.screen.bad!=='touch'&&p.screen.bad!=='crack',
+    glass:!!p.screen&&p.screen.bad!=='crack',
     battery:power&&!p.battery.bad,
-    charging:power&&!!p.port&&!p.port.bad&&P.lint<=0,
+    charging:power&&!!p.port&&c.port&&!p.port.bad&&P.lint<=0,
     speaker:power&&!!p.speaker&&!p.speaker.bad,
-    camera:power&&!!p.camera&&!p.camera.bad};
+    camera:power&&!!p.camera&&c.cam&&!p.camera.bad};
 }
-function missingScrews(){const P=cur;return SCREWS.filter(s=>(s.part==='case'||hostOf(s))&&!P.sc[s.id]).length}
+function missingScrews(){return HOLES.filter(h=>hostOf(h)&&!correct(h.id)).length}
 function addFault(k){
   const P=cur,t=FAULTS[k].part;
   if(t&&(!P.part[t]||P.part[t].bad))return false;
@@ -315,134 +333,182 @@ function addFault(k){
   P.faults.push({k,paid:false});P.known[k]=1;P.caused++;
   return true;
 }
-function partCost(t,model){return Math.max(1,Math.round(PARTS[t].cost*MODELS[model].mult*(upg('bulk')?.75:1)))}
+function partCost(t,model){
+  const base=t==='gasket'?3:t==='kit'?6:PARTS[t].cost*MODELS[model].mult;
+  return Math.max(1,Math.round(base*(upg('bulk')&&t!=='kit'&&t!=='gasket'?.75:1)));
+}
+function once(key,txt,kind){const P=cur;if(P.said[key])return;P.said[key]=1;msg(txt,kind)}
 
 // every action returns true when it did something. `quiet` skips the effects (bot / tests).
 let quiet=false;
 function toggleScrew(id){
-  const P=cur,s=SCREW_BY[id];if(!s||!screwShown(s)&&!quiet)return false;
-  if(P.sc[id]){
-    P.sc[id]=false;
-    if(!quiet&&!upg('mat')&&!tut()&&Math.random()<.12)spawnRoll(s.x,s.y);
-    else C.mat++;
+  const P=cur,h=HOLE[id];if(!h||!hostOf(h)||(!screwShown(h)&&!quiet))return false;
+  const s=P.sc[id];
+  if(s){
+    if(C.bit!==s.head){msg('The '+bitName(C.bit)+' bit just cams out of that head.');sfx('err');return false}
+    P.sc[id]=null;
+    if(!quiet&&!upg('mat')&&Math.random()<.1)spawnRoll(h.x,h.y,s);
+    else C.tray.push(s);
     sfx('screw');
   }else{
-    if(C.mat<=0){msg('No screws left on your mat! Buy a 🔩 screw kit in Parts.','warn');sfx('err');return false}
-    P.sc[id]=true;C.mat--;sfx('screw');
+    let t=null;
+    if(upg('mat'))t=C.tray.find(x=>x.from===P.uid+':'+id);
+    if(!t&&SELSCREW)t=C.tray.find(x=>skey(x)===SELSCREW);
+    if(!t){msg(C.tray.length?'No screw picked up from the tray.':'The screw tray is empty.');sfx('err');return false}
+    if(C.bit!==t.head){msg('The '+bitName(C.bit)+' bit doesn\'t fit that screw.');sfx('err');return false}
+    C.tray.splice(C.tray.indexOf(t),1);P.sc[id]=t;
+    if(SELSCREW&&!C.tray.some(x=>skey(x)===SELSCREW))SELSCREW=null;
+    const sp=holeSpec(h,P.model);
+    if(t.len>sp.len+.31&&BOARD_HOLE(h)&&P.part.board){
+      if(addFault('board')){fx('spark',h.x,h.y);msg('Crunch. The screw kept turning long after it should have stopped.','bad');sfx('crack')}
+    }else if(Math.abs(t.len-sp.len)>.31&&!quiet)msg(t.len>sp.len?'It won\'t sit flush.':'It spins but never tightens.');
+    sfx('screw');
   }
   UI();return true;
 }
+const bitName=b=>(BITS.find(x=>x[0]===b)||['','?'])[1];
 function heatTick(dt){
   const P=cur;if(P.open)return;
-  const cap=upg('gun')?92:130;
+  const cap=upg('gun')?96:140;
   P.heat=Math.min(cap,P.heat+dt*(upg('gun')?80:42)+dt*8);
-  if(P.heat>100){P.hot+=dt;if(P.hot>1.2&&addFault('battery')){P.hot=0;fx('smoke',50,110);msg('🔥 Too hot! You cooked the battery — it needs replacing now.','bad');sfx('err')}}
+  if(P.heat>100){P.hot+=dt;if(P.hot>1.2&&addFault('battery')){P.hot=0;fx('smoke',50,110);msg('A sharp chemical smell comes off the phone.','bad');sfx('err')}}
   P.heatHeld=.15;
 }
-function pry(){
-  const P=cur;if(P.open)return false;
-  if(P.sc.b1||P.sc.b2){msg('It\'s screwed shut — take out the two bottom screws first 🪛','warn');sfx('err');return false}
-  if(P.heat<45&&!swollen()){
-    if(tut()){msg('The glue is too cold to pry! Hold the 🔥 heat gun on the phone first.','warn');sfx('err');return false}
-    if(Math.random()<.55){if(!P.cracks)P.cracks=makeCracks(Date.now()%1e6,50,186);addFault('crack');msg('💥 CRACK! The glue was cold — you broke the screen. That one\'s on you.','bad');sfx('crack')}
-  }
-  P.open=true;P.heat=0;P.hot=0;
-  if(P.job.faults.includes('water'))P.known.water=1;
-  sfx('pop');UI();return true;
+const tempC=h=>Math.round(22+h*.75);
+function suctionDone(){
+  const P=cur;if(P.open||P.gap)return false;
+  if(HOLES.some(h=>h.part==='case'&&hostOf(h)&&P.sc[h.id])){msg('The glass won\'t lift — something holds the bottom edge.');sfx('err');return false}
+  if(P.heat<40){msg('The cup pops off with a thwack. The glue is holding firm.');sfx('err');return false}
+  P.gap=true;sfx('pop');UI();return true;
 }
+function cutAt(l,dist){
+  const P=cur;if(P.open)return;
+  const d={bottom:Math.abs(l.y-200),top:Math.abs(l.y),left:Math.abs(l.x),right:Math.abs(l.x-100)};
+  let side=null,best=11;for(const s of SIDES)if(d[s]<best){best=d[s];side=s}
+  if(!side)return;
+  if(!P.gap){once('nogap','The pick can\'t get under the glass.');return}
+  const horiz=side==='bottom'||side==='top';
+  const i=horiz?clamp(Math.floor((l.x-10)/20),0,3):clamp(Math.floor((l.y-14)/21.5),0,7);
+  const k=(P.heat>=45?1:.3)*MODELS[P.model].glue/14;
+  P.segs[side][i]=Math.min(1,P.segs[side][i]+dist*k);
+  if(side==='right'&&i<=2){
+    const v=P.segs.right[i];
+    if(v>.15&&!P.snag){P.snag=true;msg('The pick snags on something soft.')}
+    if(v>.42&&!P.tore){P.tore=true;if(addFault('touch')){msg('Something under the glass gave way with a tiny rip.','bad');sfx('crack')}}
+  }
+}
+function openUp(){
+  const P=cur;if(P.open)return false;
+  if(HOLES.some(h=>h.part==='case'&&hostOf(h)&&P.sc[h.id])){msg('It won\'t budge.');sfx('err');return false}
+  const req=['bottom','left','top'],mins=req.map(s=>Math.min(...P.segs[s]));
+  if(mins.every(v=>v>=.9)){doOpen();return true}
+  if(!P.gap){msg('It won\'t budge.');sfx('err');return false}
+  const w=req[mins.indexOf(Math.min(...mins))];
+  if(Math.random()<.5){
+    if(!P.cracks)P.cracks=makeCracks(Date.now()%1e6,w==='left'?6:50,w==='top'?10:w==='left'?100:184);
+    if(addFault('crack')){msg('💥 The glass flexed too far and cracked.','bad');sfx('crack')}
+    doOpen();return true;
+  }
+  msg('Still glued along the '+w+' edge.');sfx('err');return false;
+}
+function doOpen(){const P=cur;P.open=true;P.opened=true;P.heat=0;P.hot=0;P.gasket=false;if(P.job.faults.includes('water'))P.known.water=1;sfx('pop');UI()}
 function closeUp(){
   const P=cur;if(!P.open)return false;
-  if(!P.part.screen){msg('There\'s no screen on it — install one first.','warn');sfx('err');return false}
-  P.open=false;sfx('pop');UI();return true;
+  if(!P.part.screen){msg('There\'s no screen to close.');sfx('err');return false}
+  P.open=false;
+  if(P.gasket){for(const s of SIDES)P.segs[s].fill(0);P.gap=false}else{for(const s of SIDES)P.segs[s].fill(1);P.gap=true}
+  sfx('pop');UI();return true;
 }
-function zap(k,why){
-  const P=cur;fx('spark',R.batConn[0]+9,R.batConn[1]+4);sfx('spark');
-  const hit=addFault(k);
-  msg('⚡ ZAP! '+why+(hit?(k==='board'?' The logic board is fried.':' The screen\'s backlight blew.'):''),'bad');
+function zap(k,x,y){
+  const P=cur;fx('spark',x,y);sfx('spark');
+  addFault(k);
+  msg('⚡ A spark jumped off the board.','bad');
 }
 function toggleConn(id){
-  const P=cur;if(!P.open||!P.part.board)return false;
-  const scr=id==='scr',br=scr?['sc1']:['bc1','bc2'];
-  if(br.some(s=>P.sc[s])){msg('A metal bracket covers that connector — unscrew it first 🪛','warn');sfx('err');return false}
-  if(scr&&!P.part.screen){msg('No screen to plug in.','warn');return false}
-  if(!scr&&!P.part.battery){msg('No battery to plug in.','warn');return false}
-  if(P.conn[id]){
-    if(scr&&powered()){
-      if(tut()){msg('⚠️ The battery is still plugged in! Unplug the battery connector first or you\'ll short something.','warn');sfx('err');return false}
-      zap('backlight','You unplugged the screen with the battery still connected.');
-    }
-    P.conn[id]=false;
-  }else P.conn[id]=true;
+  const P=cur,c=CONNS[id];if(!P.open||!P.part.board||!c)return false;
+  if(c.br.some(s=>P.sc[s])){msg('There\'s a metal bracket over it.');sfx('err');return false}
+  if(!P.part[c.part]){msg('Nothing to plug in there.');return false}
+  if(id!=='bat'&&powered())zap(c.zap,c.r[0]+c.r[2]/2,c.r[1]+4);
+  P.conn[id]=!P.conn[id];
   sfx('click');UI();return true;
 }
 function measure(t){
   const P=cur,p=P.part[t];
-  if(!P.open&&t!=='port'){msg('Open it up to meter the inside parts (or ⚡ Test the whole phone).','warn');return false}
-  if(!p){msg('Nothing there to measure.');return false}
-  const b=p.bad;let txt,bad=!!b;
-  if(t==='battery')txt=b==='swollen'?'🔋 Cell is swollen — 3.6V ✗ replace':b?'🔋 Health 54% ✗ worn out':'🔋 3.9V · health 97% ✓';
-  else if(t==='screen')txt=b==='crack'?'📺 Glass shattered ✗':b==='touch'?'📺 Touch chip not responding ✗':b==='backlight'?'📺 Backlight fuse blown ✗':'📺 Display + touch OK ✓';
-  else if(t==='port'){if(b)txt='🔌 Pins open — port is broken ✗';else if(P.lint>0){txt='🔌 Pins are fine… something\'s stuck in there 🧶';bad=true;P.known.lint=1}else txt='🔌 5.0V on the pins ✓'}
-  else if(t==='speaker')txt=b?'🔊 ∞Ω — open circuit ✗':'🔊 8Ω ✓';
-  else if(t==='camera')txt=b?'📷 Focus motor stuck ✗':'📷 Focus motor OK ✓';
-  else if(t==='board'){if(b)txt='🧠 Short to ground on main rail ✗';else if(!waterOK()){txt='🧠 Leaking current — corrosion! Scrub it 🪥';bad=true}else txt='🧠 Rails 3.8V ✓'}
+  if(!P.open&&t!=='port'){msg('The probes can\'t reach anything through the glass.');return false}
+  if(!p){msg('Nothing there to probe.');return false}
+  const b=p.bad,m=MODELS[p.model];let txt;
+  if(t==='battery')txt=b==='swollen'?'BATT  3.62 V · cell 6.1 mm thick (new: 4.5)':b?'BATT  3.71 V · '+Math.round(m.mah*.55)+' / '+m.mah+' mAh':'BATT  4.02 V · '+Math.round(m.mah*.97)+' / '+m.mah+' mAh';
+  else if(t==='screen')txt='DISP  backlight '+(b==='backlight'?'0.0':'18.4')+' V · touch IC '+(b==='touch'?'no reply':'replies');
+  else if(t==='port'){if(b)txt='PORT  VBUS 0.00 V · pins open';else if(P.lint>0){txt='PORT  VBUS 5.0 V · 0.00 A · plug seats 70%';P.known.lint=1}else txt='PORT  VBUS 5.0 V · 1.42 A draw'}
+  else if(t==='speaker')txt='SPKR  coil '+(b?'∞ Ω (open)':'7.9 Ω');
+  else if(t==='camera')txt='CAM   VCM '+(b?'0 mA · focus stuck 0%':'98 mA · focus sweep 0→100%');
+  else if(t==='board'){if(b)txt='MAIN  VDD 0.02 V · 2.9 A to ground';else if(!waterOK())txt='MAIN  VDD 3.81 V · 380 mA idle';else txt='MAIN  VDD 3.84 V · 42 mA idle'}
   if(b)P.known[b]=1;
   P.meas[t]=1;
-  P.notes=P.notes.filter(n=>n.t!==t);P.notes.push({t,txt,bad});
+  P.notes=P.notes.filter(n=>n.t!==t);P.notes.push({t,txt});
   const r=t==='port'&&!P.open?[40,186,20,10]:t==='screen'?[SCREEN_X+10,60,80,40]:R[t];
-  P.read={txt,bad,x:r[0]+r[2]/2,y:r[1],life:4};
-  sfx(bad?'err':'beep');UI();return true;
+  P.read={txt,x:r[0]+r[2]/2,y:r[1],life:5};
+  sfx('beep');UI();return true;
 }
-function removePart(t){
+function removePart(t,bent){
   const P=cur,p=P.part[t];if(!P.open||!p)return false;
-  const sc=SCREWS.filter(s=>s.part===t&&P.sc[s.id]);
-  if(sc.length){msg('Still screwed down — '+sc.length+' screw'+(sc.length>1?'s':'')+' to go 🪛','warn');sfx('err');return false}
-  if(t==='battery'&&P.conn.bat){msg('The battery is still plugged in — unplug its connector first 🔌','warn');sfx('err');return false}
-  if(t==='screen'&&P.conn.scr){msg('Unplug the screen\'s ribbon cable first 🔌','warn');sfx('err');return false}
-  if(t==='board'){
-    if(P.part.camera){msg('The camera sits on the board — take it off first.','warn');sfx('err');return false}
-    if(P.conn.bat||P.conn.scr){msg('Unplug the battery and screen connectors before lifting the board 🔌','warn');sfx('err');return false}
+  if(HOLES.some(h=>h.part===t&&P.sc[h.id])){msg('It\'s still screwed down.');sfx('err');return false}
+  if(t==='board'&&P.part.camera){msg('The camera module is sitting on top of it.');sfx('err');return false}
+  // cables still plugged in get torn out
+  const cs=t==='board'?CONN_IDS.filter(c=>c!=='bat'):CONN_IDS.filter(c=>CONNS[c].part===t);
+  let tore=false;
+  for(const c of cs)if(P.conn[c]){
+    P.conn[c]=false;tore=true;
+    if(c==='bat')zap('board',67,62)
+    else{const k=CONNS[c].tear,pt=CONNS[c].part;if(P.part[pt]&&!P.part[pt].bad){P.part[pt].bad=k;P.faults.push({k,paid:false});P.known[k]=1;P.caused++}}
   }
-  if((t==='port'||t==='speaker'||t==='camera')&&powered()){
-    if(tut()){msg('⚠️ The battery is still plugged in! Unplug the battery connector before pulling parts.','warn');sfx('err');return false}
-    zap('board','You pulled a part with the battery still connected.');
-  }
-  if(t==='board'){for(const id of['bc1','bc2','sc1'])if(P.sc[id]){P.sc[id]=false;C.mat++}}
-  C.inv.push({id:uid(),type:t,model:p.model,bad:p.bad,orig:p.orig,used:true});
-  P.part[t]=null;
+  if(t==='board'&&P.conn.bat){P.conn.bat=false;tore=true;zap('board',67,62)}
+  if(tore&&!quiet){msg('Rrrip — a flex cable tore.','bad');sfx('crack')}
+  if((t==='port'||t==='speaker'||t==='camera'||t==='screen')&&powered())zap('board',R[t==='screen'?'board':t][0]+8,R[t==='screen'?'board':t][1]+6);
+  if(t==='board'){for(const id of['bc1','bc2','sc1','sc2'])if(P.sc[id]){C.tray.push(P.sc[id]);P.sc[id]=null}}
+  const item={id:uid(),type:t,model:p.model,bad:p.bad,orig:p.orig,used:true};
+  if(bent&&!item.bad){item.bad='battery'}
+  if(bent){fx('smoke',50,118);msg('The cell folded as it came free. It\'s hissing faintly.','bad')}
+  C.inv.push(item);
+  P.part[t]=null;if(t==='battery')P.alc=false;
+  for(const c of CONN_IDS)if(CONNS[c].part===t)P.conn[c]=false;
   if(SEL&&!C.inv.some(i=>i.id===SEL))SEL=null;
   sfx('pop');UI();return true;
 }
 function installPart(t){
   const P=cur;if(!P.open||P.part[t])return false;
-  if(t==='camera'&&!P.part.board){msg('The camera mounts on the logic board — put a board in first.','warn');return false}
+  if(t==='camera'&&!P.part.board){msg('There\'s nothing for the camera to sit on.');return false}
   let it=SEL&&C.inv.find(i=>i.id===SEL&&i.type===t);
   if(!it)it=C.inv.find(i=>i.type===t&&i.model===P.model&&!i.used)||C.inv.find(i=>i.type===t&&i.model===P.model&&!i.bad)||C.inv.find(i=>i.type===t&&i.model===P.model);
-  if(!it){
-    const wrong=C.inv.find(i=>i.type===t);
-    msg(wrong?'Your '+PARTS[t].n.toLowerCase()+' is for a '+MODELS[wrong.model].name+' — this is a '+MODELS[P.model].name+'. Buy the right one in 📦 Parts.':'No '+PARTS[t].n.toLowerCase()+' for a '+MODELS[P.model].name+' — buy one in 📦 Parts.','warn');
-    TAB=P.model;sfx('err');UI();return false;
-  }
-  if(it.model!==P.model){msg('Doesn\'t fit! That '+PARTS[t].n.toLowerCase()+' is for a '+MODELS[it.model].name+'.','warn');sfx('err');return false}
+  if(!it){const wrong=C.inv.find(i=>i.type===t);msg(wrong?'Your '+PARTS[t].n.toLowerCase()+' doesn\'t fit a '+MODELS[P.model].name+'.':'You don\'t have a '+PARTS[t].n.toLowerCase()+' for this.');sfx('err');return false}
+  if(it.model!==P.model){msg('Wrong shape — that '+PARTS[t].n.toLowerCase()+' is for a '+MODELS[it.model].name+'.');sfx('err');return false}
   C.inv=C.inv.filter(i=>i!==it);if(SEL===it.id)SEL=null;
   P.part[t]={model:it.model,bad:it.bad,orig:!!it.orig};
-  for(const s of SCREWS)if(s.part===t)P.sc[s.id]=false;
-  if(t==='battery')P.conn.bat=false;
-  if(t==='screen')P.conn.scr=false;
-  if(t==='board'){P.conn.bat=false;P.conn.scr=false;for(const id of['bc1','bc2','sc1'])P.sc[id]=false}
+  for(const c of CONN_IDS)if(CONNS[c].part===t)P.conn[c]=false;
+  if(t==='board')for(const c of CONN_IDS)P.conn[c]=false;
   sfx('click');UI();return true;
 }
+function applyGasket(it){
+  const P=cur;if(!P.open){msg('The phone is closed.');return false}
+  if(P.gasket){msg('There\'s already a fresh gasket on the frame.');return false}
+  it=it||C.inv.find(i=>i.type==='gasket'&&i.model===P.model);
+  if(!it){msg('You don\'t have a gasket for this frame.');return false}
+  if(it.model!==P.model){msg('That gasket is shaped for a '+MODELS[it.model].name+'.');sfx('err');return false}
+  C.inv=C.inv.filter(i=>i!==it);if(SEL===it.id)SEL=null;P.gasket=true;sfx('click');UI();return true;
+}
 function buy(t,model){
-  if(t==='kit'){if(C.cash<4){msg('Not enough cash.','bad');return false}C.cash-=4;C.mat+=6;spend(4);sfx('cash');UI();return true}
   const c=partCost(t,model);
-  if(C.cash<c){msg('Not enough cash for that part.','bad');sfx('err');return false}
-  C.cash-=c;spend(c);C.inv.push({id:uid(),type:t,model,bad:null,orig:false,used:false});
+  if(C.cash<c){msg('Not enough cash.','bad');sfx('err');return false}
+  C.cash-=c;spend(c);
+  if(t==='kit'){for(const h of HOLES){if(h.part==='case'&&!MODELS[model].caseScrews)continue;C.tray.push(Object.assign(holeSpec(h,model),{from:null}))}}
+  else C.inv.push({id:uid(),type:t,model,bad:null,orig:false,used:false});
   sfx('cash');UI();return true;
 }
 function spend(c){if(C===S)S.daySpend+=c;save()}
 function brushDone(i){
   const P=cur;
-  if(i<0){if(P.lint<=0)return false;P.lint=0;P.known.lint=1;fx('dust',50,P.open?189:194);msg('🧶 A big wad of pocket lint came out!','good');sfx('pop')}
+  if(i===-2){if(!P.open||!P.part.battery)return false;P.alc=true;msg('The alcohol wicks in under the cell.');sfx('click');UI();return true}
+  if(i<0){if(P.lint<=0)return false;P.lint=0;fx('dust',50,P.open?189:194);msg('🧶 A grey wad of pocket lint came out of the port.');sfx('pop')}
   else{const s=P.spots[i];if(!s||s.left<=0)return false;s.left=0;fx('dust',s.x,s.y);sfx('click')}
   UI();return true;
 }
@@ -452,109 +518,110 @@ function runTest(){
   if(w.power){
     for(const t of['screen','battery','speaker','camera'])if(p[t]&&p[t].bad)P.known[p[t].bad]=1;
     if(!w.charging)P.portSuspect=true;
-  }else P.deadSeen=true;
+  }
   sfx(w.power?'boot':'err');
-  const scrTxt=!w.power?'—':!p.screen?'missing':!P.conn.scr?'no picture (unplugged)':p.screen.bad==='crack'?'cracked glass':p.screen.bad==='touch'?'touch is dead':p.screen.bad==='backlight'?'black — backlight dead':'OK';
-  const rows=[['⚡ Power',w.power,w.power?'boots':!p.battery||!P.conn.bat?'no battery connected':'DEAD — won\'t turn on'],
-    ['📺 Screen',w.screen,scrTxt],['🔋 Battery',w.battery,!w.power?'—':p.battery.bad?'health 54% — worn':'97%'],
-    ['🔌 Charging',w.charging,!w.power?'—':w.charging?'OK':'not charging'],
-    ['🔊 Speaker',w.speaker,!w.power?'—':!p.speaker?'missing':w.speaker?'OK':'silent'],
-    ['📷 Camera',w.camera,!w.power?'—':!p.camera?'missing':w.camera?'OK':'blurry']];
+  const off='—';
+  const rows=[['⚡ Power',w.power?'boots to the lock screen':'nothing — no logo, no vibration'],
+    ['📺 Display',!w.power?off:w.display?'picture'+(w.glass?'':' (behind cracked glass)'):'black'],
+    ['👆 Touch',!w.power?off:w.touch?'responds':'no response'],
+    ['🔋 Battery',!w.power?off:p.battery.bad?'shows 100%, drops to 61% in a minute':'holds charge'],
+    ['🔌 Charging',!w.power?off:w.charging?'charging icon appears':'no charging icon'],
+    ['🔊 Speaker',!w.power?off:!p.speaker?'—':w.speaker?'plays the test tone':'silent'],
+    ['📷 Camera',!w.power?off:!p.camera||!P.conn.cam?'"camera not found"':w.camera?'focuses':'image is a blur']];
   P.notes=P.notes.filter(n=>n.t!=='test');
-  const fails=rows.filter(r=>!r[1]).map(r=>r[0].split(' ')[1]);
-  P.notes.push({t:'test',txt:'⚡ Test: '+(fails.length?fails.join(', ')+' failed':'everything works!'),bad:!!fails.length});
+  P.notes.push({t:'test',txt:'TEST  '+(w.power?rows.slice(1).map(r=>r[0].split(' ')[1]+': '+r[1]).join(' · '):'no power')});
   UI();return rows;
 }
 function handBack(){
   const P=cur;if(!P||P.gone)return null;
-  if(P.open||P.openT>.05){msg('Close it up first — you can\'t hand back a phone in pieces!','warn');sfx('err');return null}
+  if(P.open||P.openT>.05){msg('It\'s still open on the bench.');sfx('err');return null}
   const w=works(),miss=missingScrews(),f=Math.max(0,1-P.t/patience());
   const un=unfixed(),allWork=Object.values(w).every(Boolean),good=allWork&&!un.length;
   let pay=0;if(w.power)for(const x of P.faults)if(x.paid&&isFixed(x))pay+=FAULTS[x.k].pay;
   const full=P.faults.filter(x=>x.paid).reduce((a,x)=>a+FAULTS[x.k].pay,0);
-  let tip=good?Math.round(full*.25*f*(upg('sign')?1.5:1)):0;
+  const lift=P.opened&&!P.gasket;
+  let tip=good&&!lift?Math.round(full*.25*f*(upg('sign')?1.5:1)):0;
   if(f<=0)pay=Math.round(pay*.85);
-  const pen=miss*8;
+  const pen=miss*8+(lift?10:0);
   const total=Math.max(0,pay+tip-pen);
-  const stars=good?(f>.4&&!miss?5:f>0&&miss<=1?4:3):pay>0?2:1;
-  const broke=Object.keys(w).filter(k=>!w[k]);
-  const line=good?pick(Math.random,stars===5?['Wow, it\'s like new!','You\'re a wizard. Thank you!!','Perfect. I\'m telling everyone about this place.']:['Works great, thanks!','All good — took a while, but all good.'])
+  let stars=good?(f>.4&&!miss?5:f>0&&miss<=1?4:3):pay>0?2:1;
+  if(lift)stars=Math.min(stars,good?3:stars);
+  const broke=Object.keys(w).filter(k=>!w[k]).map(k=>k==='glass'?'glass':k);
+  const line=good?(lift?'It works… but the screen is lifting at the edge?':pick(Math.random,stars===5?['Wow, it\'s like new!','You\'re a wizard. Thank you!!','Perfect. I\'m telling everyone about this place.']:['Works great, thanks!','All good — took a while, but all good.']))
     :!w.power?'It won\'t even turn on! What did you do?!':'Uh… the '+broke.join(' and ')+' still '+(broke.length>1?'don\'t':'doesn\'t')+' work.';
   C.cash+=total;P.gone=true;
   C.inv=C.inv.filter(i=>!i.used);SEL=null;
   sfx(good?'cash':'err');
-  return{pay,tip,pen,total,stars,line,good,miss,caused:P.caused,late:f<=0};
+  return{pay,tip,pen,total,stars,line,good,miss,lift,caused:P.caused,late:f<=0};
 }
 function patience(){return cur.job.pat*(upg('chairs')?1.4:1)}
 
-// ═══════════════════════ hint engine (also drives the self-test bot) ═══════════════════════
+// ═══════════════════════ repair planner — the self-test bot (never shown to the player) ═══════════════════════
 function advise(){
   const P=cur;if(!P||P.gone)return null;
   const A=(txt,act)=>({txt,act});
   const un=unfixed(),kn=un.filter(f=>P.known[f.k]),unk=un.filter(f=>!P.known[f.k]);
-  const screwOut=id=>A('Unscrew that screw 🪛',{k:'screw',id});
+  const out=id=>A('unscrew '+id,{k:'screw',id});
+  const caseIds=MODELS[P.model].caseScrews?['b1','b2']:[];
   if(!P.open){
     if(P.openT>.05)return null;
-    if(!P.tested&&powered())return A('Press ⚡ Test first to see what works and what doesn\'t.',{k:'test'});
-    if(un.some(f=>f.k==='lint')&&P.known.lint)return A('Hold the 🪥 brush on the charge port to dig out the gunk.',{k:'brush',i:-1});
-    if(unk.length&&P.portSuspect&&!P.meas.port)return A('Charging failed — touch the 🔍 meter to the charge port.',{k:'meter',part:'port'});
-    if(!un.length){
-      for(const id of['b1','b2'])if(!P.sc[id])return A(C.mat>0?'Put the bottom screws back in 🪛':'Out of screws — buy a 🔩 screw kit',C.mat>0?{k:'screw',id}:{k:'buy',part:'kit'});
-      return A('All fixed! Hand it back to the customer ✅',{k:'handback'});
-    }
-    for(const id of['b1','b2'])if(P.sc[id])return A('Unscrew the two screws at the bottom 🪛',{k:'screw',id});
-    if(P.heat<55&&!swollen())return A('Hold the 🔥 heat gun on the phone until the gauge is in the green.',{k:'heat'});
-    return A('Pry the screen open with ✋ (click the phone).',{k:'pry'});
+    if(!P.tested&&powered())return A('test',{k:'test'});
+    if(un.some(f=>f.k==='lint')&&P.known.lint)return A('brush port',{k:'brush',i:-1});
+    if(unk.length&&P.portSuspect&&!P.meas.port)return A('meter port',{k:'meter',part:'port'});
+    if(!un.length){for(const id of caseIds)if(!correct(id))return P.sc[id]?out(id):screwIn(id);return A('hand back',{k:'handback'})}
+    for(const id of caseIds)if(P.sc[id])return out(id);
+    const req=['bottom','left','top'];
+    if(req.every(s=>Math.min(...P.segs[s])>=.9))return A('open',{k:'open'});
+    if(!P.gap){if(P.heat<55)return A('heat',{k:'heat'});return A('suction',{k:'suction'})}
+    for(const s of req)if(Math.min(...P.segs[s])<.9)return A('cut '+s,{k:'cut',side:s});
+    return A('open',{k:'open'});
   }
   if(P.openT<.95)return null;
-  if(unk.length)for(const t of['board','battery','port','speaker','camera','screen'])
-    if(P.part[t]&&!P.meas[t])return A('Find the fault: touch the 🔍 meter to the '+PARTS[t].n.toLowerCase()+'.',{k:'meter',part:t});
+  if(unk.length)for(const t of['board','battery','port','speaker','camera','screen'])if(P.part[t]&&!P.meas[t])return A('meter '+t,{k:'meter',part:t});
   const work=kn.slice().sort((a,b)=>(b.k==='board')-(a.k==='board'));
   if(work.length){
-    if(P.conn.bat&&work.some(f=>FAULTS[f.k].part)){
-      for(const id of['bc1','bc2'])if(P.sc[id])return A('Unscrew the bracket over the battery connector 🪛',{k:'screw',id});
-      return A('Unplug the battery connector 🔌 — ALWAYS before touching parts!',{k:'conn',id:'bat'});
-    }
+    if(P.conn.bat&&work.some(f=>FAULTS[f.k].part))return unplug('bat');
     for(const f of work){
-      if(f.k==='lint')return A('Hold the 🪥 brush on the charge port.',{k:'brush',i:-1});
-      if(f.k==='water'){const i=P.spots.findIndex(s=>s.left>0);if(i>=0&&P.part.board&&P.part.board.orig)return A('Scrub the green corrosion off the board with the 🪥 brush.',{k:'brush',i});continue}
+      if(f.k==='lint')return A('brush port',{k:'brush',i:-1});
+      if(f.k==='water'){const i=P.spots.findIndex(s=>s.left>0);if(i>=0&&P.part.board&&P.part.board.orig)return A('scrub',{k:'brush',i});continue}
       const t=FAULTS[f.k].part,p=P.part[t];
       if(p&&p.bad){
-        let rm=t;
-        if(t==='board'&&P.part.camera)rm='camera';
-        if((t==='board'||t==='screen')&&P.conn.scr){if(P.sc.sc1)return screwOut('sc1');return A('Unplug the screen ribbon 🔌',{k:'conn',id:'scr'})}
-        if(t==='board'&&P.conn.bat){for(const id of['bc1','bc2'])if(P.sc[id])return screwOut(id);return A('Unplug the battery connector 🔌',{k:'conn',id:'bat'})}
-        for(const s of SCREWS)if(s.part===rm&&P.sc[s.id])return A('Unscrew the '+PARTS[rm].n.toLowerCase()+' 🪛',{k:'screw',id:s.id});
-        return A('Pull out the '+(rm===t?'broken ':'')+PARTS[rm].n.toLowerCase()+' with ✋'+(rm==='battery'?' (hold — it\'s glued)':''),{k:'remove',part:rm});
+        const rm=t==='board'&&P.part.camera?'camera':t;
+        const cs=rm==='board'?CONN_IDS:CONN_IDS.filter(c=>CONNS[c].part===rm);
+        for(const c of cs)if(P.conn[c])return unplug(c);
+        for(const h of HOLES)if(h.part===rm&&P.sc[h.id])return out(h.id);
+        if(rm==='battery'&&!MODELS[P.model].tabs&&!P.alc)return A('alcohol',{k:'brush',i:-2});
+        return A('remove '+rm,{k:'remove',part:rm});
       }
       if(!p)return installStep(t);
     }
   }
   for(const t of['board','battery','camera','port','speaker','screen'])if(!P.part[t])return installStep(t);
-  if(!P.conn.scr){if(P.sc.sc1)return screwOut('sc1');return A('Plug the screen ribbon back in 🔌',{k:'conn',id:'scr'})}
-  if(!P.conn.bat){for(const id of['bc1','bc2'])if(P.sc[id])return screwOut(id);return A('Plug the battery back in 🔌',{k:'conn',id:'bat'})}
-  for(const s of SCREWS)if(s.part!=='case'&&hostOf(s)&&!P.sc[s.id])return C.mat>0?A('Put every screw back 🪛 — customers notice rattles.',{k:'screw',id:s.id}):A('Out of screws — buy a 🔩 screw kit',{k:'buy',part:'kit'});
-  return A('Looks good — close it up 📕',{k:'close'});
+  for(const c of CONN_IDS)if(P.part[CONNS[c].part]&&!P.conn[c]){for(const id of CONNS[c].br)if(P.sc[id])return out(id);return A('plug '+c,{k:'conn',id:c})}
+  for(const h of HOLES)if(h.part!=='case'&&hostOf(h)&&!correct(h.id))return P.sc[h.id]?out(h.id):screwIn(h.id);
+  if(!P.gasket)return C.inv.some(i=>i.type==='gasket'&&i.model===P.model)?A('gasket',{k:'gasket'}):A('buy gasket',{k:'buy',part:'gasket'});
+  return A('close',{k:'close'});
 }
+function unplug(c){const P=cur;for(const id of CONNS[c].br)if(P.sc[id])return{txt:'unscrew',act:{k:'screw',id}};return{txt:'unplug '+c,act:{k:'conn',id:c}}}
+function screwIn(id){const sp=holeSpec(HOLE[id],cur.model);return C.tray.some(t=>t.head===sp.head&&Math.abs(t.len-sp.len)<.01)?{txt:'screw '+id,act:{k:'screw',id}}:{txt:'kit',act:{k:'buy',part:'kit'}}}
 function installStep(t){
-  const P=cur;
-  const has=C.inv.find(i=>i.type===t&&i.model===P.model&&!i.bad);
-  if(has)return{txt:'Put the '+(has.used?'':'new ')+PARTS[t].n.toLowerCase()+' in: ✋ click its empty slot.',act:{k:'install',part:t}};
-  return{txt:'Buy a '+MODELS[P.model].name+' '+PARTS[t].n.toLowerCase()+' from 📦 Parts.',act:{k:'buy',part:t}};
+  const P=cur,has=C.inv.find(i=>i.type===t&&i.model===P.model&&!i.bad);
+  return has?{txt:'install '+t,act:{k:'install',part:t}}:{txt:'buy '+t,act:{k:'buy',part:t}};
 }
-const ACT_TOOL={screw:'driver',heat:'heat',pry:'hand',remove:'hand',install:'hand',conn:'spudger',meter:'meter',brush:'brush'};
-// the bot / smoke tests: do exactly what the hint says
 function doAct(a){
   const P=cur;quiet=true;let ok=true;
   try{switch(a.k){
-    case'screw':ok=toggleScrew(a.id);break;
-    case'heat':for(let i=0;i<40&&P.heat<60;i++)heatTick(.1);break;
-    case'pry':ok=pry();P.openT=1;break;
+    case'screw':{const s=P.sc[a.id];if(s)C.bit=s.head;else{const sp=holeSpec(HOLE[a.id],P.model),t=C.tray.find(x=>x.head===sp.head&&Math.abs(x.len-sp.len)<.01);if(t){SELSCREW=skey(t);C.bit=t.head}}ok=toggleScrew(a.id);break}
+    case'heat':for(let i=0;i<40&&P.heat<65;i++)heatTick(.1);break;
+    case'suction':ok=suctionDone();break;
+    case'cut':P.segs[a.side].fill(1);break;
+    case'open':ok=openUp();P.openT=1;break;
     case'close':ok=closeUp();P.openT=0;break;
     case'conn':ok=toggleConn(a.id);break;
     case'meter':ok=measure(a.part);break;
-    case'remove':ok=removePart(a.part);break;
+    case'remove':ok=removePart(a.part,false);break;
     case'install':ok=installPart(a.part);break;
+    case'gasket':ok=applyGasket();break;
     case'buy':ok=buy(a.part,P.model);break;
     case'brush':ok=brushDone(a.i);break;
     case'test':runTest();break;
@@ -570,21 +637,21 @@ function fx(kind,x,y){
   for(let i=0;i<n;i++){const a=Math.random()*6.283,v=kind==='spark'?30+Math.random()*60:8+Math.random()*20;
     FX.push({kind,x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-(kind==='smoke'?15:0),life:kind==='smoke'?1.6:.6+Math.random()*.4,max:1})}
 }
-function spawnRoll(x,y){ROLL.push({x,y,vx:(Math.random()<.5?-1:1)*(22+Math.random()*14),vy:8+Math.random()*10,life:3.2,rot:0});msg('🔩 A screw rolled off the bench — click it quick!','warn')}
+function spawnRoll(x,y,s){ROLL.push({x,y,s,vx:(Math.random()<.5?-1:1)*(22+Math.random()*14),vy:8+Math.random()*10,life:3.2,rot:0});msg('🔩 A screw bounced off the mat!')}
 function floatText(txt,x,y,col){FLOAT.push({txt,x,y,col:col||'#3ddc84',life:1.6})}
 let AC=null;
 function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
 function tone(f,d,type,v,slide){const a=AC;if(!a||!S.sound||quiet)return;const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),a.currentTime+d);g.gain.setValueAtTime(v||.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+d+.02)}
 function noise(d,v,hp){const a=AC;if(!a||!S.sound||quiet)return;const len=Math.floor(a.sampleRate*d),b=a.createBuffer(1,len,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<len;i++)c[i]=(Math.random()*2-1)*(1-i/len);const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();s.buffer=b;f.type='highpass';f.frequency.value=hp||1000;g.gain.value=v||.15;s.connect(f).connect(g).connect(a.destination);s.start()}
 const SFXS={screw:()=>{tone(1100,.04,'square',.05);setTimeout(()=>tone(1500,.04,'square',.04),40)},pop:()=>tone(260,.16,'triangle',.18,240),spark:()=>{noise(.3,.3,2500);tone(90,.25,'sawtooth',.12)},
-  cash:()=>{tone(1320,.08,'square',.07);setTimeout(()=>tone(1760,.22,'square',.07),90)},err:()=>tone(150,.18,'sawtooth',.08),click:()=>tone(720,.04,'triangle',.08),
-  beep:()=>tone(990,.1,'sine',.1),boot:()=>{tone(523,.14,'sine',.1);setTimeout(()=>tone(784,.26,'sine',.1),140)},crack:()=>{noise(.2,.35,3500);tone(200,.1,'square',.08)},brush:()=>noise(.07,.05,4000),hiss:()=>noise(.09,.03,800)};
+  cash:()=>{tone(1320,.08,'square',.07);setTimeout(()=>tone(1760,.22,'square',.07),90)},err:()=>tone(150,.14,'triangle',.08),click:()=>tone(720,.04,'triangle',.08),
+  beep:()=>tone(990,.1,'sine',.1),boot:()=>{tone(523,.14,'sine',.1);setTimeout(()=>tone(784,.26,'sine',.1),140)},crack:()=>{noise(.2,.35,3500);tone(200,.1,'square',.08)},brush:()=>noise(.07,.05,4000),hiss:()=>noise(.09,.03,800),slice:()=>noise(.05,.04,5000)};
 function sfx(k){if(SFXS[k])SFXS[k]()}
 function msg(t,kind){
   if(quiet)return;
   const el=document.createElement('div');el.className='tst '+(kind||'');el.textContent=t;
   const box=$('toast');box.appendChild(el);while(box.children.length>3)box.firstChild.remove();
-  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),450)},kind==='bad'?4200:3000);
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),450)},kind==='bad'?4200:2800);
 }
 
 // ═══════════════════════ input ═══════════════════════
@@ -599,8 +666,7 @@ function layout(){
 addEventListener('resize',layout);
 if(window.ResizeObserver)new ResizeObserver(layout).observe($('stage'));
 function geom(){
-  // leave a strip at the bottom for the hint bar and the race chips
-  const P=cur,foot=H>520?78:58;U=Math.max(.8,Math.min((H-foot-20)/202,(W-24)/222));
+  const P=cur,foot=mode==='race'?48:16;U=Math.max(.8,Math.min((H-foot-24)/204,(W-24)/222));
   const t=P?ease(P.openT):0;
   OX=lerp(W/2-50*U,W/2-104*U,t);OY=12+(H-foot-12-200*U)/2;
 }
@@ -608,13 +674,13 @@ const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
 const toL=(x,y)=>({x:(x-OX)/U,y:(y-OY)/U});
 const playing=()=>(mode==='solo'||mode==='race')&&cur&&!cur.gone;
 function hitTest(x,y){
-  const P=cur;let best=null,bd=8.5;
-  for(const s of SCREWS){if(!screwShown(s))continue;const d=Math.hypot(x-s.x,y-s.y);if(d<bd){bd=d;best={k:'screw',id:s.id}}}
+  const P=cur;let best=null,bd=8;
+  for(const h of HOLES){if(!screwShown(h))continue;const d=Math.hypot(x-h.x,y-h.y);if(d<bd){bd=d;best={k:'screw',id:h.id}}}
   if(best)return best;
-  if(!P.open){if(P.openT>.05)return null;if(inR(x,y,[38,184,24,16]))return{k:'port'};if(inR(x,y,[0,0,100,200]))return{k:'phone'};return null}
+  if(!P.open){if(P.openT>.05)return null;if(inR(x,y,[38,186,24,14]))return{k:'port'};if(inR(x,y,[-12,-12,124,224]))return{k:'phone'};return null}
   if(P.openT<.95)return null;
-  if(P.part.board){if(inR(x,y,R.batConn,2))return{k:'conn',id:'bat'};if(inR(x,y,R.scrConn,2))return{k:'conn',id:'scr'}}
-  if(P.part.board&&P.part.board.orig)for(let i=0;i<P.spots.length;i++){const s=P.spots[i];if(s.left>0&&Math.hypot(x-s.x,y-s.y)<8)return{k:'spot',i}}
+  if(P.part.board)for(const c of CONN_IDS)if(inR(x,y,CONNS[c].r,1.5))return{k:'conn',id:c};
+  if(P.part.board&&P.part.board.orig)for(let i=0;i<P.spots.length;i++){const s=P.spots[i];if(s.left>0&&Math.hypot(x-s.x,y-s.y)<7)return{k:'spot',i}}
   for(const t of['camera','port','speaker','battery','board']){
     if(!inR(x,y,R[t]))continue;
     if(t==='camera'&&!P.part.board)return{k:'slot',id:'board'};
@@ -633,35 +699,36 @@ cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')PTR.in=false})
 function press(){
   if(!playing())return;
   const P=cur,l=toL(PTR.x,PTR.y);
-  for(let i=0;i<ROLL.length;i++){const r=ROLL[i];if(Math.hypot(l.x-r.x,l.y-r.y)<11){ROLL.splice(i,1);C.mat++;msg('🔩 Caught it!','good');sfx('screw');UI();return}}
+  for(let i=0;i<ROLL.length;i++){const r=ROLL[i];if(Math.hypot(l.x-r.x,l.y-r.y)<11){ROLL.splice(i,1);C.tray.push(r.s);msg('🔩 Caught it.');sfx('screw');UI();return}}
   const t=hitTest(l.x,l.y);
-  const no=s=>{msg(s,'warn');sfx('err')};
   switch(TOOL){
-    case'driver':if(t&&t.k==='screw')HOLD={k:'screw',id:t.id,t:0,need:upg('drill')?.06:.32,l};
-      else no(P.open?'Use the 🪛 screwdriver on a screw.':'The screws are at the bottom edge of the phone.');break;
-    case'heat':if(P.open)no('Heat is for softening the glue on a closed phone.');else if(t)HOLD={k:'heat',t:0,need:1e9,l};break;
+    case'driver':if(t&&t.k==='screw')HOLD={k:'screw',id:t.id,t:0,need:upg('drill')?.06:.32,l};break;
+    case'heat':if(!P.open&&t)HOLD={k:'heat',t:0,need:1e9,l};break;
+    case'suction':if(!P.open&&t&&t.k!=='screw'&&inR(l.x,l.y,[0,0,100,200]))HOLD={k:'suc',t:0,need:.7,l};break;
+    case'pick':if(!P.open)HOLD={k:'pick',t:0,need:1e9,l,last:l};break;
     case'hand':
       if(!t)break;
-      if(!P.open&&(t.k==='phone'||t.k==='port'||t.k==='screw'))pry();
-      else if(t.k==='part'){if(t.id==='battery'&&!P.conn.bat&&!SCREWS.some(s=>s.part==='battery'&&P.sc[s.id]))HOLD={k:'pull',t:0,need:.8,l};else removePart(t.id)}
+      if(!P.open&&(t.k==='phone'||t.k==='port'||t.k==='screw'))openUp();
+      else if(t.k==='part'){if(t.id==='battery'&&!HOLES.some(h=>h.part==='battery'&&P.sc[h.id])){const tabs=MODELS[P.model].tabs;HOLD={k:'pull',t:0,need:tabs||P.alc?1:1.8,l,bent:!tabs&&!P.alc}}else removePart(t.id)}
       else if(t.k==='slot')installPart(t.id);
-      else if(t.k==='conn')no('Connectors need the 🔌 plug tool (a plastic spudger).');
       break;
-    case'spudger':if(t&&t.k==='conn')toggleConn(t.id);else no(P.open?'Use the 🔌 spudger on a connector — the little plugs on the board.':'Open the phone first to reach the connectors.');break;
+    case'spudger':if(t&&t.k==='conn')toggleConn(t.id);break;
     case'meter':
       if(t&&t.k==='part')measure(t.id);else if(t&&t.k==='spot')measure('board');else if(t&&t.k==='port')measure('port');
-      else no(P.open?'Touch the meter to a part.':'From outside you can only meter the charge port. Or press ⚡ Test.');break;
+      else if(t&&(t.k==='phone'||t.k==='body'))msg('The probes can\'t reach anything there.');break;
     case'brush':
       if(t&&t.k==='spot')HOLD={k:'brush',i:t.i,t:0,need:.6,l};
       else if(t&&(t.k==='port'||t.k==='part'&&t.id==='port'))HOLD={k:'brush',i:-1,t:0,need:.7,l};
-      else no('The brush is for dirt and corrosion — try the port, or green gunk on the board.');break;
+      else if(t&&t.k==='part'&&t.id==='battery')HOLD={k:'brush',i:-2,t:0,need:.8,l};
+      break;
   }
 }
 function holdTick(dt){
   if(!HOLD)return;
   if(!PTR.down||!playing()){HOLD=null;return}
   const P=cur,l=toL(PTR.x,PTR.y);
-  if(HOLD.k==='heat'){if(!inR(l.x,l.y,[-10,-10,120,220])||P.open)return;heatTick(dt);if(Math.random()<dt*14)sfx('hiss');HOLD.l=l;return}
+  if(HOLD.k==='heat'){if(!inR(l.x,l.y,[-12,-12,124,224])||P.open)return;heatTick(dt);if(Math.random()<dt*14)sfx('hiss');HOLD.l=l;return}
+  if(HOLD.k==='pick'){const d=Math.hypot(l.x-HOLD.last.x,l.y-HOLD.last.y);HOLD.last=l;HOLD.l=l;if(d>0&&!P.open){cutAt(l,Math.min(d,12));if(P.gap&&Math.random()<dt*10)sfx('slice')}return}
   if(Math.hypot(l.x-HOLD.l.x,l.y-HOLD.l.y)>14){HOLD=null;return}
   HOLD.t+=dt;
   if(HOLD.k==='brush'&&Math.random()<dt*12){sfx('brush');FX.push({kind:'dust',x:l.x,y:l.y,vx:(Math.random()-.5)*30,vy:(Math.random()-.5)*30,life:.4,max:1})}
@@ -669,12 +736,15 @@ function holdTick(dt){
   if(HOLD.t<HOLD.need)return;
   const h=HOLD;HOLD=null;
   if(h.k==='screw')toggleScrew(h.id);
-  else if(h.k==='pull')removePart('battery');
+  else if(h.k==='suc')suctionDone();
+  else if(h.k==='pull')removePart('battery',h.bent);
   else if(h.k==='brush')brushDone(h.i);
 }
+function cycleBit(){const i=BITS.findIndex(b=>b[0]===C.bit);C.bit=BITS[(i+1)%BITS.length][0];sfx('click');UI();renderToolLabels()}
 addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT')return;
-  const tl=TOOLS.find(t=>t.key===e.key);if(tl){setTool(tl.id);return}
+  const tl=TOOLS.find(t=>t.key===e.key);if(tl){if(tl.id==='driver'&&TOOL==='driver')cycleBit();else setTool(tl.id);return}
+  if(e.key==='b'||e.key==='B'){cycleBit();return}
   if(!playing())return;
   if(e.key==='t'||e.key==='T')testBtn();
   else if(e.key==='c'||e.key==='C'){if(cur.open)closeUp()}
@@ -684,6 +754,7 @@ addEventListener('keydown',e=>{
 // ═══════════════════════ rendering ═══════════════════════
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 function fillRR(x,y,w,h,r,c){rr(x,y,w,h,r);ctx.fillStyle=c;ctx.fill()}
+function txt(t,x,y,size,col,w,align){ctx.fillStyle=col;ctx.font=(w||600)+' '+size+'px Rubik,sans-serif';ctx.textAlign=align||'center';ctx.fillText(t,x,y)}
 let TIME=0;
 function drawBench(){
   ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -693,13 +764,19 @@ function drawBench(){
   for(let x=(W/2)%32;x<W;x+=32){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=(H/2)%32;y<H;y+=32){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();
   ctx.fillStyle='rgba(255,255,255,.05)';ctx.font='700 11px Rubik,sans-serif';ctx.textAlign='left';ctx.fillText('ESD SAFE  ·  PHONE DOCTOR REPAIR BENCH',10,H-10);
 }
-function drawScrew(s,inn){
-  if(inn){
-    const g=ctx.createRadialGradient(s.x-1,s.y-1,.3,s.x,s.y,3.6);g.addColorStop(0,'#f4f7fb');g.addColorStop(1,'#7d8794');
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(s.x,s.y,3.3,0,6.283);ctx.fill();ctx.strokeStyle='#4b535e';ctx.lineWidth=.5;ctx.stroke();
-    ctx.strokeStyle='#39414b';ctx.lineWidth=.7;ctx.beginPath();for(let i=0;i<5;i++){const a=i/5*6.283-1.57;ctx.moveTo(s.x,s.y);ctx.lineTo(s.x+Math.cos(a)*1.9,s.y+Math.sin(a)*1.9)}ctx.stroke();
-  }else{ctx.fillStyle='#0c0f13';ctx.beginPath();ctx.arc(s.x,s.y,2.6,0,6.283);ctx.fill();ctx.strokeStyle='#59626e';ctx.lineWidth=.6;ctx.stroke()}
+// screw heads: P = pentalobe, Y = tri-point, PH = Phillips. A wrong-length screw sits proud.
+function drawScrew(x,y,s,ok){
+  if(!s){ctx.fillStyle='#0a0c10';ctx.beginPath();ctx.arc(x,y,2.4,0,6.283);ctx.fill();ctx.strokeStyle='#59626e';ctx.lineWidth=.55;ctx.stroke();return}
+  const proud=ok===false;
+  if(proud){ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.arc(x+1,y+1.3,3.3,0,6.283);ctx.fill();y-=.7}
+  const g=ctx.createRadialGradient(x-1,y-1,.3,x,y,3.6);g.addColorStop(0,s.head==='P'?'#f6f7f9':'#e9eef4');g.addColorStop(1,s.head==='P'?'#8a8f96':'#6f7884');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,3.2,0,6.283);ctx.fill();ctx.strokeStyle='#454c56';ctx.lineWidth=.45;ctx.stroke();
+  ctx.fillStyle='#2c323a';ctx.strokeStyle='#2c323a';
+  if(s.head==='P'){ctx.beginPath();for(let i=0;i<10;i++){const a=i/10*6.283-1.57,r=i%2?.7:1.7;ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r)}ctx.closePath();ctx.fill()}
+  else if(s.head==='Y'){ctx.lineWidth=.65;ctx.beginPath();for(let i=0;i<3;i++){const a=i/3*6.283-1.57;ctx.moveTo(x,y);ctx.lineTo(x+Math.cos(a)*1.9,y+Math.sin(a)*1.9)}ctx.stroke()}
+  else{ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(x-1.8,y);ctx.lineTo(x+1.8,y);ctx.moveTo(x,y-1.8);ctx.lineTo(x,y+1.8);ctx.stroke()}
 }
+function drawHole(h){const P=cur;drawScrew(h.x,h.y,P.sc[h.id],P.sc[h.id]?correct(h.id):null)}
 function drawFront(P,lit){
   const m=MODELS[P.model],sw=swollen();
   ctx.save();
@@ -708,24 +785,37 @@ function drawFront(P,lit){
   if(lit){
     const g=ctx.createLinearGradient(0,6,100,186);g.addColorStop(0,m.accent);g.addColorStop(1,'#1b1f3a');
     ctx.globalAlpha=Math.min(1,lit);fillRR(5,5,90,179,9,g);
-    ctx.fillStyle='rgba(255,255,255,.92)';ctx.textAlign='center';ctx.font='700 20px Rubik,sans-serif';ctx.fillText('12:41',50,48);
-    ctx.font='500 6px Rubik,sans-serif';ctx.fillText(m.name.toUpperCase(),50,58);ctx.globalAlpha=1;
+    txt('12:41',50,48,20,'rgba(255,255,255,.92)',700);txt(m.name.toUpperCase(),50,58,6,'rgba(255,255,255,.92)',500);ctx.globalAlpha=1;
   }else{
     const g=ctx.createLinearGradient(0,0,100,190);g.addColorStop(0,'rgba(255,255,255,.08)');g.addColorStop(.45,'rgba(255,255,255,0)');ctx.fillStyle=g;rr(5,5,90,179,9);ctx.fill();
   }
-  ctx.fillStyle='#000';
-  if(m.cut==='notch')fillRR(32,3,36,8,4,'#000');else if(m.cut==='island')fillRR(38,8,24,7,3.5,'#000');else{ctx.beginPath();ctx.arc(50,11,3,0,6.283);ctx.fill()}
+  // earpiece slot, sensors
+  fillRR(42,6,16,1.6,.8,'#1a1d22');
+  if(m.cut==='notch')fillRR(32,3,36,8,4,'#000');else if(m.cut==='island')fillRR(38,8,24,7,3.5,'#000');else{ctx.fillStyle='#000';ctx.beginPath();ctx.arc(50,11,3,0,6.283);ctx.fill()}
   if(P.cracks){
     ctx.strokeStyle='rgba(235,245,255,.75)';ctx.lineWidth=.55;ctx.lineJoin='round';
     for(const pl of P.cracks){ctx.beginPath();pl.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}
     ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1.6;for(const pl of P.cracks.slice(0,3)){ctx.beginPath();pl.slice(0,3).forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke()}
   }
   ctx.restore();
-  // chin: screws + port
+  // chin: port, speaker grille, case screws
   fillRR(4,186,92,11,4,m.dark);
   fillRR(42,190,16,5,2.5,'#0a0c10');
+  ctx.fillStyle='#14171c';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(64+i*3,192.5,.8,0,6.283);ctx.fill();ctx.beginPath();ctx.arc(24+i*3,192.5,.8,0,6.283);ctx.fill()}
   if(P.lint>0){ctx.fillStyle='#b8b2a6';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(44+i*2.4,192.5+Math.sin(i*2)*.8,1.1,0,6.283);ctx.fill()}}
-  for(const id of['b1','b2'])drawScrew(SCREW_BY[id],P.sc[id]);
+  if(m.caseScrews)for(const id of['b1','b2'])drawHole(HOLE[id]);
+  // the adhesive line where the pick has been, and the lifted gap
+  ctx.lineCap='round';
+  for(const s of SIDES)P.segs[s].forEach((v,i)=>{if(v<=.02)return;ctx.strokeStyle='rgba(0,0,0,'+(.25+v*.6)+')';ctx.lineWidth=.6+v*1.2;ctx.beginPath();
+    if(s==='bottom'||s==='top'){const y=s==='top'?2.2:197.8,x=10+i*20;ctx.moveTo(x,y);ctx.lineTo(x+20,y)}else{const x=s==='left'?2.2:97.8,y=14+i*21.5;ctx.moveTo(x,y);ctx.lineTo(x,y+21.5)}ctx.stroke()});
+  ctx.lineCap='butt';
+  if(P.gap&&!P.open){
+    ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(6,184.5,88,1.6);
+    // suction cup stuck to the glass
+    ctx.save();ctx.globalAlpha=.85;const g=ctx.createRadialGradient(50,165,2,50,165,15);g.addColorStop(0,'rgba(200,215,230,.55)');g.addColorStop(1,'rgba(120,140,160,.65)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(50,165,14,0,6.283);ctx.fill();ctx.strokeStyle='rgba(230,240,250,.8)';ctx.lineWidth=.8;ctx.stroke();
+    fillRR(46,150,8,15,3,'#c33');fillRR(44,147,12,5,2,'#a22');ctx.restore();
+  }
   if(P.heat>0){
     const a=Math.min(.55,P.heat/100*.45);const hx=HOLD&&HOLD.k==='heat'?HOLD.l.x:50,hy=HOLD&&HOLD.k==='heat'?HOLD.l.y:100;
     const g=ctx.createRadialGradient(hx,hy,2,hx,hy,95);g.addColorStop(0,P.heat>100?'rgba(255,60,40,'+a+')':'rgba(255,140,40,'+a+')');g.addColorStop(1,'rgba(255,120,40,0)');
@@ -733,78 +823,113 @@ function drawFront(P,lit){
   }
 }
 function drawBack(P){
-  const x=SCREEN_X;
+  const x=SCREEN_X,m=MODELS[P.model];
   fillRR(x,0,100,200,13,'#1d2127');
-  fillRR(x+5,5,90,190,9,'#3a404a');
-  ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=.5;for(let i=0;i<9;i++){ctx.beginPath();ctx.moveTo(x+10,20+i*20);ctx.lineTo(x+90,20+i*20);ctx.stroke()}
-  ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='600 5px Rubik,sans-serif';ctx.textAlign='center';ctx.fillText(MODELS[P.model].name.toUpperCase()+' · DISPLAY',x+50,110);
-  const b=P.part.screen.bad;if(b&&upg('thermal'))glowRect([x+4,4,92,192]);
-  fillRR(x+4,14,14,20,2,'#d98a2b');
+  fillRR(x+5,5,90,190,9,'#3d434d');
+  // EMI shield + graphite sheet + copper tape
+  fillRR(x+12,40,76,120,3,'#2b2f35');ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=.4;for(let i=0;i<12;i++){ctx.beginPath();ctx.moveTo(x+14,44+i*10);ctx.lineTo(x+86,44+i*10);ctx.stroke()}
+  fillRR(x+70,150,16,30,1,'#b87333');fillRR(x+14,165,22,14,1,'#b87333');
+  txt(m.name.toUpperCase()+' · LCM ASSY',x+50,104,5,'rgba(255,255,255,.35)');txt('DO NOT PRESS',x+50,112,3.6,'rgba(255,255,255,.25)');
+  // earpiece + front camera assembly
+  fillRR(x+30,6,40,14,2,'#15181c');fillRR(x+36,9,18,6,2,'#262a30');ctx.fillStyle='#000';ctx.beginPath();ctx.arc(x+62,12,3,0,6.283);ctx.fill();
+  ctx.fillStyle='#24324d';ctx.beginPath();ctx.arc(x+62,12,1.4,0,6.283);ctx.fill();
+  // the display + digitizer flex tails (they run to the board connectors)
+  fillRR(x+4,14,14,10,1.5,'#d98a2b');fillRR(x+4,27,14,8,1.5,'#c27a24');
+  // old adhesive on the screen rim
+  if(!P.gasket){ctx.strokeStyle='rgba(240,240,235,.5)';ctx.lineWidth=1.4;ctx.setLineDash([3,1.5,1,2]);rr(x+2,2,96,196,11);ctx.stroke();ctx.setLineDash([])}
+  if(P.part.screen.bad&&upg('thermal'))glowRect([x+4,4,92,192]);
 }
 function glowRect(r){const a=.35+.25*Math.sin(TIME*5);ctx.save();ctx.shadowColor='rgba(255,60,60,'+a+')';ctx.shadowBlur=12;ctx.strokeStyle='rgba(255,80,80,'+a+')';ctx.lineWidth=1.5;rr(r[0],r[1],r[2],r[3],4);ctx.stroke();ctx.restore()}
 function slot(r,label){ctx.save();ctx.setLineDash([2.5,2]);ctx.strokeStyle='rgba(140,155,176,.7)';ctx.lineWidth=.7;rr(r[0],r[1],r[2],r[3],3);ctx.stroke();ctx.restore();
-  ctx.fillStyle='rgba(140,155,176,.85)';ctx.font='600 '+Math.min(6,r[2]/5)+'px Rubik,sans-serif';ctx.textAlign='center';ctx.fillText(label,r[0]+r[2]/2,r[1]+r[3]/2+2)}
+  txt(label,r[0]+r[2]/2,r[1]+r[3]/2+2,Math.min(5.5,r[2]/5),'rgba(140,155,176,.85)')}
+function flex(pts,w,col){ctx.strokeStyle=col||'#d98a2b';ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
+  ctx.strokeStyle='rgba(255,220,150,.35)';ctx.lineWidth=w*.15;ctx.stroke();ctx.lineCap='butt'}
+// a plug sits in its socket (connected) or is flipped up beside it
+function drawConn(id){
+  const P=cur,c=CONNS[id],r=c.r,on=P.conn[id],has=!!P.part[c.part];
+  fillRR(r[0],r[1],r[2],r[3],1,'#0d0f12');ctx.fillStyle='#d4a940';for(let i=0;i<Math.floor(r[2]/2)-1;i++)ctx.fillRect(r[0]+1.4+i*2,r[1]+r[3]/2-1,1,2);
+  if(!has)return;
+  if(on){fillRR(r[0]+.8,r[1]+.8,r[2]-1.6,r[3]-1.6,1,'#2c3138');ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(r[0]+1.5,r[1]+1.2,r[2]-3,.6)}
+  else{fillRR(r[0]+.8,r[1]-r[3]+1,r[2]-1.6,r[3]-1.6,1,'#2c3138');ctx.strokeStyle='#d98a2b';ctx.lineWidth=.5;rr(r[0]+.8,r[1]-r[3]+1,r[2]-1.6,r[3]-1.6,1);ctx.stroke()}
+}
+let SMD=null;
 function drawInterior(P){
+  const m=MODELS[P.model];
+  // chassis
   fillRR(3,3,94,194,11,'#2b3038');
-  ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=.6;for(let y=8;y<196;y+=6){ctx.beginPath();ctx.moveTo(6,y);ctx.lineTo(94,y);ctx.stroke()}
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=.6;for(let y=8;y<196;y+=4){ctx.beginPath();ctx.moveTo(6,y);ctx.lineTo(94,y);ctx.stroke()}
+  ctx.fillStyle=m.dark;ctx.fillRect(3,72,94,1.2);ctx.fillRect(3,160,94,1.2);   // antenna splits
+  fillRR(95,90,3,26,1.2,'#1a1d22');                                          // SIM tray
+  // adhesive remnants / fresh gasket on the rim
+  if(P.gasket){ctx.strokeStyle='#0a0a0a';ctx.lineWidth=2;rr(4.5,4.5,91,191,10);ctx.stroke()}
+  else{ctx.strokeStyle='rgba(240,240,235,.55)';ctx.lineWidth=1.3;ctx.setLineDash([4,1.5,1,2.5]);rr(4.5,4.5,91,191,10);ctx.stroke();ctx.setLineDash([])}
   const p=P.part,th=upg('thermal');
+  // port flex runs up the left edge to its board connector
+  if(p.port)flex([[44,183],[11,178],[11,72],[22,68],[28,66]],3);
   // board
   if(p.board){
-    const[bx,by,bw,bh]=R.board;fillRR(bx,by,bw,bh,5,'#1d6b45');
-    ctx.strokeStyle='#2f8f5f';ctx.lineWidth=.6;ctx.beginPath();
-    for(let i=0;i<9;i++){ctx.moveTo(bx+4,by+8+i*6);ctx.lineTo(bx+20+i*3,by+8+i*6);ctx.lineTo(bx+26+i*3,by+14+i*6)}
-    for(let i=0;i<6;i++){ctx.moveTo(bx+46+i*5,by+30);ctx.lineTo(bx+46+i*5,by+44)}ctx.stroke();
-    fillRR(40,30,24,18,1.5,'#121417');ctx.fillStyle='#8a9099';ctx.font='600 4px Rubik,sans-serif';ctx.textAlign='center';ctx.fillText('A13 SoC',52,40);
-    fillRR(66,30,12,8,1,'#121417');fillRR(66,40,12,6,1,'#121417');fillRR(20,40,14,10,1,'#121417');
-    ctx.fillStyle='#d4a940';for(let i=0;i<7;i++)ctx.fillRect(40+i*3.5,49,1.6,1.6);
+    const[bx,by,bw,bh]=R.board;fillRR(bx,by,bw,bh,5,'#1d5e3e');fillRR(bx+.8,by+.8,bw-1.6,bh-1.6,4.5,'#1f6b45');
+    ctx.strokeStyle='#2c8a5a';ctx.lineWidth=.45;ctx.beginPath();
+    for(let i=0;i<10;i++){ctx.moveTo(bx+30,by+16+i*4);ctx.lineTo(bx+44,by+16+i*4);ctx.lineTo(bx+48,by+20+i*4)}
+    for(let i=0;i<8;i++){ctx.moveTo(bx+48+i*2.2,by+34);ctx.lineTo(bx+48+i*2.2,by+44)}ctx.stroke();
+    if(!SMD){const r=rngOf(42);SMD=Array.from({length:70},()=>[12+r()*76,12+r()*56,r()<.5?1.6:.9,r()<.5?.8:.5,r()<.3?'#c9a227':r()<.6?'#3a2a1a':'#222'])}
+    for(const s of SMD)if(!inR(s[0],s[1],[12,10,30,35])&&!inR(s[0],s[1],[54,11,24,25])&&!inR(s[0],s[1],[55,56,24,13])){ctx.fillStyle=s[4];ctx.fillRect(s[0],s[1],s[2],s[3])}
+    // SoC under a shield can, PMIC, NAND
+    fillRR(38,24,17,18,1,'#b9c0c8');ctx.fillStyle='rgba(0,0,0,.25)';for(let i=0;i<6;i++)for(let j=0;j<6;j++){ctx.beginPath();ctx.arc(40.5+i*2.5,26.5+j*2.7,.35,0,6.283);ctx.fill()}
+    txt('SoC',46.5,34,3.4,'#5c646e',700);
+    fillRR(62,40,13,10,1,'#121417');txt('PMIC',68.5,46.3,2.8,'#7d848d');
+    fillRR(44,58,10,9,.8,'#121417');txt('NAND',49,63.5,2.4,'#7d848d');
+    fillRR(76,50,10,7,.8,'#121417');
+    ctx.fillStyle='#d4a940';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(26+i*2.8,66,.6,0,6.283);ctx.fill()}   // test points
     if(p.board.orig&&P.job.faults.includes('water'))for(const s of P.spots){if(s.left<=0)continue;
       ctx.globalAlpha=s.left;const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,7);g.addColorStop(0,'#7cf2c3');g.addColorStop(.6,'#2fa77e');g.addColorStop(1,'rgba(40,140,110,0)');
       ctx.fillStyle=g;ctx.beginPath();ctx.arc(s.x,s.y,7,0,6.283);ctx.fill();ctx.fillStyle='#e9fff6';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(s.x+Math.cos(i*2.4)*3,s.y+Math.sin(i*2.4)*3,.7,0,6.283);ctx.fill()}ctx.globalAlpha=1}
     if(th&&(p.board.bad||!waterOK()))glowRect(R.board);
-    // connectors (+ their brackets)
-    for(const id of['scr','bat']){
-      const r=id==='scr'?R.scrConn:R.batConn,on=P.conn[id],plugged=id==='scr'?!!p.screen:!!p.battery;
-      fillRR(r[0],r[1],r[2],r[3],1,'#0d0f12');
-      ctx.fillStyle='#d4a940';for(let i=0;i<8;i++)ctx.fillRect(r[0]+1.5+i*2,r[1]+3.5,1,2);
-      if(plugged){const dy=on?0:-4.5;fillRR(r[0]+1,r[1]+1+dy,r[2]-2,r[3]-2,1,on?'#2c3138':'#4a3a1e');if(!on){ctx.strokeStyle='#ff9f3d';ctx.lineWidth=.7;rr(r[0]+1,r[1]+1+dy,r[2]-2,r[3]-2,1);ctx.stroke()}}
-      const br=id==='scr'?['sc1']:['bc1','bc2'];
-      if(br.some(s=>P.sc[s])){ctx.globalAlpha=.92;fillRR(r[0]-3,r[1]-2,r[2]+6,r[3]+4,2,'#b4bcc6');ctx.globalAlpha=1;ctx.strokeStyle='#7d8794';ctx.lineWidth=.5;rr(r[0]-3,r[1]-2,r[2]+6,r[3]+4,2);ctx.stroke()}
-    }
-    // camera
-    if(p.camera){const[cx,cy,cw,ch]=R.camera;fillRR(cx,cy,cw,ch,3,'#aab2bc');fillRR(cx+2,cy+2,cw-4,ch-4,2,'#d8dde3');
-      ctx.fillStyle='#0b0d12';ctx.beginPath();ctx.arc(cx+10,cy+10,6.2,0,6.283);ctx.fill();ctx.fillStyle='#24324d';ctx.beginPath();ctx.arc(cx+10,cy+10,3.6,0,6.283);ctx.fill();
+    for(const c of CONN_IDS)drawConn(c);
+    // camera module + its flex + its bracket
+    if(p.camera){
+      const[cx,cy,cw,ch]=R.camera;flex([[24,32],[23,37]],5);
+      fillRR(cx,cy,cw,ch,3,'#aab2bc');fillRR(cx+2,cy+2,cw-4,ch-4,2,'#d8dde3');
+      ctx.fillStyle='#0b0d12';ctx.beginPath();ctx.arc(cx+10,cy+10,6.2,0,6.283);ctx.fill();ctx.strokeStyle='#3c4450';ctx.lineWidth=.6;ctx.beginPath();ctx.arc(cx+10,cy+10,4.8,0,6.283);ctx.stroke();
+      ctx.fillStyle='#24324d';ctx.beginPath();ctx.arc(cx+10,cy+10,3.4,0,6.283);ctx.fill();
       ctx.fillStyle='rgba(140,200,255,.8)';ctx.beginPath();ctx.arc(cx+8.5,cy+8.5,1.1,0,6.283);ctx.fill();
-      if(th&&p.camera.bad)glowRect(R.camera)}
-    else slot(R.camera,'CAM');
+      if(P.sc.c1){ctx.strokeStyle='#c4ccd6';ctx.lineWidth=1.6;rr(12.5,10.5,29,34,2);ctx.stroke();fillRR(12,39,24,6,1,'#b4bcc6');fillRR(36,10,6,8,1,'#b4bcc6')}
+      if(th&&p.camera.bad)glowRect(R.camera);
+    }else slot(R.camera,'CAM');
+    for(const b of BRACKETS)if(b.sc.some(s=>P.sc[s])){const r=b.r;ctx.globalAlpha=.94;fillRR(r[0],r[1],r[2],r[3],2,'#b4bcc6');ctx.globalAlpha=1;ctx.strokeStyle='#7d8794';ctx.lineWidth=.5;rr(r[0],r[1],r[2],r[3],2);ctx.stroke();
+      ctx.fillStyle='rgba(0,0,0,.18)';for(let i=0;i<4;i++)ctx.fillRect(r[0]+3+i*5,r[1]+r[3]/2-.4,3,.8)}
   }else{slot(R.board,'LOGIC BOARD')}
-  // battery + its flex to the board
+  // battery + flex to its connector
   if(p.battery){
-    const[x,y,w,h]=R.battery;
-    fillRR(60,66,8,12,1,'#d98a2b');
+    const[x,y,w,h]=R.battery,bm=MODELS[p.battery.model];
+    flex([[62,77],[66,70],[67,66]],7);
     fillRR(x,y,w,h,4,'#16181c');
     if(swollen()){const g=ctx.createRadialGradient(x+w/2,y+h/2,4,x+w/2,y+h/2,46);g.addColorStop(0,'rgba(255,255,255,.22)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;rr(x,y,w,h,4);ctx.fill();
-      ctx.strokeStyle='rgba(255,160,60,.6)';ctx.lineWidth=.6;ctx.beginPath();ctx.ellipse(x+w/2,y+h/2,w/2-4,h/2-6,0,0,6.283);ctx.stroke()}
-    fillRR(x+8,y+28,w-16,22,2,MODELS[p.battery.model].accent);
-    ctx.fillStyle='#0d0f12';ctx.font='800 7px Rubik,sans-serif';ctx.textAlign='center';ctx.fillText('Li-ion',x+w/2,y+38);ctx.font='600 4.5px Rubik,sans-serif';ctx.fillText('3.85V · '+MODELS[p.battery.model].name,x+w/2,y+45);
-    ctx.fillStyle='#000';for(const tx of[x+16,x+w-26])fillRR(tx,y+h-6,10,9,1.5,'#060708');
+      ctx.strokeStyle='rgba(255,180,90,.5)';ctx.lineWidth=.6;ctx.beginPath();ctx.ellipse(x+w/2,y+h/2,w/2-4,h/2-6,0,0,6.283);ctx.stroke()}
+    txt('Li-ion Polymer',x+w/2,y+14,5,'#e8ecf1',700);
+    txt(bm.mah+' mAh · 3.85 V · '+(bm.mah*3.85/1000).toFixed(2)+' Wh',x+w/2,y+21,3.4,'#aab2bc',500);
+    fillRR(x+8,y+28,w-16,22,2,bm.accent);txt(bm.name,x+w/2,y+38,6,'#0d0f12',800);txt('A'+(1800+bm.mah%997),x+w/2,y+45,3.6,'#0d0f12',600);
+    ctx.fillStyle='#e8ecf1';for(let i=0;i<22;i++)ctx.fillRect(x+16+i*1.8,y+56,i%3?.5:1,8);
+    txt('⚠ DO NOT PUNCTURE · DO NOT HEAT',x+w/2,y+72,3,'#aab2bc',600);
+    if(P.alc){ctx.fillStyle='rgba(180,220,255,.18)';rr(x,y,w,h,4);ctx.fill()}
+    if(m.tabs||bm.tabs)for(const tx of[x+14,x+w-26])fillRR(tx,y+h-3,12,10,1.5,'#060708');
     if(th&&p.battery.bad)glowRect(R.battery);
   }else slot(R.battery,'BATTERY');
-  // speaker
-  if(p.speaker){const[x,y,w,h]=R.speaker;fillRR(x,y,w,h,2,'#121417');ctx.fillStyle='#3d434c';for(let i=0;i<4;i++)for(let j=0;j<3;j++){ctx.beginPath();ctx.arc(x+4+i*4,y+4+j*4,1,0,6.283);ctx.fill()}if(th&&p.speaker.bad)glowRect(R.speaker)}
+  // taptic engine (decorative), speaker, port
+  {const[x,y,w,h]=R.taptic;fillRR(x,y,w,h,2,'#9aa3ad');fillRR(x+1,y+1,w-2,h-2,1.5,'#b9c0c8');txt('TAPTIC',x+w/2,y+h/2+1.2,3,'#5c646e',700)}
+  if(p.speaker){const[x,y,w,h]=R.speaker;fillRR(x,y,w,h,2,'#121417');ctx.fillStyle='#3d434c';for(let i=0;i<4;i++)for(let j=0;j<3;j++){ctx.beginPath();ctx.arc(x+4+i*4,y+4+j*4,1,0,6.283);ctx.fill()}fillRR(x+w-5,y+h-4,4,3,.5,'#d4a940');if(th&&p.speaker.bad)glowRect(R.speaker)}
   else slot(R.speaker,'SPK');
-  // port
-  if(p.port){const[x,y,w,h]=R.port;fillRR(x-4,y-6,w+8,6,1,'#d98a2b');fillRR(x,y,w,h,2,'#c4ccd6');fillRR(x+4,y+4,w-8,5,2.5,'#0b0d12');
+  if(p.port){const[x,y,w,h]=R.port;fillRR(x,y,w,h,2,'#c4ccd6');fillRR(x+4,y+4,w-8,5,2.5,'#0b0d12');
     ctx.fillStyle='#d4a940';for(let i=0;i<6;i++)ctx.fillRect(x+6+i*2,y+5.6,1,1.8);
     if(P.lint>0){ctx.fillStyle='#b8b2a6';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(x+6+i*2.4,y+6.5+Math.sin(i*2)*.7,1,0,6.283);ctx.fill()}}
     if(th&&p.port.bad)glowRect(R.port)}
   else slot(R.port,'PORT');
-  for(const s of SCREWS)if(s.part!=='case'&&hostOf(s))drawScrew(s,P.sc[s.id]);
+  for(const h of HOLES)if(h.part!=='case'&&hostOf(h))drawHole(h);
 }
 function drawPhone(){
   const P=cur;
   ctx.setTransform(DPR*U,0,0,DPR*U,DPR*OX,DPR*OY);
   const m=MODELS[P.model],t=P.openT;
-  // drop shadow
   ctx.save();ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=18*U*DPR;ctx.shadowOffsetY=6*U*DPR;fillRR(0,0,100,200,13,m.frame);ctx.restore();
   const fg=ctx.createLinearGradient(0,0,100,0);fg.addColorStop(0,m.frame);fg.addColorStop(.5,'#ffffff22');fg.addColorStop(1,m.frame);
   fillRR(0,0,100,200,13,m.frame);ctx.fillStyle=fg;ctx.globalAlpha=.25;rr(0,0,100,200,13);ctx.fill();ctx.globalAlpha=1;
@@ -817,83 +942,69 @@ function drawPhone(){
     if(P.part.screen){ctx.save();ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=12*U*DPR;ctx.shadowOffsetY=4*U*DPR;fillRR(SCREEN_X,0,100,200,13,'#1d2127');ctx.restore();drawBack(P)}
     else slot([SCREEN_X+6,6,88,188],'SCREEN')}
   ctx.restore();
-  // ribbon from the screen to its connector
+  // display + digitizer flexes from the screen to their connectors, over the board
   if(t>.9&&P.part.screen&&P.part.board){
-    const c=R.scrConn,on=P.conn.scr,ex=c[0]+c[2]/2,ey=c[1]+(on?4:-1);
-    ctx.strokeStyle='#d98a2b';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(SCREEN_X+11,24);ctx.bezierCurveTo(100,10,90,ey-8,ex+6,ey);ctx.stroke();ctx.lineCap='butt';
-    const r=R.scrConn,dy=on?0:-4.5;fillRR(r[0]+1,r[1]+1+dy,r[2]-2,r[3]-2,1,on?'#2c3138':'#4a3a1e');
-    if(!on){ctx.strokeStyle='#ff9f3d';ctx.lineWidth=.7;rr(r[0]+1,r[1]+1+dy,r[2]-2,r[3]-2,1);ctx.stroke()}
-    if(P.sc.sc1){ctx.globalAlpha=.92;fillRR(r[0]-3,r[1]-2,r[2]+6,r[3]+4,2,'#b4bcc6');ctx.globalAlpha=1}
-    drawScrew(SCREW_BY.sc1,P.sc.sc1);
+    for(const[id,yy,w,col]of[['scr',19,6,'#d98a2b'],['tch',31,5,'#c27a24']]){
+      const r=CONNS[id].r,on=P.conn[id],ex=r[0]+r[2]/2,ey=r[1]+(on?r[3]/2:-r[3]/2+1);
+      ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(SCREEN_X+11,yy);ctx.bezierCurveTo(100,yy-6,92,ey,ex+5,ey);ctx.stroke();ctx.lineCap='butt';
+    }
+    for(const id of['scr','tch'])drawConn(id);
+    const b=BRACKETS[0];if(b.sc.some(s=>P.sc[s])){const r=b.r;ctx.globalAlpha=.94;fillRR(r[0],r[1],r[2],r[3],2,'#b4bcc6');ctx.globalAlpha=1;ctx.strokeStyle='#7d8794';ctx.lineWidth=.5;rr(r[0],r[1],r[2],r[3],2);ctx.stroke()}
+    drawHole(HOLE.sc1);drawHole(HOLE.sc2);
   }
-}
-function hintTarget(a){
-  if(!a)return null;const P=cur;
-  if(a.k==='screw'){const s=SCREW_BY[a.id];return{c:[s.x,s.y,7]}}
-  if(a.k==='conn')return{r:a.id==='bat'?R.batConn:R.scrConn};
-  if(a.k==='meter'||a.k==='remove'||a.k==='install'){const t=a.part;if(t==='port'&&!P.open)return{r:[40,188,20,9]};return{r:t==='screen'?[SCREEN_X,0,100,200]:R[t]}}
-  if(a.k==='brush'){if(a.i<0)return{r:P.open?R.port:[40,188,20,9]};const s=P.spots[a.i];return{c:[s.x,s.y,8]}}
-  if(a.k==='heat'||a.k==='pry')return{r:[0,0,100,200]};
-  return null;
 }
 function drawOverlay(){
   const P=cur;
   ctx.setTransform(DPR*U,0,0,DPR*U,DPR*OX,DPR*OY);
-  // hover highlight
   if(PTR.in&&playing()&&!HOLD){
     const l=toL(PTR.x,PTR.y),t=hitTest(l.x,l.y);
-    if(t){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=.8;
-      if(t.k==='screw'){const s=SCREW_BY[t.id];ctx.beginPath();ctx.arc(s.x,s.y,5.5,0,6.283);ctx.stroke()}
-      else if(t.k==='conn'){const r=t.id==='bat'?R.batConn:R.scrConn;rr(r[0]-2,r[1]-2,r[2]+4,r[3]+4,2);ctx.stroke()}
+    if(t){ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=.7;
+      if(t.k==='screw'){const s=HOLE[t.id];ctx.beginPath();ctx.arc(s.x,s.y,5,0,6.283);ctx.stroke()}
+      else if(t.k==='conn'){const r=CONNS[t.id].r;rr(r[0]-1.5,r[1]-1.5,r[2]+3,r[3]+3,2);ctx.stroke()}
       else if(t.k==='part'||t.k==='slot'){const r=t.id==='screen'?[SCREEN_X,0,100,200]:R[t.id];rr(r[0]-1,r[1]-1,r[2]+2,r[3]+2,4);ctx.stroke()}
-      else if(t.k==='spot'){const s=P.spots[t.i];ctx.beginPath();ctx.arc(s.x,s.y,8,0,6.283);ctx.stroke()}}
+      else if(t.k==='spot'){const s=P.spots[t.i];ctx.beginPath();ctx.arc(s.x,s.y,7.5,0,6.283);ctx.stroke()}}
   }
-  // hint ring
-  if(S.hints||tut()){const h=HINT&&hintTarget(HINT.act);if(h){const a=.5+.5*Math.sin(TIME*6);ctx.strokeStyle='rgba(57,208,255,'+(.35+a*.6)+')';ctx.lineWidth=1.3;ctx.setLineDash([3,2]);ctx.lineDashOffset=-TIME*12;
-    if(h.c){ctx.beginPath();ctx.arc(h.c[0],h.c[1],h.c[2]+a*1.5,0,6.283);ctx.stroke()}else{const r=h.r;rr(r[0]-2-a,r[1]-2-a,r[2]+4+2*a,r[3]+4+2*a,5);ctx.stroke()}ctx.setLineDash([])}}
-  // particles
   for(const f of FX){const a=f.life/f.max;
     if(f.kind==='spark'){ctx.strokeStyle='rgba(255,'+(200+Math.random()*55|0)+',90,'+a+')';ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.x-f.vx*.04,f.y-f.vy*.04);ctx.stroke()}
     else if(f.kind==='smoke'){ctx.fillStyle='rgba(120,120,120,'+a*.4+')';ctx.beginPath();ctx.arc(f.x,f.y,4+(1-a)*10,0,6.283);ctx.fill()}
     else{ctx.fillStyle='rgba(210,220,230,'+a+')';ctx.fillRect(f.x,f.y,1.2,1.2)}}
-  for(const r of ROLL){ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.rot);drawScrew({x:0,y:0},true);ctx.restore();ctx.strokeStyle='rgba(255,159,61,'+(.5+.5*Math.sin(TIME*10))+')';ctx.lineWidth=.8;ctx.beginPath();ctx.arc(r.x,r.y,7,0,6.283);ctx.stroke()}
-  // hold progress
-  if(HOLD&&HOLD.k!=='heat'){ctx.strokeStyle='#39d0ff';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(HOLD.l.x,HOLD.l.y,9,-1.57,-1.57+6.283*Math.min(1,HOLD.t/HOLD.need));ctx.stroke()}
-  // screen space: meter reading, heat gauge, floating text, tool cursor
+  for(const r of ROLL){ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.rot);drawScrew(0,0,r.s,true);ctx.restore()}
+  if(HOLD&&HOLD.k!=='heat'&&HOLD.k!=='pick'){ctx.strokeStyle='rgba(57,208,255,.9)';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(HOLD.l.x,HOLD.l.y,9,-1.57,-1.57+6.283*Math.min(1,HOLD.t/HOLD.need));ctx.stroke()}
+  if(TOOL==='pick'&&PTR.in&&playing()&&!P.open){const l=toL(PTR.x,PTR.y);ctx.fillStyle='rgba(57,170,255,.85)';ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x+9,l.y+5);ctx.lineTo(l.x+4,l.y+11);ctx.closePath();ctx.fill()}
+  // screen space: meter readout, thermometer, floating text, tool cursor
   ctx.setTransform(DPR,0,0,DPR,0,0);
   const sx=x=>OX+x*U,sy=y=>OY+y*U;
   if(P.read&&P.read.life>0){
-    ctx.font='600 13px Rubik,sans-serif';const tw=ctx.measureText(P.read.txt).width+20;
+    ctx.font='600 12.5px "JetBrains Mono",ui-monospace,monospace';const tw=ctx.measureText(P.read.txt).width+20;
     let x=clamp(sx(P.read.x)-tw/2,6,W-tw-6),y=Math.max(6,sy(P.read.y)-36);
-    ctx.globalAlpha=Math.min(1,P.read.life*2);fillRR(x,y,tw,26,8,P.read.bad?'#3a1118':'#0f3324');ctx.strokeStyle=P.read.bad?'#ff4d5e':'#3ddc84';ctx.lineWidth=1;rr(x,y,tw,26,8);ctx.stroke();
-    ctx.fillStyle='#fff';ctx.textAlign='left';ctx.fillText(P.read.txt,x+10,y+17.5);ctx.globalAlpha=1;
+    ctx.globalAlpha=Math.min(1,P.read.life*2);fillRR(x,y,tw,26,6,'#0b1a12');ctx.strokeStyle='#2c6b4a';ctx.lineWidth=1;rr(x,y,tw,26,6);ctx.stroke();
+    ctx.fillStyle='#7dffb2';ctx.textAlign='left';ctx.fillText(P.read.txt,x+10,y+17.5);ctx.globalAlpha=1;
   }
   if(!P.open&&P.openT<.05&&(P.heat>1||TOOL==='heat')){
-    const gx=Math.min(W-26,sx(100)+16),gy=sy(30),gh=140*U*.6+40;
-    fillRR(gx,gy,14,gh,7,'#0d1218');
-    const zone=(v)=>gy+gh-gh*v/130;
-    ctx.fillStyle='rgba(61,220,132,.35)';ctx.fillRect(gx+2,zone(100),10,zone(45)-zone(100));
-    ctx.fillStyle='rgba(255,77,94,.35)';ctx.fillRect(gx+2,zone(130),10,zone(100)-zone(130));
-    const v=clamp(P.heat,0,130);fillRR(gx+3,zone(v),8,gy+gh-zone(v)-1,4,P.heat>100?'#ff4d5e':P.heat>=45?'#3ddc84':'#ff9f3d');
-    ctx.fillStyle='#8c9bb0';ctx.font='700 10px Rubik,sans-serif';ctx.textAlign='center';ctx.fillText(Math.round(P.heat)+'°',gx+7,gy+gh+13);
-    if(P.heat>100){ctx.fillStyle='#ff4d5e';ctx.fillText('HOT!',gx+7,gy-6)}
+    const gx=Math.min(W-30,sx(100)+16),gy=sy(30),gh=Math.max(90,140*U*.6);
+    fillRR(gx,gy,14,gh,7,'#0d1218');ctx.strokeStyle='#2f3a48';ctx.lineWidth=1;rr(gx,gy,14,gh,7);ctx.stroke();
+    ctx.strokeStyle='#3a4757';for(let i=0;i<=6;i++){const yy=gy+gh-gh*i/6;ctx.beginPath();ctx.moveTo(gx+14,yy);ctx.lineTo(gx+18,yy);ctx.stroke()}
+    const v=clamp(P.heat,0,140)/140,g=ctx.createLinearGradient(0,gy+gh,0,gy);g.addColorStop(0,'#ffcf6b');g.addColorStop(1,'#ff4d2e');
+    fillRR(gx+3,gy+gh-gh*v,8,Math.max(1,gh*v-1),4,g);
+    txt(tempC(P.heat)+'°C',gx+7,gy+gh+14,11,'#cfe3f5',700);
   }
-  for(const f of FLOAT){ctx.globalAlpha=Math.min(1,f.life);ctx.fillStyle=f.col;ctx.font='800 20px Rubik,sans-serif';ctx.textAlign='center';ctx.fillText(f.txt,sx(f.x),sy(f.y)-(1.6-f.life)*30)}ctx.globalAlpha=1;
-  if(PTR.in&&playing()&&matchMedia('(pointer:fine)').matches){const tl=TOOLS.find(t=>t.id===TOOL);ctx.font='22px "Apple Color Emoji","Segoe UI Emoji",sans-serif';ctx.textAlign='left';ctx.fillText(tl.e,PTR.x+8,PTR.y+26)}
+  for(const f of FLOAT){ctx.globalAlpha=Math.min(1,f.life);txt(f.txt,sx(f.x),sy(f.y)-(1.6-f.life)*30,20,f.col,800)}ctx.globalAlpha=1;
+  if(PTR.in&&playing()&&matchMedia('(pointer:fine)').matches&&TOOL!=='pick'){const tl=TOOLS.find(t=>t.id===TOOL);ctx.font='22px "Apple Color Emoji","Segoe UI Emoji",sans-serif';ctx.textAlign='left';ctx.fillText(tl.e,PTR.x+8,PTR.y+26)}
 }
 
 // ═══════════════════════ UI (DOM) ═══════════════════════
-let HINT=null,uiDirty=true;
+let uiDirty=true;
 const UI=()=>{uiDirty=true};
 function buildTools(){
   $('tools').innerHTML=TOOLS.map(t=>`<button class="tool" data-tool="${t.id}"><i>${t.key}</i>${t.e}<small>${t.n}</small></button>`).join('')+
-    `<button class="tool act" id="bTest">⚡<small>Test</small></button><button class="tool act" id="bMain">✅<small>Hand back</small></button>`;
+    `<button class="tool act" id="bTest">⚡<small>Power on</small></button><button class="tool act" id="bMain">✅<small>Hand back</small></button>`;
 }
+function renderToolLabels(){const b=document.querySelector('.tool[data-tool="driver"] small');if(b)b.textContent=bitName(C.bit)}
 function setTool(id){TOOL=id;HOLD=null;document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===id))}
 function testBtn(){
   if(!playing())return;const rows=runTest();
   if(quiet||DEMO&&HASH!=='#demotest')return;
-  showSheet(`<h2>⚡ Phone test</h2><div class="tl">${rows.map(r=>`<div><span>${r[0]}</span><b class="${r[1]?'p':'f'}">${r[1]?'✓ ':'✗ '}${esc(r[2])}</b></div>`).join('')}</div>
+  showSheet(`<h2>⚡ Power-on check</h2><div class="tl">${rows.map(r=>`<div><span>${r[0]}</span><b class="n">${esc(r[1])}</b></div>`).join('')}</div>
     <button class="big" data-close>OK</button>`);
 }
 function handBackBtn(){
@@ -908,51 +1019,52 @@ function renderTop(){
   $('sDay').textContent=mode==='race'&&RACE?'📱 '+Math.min(RACE.i+1,RACE.jobs.length)+'/'+RACE.jobs.length:'Day '+S.day+(DAY?' · '+Math.min(DAY.i+1,DAY.jobs.length)+'/'+DAY.jobs.length:'');
   $('sCash').textContent=money(C.cash);
   const rs=S.rates;$('sRate').textContent=mode==='race'?'⏱ '+raceClock():'⭐ '+(rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'–');
-  $('bHint').classList.toggle('on',S.hints);$('bSnd').textContent=S.sound?'🔊':'🔇';
+  $('bSnd').textContent=S.sound?'🔊':'🔇';
 }
 function renderSide(){
   const P=cur,el=$('side');
   if(!P||!playing()){el.innerHTML='';return}
-  const j=P.job,m=MODELS[P.model];
-  const tab=TAB||P.model;
-  const invHtml=C.inv.length?C.inv.map(i=>`<button class="it${SEL===i.id?' sel':''}" data-inv="${i.id}">${PARTS[i.type].e} ${esc(MODELS[i.model].name)} ${PARTS[i.type].n.toLowerCase()}${i.used?' <span class="old">old</span>':''}${i.used&&i.bad&&P.known[i.bad]?' <span class="bad">✗</span>':''}</button>`).join(''):'<div class="empty">Empty. Buy parts below — or pull them from the phone.</div>';
+  const j=P.job,m=MODELS[P.model],tab=TAB||P.model;
+  const invHtml=C.inv.length?C.inv.map(i=>`<button class="it${SEL===i.id?' sel':''}" data-inv="${i.id}">${i.type==='gasket'?'⬛':PARTS[i.type].e} ${esc(MODELS[i.model].name)} ${i.type==='gasket'?'gasket':PARTS[i.type].n.toLowerCase()}${i.used?' <span class="old">removed</span>':''}</button>`).join(''):'<div class="empty">Empty.</div>';
+  const groups={};for(const s of C.tray){const k=skey(s);groups[k]=(groups[k]||0)+1}
+  const trayHtml=Object.keys(groups).length?Object.keys(groups).sort().map(k=>{const[h,l]=k.split('|');return`<button class="it sc${SELSCREW===k?' sel':''}" data-scr="${k}">${HEAD_NAME[h]} ${(+l).toFixed(1)}mm ×${groups[k]}</button>`}).join(''):'<div class="empty">No loose screws.</div>';
   el.innerHTML=`
   <div class="card"><h3>Customer <span>${mode==='race'?'Phone '+(RACE.i+1)+' of '+RACE.jobs.length:'#'+(DAY?DAY.i+1:1)}</span></h3>
     <div id="cust"><div class="face" style="background:hsl(${j.hue},45%,30%)">${j.face}</div><div><div class="who">${esc(j.name)}</div><span class="mdl">📱 ${esc(m.name)}</span></div></div>
     <div class="said">“${esc(j.say)}”</div>
-    <div class="pat"><div id="patBar"></div></div><div class="patl"><span id="patTxt"></span><span>pays up to ${money(P.faults.filter(f=>f.paid).reduce((a,f)=>a+FAULTS[f.k].pay,0))} + tip</span></div>
+    <div class="pat"><div id="patBar"></div></div><div class="patl"><span id="patTxt"></span><span>quoted ${money(P.faults.filter(f=>f.paid).reduce((a,f)=>a+FAULTS[f.k].pay,0))}</span></div>
   </div>
-  <div class="card"><h3>Notes</h3><div class="notes">${P.notes.length?P.notes.map(n=>`<div class="${n.bad?'x':'ok'}">${esc(n.txt)}</div>`).join(''):'<div class="empty">⚡ Test the phone or 🔍 meter parts to find what\'s wrong.</div>'}</div></div>
-  <div class="card"><h3>Your parts <span class="mat">🔩 ${C.mat} screws</span></h3><div class="inv">${invHtml}</div></div>
-  <div class="card"><h3>📦 Parts supplier</h3>
-    <div class="tabs">${MODEL_IDS.map(id=>`<button data-tab="${id}" class="${tab===id?'on':''} ${id===P.model?'cur':''}">${esc(MODELS[id].name)}${id===P.model?' ●':''}</button>`).join('')}</div>
+  <div class="card"><h3>Bench log</h3><div class="notes">${P.notes.length?P.notes.map(n=>`<div>${esc(n.txt)}</div>`).join(''):'<div class="empty" style="font-family:Rubik">—</div>'}</div></div>
+  <div class="card"><h3>Driver bit · screw tray</h3>
+    <div class="bits">${BITS.map(([b,n])=>`<button data-bit="${b}" class="${C.bit===b?'on':''}">${n}</button>`).join('')}</div>
+    <div class="tray">${trayHtml}</div></div>
+  <div class="card"><h3>Parts on the bench</h3><div class="inv">${invHtml}</div></div>
+  <div class="card"><h3>📦 Supplier</h3>
+    <div class="tabs">${MODEL_IDS.map(id=>`<button data-tab="${id}" class="${tab===id?'on':''}">${esc(MODELS[id].name)}</button>`).join('')}</div>
     ${PART_IDS.map(t=>{const c=partCost(t,tab);return`<div class="row">${PARTS[t].e}<span>${PARTS[t].n}</span><button class="buy" data-buy="${t}" data-model="${tab}" ${C.cash<c?'disabled':''}>${money(c)}</button></div>`}).join('')}
-    <div class="row">🔩<span>Screw kit (+6)</span><button class="buy" data-buy="kit" ${C.cash<4?'disabled':''}>$4</button></div>
+    <div class="row">⬛<span>Adhesive gasket</span><button class="buy" data-buy="gasket" data-model="${tab}" ${C.cash<3?'disabled':''}>$3</button></div>
+    <div class="row">🔩<span>Screw set</span><button class="buy" data-buy="kit" data-model="${tab}" ${C.cash<6?'disabled':''}>$6</button></div>
   </div>`;
 }
 function renderTools(){
   const P=cur;const m=$('bMain');if(!m)return;
-  if(P&&P.open)m.innerHTML='📕<small>Close up</small>';else m.innerHTML='✅<small>Hand back</small>';
-  document.querySelectorAll('.tool').forEach(b=>b.classList.remove('glow'));
-  if((S.hints||tut())&&HINT&&HINT.act&&playing()){
-    const a=HINT.act,tl=ACT_TOOL[a.k];
-    if(tl&&tl!==TOOL){const b=document.querySelector('.tool[data-tool="'+tl+'"]');if(b)b.classList.add('glow')}
-    if(a.k==='test')$('bTest').classList.add('glow');
-    if(a.k==='handback'||a.k==='close')m.classList.add('glow');
-    if(a.k==='buy'){const b=document.querySelector('[data-buy="'+a.part+'"]'+(a.part==='kit'?'':'[data-model="'+cur.model+'"]'));if(b)b.classList.add('glow')}
-  }
+  const want=P&&P.open?'📕<small>Close up</small>':'✅<small>Hand back</small>';
+  if(m.innerHTML!==want)m.innerHTML=want;
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;ac();
-  if(b.dataset.tool){setTool(b.dataset.tool);return}
+  if(b.dataset.tool){if(b.dataset.tool==='driver'&&TOOL==='driver')cycleBit();else setTool(b.dataset.tool);return}
   if(b.id==='bTest'){testBtn();return}
   if(b.id==='bMain'){handBackBtn();return}
-  if(b.dataset.inv){const id=+b.dataset.inv;SEL=SEL===id?null:id;if(SEL)setTool('hand');UI();return}
+  if(b.dataset.bit){C.bit=b.dataset.bit;setTool('driver');renderToolLabels();UI();return}
+  if(b.dataset.scr){SELSCREW=SELSCREW===b.dataset.scr?null:b.dataset.scr;if(SELSCREW){setTool('driver')}UI();return}
+  if(b.dataset.inv){const id=+b.dataset.inv,it=C.inv.find(i=>i.id===id);
+    if(it&&it.type==='gasket'&&playing()&&cur.open){applyGasket(it);return}
+    SEL=SEL===id?null:id;if(SEL)setTool('hand');UI();return}
   if(b.dataset.tab){TAB=b.dataset.tab;UI();return}
-  if(b.dataset.buy){if(playing()){buy(b.dataset.buy,b.dataset.model||cur.model);}return}
+  if(b.dataset.buy){if(playing())buy(b.dataset.buy,b.dataset.model||cur.model);return}
   if(b.hasAttribute('data-close')){hideSheet();return}
   if(b.dataset.upg){const u=UPG.find(x=>x.id===b.dataset.upg);if(u&&!S.upg[u.id]&&S.cash>=u.cost){S.cash-=u.cost;S.upg[u.id]=1;save();sfx('cash');showDayEnd(true)}return}
-  if(b.id==='bHint'){S.hints=!S.hints;save();UI();renderTop();return}
   if(b.id==='bSnd'){S.sound=!S.sound;save();renderTop();return}
   if(b.id==='bHelp'||b.id==='howBtn'){showHelp();return}
   if(b.id==='playBtn'){$('titleOv').classList.remove('on');startDay();return}
@@ -962,16 +1074,20 @@ document.addEventListener('click',e=>{
   if(b.id==='nextDay'){hideSheet();S.day++;S.jobIdx=0;S.dayEarn=0;S.daySpend=0;save();startDay();return}
   if(b.id==='toTitle'){hideSheet();goTitle();return}
 });
+// A reference card for the bench: what each tool is. Deliberately not a walkthrough.
 function showHelp(){
-  showSheet(`<h2>❓ How to fix a phone</h2><div class="how">
-  <p><b>1. Diagnose.</b> Read what the customer says, then press <b>⚡ Test</b>. Use the <b>🔍 meter</b> on the charge port from outside, or on any part once it's open.</p>
-  <p><b>2. Open it.</b> 🪛 the two bottom screws, hold the <b>🔥 heat gun</b> until the gauge is green (too hot cooks the battery!), then pry with <b>✋</b>. Cold glue = cracked screen.</p>
-  <p><b>3. Unplug the battery.</b> 🪛 its bracket, then the <b>🔌 plug tool</b> on the connector. Pull any part with the battery plugged in and you'll <b style="color:var(--red)">short the board</b>.</p>
-  <p><b>4. Swap the part.</b> Unscrew it, pull it with ✋ (hold for the glued battery), buy the right model's part, click the empty slot.</p>
-  <p><b>5. Water damage?</b> Scrub the green corrosion with the <b>🪥 brush</b>. Lint in the port? Brush it out — no need to open!</p>
-  <p><b>6. Put it all back.</b> Plug in, every screw back (missing screws cost $8 each), 📕 close, ✅ hand back. Faster = bigger tip.</p>
-  <p>Keys: <b>1-6</b> tools · <b>T</b> test · <b>C</b> close · <b>Enter</b> hand back. 💡 toggles hints.</p></div>
-  <button class="big" data-close>Got it</button>`);
+  showSheet(`<h2>📘 Bench reference</h2><div class="how">
+  <p><b>🪛 Driver</b> — click it again (or press <b>B</b>) to swap bits: P2 pentalobe, Y000 tri-point, PH000 Phillips. Hold on a screw. To drive one in, pick it up from the tray first.</p>
+  <p><b>🔥 Heat</b> — hold on the phone. Softens adhesive. Lithium cells don't love it.</p>
+  <p><b>🪠 Suction</b> — hold on the glass to lift it.</p>
+  <p><b>🔺 Pick</b> — drag along an edge to slice adhesive.</p>
+  <p><b>✋ Hand</b> — open, lift parts out, set parts in, pull glued things (hold).</p>
+  <p><b>🥢 Spudger</b> — pop board connectors off and press them back on.</p>
+  <p><b>📟 Meter</b> — probe a part, read the numbers.</p>
+  <p><b>🪥 IPA</b> — isopropyl alcohol and a brush: cleans, dissolves adhesive.</p>
+  <p><b>⚡ Power on</b> — boots the phone and runs through its functions.</p>
+  <p>Keys: <b>1-8</b> tools · <b>B</b> bit · <b>T</b> power on · <b>C</b> close · <b>Enter</b> hand back.</p></div>
+  <button class="big" data-close>Close</button>`);
 }
 
 // ═══════════════════════ solo flow ═══════════════════════
@@ -979,16 +1095,15 @@ function dayJobs(){return S.day<=1?3:S.day===2?4:S.day<6?5:6}
 function startDay(){
   C=S;mode='solo';S.started=true;
   DAY={jobs:jobsFor(S.seed*7919+S.day*104729,Math.min(S.day,6),dayJobs()),i:S.jobIdx||0};
-  if(S.day===1&&!S.jobIdx)S.hints=true;
   nextJob(true);
 }
+function resetBench(){TAB=null;SEL=null;FX=[];ROLL=[];FLOAT=[];setTool('driver');renderToolLabels()}
 function nextJob(first){
   if(mode==='race'){raceNext();return}
   if(!first){DAY.i++;S.jobIdx=DAY.i;save()}
   if(DAY.i>=DAY.jobs.length){endDay();return}
-  cur=newPhone(DAY.jobs[DAY.i]);TAB=null;SEL=null;FX=[];ROLL=[];FLOAT=[];setTool('driver');
+  cur=newPhone(DAY.jobs[DAY.i]);resetBench();
   mode='solo';UI();renderTop();
-  if(S.day===1&&DAY.i===0)msg('👋 Welcome to your shop! Follow the 💡 hints for your first repairs.','good');
 }
 function afterJob(r){
   if(mode==='race'){raceAfter(r);return}
@@ -998,10 +1113,11 @@ function afterJob(r){
     <div class="said" style="text-align:left">“${esc(r.line)}”</div>
     <div class="stars" style="margin-top:10px">${'★'.repeat(r.stars)}<span style="opacity:.25">${'★'.repeat(5-r.stars)}</span></div>
     <div class="tl"><div><span>Repair</span><b class="p">${money(r.pay)}</b></div>
-    ${r.tip?`<div><span>Tip ${r.late?'':'(speedy!)'}</span><b class="p">+${money(r.tip)}</b></div>`:''}
-    ${r.pen?`<div><span>Missing screws ×${r.miss}</span><b class="f">-${money(r.pen)}</b></div>`:''}
+    ${r.tip?`<div><span>Tip</span><b class="p">+${money(r.tip)}</b></div>`:''}
+    ${r.miss?`<div><span>Screws missing or wrong ×${r.miss}</span><b class="f">-${money(r.miss*8)}</b></div>`:''}
+    ${r.lift?'<div><span>Screen not sealed</span><b class="f">-$10</b></div>':''}
     ${r.late?'<div><span>Kept them waiting too long</span><b class="f">-15%</b></div>':''}
-    ${r.caused?`<div><span>Damage you caused</span><b class="f">${r.caused} part${r.caused>1?'s':''}, no pay</b></div>`:''}
+    ${r.caused?`<div><span>Damage done on your bench</span><b class="f">${r.caused} part${r.caused>1?'s':''}, unpaid</b></div>`:''}
     <div><span><b>Total</b></span><b class="p">${money(r.total)}</b></div></div>
     <button class="big" id="nextJob">${DAY.i+1>=DAY.jobs.length?'🌙 Close up for the day':'🔔 Next customer'}</button>`);
   renderTop();
@@ -1013,15 +1129,14 @@ function endDay(){
   try{if(!DEMO&&window.GLITCHBOX&&GLITCHBOX.score)GLITCHBOX.score(Math.max(0,Math.round(S.total)))}catch(e){}
   cur=null;mode='sheet';showDayEnd(false);
 }
-function showDayEnd(shopOnly){
+function showDayEnd(){
   const rent=S.dayRent||0,profit=S.dayEarn-S.daySpend-rent;
   showSheet(`<h2>🌙 Day ${S.day} done</h2>
-    <div class="tl"><div><span>Repairs + tips</span><b class="p">${money(S.dayEarn)}</b></div><div><span>Parts</span><b class="f">-${money(S.daySpend)}</b></div>
+    <div class="tl"><div><span>Repairs + tips</span><b class="p">${money(S.dayEarn)}</b></div><div><span>Parts & supplies</span><b class="f">-${money(S.daySpend)}</b></div>
     <div><span>Shop rent</span><b class="f">-${money(rent)}</b></div><div><span><b>Profit</b></span><b class="${profit>=0?'p':'f'}">${money(profit)}</b></div>
     <div><span>Cash in the till</span><b>${money(S.cash)}</b></div></div>
     <h2 style="font-size:18px;margin-top:6px">🛠️ Upgrade the shop</h2>
     <div class="upg">${UPG.map(u=>`<div class="u${S.upg[u.id]?' own':''}"><b>${u.e} ${u.n}</b><div class="d">${u.d}</div>${S.upg[u.id]?'<div style="color:var(--green);margin-top:6px">✓ Owned</div>':`<button class="buy" data-upg="${u.id}" ${S.cash<u.cost?'disabled':''}>${money(u.cost)}</button>`}</div>`).join('')}</div>
-    ${S.day===1?'<p>From tomorrow you\'re on your own: shorts and cracks really happen. Speakers and cameras start breaking too.</p>':''}
     <button class="big gr" id="nextDay">☀️ Open day ${S.day+1}</button><button class="big alt" id="toTitle">🏠 Title screen</button>`);
 }
 function goTitle(){
@@ -1039,7 +1154,7 @@ function frame(now){
   if(cur){
     const P=cur;
     P.openT=clamp(P.openT+(P.open?dt:-dt)*3,0,1);
-    if(P.heatHeld>0)P.heatHeld-=dt;else P.heat=Math.max(0,P.heat-dt*7);
+    if(P.heatHeld>0)P.heatHeld-=dt;else P.heat=Math.max(0,P.heat-dt*6);
     if(P.heat<=100)P.hot=Math.max(0,P.hot-dt*.5);
     if(P.boot>0)P.boot-=dt;
     if(P.read)P.read.life-=dt;
@@ -1047,14 +1162,11 @@ function frame(now){
     holdTick(dt);
   }
   for(const f of FX){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=(f.kind==='spark'?80:-6)*dt;f.life-=dt}FX=FX.filter(f=>f.life>0);
-  for(const r of ROLL){r.x+=r.vx*dt;r.y+=r.vy*dt;r.vy*=.96;r.rot+=r.vx*dt*.3;r.life-=dt;if(r.life<=0){msg('🔩 The screw rolled away for good. Buy a kit if you run short.','warn')}}ROLL=ROLL.filter(r=>r.life>0);
+  for(const r of ROLL){r.x+=r.vx*dt;r.y+=r.vy*dt;r.vy*=.96;r.rot+=r.vx*dt*.3;r.life-=dt;if(r.life<=0)msg('🔩 The screw is gone — somewhere under the bench.')}ROLL=ROLL.filter(r=>r.life>0);
   for(const f of FLOAT)f.life-=dt;FLOAT=FLOAT.filter(f=>f.life>0);
-  HINT=playing()?advise():null;
-  const hb=$('hintbar');
-  if((S.hints||tut())&&HINT){hb.textContent='💡 '+HINT.txt;hb.classList.add('on')}else hb.classList.remove('on');
   if(uiDirty){uiDirty=false;renderSide();renderTop()}
   renderTools();
-  if(cur&&playing()){const f=Math.max(0,1-cur.t/patience()),pb=$('patBar');if(pb){pb.style.width=(f*100)+'%';pb.style.background=f>.5?'#3ddc84':f>.2?'#ffd23f':'#ff4d5e';$('patTxt').textContent=f>0?'Waiting '+Math.ceil(patience()-cur.t)+'s':'😤 Fed up!'}}
+  if(cur&&playing()){const f=Math.max(0,1-cur.t/patience()),pb=$('patBar');if(pb){pb.style.width=(f*100)+'%';pb.style.background=f>.5?'#3ddc84':f>.2?'#ffd23f':'#ff4d5e';$('patTxt').textContent=f>.5?'😊 waiting':f>.2?'😐 checking the time':f>0?'😠 getting annoyed':'😤 fed up'}}
   if(mode==='race'&&Math.floor(TIME*2)!==Math.floor((TIME-dt)*2))renderTop();
   if(!W)layout();
   geom();drawBench();
@@ -1088,7 +1200,7 @@ function netClose(){const w=NET.ws;NET.ws=null;if(w){w.onclose=null;try{w.close(
 const myName=()=>(S.name||'Tech').slice(0,12);
 function toHost(m){if(NET.mode==='host')hostIn(m);else netSend(m)}
 function onNet(m){
-  if(m.t==='created'){HS={ph:'lobby',players:[],seed:0,lvl:2,n:5,pro:false,end:0,finN:0,seen:{}};hostIn({t:'hi',cid:MY,name:myName(),hue:S.hue});return}
+  if(m.t==='created'){HS={ph:'lobby',players:[],seed:0,lvl:3,n:5,pro:false,end:0,finN:0,seen:{}};hostIn({t:'hi',cid:MY,name:myName(),hue:S.hue});return}
   if(m.t==='joined'||m.t==='start'){if(NET.mode==='guest')netSend({t:'hi',cid:MY,name:myName(),hue:S.hue});return}
   if(m.t==='error'){const t=m.msg||'That didn\'t work.';netClose();NET.mode='off';mpHome(t==='No game with that code.'?'No room with that code — check the letters.':t);return}
   if(m.t==='left')return;
@@ -1119,7 +1231,7 @@ function hostIn(m){
 function hostDrop(cid){if(cid===MY)return;HS.players=HS.players.filter(p=>p.cid!==cid);if(HS.ph==='race'&&HS.players.length&&HS.players.every(q=>q.fin))HS.ph='results';hostPush()}
 function hostStart(){
   if(!HS||HS.players.length<2)return false;
-  HS.seed=1+Math.floor(Math.random()*1e6);HS.ph='race';HS.finN=0;HS.end=Date.now()+HS.n*150000;
+  HS.seed=1+Math.floor(Math.random()*1e6);HS.ph='race';HS.finN=0;HS.end=Date.now()+HS.n*240000;
   HS.players.forEach(p=>{p.i=0;p.cash=START_CASH;p.fin=0});
   hostPush();return true;
 }
@@ -1151,20 +1263,20 @@ function clientState(m){
 function startRace(m){
   hideSheet();$('mpOv').classList.remove('on');$('titleOv').classList.remove('on');
   RACE={seed:m.seed,jobs:jobsFor(m.seed,m.lvl,m.n),i:0,fin:false};
-  C={cash:START_CASH,upg:m.pro?Object.fromEntries(UPG.map(u=>[u.id,1])):{},inv:[],mat:4};
+  C={cash:START_CASH,upg:m.pro?Object.fromEntries(UPG.map(u=>[u.id,1])):{},inv:[],tray:[],bit:'PH'};
   mode='race';raceNext(true);
-  msg('🏁 Go! '+m.n+' phones, same faults for everyone. Most cash wins.','good');
+  msg('🏁 '+m.n+' phones, the same ones for everyone. Most cash wins.');
 }
 function raceNext(first){
   if(!first)RACE.i++;
   if(RACE.i>=RACE.jobs.length){RACE.fin=true;cur=null;mode='wait';sendPr();renderWait();return}
-  cur=newPhone(RACE.jobs[RACE.i]);TAB=null;SEL=null;FX=[];ROLL=[];FLOAT=[];setTool('driver');
+  cur=newPhone(RACE.jobs[RACE.i]);resetBench();
   mode='race';UI();renderTop();sendPr();
 }
 function sendPr(){NET.lastPr=Date.now();toHost({t:'pr',cid:MY,i:RACE?RACE.i:0,cash:C.cash,fin:RACE&&RACE.fin?1:0})}
 function raceAfter(r){
   floatText('+'+money(r.total),50,90,r.good?'#3ddc84':'#ff9f3d');
-  msg(cur.job.face+' '+(r.good?'“'+r.line+'” +'+money(r.total):'“'+r.line+'” '+money(r.total)),r.good?'good':'warn');
+  msg(cur.job.face+' “'+r.line+'” '+(r.total?'+':'')+money(r.total),r.good?'good':'bad');
   mode='sheet';
   setTimeout(()=>{if(RACE&&mode==='sheet')raceNext()},900);
 }
@@ -1178,7 +1290,7 @@ function mpReset(){cur=null;RACE=null;C=S;hideSheet();$('chips').classList.remov
 function mpHome(err){
   mode='mphome';mpReset();
   $('mpCard').innerHTML=`<h2>👥 Repair Race</h2>
-    <div class="sub" style="margin-top:0">Same broken phones for everyone. Fix them fast, fix them right — most cash wins.</div>
+    <div class="sub" style="margin-top:0">Same broken phones for everyone. Most cash at the end wins.</div>
     <input class="in" id="myName" maxlength="12" placeholder="Your name" value="${esc(S.name||'')}">
     <button class="big" id="mkRoom">🏠 Make a room</button>
     <div class="or">— or join a friend —</div>
@@ -1253,11 +1365,11 @@ setInterval(()=>{
 addEventListener('pagehide',()=>{if(NET.mode==='guest')netSend({t:'bye',cid:MY})});
 
 // ── GLITCHBOX cloud save ──
-if(window.GBSave)GBSave.register({save:()=>S.started?S:null,load:d=>{if(d&&d.v===1){S=Object.assign(fresh(),d);C=S;save();if(mode==='title')goTitle()}},autosave:60});
+if(window.GBSave)GBSave.register({save:()=>S.started?S:null,load:d=>{if(d&&d.v===2){S=Object.assign(fresh(),d);C=S;save();if(mode==='title')goTitle()}},autosave:60});
 
 // ═══════════════════════ boot ═══════════════════════
 load();
-buildTools();setTool('driver');layout();
+buildTools();setTool('driver');renderToolLabels();layout();
 if(S.started){$('playBtn').textContent='🔧 Open the shop · Day '+S.day;$('newBtn').style.display=''}
 renderTop();
 {const h=new URLSearchParams(HASH.replace(/^#/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -1265,17 +1377,19 @@ renderTop();
 if(/debug/.test(location.hash))window.__PD={get cur(){return cur},get C(){return C},get S(){return S},get mode(){return mode},get NET(){return NET},get HS(){return HS},advise,doAct,setTool,hostStart,handBackBtn};
 requestAnimationFrame(frame);
 
-// screenshots: #demo (closed + heat), #demoopen, #demotest, #demolobby, #demorace, #demoresults, #demoday
+// screenshots: #demo (closed + suction/pick), #demoopen, #demotest, #demolobby, #demorace, #demoresults, #demoday
 if(/^#demo/.test(HASH)){
   DEMO=true;S=fresh();S.day=3;S.started=true;S.cash=264;S.rates=[5,4,5];S.sound=false;S.name='Lev';C=S;
   $('titleOv').classList.remove('on');
   const job=j=>Object.assign(makeJob(rngOf(7),3),j);
-  if(HASH==='#demo'){mode='solo';DAY={jobs:[job({})],i:0};cur=newPhone(job({model:'galaxo',faults:['crack','speaker'],name:'Maya',face:'👩‍🦰',say:"My little brother sat on it. The screen's smashed. Oh, and… I can't hear anything when I play music."}));cur.sc.b1=false;cur.heat=72;cur.heatHeld=99;setTool('heat');PTR.in=false;UI()}
-  else if(HASH==='#demoopen'||HASH==='#demotest'){mode='solo';DAY={jobs:[job({})],i:1};cur=newPhone(job({model:'pear11',faults:['water'],spots:[[52,34],[24,48],[70,44]],name:'Jonah',face:'🧔',say:"I dropped it in the bath… it won't turn on."}));
-    cur.sc.b1=cur.sc.b2=false;cur.open=true;cur.openT=1;cur.known.water=1;cur.sc.bc1=cur.sc.bc2=false;cur.conn.bat=false;cur.spots[0].left=0;
-    C.inv.push({id:uid(),type:'battery',model:'pear11',bad:null,used:false});quiet=true;measure('board');quiet=false;cur.read.life=999;setTool('brush');UI();
-    if(HASH==='#demotest'){cur.open=false;cur.openT=0;cur.sc.b1=cur.sc.b2=true;cur.conn.bat=true;cur.spots.forEach(s=>s.left=0);cur.part.speaker.bad='speaker';cur.faults.push({k:'speaker',paid:true});cur.read=null;testBtn()}}
-  else if(HASH==='#demoday'){S.dayEarn=388;S.daySpend=74;S.dayRent=25;S.upg={mat:1};mode='sheet';showDayEnd(false)}
+  if(HASH==='#demo'){mode='solo';DAY={jobs:[job({})],i:0};cur=newPhone(job({model:'pear11',faults:['crack','speaker'],name:'Maya',face:'👩‍🦰',say:"My little brother sat on it. The screen's smashed. Oh, and… I can't hear anything when I play music."}));
+    C.tray.push(cur.sc.b1,cur.sc.b2);cur.sc.b1=cur.sc.b2=null;cur.heat=72;cur.heatHeld=99;cur.gap=true;cur.segs.bottom.fill(1);cur.segs.left=[1,1,1,.7,.4,0,0,0];setTool('pick');C.bit='P';renderToolLabels();UI()}
+  else if(HASH==='#demoopen'||HASH==='#demotest'){mode='solo';DAY={jobs:[job({})],i:1};cur=newPhone(job({model:'pear14',faults:['water'],spots:[[30,50],[68,46],[48,20]],name:'Jonah',face:'🧔',say:"I dropped it in the bath… it won't turn on."}));
+    for(const id of['b1','b2','bc1','bc2','sc1'])if(cur.sc[id]){C.tray.push(cur.sc[id]);cur.sc[id]=null}
+    cur.open=true;cur.opened=true;cur.openT=1;cur.known.water=1;cur.conn.bat=false;cur.spots[0].left=0;
+    C.inv.push({id:uid(),type:'gasket',model:'pear14',bad:null,used:false});SELSCREW='Y|1.1';C.bit='Y';quiet=true;measure('board');quiet=false;cur.read.life=999;setTool('brush');renderToolLabels();UI();
+    if(HASH==='#demotest'){cur.open=false;cur.openT=0;cur.conn.bat=true;cur.spots.forEach(s=>s.left=0);cur.part.speaker.bad='speaker';cur.faults.push({k:'speaker',paid:true});cur.read=null;testBtn()}}
+  else if(HASH==='#demoday'){S.dayEarn=388;S.daySpend=74;S.dayRent=25;S.upg={mat:1};mode='sheet';showDayEnd()}
   else if(/^#demo(lobby|race|results)$/.test(HASH)){
     NET.mode='host';NET.code='FIXR';onNet({t:'created'});
     [['g1','Mia',140],['g2','Sam',30],['g3','Zoe',270]].forEach(([cid,name,hue])=>hostIn({t:'hi',cid,name,hue}));
@@ -1289,69 +1403,84 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
   DEMO=true;const out=[];let pass=0,fail=0;
   const ok=(c,n)=>{if(c)pass++;else{fail++;out.push('FAIL '+n)}};
   const fresh2=()=>{S=fresh();S.sound=false;C=S;mode='solo';};
-  const solve=(P,lim=400)=>{cur=P;let n=0,r=null;while(n++<lim){const h=advise();if(!h)break;const res=doAct(h.act);if(h.act.k==='handback'){r=res;break}if(res===false){out.push('stuck on '+JSON.stringify(h.act)+' — '+h.txt);break}}return r};
+  const solve=(P,lim=600)=>{cur=P;let n=0,r=null;while(n++<lim){const h=advise();if(!h)break;const res=doAct(h.act);if(h.act.k==='handback'){r=res;break}if(res===false){out.push('stuck on '+JSON.stringify(h.act)+' '+P.model+' '+P.job.faults);break}}return r};
+  const rnd=v=>{const mr=Math.random;Math.random=()=>v;return()=>{Math.random=mr}};
   try{
-    // 1. the hint bot finishes every kind of job cleanly
-    let jobsDone=0,perfect=0;
+    // 1. a full, careful repair is possible for every kind of job and model
+    let jobsDone=0,perfect=0;const models=new Set();
     for(let lvl=1;lvl<=6;lvl++){
       fresh2();S.day=2;C.cash=99999;
-      for(const j of jobsFor(1000+lvl,lvl,40)){const r=solve(newPhone(j));jobsDone++;if(r&&r.good&&!r.miss&&!r.caused)perfect++;else out.push('lvl'+lvl+' '+j.faults.join('+')+' '+j.model+' → '+JSON.stringify(r))}
+      for(const j of jobsFor(1000+lvl,lvl,40)){const r=solve(newPhone(j));jobsDone++;models.add(j.model);if(r&&r.good&&!r.miss&&!r.caused&&!r.lift)perfect++;else out.push('lvl'+lvl+' '+j.faults.join('+')+' '+j.model+' → '+JSON.stringify(r))}
     }
-    ok(perfect===jobsDone,'hint bot fixes every job perfectly ('+perfect+'/'+jobsDone+')');
-    // every fault type showed up
+    ok(perfect===jobsDone,'every job can be fixed cleanly ('+perfect+'/'+jobsDone+')');
+    ok(models.size===4,'all four models show up');
     const seen=new Set();for(let lvl=1;lvl<=6;lvl++)jobsFor(1000+lvl,lvl,40).forEach(j=>j.faults.forEach(f=>seen.add(f)));
     ok(['crack','touch','battery','swollen','port','lint','speaker','camera','water','board'].every(k=>seen.has(k)),'all fault types appear by day 6');
     ok(jobsFor(5,1,40).every(j=>j.faults.length===1&&FAULTS[j.faults[0]].day<=1),'day 1 = one easy fault');
     ok(JSON.stringify(jobsFor(77,3,5))===JSON.stringify(jobsFor(77,3,5)),'same seed, same phones (race fairness)');
-    const g=jobsFor(9,6,200);ok(g.every(j=>new Set(j.faults.map(k=>FAULTS[k].g)).size===j.faults.length),'never two faults on one part');
-    // 2. lint can be fixed without opening the phone
+    ok(jobsFor(9,6,200).every(j=>new Set(j.faults.map(k=>FAULTS[k].g)).size===j.faults.length),'never two faults on one part');
+    // 2. lint comes out without opening the phone
     fresh2();S.day=2;cur=newPhone(Object.assign(makeJob(rngOf(1),1),{faults:['lint'],model:'pear11'}));
-    quiet=true;runTest();ok(cur.portSuspect,'test flags charging');measure('port');ok(cur.known.lint,'meter finds lint');brushDone(-1);quiet=false;
-    let r=handBack();ok(r&&r.good&&r.pay===35&&!cur.open,'lint: brushed out from outside, paid');
-    // 3. disasters
+    quiet=true;runTest();ok(cur.portSuspect,'power-on check shows no charging');measure('port');ok(cur.known.lint,'meter reading reveals the blockage');brushDone(-1);quiet=false;
+    let r=handBack();ok(r&&r.good&&r.pay===35&&!cur.opened,'lint: brushed out from outside, paid');
+    // 3. opening is a process
     fresh2();S.day=2;C.cash=999;
-    const mk=f=>{cur=newPhone(Object.assign(makeJob(rngOf(2),2),{faults:f,model:'galaxo',spots:[]}));return cur};
-    let P=mk(['speaker']);quiet=true;
-    toggleScrew('b1');toggleScrew('b2');heatTick(1.6);pry();P.openT=1;toggleScrew('sp1');removePart('speaker');quiet=false;
-    ok(P.part.board.bad==='board'&&P.caused===1,'pulling a part with the battery plugged in fries the board');
-    ok(!works().power,'fried board = dead phone');
-    P=mk(['speaker']);quiet=true;toggleScrew('b1');toggleScrew('b2');heatTick(1.6);pry();P.openT=1;toggleScrew('sc1');toggleConn('scr');quiet=false;
-    ok(P.part.screen.bad==='backlight','unplugging the screen live blows the backlight');
-    P=mk(['speaker']);quiet=true;toggleScrew('b1');toggleScrew('b2');P.heat=10;let crk=0;const mr=Math.random;Math.random=()=>.1;pry();Math.random=mr;quiet=false;
-    ok(P.part.screen.bad==='crack'&&P.open,'prying cold glue cracks the screen');
+    const mk=(f,model)=>{cur=newPhone(Object.assign(makeJob(rngOf(2),2),{faults:f,model:model||'pear11',spots:[]}));return cur};
+    const openIt=P=>{quiet=true;C.bit='P';for(const id of['b1','b2'])if(P.sc[id])toggleScrew(id);P.heat=70;suctionDone();for(const s of['bottom','left','top'])P.segs[s].fill(1);openUp();P.openT=1;quiet=false};
+    let P=mk(['speaker']);quiet=true;C.bit='PH';ok(!toggleScrew('b1')&&P.sc.b1,'wrong bit cams out of a pentalobe');C.bit='P';toggleScrew('b1');toggleScrew('b2');
+    P.heat=10;ok(!suctionDone()&&!P.gap,'suction cup pops off cold glue');P.heat=70;ok(suctionDone()&&P.gap,'warm glue lifts');
+    let rs=rnd(.9);ok(!openUp()&&!P.open,'still glued → won\'t open (lucky, no crack)');rs();
+    cutAt({x:50,y:199},40);ok(P.segs.bottom[2]>0,'dragging the pick along the bottom slices adhesive');quiet=false;
+    P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');toggleScrew('b2');P.heat=70;suctionDone();rs=rnd(.1);openUp();rs();quiet=false;
+    ok(P.open&&P.part.screen.bad==='crack'&&P.caused===1,'forcing it open cracks the glass');
+    P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');toggleScrew('b2');P.heat=70;suctionDone();for(let i=0;i<20;i++)cutAt({x:100,y:30},6);quiet=false;
+    ok(P.part.screen.bad==='touch','cutting deep along the cable side tears the digitizer flex');
+    P=mk(['speaker'],'galaxo');ok(!HOLES.some(h=>h.part==='case'&&hostOf(h)),'Galaxo has no case screws');
     P=mk(['speaker']);quiet=true;for(let i=0;i<60;i++)heatTick(.1);quiet=false;ok(P.part.battery.bad==='battery','overheating cooks the battery');
-    S.upg={gun:1};P=mk(['speaker']);quiet=true;for(let i=0;i<80;i++)heatTick(.1);quiet=false;ok(!P.part.battery.bad&&P.heat<=92,'smart heat gun never overheats');S.upg={};
-    // tutorial day blocks the dangerous stuff
-    S.day=1;P=mk(['speaker']);quiet=true;toggleScrew('b1');toggleScrew('b2');P.heat=10;ok(!pry(),'day 1: cold pry blocked');P.heat=60;pry();P.openT=1;toggleScrew('sp1');ok(!removePart('speaker')&&!P.caused,'day 1: live part pull blocked');quiet=false;
-    S.day=2;
-    // wrong-model part refused
-    P=mk(['battery']);quiet=true;toggleScrew('b1');toggleScrew('b2');P.heat=60;pry();P.openT=1;toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');removePart('battery');
-    C.inv=C.inv.filter(i=>!i.used);buy('battery','pear14');ok(!installPart('battery')&&!P.part.battery,'wrong-model part does not fit');
-    buy('battery','galaxo');ok(installPart('battery')&&P.part.battery&&!P.part.battery.bad,'right part fits');
-    ok(!P.conn.bat,'new battery arrives unplugged');
-    // missing screws cost money
-    toggleConn('bat');toggleScrew('bc1');toggleScrew('bc2');closeUp();P.openT=0;toggleScrew('b1');quiet=false;
-    r=handBack();ok(r&&r.miss===1&&r.pen===8,'one missing screw = -$8');
-    P=mk(['crack']);quiet=true;toggleScrew('b1');toggleScrew('b2');P.heat=60;pry();quiet=false;ok(handBack()===null&&!P.gone,'cannot hand back an open phone');
-    // battery disconnected at hand-back = dead phone, no pay
-    P=mk(['speaker']);quiet=true;toggleScrew('b1');toggleScrew('b2');P.heat=60;pry();P.openT=1;toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');toggleScrew('bc1');toggleScrew('bc2');closeUp();P.openT=0;toggleScrew('b1');toggleScrew('b2');quiet=false;
-    r=handBack();ok(r&&r.total===0&&r.stars===1,'forgot to plug the battery back in = $0');
-    // screws: none left → refused; kit buys 6
-    P=mk(['speaker']);C.mat=0;quiet=true;toggleScrew('b1');C.mat=0;ok(!toggleScrew('b1'),'no screws on the mat → can\'t screw');buy('kit');ok(C.mat===6,'screw kit +6');quiet=false;
-    // board replacement: camera comes off, goes back on
-    C.inv=[];P=mk(['board']);r=solve(P);ok(r&&r.good&&P.part.camera&&P.part.board&&!P.part.board.orig,'board swap moves the camera over');
-    // water: scrub OR new board fixes it
-    P=newPhone(Object.assign(makeJob(rngOf(3),3),{faults:['water'],spots:[[52,34],[24,48],[70,44]],model:'pixelle'}));cur=P;ok(!works().power,'water = dead');r=solve(P);ok(r&&r.good&&r.pay===75,'water scrubbed, phone lives');
-    // patience → tip
+    S.upg={gun:1};P=mk(['speaker']);quiet=true;for(let i=0;i<80;i++)heatTick(.1);quiet=false;ok(!P.part.battery.bad&&P.heat<=96,'smart heat gun cuts out');S.upg={};
+    // 4. inside: live work and cables
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('sp1');removePart('speaker');quiet=false;
+    ok(P.part.board.bad==='board','pulling a part with the battery connected shorts the board');
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('sc1');toggleScrew('sc2');toggleConn('scr');quiet=false;ok(P.part.screen.bad==='backlight','popping the display live blows the backlight');
+    P=mk(['camera']);openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');toggleScrew('c1');toggleConn('cam');removePart('camera');quiet=false;
+    ok(P.caused===0&&!P.part.camera,'camera with its flex unplugged… ');
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');toggleScrew('c1');removePart('camera');quiet=false;
+    ok(P.caused===1&&C.inv.some(i=>i.type==='camera'&&i.bad==='camera'),'…but yanked with it plugged in, the flex tears');
+    ok(!toggleConn('nope'),'unknown connector ignored');
+    P=mk(['speaker']);openIt(P);quiet=true;ok(!toggleConn('bat'),'battery bracket must come off first');quiet=false;
+    // battery removal: tab-less cells bend unless you use alcohol
+    C.inv=[];P=mk(['speaker'],'galaxo');quiet=true;P.heat=70;suctionDone();for(const s of['bottom','left','top'])P.segs[s].fill(1);openUp();P.openT=1;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');removePart('battery',true);quiet=false;
+    ok(C.inv.some(i=>i.type==='battery'&&i.bad==='battery'),'prying a glued tab-less cell bends it');
+    // screws: long screw in a short board hole
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';const s1=P.sc.sc1,s2=P.sc.sc2;toggleScrew('sc1');toggleScrew('sc2');SELSCREW=skey(s2);toggleScrew('sc1');quiet=false;
+    ok(P.part.board.bad==='board','2.4 mm screw in a 1.2 mm hole punches through the board');
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('sp1');toggleScrew('p1');SELSCREW=skey(P.sc.p2||{head:'PH',len:3});SELSCREW='PH|3';toggleScrew('p1');quiet=false;
+    ok(!correct('p1')&&P.caused===0,'too-long screw in the chassis just sits proud, no damage');
+    // wrong-model part refused, gasket, missing screws
+    P=mk(['battery']);r=null;C.inv=[];buy('battery','pear14');openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');removePart('battery');C.inv=C.inv.filter(i=>!i.used);
+    ok(!installPart('battery')&&!P.part.battery,'wrong-model part does not fit');buy('battery','pear11');ok(installPart('battery')&&!P.part.battery.bad,'right part fits');ok(!P.conn.bat,'new battery arrives unplugged');
+    toggleConn('bat');SELSCREW='PH|1.3';toggleScrew('bc1');toggleScrew('bc2');closeUp();P.openT=0;C.bit='P';SELSCREW='P|3.4';toggleScrew('b1');quiet=false;
+    r=handBack();ok(r&&r.miss===1&&r.lift&&r.pen===18,'one missing screw + no gasket = -$18');
+    P=mk(['crack']);openIt(P);ok(handBack()===null&&!P.gone,'cannot hand back an open phone');
+    P=mk(['speaker']);r=solve(P);ok(r&&r.good&&!r.lift&&P.gasket,'a proper job reseals with a gasket');
+    // battery left unplugged = dead on hand-back
+    P=mk(['speaker']);openIt(P);quiet=true;C.bit='PH';toggleScrew('bc1');toggleScrew('bc2');toggleConn('bat');SELSCREW='PH|1.3';toggleScrew('bc1');toggleScrew('bc2');closeUp();P.openT=0;C.bit='P';SELSCREW='P|3.4';toggleScrew('b1');toggleScrew('b2');quiet=false;
+    r=handBack();ok(r&&r.total===0&&r.stars===1,'battery left unplugged = $0');
+    // tray + kit
+    C.tray=[];P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');C.tray=[];SELSCREW=null;ok(!toggleScrew('b1'),'empty tray → nothing to drive in');buy('kit','pear11');ok(C.tray.length===13,'a screw set has one of every screw');quiet=false;
+    C.tray=[];buy('kit','galaxo');ok(C.tray.length===11&&!C.tray.some(s=>s.head==='P'),'Android set has no pentalobes');
+    S.upg={mat:1};P=mk(['speaker']);quiet=true;C.bit='P';toggleScrew('b1');SELSCREW=null;ok(toggleScrew('b1')&&correct('b1'),'project mat puts the right screw back');quiet=false;S.upg={};
+    // board, water, patience
+    C.inv=[];C.cash+=999;P=mk(['board']);r=solve(P);ok(r&&r.good&&P.part.camera&&!P.part.board.orig,'board swap moves the camera over');
+    P=newPhone(Object.assign(makeJob(rngOf(3),3),{faults:['water'],spots:[[30,50],[68,46],[48,20]],model:'pixelle'}));cur=P;ok(!works().power,'water = dead');r=solve(P);ok(r&&r.good&&r.pay===75,'water scrubbed, phone lives');
     P=mk(['speaker']);r=solve(P);const tipFast=r.tip;P=mk(['speaker']);P.t=1e5;r=solve(P);ok(tipFast>0&&r.tip===0&&r.late,'slow repairs lose the tip');
-    // thermal shows, upgrades exist
-    ok(UPG.length===7&&UPG.every(u=>u.cost>0),'upgrade shop');
-    // 4. solo day flow
+    // readings are numbers, not verdicts
+    P=mk(['speaker']);openIt(P);quiet=true;measure('speaker');quiet=false;ok(/∞/.test(P.notes[0].txt)&&!/[✓✗]|broken|replace/i.test(P.notes[0].txt),'meter shows raw values');
+    // 5. solo day flow
     fresh2();startDay();ok(DAY.jobs.length===3&&cur&&mode==='solo','day 1 has three customers');
-    for(let k=0;k<3;k++){const r2=solve(cur);ok(r2&&r2.good,'day-1 job '+(k+1)+' solved');S.dayEarn+=r2.total;nextJob()}
-    hideSheet();ok(mode==='sheet'&&!cur,'day ends after the last customer');ok(S.cash>150,'made money on day 1');
-    // 5. save roundtrip
-    const snap=JSON.stringify(S);ok(JSON.parse(snap).v===1,'save is JSON');
+    for(let k=0;k<3;k++){C.cash+=500;const r2=solve(cur);ok(r2&&r2.good,'day-1 job '+(k+1)+' solved');nextJob()}
+    hideSheet();ok(mode==='sheet'&&!cur,'day ends after the last customer');
+    ok(JSON.parse(JSON.stringify(S)).v===2,'save is JSON');
     // 6. multiplayer host logic
     fresh2();NET.mode='host';onNet({t:'created'});
     hostIn({t:'hi',cid:'g1',name:'Bo',hue:40});hostIn({t:'hi',cid:'g1',name:'Bo',hue:50});ok(HS.players.length===2&&HP('g1').hue===50,'a repeat hello updates, never duplicates');
@@ -1363,12 +1492,13 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     hostIn({t:'pr',cid:'g2',i:2,cash:9e9});ok(HP('g2').cash<=99999,'cash is clamped');
     ok(scoreOf({cash:100,fin:1})===160&&scoreOf({cash:100,fin:4})===100,'finish bonus');
     for(let i=2;i<=8;i++)hostIn({t:'pr',cid:'g'+i,i:5,cash:200,fin:1});ok(HS.ph==='race','not over until the host finishes too');
-    while(RACE.i<RACE.jobs.length&&mode!=='wait'){const r3=solve(cur);ok(r3&&r3.good,'race phone '+(RACE.i+1));raceNext()}
+    while(RACE&&RACE.i<RACE.jobs.length&&mode!=='wait'&&mode!=='results'){C.cash+=300;const r3=solve(cur);ok(r3&&r3.good,'race phone '+(RACE.i+1));raceNext()}
     ok(HS.ph==='results'&&mode==='results','everyone done → results');
     hostDrop('g3');ok(!HP('g3'),'leaver dropped');
     NET.mode='guest';const before=mode;clientState({t:'st',ph:'race',h:'x',seed:5,lvl:1,n:3,pl:[['x','Host',0,0,120,0]]});ok(mode===before,'state before my hello lands is ignored');
     NET.mode='off';HS=null;
     ok(wsURL('ABCD','host').indexOf('glitchbox-api')!==-1&&/room=ABCD&role=host$/.test(wsURL('ABCD','host')),'relay url');
+    ok(!document.getElementById('hintbar')&&!document.getElementById('bHint'),'no hint bar / hint button');
     ok(!!document.querySelector('script[src="glitchbox-menu.js"]'),'quit button script present');
   }catch(e){fail++;out.push('EXCEPTION '+e.message+'\n'+e.stack)}
   quiet=false;
