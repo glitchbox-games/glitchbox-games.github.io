@@ -4,6 +4,7 @@
 
 const GAMES=[
   {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil — race up to 7 friends on the same cars'},
+  {name:'Heist Crew',         file:'heist-crew.html',             emoji:'💰',color:['#05070c','#162036'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hacker, locksmith, muscle, lookout. Sneak past guards and cameras, crack the vault, make the van. 1 to 4 players'},
   {name:'Bomb Squad',         file:'bomb-squad.html',             emoji:'💣',color:['#141617','#2a1410'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One of you has the bomb, everyone else has the manual. Talk it through before it blows. 2 to 8 players'},
   {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hungry monsters want snacks! Count, match and serve — race up to 5 friends. Made for younger players'},
   {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
@@ -289,6 +290,25 @@ const DRAW={
   c.fillStyle='#f2c230';c.beginPath();c.arc(150,152,8,0,6.283);c.fill();c.fillStyle='#1b1d20';c.beginPath();c.arc(150,152,4,0,6.283);c.fill();
   c.save();c.translate(60,160);c.rotate(-.5);c.fillStyle='#c9ced5';c.fillRect(0,-3,70,6);c.fillStyle='#c33';c.fillRect(8,-3.5,34,7);c.beginPath();c.arc(76,0,8,0,6.283);c.fillStyle='#dfe3e8';c.fill();c.restore();
   const lg2=c.createRadialGradient(160,60,10,160,90,200);lg2.addColorStop(0,'rgba(255,240,210,.18)');lg2.addColorStop(1,'rgba(0,0,0,.35)');c.fillStyle=lg2;c.fillRect(0,0,320,200);
+  _SC(c);
+},
+'heist-crew':(c)=>{
+  // top-down night blueprint of a bank: a guard's torch cone, a camera sweep, the crew sneaking to an open vault
+  _GV(c,0,0,320,200,'#0b1220','#05070c');
+  c.fillStyle='#1d2a40';c.fillRect(20,20,280,160);c.fillStyle='#3d4a63';c.fillRect(28,28,128,72);c.fillRect(164,28,128,72);c.fillRect(28,108,128,64);c.fillStyle='#6c737c';c.fillRect(164,108,128,64);
+  c.strokeStyle='rgba(255,255,255,.06)';c.lineWidth=1;for(let x=28;x<292;x+=8){c.beginPath();c.moveTo(x,28);c.lineTo(x,172);c.stroke()}
+  c.fillStyle='#7a5636';c.fillRect(150,52,14,10);c.fillRect(84,100,14,8);c.fillStyle='#8a9098';c.fillRect(220,100,22,8);
+  // vault door swung open, gold inside
+  c.fillStyle='#2a2e36';c.beginPath();c.arc(260,140,22,0,6.283);c.fill();c.fillStyle='#9aa3ad';c.beginPath();c.arc(260,140,18,0,6.283);c.fill();c.fillStyle='#4a5058';c.beginPath();c.arc(260,140,6,0,6.283);c.fill();
+  c.fillStyle='#e8c547';for(let i=0;i<5;i++)c.fillRect(178+i*9,150-(i%2)*6,8,5);
+  // guard torch cone + camera cone
+  const cone=(x,y,a,r,col)=>{const g=c.createRadialGradient(x,y,2,x,y,r);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.beginPath();c.moveTo(x,y);c.arc(x,y,r,a-.45,a+.45);c.closePath();c.fill()};
+  cone(70,60,.4,90,'rgba(255,235,170,.55)');cone(150,30,1.9,70,'rgba(255,60,60,.45)');
+  c.fillStyle='#2a3a5a';c.beginPath();c.arc(70,60,8,0,6.283);c.fill();c.fillStyle='#e8e8e8';c.beginPath();c.arc(70,60,4,0,6.283);c.fill();
+  c.fillStyle='#ddd';c.fillRect(146,26,8,5);
+  // the crew in four role colours
+  [['#39d0ff',196,130],['#ffcf3a',212,122],['#ff5a6a',228,132],['#3ddc84',206,146]].forEach(([col,x,y])=>{c.fillStyle='rgba(0,0,0,.4)';c.beginPath();c.arc(x+2,y+3,7,0,6.283);c.fill();c.fillStyle=col;c.beginPath();c.arc(x,y,7,0,6.283);c.fill();c.fillStyle='#1b1b1b';c.beginPath();c.arc(x,y,3.5,0,6.283);c.fill()});
+  const vg=c.createRadialGradient(200,120,40,160,100,220);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.6)');c.fillStyle=vg;c.fillRect(0,0,320,200);
   _SC(c);
 },
 'bomb-squad':(c)=>{

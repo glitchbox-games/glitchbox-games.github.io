@@ -999,6 +999,51 @@ function sprBay(model){return sprite('bay:'+model,200,150,()=>{
   box(152,40,44,82,5,'rgba(0,0,0,.22)');
   // dipstick tube
   X.strokeStyle='#8d949c';X.lineWidth=1.6;X.beginPath();X.moveTo(DIP[0],DIP[1]);X.lineTo(DIP[0]+4,DIP[1]-10);X.stroke();
+  // ── the stuff that makes it an engine bay ──
+  const rr=rngOf(model.length*131+7);
+  // windshield + wiper arms beyond the cowl
+  X.fillStyle=lg(0,144,0,150,'rgba(120,160,200,.25)','rgba(40,60,80,.6)');X.fillRect(10,146,180,4);
+  for(const wx of[40,120]){X.save();X.translate(wx,146.5);X.rotate(-.08);box(0,-.6,60,1.2,.6,'#111214');box(56,-1,6,2,1,'#1b1d20');X.restore()}
+  // hood latch + striker
+  box(94,1,12,5,1.5,'#2b2e33');box(98,4,4,4,1,'#9aa3ad');T('LATCH',100,3.2,1.6,'rgba(255,255,255,.3)',800);
+  // stickers: fan warning, A/C, emissions
+  box(43,1,22,3.4,.4,'#e8c547');T('⚠ FAN MAY START',54,3.4,1.7,'#1b1d20',900);
+  box(56,13.6,26,4,.4,'#f2f2ee');T('R-1234yf · 0.48 kg',69,16.4,1.6,'#1b1d20',800);
+  box(152,128,26,10,.6,'#f2f2ee');T('VEHICLE EMISSION',165,131.6,1.7,'#1b1d20',900);T('CONTROL INFORMATION',165,134,1.4,'#1b1d20',700);for(let i=0;i<4;i++){X.fillStyle='rgba(0,0,0,.4)';X.fillRect(154,135+i*.6,22-i*3,.25)}
+  box(176,142,12,5,.5,'#c9ced5');T('VIN',182,145.8,2,'#2b2e33',900);
+  // radiator cap warning + condenser A/C lines with service caps
+  T('NEVER OPEN WHEN HOT',146,18.5,1.6,'rgba(232,197,71,.8)',900);
+  X.lineCap='round';X.strokeStyle=lg(0,0,4,0,'#c9ced5','#8d949c');X.lineWidth=1.6;X.beginPath();X.moveTo(186,92);X.bezierCurveTo(194,70,194,30,180,14);X.stroke();
+  X.lineWidth=1.1;X.beginPath();X.moveTo(180,92);X.bezierCurveTo(188,72,186,36,172,14);X.stroke();
+  circ(192,44,1.4,'#2d5fd8');circ(186,56,1.4,'#c33');
+  // throttle body at the end of the intake tube, with its cable and sensor plug
+  circ(104,50,5.2,alu(98,44,110,56));circ(104,50,3.4,'#1b1d20');X.strokeStyle='#8d949c';X.lineWidth=.6;X.beginPath();X.moveTo(101,47);X.lineTo(107,53);X.stroke();
+  box(108,46,4,4,.6,'#2b2e33');X.strokeStyle='#121315';X.lineWidth=.8;X.beginPath();X.moveTo(112,48);X.bezierCurveTo(124,46,130,52,140,58);X.stroke();
+  X.strokeStyle='#5a6069';X.lineWidth=.5;X.beginPath();X.moveTo(99,52);X.bezierCurveTo(80,58,66,70,52,96);X.stroke();
+  // thermostat housing + coolant temp sensor
+  box(136,42,9,7,2,alu(136,42,145,49));circ(140.5,45.5,1.5,'#3a3e44');box(143,40,3,3,.6,'#2b2e33');
+  // PCV hose: valve cover to air box
+  X.strokeStyle='#121315';X.lineWidth=2;X.beginPath();X.moveTo(62,56);X.bezierCurveTo(56,50,58,46,60,42);X.stroke();X.strokeStyle='rgba(255,255,255,.08)';X.lineWidth=.6;X.stroke();
+  // engine lift hooks
+  for(const[hx,hy]of[[62,48],[146,104]]){box(hx-2,hy-2,4,4,.8,steel(hx-2,hy-2,hx+2,hy+2));circ(hx,hy,.9,'#121315')}
+  // valve-cover perimeter bolts + an oil seep along the gasket
+  for(let i=0;i<9;i++){const bx=62+i*10.5;for(const by of[53.6,102.6]){X.fillStyle='#7d858e';X.beginPath();for(let k=0;k<6;k++){const a=k*Math.PI/3;X.lineTo(bx+Math.cos(a)*.9,by+Math.sin(a)*.9)}X.closePath();X.fill()}}
+  X.fillStyle='rgba(20,12,4,.35)';for(let i=0;i<5;i++){X.beginPath();X.ellipse(64+rr()*80,103+rr()*3,3+rr()*5,1+rr()*1.5,0,0,6.283);X.fill()}
+  // fuel rail + injectors over the runners, fuel feed to the firewall
+  box(66,108.4,70,2.6,1.2,lg(0,108,0,111,'#c9ced5','#7d858e'));
+  for(const i of[1,2,3,4]){const x=CX[i];box(x-2,105.5,4,5,1,'#22314a');box(x-1.2,104,2.4,2,.6,'#3a3e44');X.strokeStyle='#121315';X.lineWidth=.45;X.beginPath();X.moveTo(x,104);X.lineTo(x,98);X.stroke()}
+  X.strokeStyle='#121315';X.lineWidth=1.2;X.beginPath();X.moveTo(136,109.5);X.bezierCurveTo(144,112,146,124,146,140);X.stroke();
+  // ABS module with its brake lines, brake booster behind the fluid reservoir
+  box(138,104,13,13,1.5,alu(138,104,151,117));box(140,106,9,6,.8,'#2b2e33');for(let i=0;i<6;i++){X.strokeStyle='#c9ced5';X.lineWidth=.35;X.beginPath();X.moveTo(140+i*1.8,117);X.bezierCurveTo(140+i*1.8,121,146+i*1.6,123,150+i*1.4,126.5);X.stroke()}
+  circ(47,141,8,lg(39,133,55,149,'#2b2e33','#121315'));ring(47,141,7,'rgba(255,255,255,.08)',.5);
+  // braided ground strap, relay box under the fuse box
+  X.strokeStyle='#8d949c';X.lineWidth=1;X.setLineDash([.5,.3]);X.beginPath();X.moveTo(58,88);X.bezierCurveTo(52,90,48,92,42,96);X.stroke();X.setLineDash([]);circ(42,96,1,'#c9ced5');circ(58,88,1,'#c9ced5');
+  box(10,102,20,10,1.5,blackPlastic(10,102,30,112));for(let i=0;i<3;i++)box(12+i*6,104,4,6,.5,'#3a3e44');
+  // dust, grit and a couple of leaves at the cowl
+  for(let i=0;i<260;i++){X.fillStyle='rgba(200,190,170,'+(.05+rr()*.08)+')';X.fillRect(rr()*200,rr()*150,.35,.35)}
+  for(let i=0;i<5;i++){const lx=20+rr()*160,ly=139+rr()*4;X.save();X.translate(lx,ly);X.rotate(rr()*6);X.fillStyle=['#6a4a20','#8a5a1e','#5a3a14'][i%3];X.beginPath();X.ellipse(0,0,2.2,1,0,0,6.283);X.fill();X.restore()}
+  // work-light sheen across the top of the engine
+  X.fillStyle=lg(40,40,160,120,'rgba(255,255,255,.07)','rgba(255,255,255,0)',[.55,'rgba(255,255,255,.04)'],'rgba(255,255,255,0)');X.fillRect(0,0,200,150);
   // ambient occlusion around the edges
   path(0,0,200,150,10);X.strokeStyle='rgba(0,0,0,.35)';X.lineWidth=6;X.stroke();
 },2)}
@@ -1071,6 +1116,69 @@ function sprUnder(model){return sprite('under:'+model,120,240,()=>{
   // rear twist-beam axle with coil springs
   box(12,188,96,7,3,lg(0,188,0,195,'#5d636b','#3a3e44'));
   for(const x of[26,94]){circ(x,198,6,'#1d1f22');for(let k=0;k<4;k++)ring(x,198,5.4-k*1.2,k%2?'#c33':'#a22',.8)}
+  // ── underside detail: everything a mechanic actually sees with the car in the air ──
+  const q=rngOf(model.length*97+3),truck=model==='boulder';
+  // bumper reinforcement + tow eye, splash shield clips
+  box(12,0.6,96,4.2,1.6,steel(0,0,0,5));for(const x of[18,40,80,102])circ(x,2.7,.8,'#121315');
+  ring(100,5.4,1.6,'#c9ced5',.7);
+  for(let x=22;x<100;x+=13){circ(x,17.4,.75,'#121315');circ(x,17.4,.35,'#5a6069')}
+  // front sway bar and its end links, in rubber bushings
+  X.lineCap='round';X.lineJoin='round';X.strokeStyle='#151618';X.lineWidth=2.4;X.beginPath();X.moveTo(12,30);X.lineTo(22,18.6);X.lineTo(98,18.6);X.lineTo(108,30);X.stroke();
+  X.strokeStyle='rgba(255,255,255,.12)';X.lineWidth=.5;X.beginPath();X.moveTo(22,18.1);X.lineTo(98,18.1);X.stroke();
+  for(const x of[34,86])box(x-3,16.6,6,4,1.2,'#26282c');for(const x of[13,107]){X.strokeStyle='#8d949c';X.lineWidth=1.1;X.beginPath();X.moveTo(x,30);X.lineTo(x,36);X.stroke();circ(x,30,1.1,'#2b2e33');circ(x,36,1.1,'#2b2e33')}
+  // steering rack boots poking out from behind the block, outer tie-rod ends
+  for(const s of[1,-1]){const x0=s>0?22:98;for(let k=0;k<5;k++)box(x0-(s>0?k*1.4:-k*1.4)-1.2,36.4-.2*k,2.4,4.2+.1*k,1,k%2?'#1b1d20':'#26282c');circ(60-s*50,40,1.6,'#3a3e44');ring(60-s*50,40,1.6,'rgba(0,0,0,.5)',.4)}
+  // engine block casting: ribs, freeze plugs, the casting code
+  X.fillStyle='rgba(255,255,255,.05)';for(let y=32;y<58;y+=3.4)X.fillRect(44,y,32,.6);
+  for(const x of[48,58,68]){circ(x,30.6,1.4,steel(x-1.4,0,x+1.4,0));ring(x,30.6,1.4,'rgba(0,0,0,.4)',.3)}
+  T(CARS[model].code+'-'+(model.length*731%9000+1000),60,57,2,'rgba(255,255,255,.14)',800);
+  // crank pulley (harmonic balancer) on the left, ribbed belt edge
+  circ(29,74,6.4,'#121315');circ(29,74,5.2,steel(24,69,34,79));for(let k=0;k<6;k++)ring(29,74,4.8-k*.4,'rgba(0,0,0,.18)',.15);circ(29,74,1.6,'#2b2e33');hexPath(29,74,1,0);X.fillStyle='#9aa3ad';X.fill();
+  // starter motor under the bellhousing
+  box(80,76,17,9,4,lg(0,76,0,85,'#5a6069','#26282c'));box(90,74,8,5,2,'#3a3e44');circ(98,78.5,1.1,'#c33');X.strokeStyle='#121315';X.lineWidth=1;X.beginPath();X.moveTo(98,78.5);X.bezierCurveTo(104,82,106,90,104,100);X.stroke();
+  // engine + trans mounts
+  for(const[x,y]of[[22,66],[100,82]]){box(x-3.5,y-3,7,6,1.5,'#26282c');circ(x,y,1.7,'#0f1011');hexPath(x,y,.9,0);X.fillStyle='#8d949c';X.fill()}
+  box(56,100.5,8,4,1.4,'#1d1f22');
+  // seam sealer, crash ribs, rubber body plugs, jack-point arrows
+  X.strokeStyle='rgba(225,215,190,.22)';X.lineWidth=.7;for(const x of[14.5,105.5]){X.beginPath();X.moveTo(x,60);X.lineTo(x,182);X.stroke()}
+  for(const[x,y]of[[28,124],[92,124],[36,186],[84,186],[24,144],[96,144]]){circ(x,y,2.2,'#111214');circ(x,y,1.5,'#1d1f22');ring(x,y,1.1,'rgba(255,255,255,.06)',.3)}
+  for(const y of[66,166])for(const x of[7.5,112.5]){X.fillStyle='rgba(242,194,48,.55)';poly([[x-1.4,y-2.4],[x+1.4,y-2.4],[x,y-.6]]);X.fill()}
+  // body harness clipped down the right side, ABS sensor leads to each corner
+  X.strokeStyle='#0f1011';X.lineWidth=1.1;X.beginPath();X.moveTo(100,104);X.lineTo(100,182);X.bezierCurveTo(100,190,102,196,104,200);X.stroke();
+  for(let y=110;y<180;y+=12){box(98.6,y,2.8,1.6,.4,'#3a3e44')}
+  X.strokeStyle='#0f1011';X.lineWidth=.6;for(const[a,b,c,d]of[[100,104,104,72],[100,104,16,72]]){X.beginPath();X.moveTo(a,b);X.bezierCurveTo(a,b-14,c,d+12,c,d);X.stroke()}
+  // exhaust, done properly: heat-tinted down-pipe, braided flex section, two O2 sensors with leads, rubber hangers
+  X.strokeStyle=lg(0,90,0,130,'rgba(80,70,140,.55)','rgba(190,140,60,.45)','rgba(0,0,0,0)');X.lineWidth=5;X.beginPath();X.moveTo(60,92);X.bezierCurveTo(58,104,58,112,60,124);X.stroke();
+  X.strokeStyle='rgba(255,255,255,.22)';X.lineWidth=.8;X.beginPath();X.moveTo(58.6,126);X.lineTo(58.6,186);X.stroke();
+  box(55.6,104,8.8,10,2,'#8d949c');X.save();path(55.6,104,8.8,10,2);X.clip();X.strokeStyle='rgba(30,30,34,.55)';X.lineWidth=.35;for(let k=-10;k<20;k+=1.2){X.beginPath();X.moveTo(55,104+k);X.lineTo(66,114+k-6);X.stroke();X.beginPath();X.moveTo(55,114+k-6);X.lineTo(66,104+k);X.stroke()}X.restore();
+  for(const y of[116,146]){box(62.4,y-1.4,4,2.8,.8,steel(62,0,66,0));hexPath(64.4,y,1.2,0);X.fillStyle='#c9ced5';X.fill();X.strokeStyle='#121315';X.lineWidth=.6;X.beginPath();X.moveTo(66.4,y);X.bezierCurveTo(74,y-2,80,y-8,88,y-14);X.stroke()}
+  for(const[x,y]of[[60,140],[60,176],[86,196]]){X.strokeStyle='#0d0e0f';X.lineWidth=1.6;X.beginPath();X.moveTo(x-4,y);X.lineTo(x-9,y);X.stroke();ring(x-10.5,y,1.5,'#151618',1)}
+  // heat shields either side of the tunnel, stamped with dimples
+  box(53.5,143,13,6,1.5,alu(53,143,67,149));for(let x=55;x<66;x+=1.8)for(const y of[144.6,147])circ(x,y,.35,'rgba(0,0,0,.25)');
+  // parking-brake cables + rear brake lines fanning out to the rear corners
+  X.strokeStyle='#9aa3ad';X.lineWidth=.55;for(const s of[-1,1]){X.beginPath();X.moveTo(60+s*6,181);X.bezierCurveTo(60+s*18,184,60+s*30,188,60+s*36,196);X.stroke()}
+  X.strokeStyle='#c9ced5';X.lineWidth=.5;for(const s of[-1,1]){X.beginPath();X.moveTo(60+s*12,184);X.bezierCurveTo(60+s*20,188,60+s*30,190,60+s*40,197);X.stroke()}
+  // EVAP canister + fuel filler neck and vent line
+  box(92,138,12,9,2,blackPlastic(92,138,104,147));circ(95,142.5,1,'#3a3e44');circ(101,142.5,1,'#3a3e44');
+  X.strokeStyle='#0d0e0f';X.lineWidth=3.2;X.beginPath();X.moveTo(88,170);X.bezierCurveTo(98,172,104,178,108,186);X.stroke();X.strokeStyle='rgba(255,255,255,.08)';X.lineWidth=.6;X.stroke();
+  X.strokeStyle='#121315';X.lineWidth=.8;X.beginPath();X.moveTo(88,154);X.bezierCurveTo(98,152,104,160,107,184);X.stroke();
+  // rear shocks beside the springs, rear bumper beam, spare-wheel well
+  for(const x of[36,84]){box(x-2.2,178,4.4,12,2,lg(x-2.2,0,x+2.2,0,'#1b1d20','#3a3e44','#1b1d20'));box(x-1,176,2,3,1,steel(x-1,0,x+1,0));circ(x,189,1.4,'#c9ced5')}
+  box(14,228,92,5,2,steel(0,228,0,233));for(const x of[20,100])circ(x,230.5,.9,'#121315');
+  if(!truck){circ(36,218,9.6,'rgba(0,0,0,.25)');for(let k=0;k<3;k++)ring(36,218,9-k*2.6,'rgba(255,255,255,.06)',.6);circ(36,218,1.6,'#2b2e33')}
+  // the pickup sits on a ladder frame with a live axle, leaf springs and a driveshaft
+  if(truck){
+    for(const x of[16,98]){box(x,22,6,212,1.5,lg(x,0,x+6,0,'#2b2e33','#4a4f56','#1d1f22'));for(let y=40;y<230;y+=18)circ(x+3,y,.9,'#0f1011')}
+    for(const y of[118,150,226])box(22,y,76,4,1.2,lg(0,y,0,y+4,'#4a4f56','#26282c'));
+    X.strokeStyle=lg(46,0,54,0,'#5a6069','#9aa3ad','#3a3e44');X.lineWidth=3.6;X.beginPath();X.moveTo(52,102);X.lineTo(48,184);X.stroke();
+    for(const y of[104,143,182]){box(46.6,y-1.6,7,3.2,1,'#2b2e33');X.strokeStyle='#8d949c';X.lineWidth=.5;X.beginPath();X.moveTo(47,y);X.lineTo(53,y);X.stroke()}
+    circ(48,192,8.4,lg(40,184,56,200,'#5a6069','#26282c'));for(let k=0;k<10;k++){const a=k/10*6.283;circ(48+Math.cos(a)*6.6,192+Math.sin(a)*6.6,.5,'#c9ced5')}circ(48,192,2.2,'#1d1f22');
+    for(const x of[25,95]){for(let k=0;k<4;k++)box(x-2.4+k*.25,172+k*1.6,4.8-k*.5,44-k*3.2,2,k%2?'#1b1d20':'#2b2e33');box(x-3,190,6,4,1,steel(x-3,0,x+3,0))}
+    box(52,232,16,7,2,steel(52,232,68,239));box(56,236,8,4,1,'#121315');ring(60,238,1.4,'#c9ced5',.6);
+  }
+  // wet road spray thrown off the tyres, and drips along the sills
+  for(const[cx,cy]of[[12,72],[108,72],[12,214],[108,214]])for(let i=0;i<40;i++){const a=(cy<120?.3:-.3)+(q()-.5)*1.2,d=4+q()*18;X.fillStyle='rgba(70,50,30,'+(.06+q()*.1)+')';X.fillRect(cx+(cx<60?1:-1)*Math.cos(a)*d*.7,cy+Math.sin(a)*d+(cy<120?6:-6),.6+q(),.6+q())}
+  for(let i=0;i<14;i++){const x=q()<.5?9+q()*2:109+q()*2,y=60+q()*120;X.fillStyle='rgba(20,22,26,.35)';X.beginPath();X.ellipse(x,y,.5,1+q()*1.5,0,0,6.283);X.fill()}
   // road grime and the odd rust bloom
   const r=rngOf(model.length*41);for(let i=0;i<46;i++){X.fillStyle='rgba(130,80,35,'+(.05+r()*.12)+')';X.beginPath();X.arc(10+r()*100,10+r()*220,1+r()*3,0,6.283);X.fill()}
   // work light from below
@@ -1094,6 +1202,18 @@ function sprWheelBg(model){return sprite('wbg:'+model,160,160,()=>{
   X.lineCap='round';X.strokeStyle='#e2b11e';X.lineWidth=5;X.beginPath();X.moveTo(80,0);X.lineTo(80,20);X.stroke();
   // brake hose
   X.strokeStyle='#121315';X.lineWidth=2;X.beginPath();X.moveTo(96,30);X.bezierCurveTo(118,32,132,40,134,52);X.stroke();
+  // ribbed plastic arch liner and its push clips
+  X.save();X.beginPath();X.arc(80,86,74,Math.PI*1.04,Math.PI*1.96);X.arc(80,86,64,Math.PI*1.96,Math.PI*1.04,true);X.closePath();X.fillStyle='#141517';X.fill();X.clip();
+  X.strokeStyle='rgba(255,255,255,.035)';X.lineWidth=.6;for(let k=0;k<40;k++){const a=Math.PI*1.04+k/40*Math.PI*.92;X.beginPath();X.moveTo(80+Math.cos(a)*64,86+Math.sin(a)*64);X.lineTo(80+Math.cos(a)*74,86+Math.sin(a)*74);X.stroke()}
+  X.restore();for(const a of[1.12,1.32,1.68,1.88]){const t=Math.PI*a;circ(80+Math.cos(t)*69,86+Math.sin(t)*69,1.4,'#26282c');circ(80+Math.cos(t)*69,86+Math.sin(t)*69,.6,'#0b0c0d')}
+  // the coil spring wrapped round the strut
+  for(let k=0;k<6;k++){const y=2+k*4.6;X.strokeStyle=k%2?'#1d1f22':'#2b2e33';X.lineWidth=2.2;X.beginPath();X.ellipse(80,y,12,2.2,0,0,Math.PI);X.stroke();X.strokeStyle='rgba(255,255,255,.22)';X.lineWidth=.5;X.beginPath();X.ellipse(80,y-.6,11,1.6,0,.3,Math.PI-.3);X.stroke()}
+  box(60,24,40,4,1.5,steel(60,24,100,28));
+  // sway-bar end link and the ABS sensor lead clipped down the knuckle
+  X.strokeStyle='#8d949c';X.lineWidth=1.4;X.beginPath();X.moveTo(52,22);X.lineTo(62,40);X.stroke();circ(52,22,1.8,'#2b2e33');circ(62,40,1.8,'#2b2e33');
+  X.strokeStyle='#0d0e0f';X.lineWidth=.9;X.beginPath();X.moveTo(70,4);X.bezierCurveTo(60,16,58,30,62,46);X.lineTo(66,52);X.stroke();for(const y of[18,32])box(57.6,y,4,1.8,.5,'#3a3e44');
+  // brake dust + road grit settled in the corner
+  const r=rngOf(model.length*13+1);for(let i=0;i<420;i++){const a=r()*6.283,d=20+r()*72;X.fillStyle='rgba(90,70,50,'+(r()*.12)+')';X.fillRect(80+Math.cos(a)*d,86+Math.sin(a)*d,.7,.7)}
 },2)}
 function sprRotor(worn){return sprite('rotor:'+(worn?1:0),90,90,()=>{
   const c=45;
@@ -1104,7 +1224,11 @@ function sprRotor(worn){return sprite('rotor:'+(worn?1:0),90,90,()=>{
   X.restore();
   for(let i=0;i<24;i++){const a=i/24*6.283;circ(c+Math.cos(a)*33,c+Math.sin(a)*33,.9,'rgba(0,0,0,.35)')}
   circ(c,c,20,lg(25,25,65,65,'#9aa1aa','#5f666f'));ring(c,c,20,'rgba(0,0,0,.4)',.6);circ(c,c,7,'#2b2e33');circ(c,c,4,'#9aa3ad');
-  for(let k=0;k<5;k++){const a=-Math.PI/2+k*2*Math.PI/5;circ(c+Math.cos(a)*15,c+Math.sin(a)*15,2,'#c9ced5');ring(c+Math.cos(a)*15,c+Math.sin(a)*15,2,'rgba(0,0,0,.35)',.3)}
+  for(let k=0;k<5;k++){const a=-Math.PI/2+k*2*Math.PI/5,x=c+Math.cos(a)*15,y=c+Math.sin(a)*15;circ(x,y,2.6,'rgba(0,0,0,.3)');circ(x,y,2,lg(x-2,y-2,x+2,y+2,'#e6e9ee','#8d949c'));for(let t=0;t<4;t++)ring(x,y,1.8-t*.4,'rgba(0,0,0,.18)',.15)}
+  // vented rotor: the cooling vanes show at the edge, rust bloom on the outer lip, hat-section shadow
+  for(let i=0;i<44;i++){const a=i/44*6.283;X.strokeStyle='rgba(20,22,26,.55)';X.lineWidth=.9;X.beginPath();X.moveTo(c+Math.cos(a)*41.6,c+Math.sin(a)*41.6);X.lineTo(c+Math.cos(a+.05)*43,c+Math.sin(a+.05)*43);X.stroke()}
+  ring(c,c,42.4,'rgba(140,80,40,'+(worn?.55:.3)+')',1.2);ring(c,c,21,'rgba(0,0,0,.35)',1.4);ring(c,c,22.6,'rgba(255,255,255,.12)',.4);
+  T('MIN TH 22.0mm',c,c+31,2.6,'rgba(0,0,0,.35)',800);
 },4)}
 function sprWheel(model){return sprite('wheel:'+model,140,140,()=>{
   const m=CARS[model],c=70;
@@ -1114,10 +1238,21 @@ function sprWheel(model){return sprite('wheel:'+model,140,140,()=>{
   X.save();X.fillStyle='rgba(235,240,245,.4)';X.font='800 5.2px Rubik,sans-serif';X.textAlign='center';
   const txt=(model==='boulder'?'ALL TERRAIN · 265/70 R17':'GRIPMASTER · 205/55 R16');for(let i=0;i<txt.length;i++){const a=-2.4+i*.075;X.save();X.translate(c+Math.cos(a)*57,c+Math.sin(a)*57);X.rotate(a+Math.PI/2);X.fillText(txt[i],0,0);X.restore()}X.restore();
   // alloy rim: lip, five spokes, centre cap
-  circ(c,c,46,lg(20,20,120,120,shade(m.rim,.3),shade(m.rim,-.25)));ring(c,c,45.5,'rgba(255,255,255,.35)',.6);circ(c,c,41,'#1c1e21');
+  circ(c,c,46,lg(20,20,120,120,shade(m.rim,.3),shade(m.rim,-.25)));ring(c,c,45.5,'rgba(255,255,255,.35)',.6);X.save();X.beginPath();X.arc(c,c,41,0,Math.PI*2);X.arc(c,c,34,0,Math.PI*2,true);X.fillStyle=lg(0,30,0,110,'#2a2c30','#121315');X.fill();X.restore();circ(c,c,34,'rgba(10,11,12,.5)');
   for(let k=0;k<5;k++){const a=-Math.PI/2+Math.PI/5+k*2*Math.PI/5;X.save();X.translate(c,c);X.rotate(a);X.beginPath();X.moveTo(-6,-14);X.lineTo(-9,-41);X.lineTo(9,-41);X.lineTo(6,-14);X.closePath();X.fillStyle=lg(-9,0,9,0,shade(m.rim,-.15),shade(m.rim,.35),shade(m.rim,-.2));X.fill();X.restore()}
   circ(c,c,22,lg(48,48,92,92,shade(m.rim,.25),shade(m.rim,-.3)));ring(c,c,22,'rgba(0,0,0,.35)',.5);
   circ(c,c,7,lg(63,63,77,77,'#e6e9ee','#8d949c'));T(model[0].toUpperCase(),c,c+2.2,6,'#3a3e44',900);
+  // brake dust collects on the inner edge of each spoke
+  for(let k=0;k<5;k++){const a=-Math.PI/2+Math.PI/5+k*2*Math.PI/5;X.save();X.translate(c,c);X.rotate(a);X.fillStyle=lg(-9,0,0,0,'rgba(60,45,30,.4)','rgba(60,45,30,0)');X.beginPath();X.moveTo(-6,-14);X.lineTo(-9,-41);X.lineTo(-4,-41);X.lineTo(-3,-14);X.closePath();X.fill();X.restore()}
+  ring(c,c,43.4,'rgba(0,0,0,.35)',.8);ring(c,c,44.6,'rgba(255,255,255,.18)',.4);
+  // stick-on balance weights inside the barrel, valve stem with its cap
+  for(let i=0;i<4;i++){const a=2.1+i*.07;box(c+Math.cos(a)*37.5-.9,c+Math.sin(a)*37.5-.9,1.8,1.8,.4,'#7d858e')}
+  X.save();X.translate(c+Math.cos(.95)*44,c+Math.sin(.95)*44);X.rotate(.95);box(-3.2,-1.1,4,2.2,1,'#121315');box(.4,-1.3,2.6,2.6,.7,lg(0,-1.3,0,1.3,'#d6dbe1','#7d858e'));X.restore();
+  // tyre: DOT date code, rim protector ridge, a soft sheen across the shoulder
+  X.save();X.fillStyle='rgba(235,240,245,.22)';X.font='700 3px Rubik,sans-serif';X.textAlign='center';const dot='DOT 4B7K X9R2 '+(model.length*7%52+1)+'21';for(let i=0;i<dot.length;i++){const a=2.45-i*.052;X.save();X.translate(c+Math.cos(a)*59,c+Math.sin(a)*59);X.rotate(a-Math.PI/2);X.fillText(dot[i],0,0);X.restore()}X.restore();
+  ring(c,c,48.6,'rgba(255,255,255,.06)',1.6);ring(c,c,47,'rgba(0,0,0,.6)',1);
+  X.save();X.beginPath();X.arc(c,c,68,0,Math.PI*2);X.arc(c,c,48,0,Math.PI*2,true);X.clip();X.fillStyle=lg(10,10,90,90,'rgba(255,255,255,.07)','rgba(255,255,255,0)');X.fillRect(0,0,140,140);
+  const r=rngOf(model.length*29);for(let i=0;i<260;i++){const a=r()*6.283,d=50+r()*18;X.fillStyle='rgba(120,100,80,'+(r()*.12)+')';X.fillRect(c+Math.cos(a)*d,c+Math.sin(a)*d,.6,.6)}X.restore();
   // the worn pads glint through the spokes as a thin sliver; good pads look the same from outside
 },4)}
 function sprCaliper(model){return sprite('cal:'+model,26,60,()=>{
