@@ -1482,13 +1482,8 @@ const SFX={
   ult(){const t=T0();if(t==null)return;tone(t,.5,'sawtooth',200,820,.1);tone(t+.05,.55,'square',300,1250,.05)},
   ui(){const t=T0();if(t==null)return;tone(t,.06,'square',660,990,.04)},
 };
-let VOICE=null;
-function say(text){
-  if(!SET.snd||G.attract||!window.speechSynthesis||SMOKE)return;
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
-    if(!VOICE){const vs=speechSynthesis.getVoices();VOICE=vs.find(v=>/en[-_](US|GB)/i.test(v.lang)&&/male|daniel|alex|fred|google uk english male/i.test(v.name))||vs.find(v=>/^en/i.test(v.lang))||null}
-    if(VOICE)u.voice=VOICE;u.rate=1.02;u.pitch=.55;u.volume=.85;speechSynthesis.speak(u)}catch(e){}
-}
+// no commentator: the announcer voice was removed at the player's request
+function say(){}
 
 // ════════════════════ CPU OPPONENT ════════════════════
 class Bot{
@@ -1703,7 +1698,7 @@ function floatAt(text,pos,cls='',dy=0,key){if(G.attract||SMOKE)return;
 function updateFloats(dt){for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i];f.t+=dt;if(f.t>.95){f.el.remove();FLOATS.splice(i,1);continue}
   _fp.copy(f.p).project(camera);if(_fp.z>1){f.el.style.opacity=0;continue}const x=(_fp.x*.5+.5)*innerWidth+f.ox,y=(-_fp.y*.5+.5)*innerHeight-f.t*70+f.dy;
   const sc=f.t<.12?1.5-f.t*4:1;f.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;f.el.style.opacity=f.t>.6?(.95-f.t)/.35:1}}
-function toggleSound(){SET.snd=!SET.snd;saveSet();if(AU.master)AU.master.gain.value=SET.snd?.85:0;if(!SET.snd&&window.speechSynthesis)speechSynthesis.cancel();$('sBtn').textContent=SET.snd?'ON':'OFF'}
+function toggleSound(){SET.snd=!SET.snd;saveSet();if(AU.master)AU.master.gain.value=SET.snd?.85:0;$('sBtn').textContent=SET.snd?'ON':'OFF'}
 function togglePause(force){if(G.mode!=='fight')return;const on=force!=null?force:!$('pauseOv').classList.contains('on');if(on){showOv('pauseOv');if(!G.online)G.paused=true}else{hideOv('pauseOv');hideOv('helpOv');G.paused=false}}
 function renderRec(){$('recLine').textContent=(REC.w||REC.l)?`RECORD ${REC.w}–${REC.l} · ${REC.ko} KOs`+(REC.ladders?` · 🏆 ×${REC.ladders}`:''):''}
 const HUDC={};
