@@ -1996,7 +1996,7 @@ function init(){
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG)window.__HM={updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG)window.__HM={hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();
   const h=new URLSearchParams(HASH.replace(/^#/,'').replace(/-?debug$/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
