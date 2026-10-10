@@ -42,6 +42,11 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
 .chip{background:rgba(12,17,24,.9);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;display:flex;gap:6px;align-items:center}
 .chip.me{border-color:var(--cyan)}
 .chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+#tut{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(94%,560px);background:rgba(13,18,24,.96);border:1px solid #3a4757;border-radius:14px;padding:10px 14px;z-index:3;display:none;font-size:14.5px;line-height:1.45}
+#tut.on{display:block}
+#tut b{color:var(--cyan)}
+#tut .th{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:3px}
+#tut button{font-size:11px;color:var(--dim);text-decoration:underline;letter-spacing:0;text-transform:none}
 #side{background:#0d1218;border-left:1px solid var(--line);overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
 .card h3{margin:0 0 6px;font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:6px}
@@ -132,7 +137,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none
   </div>
   <div id="main">
     <div id="tools"></div>
-    <div id="stage"><canvas id="cv"></canvas><div id="toast"></div><div id="chips"></div></div>
+    <div id="stage"><canvas id="cv"></canvas><div id="toast"></div><div id="chips"></div><div id="tut"><div class="th"><span>📘 Day 1 · how repairs work</span><button id="tutSkip">Skip tutorial</button></div><div id="tutTxt"></div></div></div>
     <div id="side"></div>
   </div>
 </div>
@@ -231,7 +236,7 @@ const NSEG={bottom:4,top:4,left:8,right:8};
 
 // ═══════════════════════ state ═══════════════════════
 const fresh=()=>({v:2,day:1,cash:150,upg:{},inv:[],tray:[],bit:'PH',rates:[],total:0,best:0,jobIdx:0,dayEarn:0,daySpend:0,seed:1+Math.floor(Math.random()*1e6),
-  sound:true,name:'',hue:Math.floor(Math.random()*360),started:false});
+  sound:true,name:'',hue:Math.floor(Math.random()*360),started:false,tutOff:false});
 let S=fresh();
 const SAVE_KEY='phonedoctor.v2';
 function save(){if(DEMO)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
@@ -632,6 +637,43 @@ function doAct(a){
   return ok;
 }
 
+// ═══════════════════════ day-1 tutorial (words only — never highlights anything) ═══════════════════════
+const tutOn=()=>mode==='solo'&&C===S&&S.day===1&&!S.tutOff&&playing();
+const PNAME=t=>PARTS[t]?PARTS[t].n.toLowerCase():t;
+function tutText(){
+  const P=cur,h=advise();if(!h)return P.openT>0&&P.openT<1?'…':'';
+  const a=h.act,bitFor=id=>{const s=P.sc[id]||holeSpec(HOLE[id],P.model);return bitName(s.head)};
+  switch(a.k){
+    case'test':return'A customer just handed you their phone. First, press <b>⚡ Power on</b> (or T) to see what still works.';
+    case'screw':{const hh=HOLE[a.id],outq=!!P.sc[a.id],where=hh.part==='case'?'bottom edge':hh.part==='batbr'?'battery connector bracket':hh.part==='scrbr'?'screen connector bracket':PNAME(hh.part==='board'?'board':hh.part);
+      return outq?'Take out the screw on the <b>'+where+'</b>: choose the <b>🪛 Driver</b>, set the <b>'+bitFor(a.id)+'</b> bit (click Driver again or press B), then <b>hold</b> on the screw. Screws go into the tray on the right.'
+        :'Put the screw back in the <b>'+where+'</b>: in the screw tray (right panel) click the <b>'+HEAD_NAME[holeSpec(hh,P.model).head]+' '+holeSpec(hh,P.model).len.toFixed(1)+'mm</b> screws, set the <b>'+bitFor(a.id)+'</b> bit, then hold on the empty hole. Wrong lengths cause damage!'}
+    case'heat':return'The screen is glued on. Hold the <b>🔥 Heat</b> gun on the phone until the thermometer reads about <b>65–85°C</b>. Much hotter and you\'ll cook the battery.';
+    case'suction':return'Now <b>hold</b> the <b>🪠 Suction</b> cup on the glass near the bottom. It lifts the screen and opens a little gap.';
+    case'cut':return'Drag the <b>🔺 Pick</b> along the <b>'+a.side+' edge</b> of the phone to slice the glue (hold the mouse and slide). Cut the bottom, left and top. <b>Don\'t</b> dig along the right edge — the screen\'s cables are there.';
+    case'open':return'All the glue is cut. Click the phone with the <b>✋ Hand</b> to swing the screen open like a book.';
+    case'meter':return'Something\'s wrong but you don\'t know what yet. Touch the <b>📟 Meter</b> to the <b>'+PNAME(a.part)+'</b> and read the numbers in the bench log. Compare parts — the odd one out is your fault.';
+    case'conn':{const c=a.id,on=P.conn[c];const nm={bat:'battery',scr:'display',tch:'touch',cam:'camera',port:'charge port'}[c];
+      return on?(c==='bat'?'Before touching anything else: <b>unplug the battery</b>. Click its connector (the plug above the battery) with the <b>🥢 Spudger</b>. Working on a live phone causes sparks.':'Unplug the <b>'+nm+'</b> cable from the board with the <b>🥢 Spudger</b> before pulling that part out, or the cable tears.')
+        :'Plug the <b>'+nm+'</b> connector back in with the <b>🥢 Spudger</b>'+(c==='bat'?' — the battery goes last.':'.')}
+    case'remove':return'Lift the <b>'+PNAME(a.part)+'</b> out with the <b>✋ Hand</b>'+(a.part==='battery'?' — <b>hold</b> on it, it\'s glued down':'')+(a.part==='screen'?' (click the screen panel on the right)':'')+'.';
+    case'install':return'Click the empty spot where the <b>'+PNAME(a.part)+'</b> goes with the <b>✋ Hand</b> to fit the new one.';
+    case'buy':return a.part==='kit'?'You\'re short of screws. Buy a <b>🔩 Screw set</b> from the Supplier (right panel).':a.part==='gasket'?'Before closing, buy an <b>adhesive gasket</b> from the Supplier and click it in "Parts on the bench" — it seals the screen back on.':'You need a new <b>'+PNAME(a.part)+'</b>. Buy one for a <b>'+MODELS[P.model].name+'</b> from the Supplier in the right panel.';
+    case'gasket':return'Click the <b>gasket</b> in "Parts on the bench" to lay it on the frame, so the screen sticks back down.';
+    case'brush':return a.i===-1?'Something\'s stuck in the charge port. Hold the <b>🪥 IPA</b> brush on the port to clean it out.':a.i===-2?'This battery has no pull tabs. Hold the <b>🪥 IPA</b> brush on it first — the alcohol softens the glue so it won\'t bend.':'Scrub the green corrosion off the board: hold the <b>🪥 IPA</b> brush on each patch.';
+    case'close':return'Everything\'s back together inside. Press <b>📕 Close up</b> to shut the phone.';
+    case'handback':return'Done! Press <b>✅ Hand back</b> (or Enter) to return it. Tip: wiping the glass with the 🪥 brush first makes customers happy.';
+  }
+  return'';
+}
+let tutLast='';
+function renderTut(){
+  const el=$('tut');if(!el)return;
+  if(!tutOn()){el.classList.remove('on');tutLast='';return}
+  const t=tutText();if(t!==tutLast){tutLast=t;$('tutTxt').innerHTML=t}
+  el.classList.toggle('on',!!t);
+}
+
 // ═══════════════════════ effects ═══════════════════════
 let FX=[],ROLL=[],FLOAT=[];
 function fx(kind,x,y){
@@ -668,7 +710,7 @@ function layout(){
 addEventListener('resize',layout);
 if(window.ResizeObserver)new ResizeObserver(layout).observe($('stage'));
 function geom(){
-  const P=cur,foot=mode==='race'?48:16;U=Math.max(.8,Math.min((H-foot-24)/204,(W-24)/222));
+  const P=cur,foot=mode==='race'?48:tutOn()?96:16;U=Math.max(.8,Math.min((H-foot-24)/204,(W-24)/222));
   const t=P?ease(P.openT):0;
   OX=lerp(W/2-50*U,W/2-104*U,t);OY=12+(H-foot-12-200*U)/2;
 }
@@ -1061,6 +1103,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.buy){if(playing())buy(b.dataset.buy,b.dataset.model||cur.model);return}
   if(b.hasAttribute('data-close')){hideSheet();return}
   if(b.dataset.upg){const u=UPG.find(x=>x.id===b.dataset.upg);if(u&&!S.upg[u.id]&&S.cash>=u.cost){S.cash-=u.cost;S.upg[u.id]=1;save();sfx('cash');showDayEnd(true)}return}
+  if(b.id==='tutSkip'){S.tutOff=true;save();renderTut();return}
   if(b.id==='bSnd'){S.sound=!S.sound;save();renderTop();return}
   if(b.id==='bHelp'||b.id==='howBtn'){showHelp();return}
   if(b.id==='playBtn'){$('titleOv').classList.remove('on');startDay();return}
@@ -1161,7 +1204,7 @@ function frame(now){
   for(const r of ROLL){r.x+=r.vx*dt;r.y+=r.vy*dt;r.vy*=.96;r.rot+=r.vx*dt*.3;r.life-=dt;if(r.life<=0)msg('🔩 The screw is gone — somewhere under the bench.')}ROLL=ROLL.filter(r=>r.life>0);
   for(const f of FLOAT)f.life-=dt;FLOAT=FLOAT.filter(f=>f.life>0);
   if(uiDirty){uiDirty=false;renderSide();renderTop()}
-  renderTools();
+  renderTools();if(Math.floor(TIME*6)!==Math.floor((TIME-dt)*6))renderTut();
   if(cur&&playing()){const f=Math.max(0,1-cur.t/patience()),pb=$('patBar');if(pb){pb.style.width=(f*100)+'%';pb.style.background=f>.5?'#3ddc84':f>.2?'#ffd23f':'#ff4d5e';$('patTxt').textContent=f>.5?'😊 waiting':f>.2?'😐 checking the time':f>0?'😠 getting annoyed':'😤 fed up'}}
   if(mode==='race'&&Math.floor(TIME*2)!==Math.floor((TIME-dt)*2))renderTop();
   if(!W)layout();
@@ -1502,6 +1545,9 @@ if(HASH==='#smoke')addEventListener('DOMContentLoaded',()=>{
     NET.mode='off';HS=null;
     ok(wsURL('ABCD','host').indexOf('glitchbox-api')!==-1&&/room=ABCD&role=host$/.test(wsURL('ABCD','host')),'relay url');
     ok(!document.getElementById('hintbar')&&!document.getElementById('bHint'),'no hint bar / hint button');
+    fresh2();startDay();renderTut();ok($('tut').classList.contains('on')&&/Power on/.test($('tutTxt').textContent),'day 1 shows the tutorial card');
+    S.tutOff=true;renderTut();ok(!$('tut').classList.contains('on'),'skip hides it');S.tutOff=false;S.day=2;renderTut();ok(!$('tut').classList.contains('on'),'no tutorial after day 1');
+    S.day=1;for(let k=0;k<200;k++){const h=advise();if(!h||h.act.k==='handback')break;if(!tutText()){ok(false,'tutorial has words for '+h.act.k);break}doAct(h.act)}ok(true,'tutorial text covers every step');
     ok(typeof glowRect==='undefined'&&!UPG.some(u=>u.id==='thermal'),'no part glow');
     ok(!!document.querySelector('script[src="glitchbox-menu.js"]'),'quit button script present');
   }catch(e){fail++;out.push('EXCEPTION '+e.message+'\n'+e.stack)}
