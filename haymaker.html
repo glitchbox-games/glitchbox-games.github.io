@@ -92,6 +92,7 @@ body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{backg
 #emoBtn{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(10,10,16,.75);font-size:20px}
 #emoMenu{position:absolute;left:52px;top:0;display:none;flex-direction:row;flex-wrap:wrap;gap:6px;width:260px}#emoMenu.on{display:flex}
 #emoMenu button{background:#fff;color:#111;border:0;border-radius:10px;padding:7px 12px;font:400 15px Anton;white-space:nowrap}
+#ladBody .story{font:italic 600 13.5px Rubik;color:#e8e2d6;line-height:1.45;border-left:3px solid var(--c);padding:6px 12px;margin:10px 0;background:rgba(255,255,255,.04);border-radius:0 8px 8px 0}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -4031,12 +4032,25 @@ function startSolo(myF,oppF,diff,watch){rpStop();G.surv=null;G.local=diff==='p2'
   G.title=!!(G.ladder&&G.ladder.i===G.ladder.opps.length-1);if(G.title&&G.phase==='walk')giveBelt(G.B[1],true);
 }
 const LAD_DIFF=['rookie','rookie','contender','contender','champion'];
+// each fighter's ladder is a little story: why they climb, the night before the title, and what the belt means
+const STORY={
+  blaze:['The foundry\'s closing. Win the belt and the purse keeps the furnaces lit for one more winter.','Tomorrow\'s the title. The whole boiler district is crammed into one bar to watch.','The furnaces roar back to life. Kids in the district start wrapping their hands with rags.'],
+  volt:['Couriers get paid by the delivery. Champions get paid by the second. Volt did the maths.','One fight left. Volt hasn\'t slept — too much charge in the hands.','Volt does a lap of the ring so fast the cameras only catch the belt.'],
+  titan:['Thirty-one fights, never down. But never a belt. The mountain wants its summit.','His father fought for this belt and lost. Titan keeps the old gloves in his bag.','He hangs the belt on the summit cairn above his village. It\'s still there.'],
+  shade:['A letter arrives with no name: "Win the belt and you\'ll learn who you were."','The night before the title, the letter-writer leaves a second note: "Almost."','The belt is handed over. The hood stays up. Some things are better as a mystery.'],
+  frost:['A torn ligament ended her skating. Boxing gave her somewhere to put the cold.','Her old skating coach buys a ticket for the title fight. Front row.','She skates one slow circle of the ring with the belt held high. Ten out of ten.'],
+  viper:['Viper wants one thing: the reptile house saved from demolition. The prize money would do it.','The zoo board says they\'ll decide after the fight.','The reptile house gets a new wing, with a very green, very fanged champion on the sign.'],
+  kitsune:['A shrine spirit is bored. Very bored. A tournament looks like fun.','Nine tails, eight wins to go… wait, that\'s not how counting works. Kitsune doesn\'t care.','The belt vanishes from the trophy case the next morning. Kitsune insists it was "a trick".'],
+  toro:['He spent ten years dodging capes. Now he wants to be the one holding the red.','The title fight is on a Sunday. Toro always charged hardest on Sundays.','Toro waves the belt like a cape at the crowd. Olé.'],
+  unit:['PROGRAM: SPARRING PARTNER. NEW PROGRAM: CHAMPION. REASON: UNKNOWN.','ONE OPPONENT REMAINS. PROBABILITY OF VICTORY: IRRELEVANT.','UNIT-7 POLISHES THE BELT 1,438 TIMES. IT DOES NOT KNOW WHY THIS FEELS GOOD.'],
+  grizz:['The gym has a fridge full of salmon. The champion gets the key to the fridge.','The night before the title, Grizz eats twelve fish and sleeps like a log.','Grizz gets the fridge key. He also gets the belt, which he uses to hold the fridge shut.']};
 function showLadder(){rpStop();vsHide();clearConfetti();
   const L=G.ladder;G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;hideAllOv();showOv('ladOv');showHUD(false);REF.b.root.visible=false;
   const done=L.i>=L.opps.length;if(done){setTimeout(()=>{confetti();SFX.fanfare(true)},300)}
   G.B.forEach(b=>{b.down=false;b.act=null;b.fxBits=0;b.P.fall=0});placePreview([L.f,done?null:L.opps[L.i]]);
   $('ladBody').innerHTML=`<div class="res" style="font-size:48px">${done?'<span class="ttl">'+ICO('trophy')+'</span> CHAMPION':'ARCADE LADDER'}</div><div class="how">${done?FBY[L.f].name+' IS THE UNDISPUTED CHAMPION':'FIGHT '+(L.i+1)+' OF 5'}</div>
     <div class="lad">${L.opps.map((id,i)=>`<div class="${i<L.i?'done':i===L.i?'cur':''}" style="${i===L.i?'border-color:'+FBY[id].col:''}">${i<L.i?ICO('check'):portrait(id,58)}<small>${DIFF[LAD_DIFF[i]].name}</small></div>`).join('')}<div style="border-color:var(--gold)">${ICO('trophy')}<small>BELT</small></div></div>
+    ${STORY[L.f]?`<p class="story" style="--c:${FBY[L.f].col}">${STORY[L.f][done?2:L.i===L.opps.length-1?1:L.i===0?0:0]}</p>`:''}
     ${done?'<p class="dimt" style="text-align:center">Five fights, five wins. The belt is yours — try it with another fighter.</p>':`<p class="dimt" style="text-align:center">Next up: <b style="color:${FBY[L.opps[L.i]].col}">${FBY[L.opps[L.i]].name}</b> — “${FBY[L.opps[L.i]].nick}” (${DIFF[LAD_DIFF[L.i]].name})</p>`}
     <div class="menu">${done?'':'<button class="primary" id="ladGo">FIGHT</button>'}<button id="ladMenu">MAIN MENU</button></div>`;
   if(!done)$('ladGo').onclick=()=>startSolo(L.f,L.opps[L.i],LAD_DIFF[L.i]);
@@ -4600,6 +4614,7 @@ function runSmoke(){
     {SET.calm=true;CAM.slowT=0;const t0=G.time;solo('blaze','frost');CAM.slow=.2;CAM.slowT=1;PFX.zoom=1;updPFX(.016);ok(PFX.zoom===0,'REDUCED EFFECTS kills zoom blur');SET.calm=false;CAM.slowT=0}
     {solo('blaze','frost');giveBelt(G.B[0],true);let ok2=true;try{G.B[0].build(FBY.volt,0)}catch(e){ok2=false}ok(ok2&&!G.B[0].belt,'a fighter wearing the belt can be rebuilt (back to the title after a title win)')}
     {solo('blaze','frost');emote(1,0,true);ok(EMOB.length===1&&EMOB[0].el.textContent==='GG!','a rival\'s emote shows over their fighter');updEmos(3);ok(EMOB.length===0,'…and fades away')}
+    ok(FIGHTERS.every(f=>STORY[f.id]&&STORY[f.id].length===3),'every fighter has a three-beat ladder story');
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
