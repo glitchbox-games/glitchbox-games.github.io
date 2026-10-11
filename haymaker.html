@@ -428,7 +428,7 @@ body.touch #abil,body.touch #keys{display:none}
 <div id="photoBar"><b>PHOTO MODE</b><span>DRAG orbit · WHEEL / Q E zoom · F filter: <i id="phF">NONE</i> · S save · ESC back</span><button id="phSave">SAVE PNG</button><button id="phFilt">FILTER</button><button id="phExit">DONE</button></div>
 <div id="walk"><div class="bar"></div><div class="skip">PRESS ANY KEY TO SKIP</div></div>
 <div id="vs"><div class="side l"></div><div class="side r"></div><div class="mid">VS</div></div>
-<div id="replayTag"><i></i>REPLAY<small>ANY KEY TO SKIP</small></div>
+<div id="replayTag"><i></i><span id="rpLbl">REPLAY</span><small>ANY KEY TO SKIP</small></div>
 <div id="rotate"><span style="display:inline-block;width:40px;height:40px;vertical-align:middle" id="rotIco"></span> TURN YOUR PHONE SIDEWAYS</div>
 <div id="emoT"><button id="emoBtn">💬</button><div id="emoMenu"></div></div>
 <div id="touch" class="hide">
@@ -3289,7 +3289,7 @@ function startKD(i){
   v.getup=0;
   if(owned(v)&&G.bots[i])v.upAt=botUpAt(v);
   if(!G.attract){
-    RP.kdAt=RP.clock;RP.hold=RP.clock+1.35;
+    RP.kdAt=RP.clock;RP.hold=RP.clock+1.35;hlMark(RP.clock,40+v.kd*5,i,v.kd>=3?'T.K.O.':'KNOCKDOWN');
     CAM.slow=.3;CAM.slowT=.55;shake(.7);screenFlash('white',.35);SFX.cheer(1);ARENA.crowdU.uEx.value=1;ARENA.excite=1;
     announce(v.kd>=3?'T.K.O.!':'DOWN!','red big',1.1);say(v.kd>=3?'Technical knockout!':'Down goes '+v.f.name.toLowerCase()+'!');
     after(.62,()=>{if(!v.f)return;const c=kdCentre(v),P=new THREE.Vector3(c[0],.15,c[1]);SFX.thud(P);shake(.5);wave(P,1.2);decal('crack',c[0],c[1],1.7,10);groundRing(c[0],c[1],1.6,0xffffff,.45,.08);
@@ -4626,6 +4626,7 @@ function renderEndButtons(){
   else if(G.tour)h=`<button class="primary" id="eTour">${G.tour.won?'LIFT THE TROPHY':G.tour.out?'SEE THE BRACKET':'NEXT ROUND'}</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   else if(G.surv)h=G.surv.over?`<button class="primary" id="eSurv">GO AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eSurvN">NEXT OPPONENT</button><button class="ghost" id="eMenu">CASH OUT</button>`;
   else h=`<button class="primary" id="eRetry">REMATCH</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
+  if(!G.attract&&HL.clips.length)h+=`<button class="ghost" id="eHl">▶ HIGHLIGHTS</button>`;
   if(!G.attract)h+=`<button class="ghost" id="eShare">${navigator.share&&TOUCH?'SHARE':'COPY RESULT'}</button>`;
   el.innerHTML=h;
   const on=(id,f)=>{const b=$(id);if(b)b.onclick=()=>{SFX.ui();f()}};
@@ -4633,7 +4634,7 @@ function renderEndButtons(){
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eShare',shareResult);on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eShare',shareResult);on('eHl',()=>{hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
@@ -4908,10 +4909,24 @@ function rpRead(b,da,db,u,o){for(const n of rigNodes(b)){n.position.set(lerp(da[
   b.root.updateMatrixWorld(true);b.head.getWorldPosition(b.headW);b.headW.y+=.04*b.worldScale;b.chest.getWorldPosition(b.chestW);b.arm.forEach((A,i)=>A.gl.getWorldPosition(b.gW[i]));return o+8}
 function rpRecord(adt){
   if(RP.play||G.attract||G.mode!=='fight'||!REF.b||!G.B[0].f||!G.B[1].f||!(G.phase==='fight'||G.phase==='kd'||G.phase==='end'))return;
-  RP.clock+=adt;if(RP.hold>=0&&RP.clock>RP.hold)return;
-  const j=RP.i%RP.max;const fr=RP.buf[j]||(RP.buf[j]={t:0,d:new Float32Array(RIGF*3)});fr.t=RP.clock;let o=0;for(const b of [G.B[0],G.B[1],REF.b])o=rpWrite(b,fr.d,o);RP.i++;RP.n=Math.min(RP.max,RP.n+1)}
-function rpEvent(res){if(RP.play||G.mode!=='fight'||(RP.hold>=0&&RP.clock>RP.hold))return;RP.ev.push({t:RP.clock,res:JSON.parse(JSON.stringify(res))});while(RP.ev.length&&RP.ev[0].t<RP.clock-6)RP.ev.shift()}
-function rpReset(){RP.i=0;RP.n=0;RP.clock=0;RP.hold=-1;RP.kdAt=-1;RP.ev.length=0;RP.play=null}
+  RP.clock+=adt;if(RP.hold>=0&&RP.clock>RP.hold){if(HL.pend.length)hlTick();return}
+  const j=RP.i%RP.max;const fr=RP.buf[j]||(RP.buf[j]={t:0,d:new Float32Array(RIGF*3)});fr.t=RP.clock;let o=0;for(const b of [G.B[0],G.B[1],REF.b])o=rpWrite(b,fr.d,o);RP.i++;RP.n=Math.min(RP.max,RP.n+1);if(HL.pend.length)hlTick()}
+// ════ HIGHLIGHTS: the fight's biggest moments are clipped off the tape as they happen, for a reel on the results screen ════
+const HL={clips:[],pend:[]};
+function hlMark(t,score,vic,label){if(G.attract)return;if(HL.pend.some(p=>Math.abs(p.t-t)<1.2&&p.s>=score))return;HL.pend=HL.pend.filter(p=>!(Math.abs(p.t-t)<1.2));HL.pend.push({t,s:score,vic,label})}
+function hlTick(){for(let i=HL.pend.length-1;i>=0;i--){const p=HL.pend[i];if(RP.clock<p.t+1.1&&!(RP.hold>=0&&RP.clock>RP.hold+.05))continue;HL.pend.splice(i,1);
+    const fr=[];for(let k=RP.n;k>0;k--){const f=RP.buf[((RP.i-k)%RP.max+RP.max)%RP.max];if(f&&f.t>=p.t-1.6&&f.t<=p.t+1.15)fr.push({t:f.t,d:f.d.slice()})}if(fr.length<40)continue;
+    const c={t:p.t,t0:fr[0].t,t1:fr[fr.length-1].t,fr,ev:RP.ev.filter(e=>e.t>=fr[0].t-.02&&e.t<=fr[fr.length-1].t),s:p.s,vic:p.vic,label:p.label};
+    const clash=HL.clips.find(o=>Math.abs(o.t-c.t)<2.6);if(clash){if(clash.s>=c.s)continue;HL.clips.splice(HL.clips.indexOf(clash),1)}
+    HL.clips.push(c);HL.clips.sort((a,b)=>b.s-a.s);HL.clips.length=Math.min(HL.clips.length,4)}}
+function hlPlay(done){const L=HL.clips.slice().sort((a,b)=>a.t-b.t);let i=0;
+  const next=nat=>{if(!nat&&i>0||i>=L.length){done&&done();return}const c=L[i++];RP.play={fr:c.fr,t:c.t0,t0:c.t0,t1:c.t1,k:c.t,done:next,ev:c.ev,a0:null,vic:c.vic,hl:1};
+    document.body.classList.add('cine','replay');PFX.letter=1;PFX.desat=.2;FLOATS.forEach(f=>f.el.remove());FLOATS.length=0;for(const b of G.B)if(b.ribs)b.ribs.forEach(r=>r.clear());$('rpLbl').textContent=`HIGHLIGHT ${i}/${L.length} · ${c.label}`};
+  if(!L.length)return false;next(true);return true}
+function rpEvent(res){if(RP.play||G.mode!=='fight'||(RP.hold>=0&&RP.clock>RP.hold))return;RP.ev.push({t:RP.clock,res:JSON.parse(JSON.stringify(res))});
+  {const d=res.dmg||0,sc=d+(res.r==='break'?8:0)+(res.counter?8:0)+(res.r==='clash'?18:0)+(res.r==='parry'?10:0);
+    if(sc>=14&&res.a!=null)hlMark(RP.clock,sc,res.r==='parry'?res.a:1-res.a,res.r==='clash'?'HAYMAKER CLASH':res.r==='parry'?'PERFECT BLOCK':res.r==='break'?'GUARD BREAK · '+Math.round(d)+' DMG':res.counter?'COUNTER · '+Math.round(d)+' DMG':'BIG HIT · '+Math.round(d)+' DMG')}while(RP.ev.length&&RP.ev[0].t<RP.clock-6)RP.ev.shift()}
+function rpReset(){RP.i=0;RP.n=0;RP.clock=0;RP.hold=-1;RP.kdAt=-1;RP.ev.length=0;RP.play=null;HL.clips.length=0;HL.pend.length=0}
 function rpStart(done){
   if(RP.kdAt<0||RP.n<30||!G.result)return false;
   const fr=[];for(let k=RP.n;k>0;k--){const f=RP.buf[((RP.i-k)%RP.max+RP.max)%RP.max];if(f)fr.push(f)}
@@ -4941,8 +4956,8 @@ function rpUpdate(rdt){
   else if(cut===1){const sx=Math.sin(P.a0),sz=Math.cos(P.a0);let r1=1.9;while(r1>1.2&&Math.max(Math.abs(cx+sx*r1),Math.abs(cz+sz*r1))>RING+.1)r1-=.05;CAM.lock=[[cx+sx*r1,.32,cz+sz*r1],[cx,1.25,cz]]}
   else{const dx=V.x-A.x,dz=V.z-A.z,dl=Math.hypot(dx,dz)||1,ux=dx/dl,uz=dz/dl;CAM.lock=[[A.x-ux*.9-uz*.45,1.7,A.z-uz*.9+ux*.45],[V.chestW.x,Math.max(.5,V.chestW.y-.2),V.chestW.z]]}
   if(cut!==P.cut){P.cut=cut;CAM.cutL=1;if(cut&&!G.attract)SFX.slide&&SFX.slide()}
-  if(P.t>=P.t1-1e-4)rpEnd()}
-function rpEnd(){const P=RP.play;if(!P)return;RP.play=null;document.body.classList.remove('cine','replay');PFX.letter=0;PFX.desat=0;CAM.lock=null;for(const b of G.B)if(b.f)b.root.visible=true;if(P.done)P.done()}
+  if(P.t>=P.t1-1e-4)rpEnd(true)}
+function rpEnd(nat){const P=RP.play;if(!P)return;if(P.hl)$('rpLbl').textContent='REPLAY';RP.play=null;document.body.classList.remove('cine','replay');PFX.letter=0;PFX.desat=0;CAM.lock=null;for(const b of G.B)if(b.f)b.root.visible=true;if(P.done)P.done(nat===true)}
 
 // ── per-frame extras: glove smears, afterimages, the haymaker growl, heartbeat, rage, the 10-second clapper, music ──
 let RIBT=0;
@@ -5163,6 +5178,9 @@ function runSmoke(){
     {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===14,'SETTINGS lists every option');hideOv('setOv')}
     {solo('blaze','frost');G.flow=[];G.flowT=0;sim(2);ok(G.flow.length>=3&&G.flow.every(p=>p[0]>0&&p[1]>0),'the fight-flow graph samples both health bars ('+G.flow.length+')')}
     ok(rivalry('frost','blaze')&&rivalry('frost','blaze')[0]===RIVALS['blaze|frost'][1]&&!rivalry('blaze','volt')&&FIGHTERS.every(f=>BIOS[f.id]),'rivalries pair up the right lines, and every fighter has a bio');
+    {solo('blaze','frost');rpReset();for(let i=0;i<120;i++){step(1/60);rpRecord(1/60)}hlMark(RP.clock,30,1,'TEST');hlMark(RP.clock-.3,20,1,'WEAKER');for(let i=0;i<80;i++){step(1/60);rpRecord(1/60)}
+      ok(HL.clips.length===1&&HL.clips[0].label==='TEST'&&HL.clips[0].fr.length>=100,'HIGHLIGHTS: big moments are clipped off the tape (the weaker one nearby is dropped)');
+      let fin=0;ok(hlPlay(()=>fin=1)&&RP.play&&RP.play.hl,'…and the reel plays them');rpEnd(true);ok(fin===1&&!RP.play,'…then hands back to the results');rpReset();ok(!HL.clips.length,'a new fight starts a fresh reel')}
     {solo('blaze','frost');rpReset();G.B[1].hp=100;for(let i=0;i<80;i++){step(1/60);rpRecord(1/60)}let back=0;ok(rpInstant(()=>back=1)&&RP.play&&RP.play.inst,'instant replay rolls the last seconds of tape');rpEnd();ok(back===1&&!RP.play,'…and hands back to the pause menu')}
     {SET.calm=true;CAM.slowT=0;const t0=G.time;solo('blaze','frost');CAM.slow=.2;CAM.slowT=1;PFX.zoom=1;updPFX(.016);ok(PFX.zoom===0,'REDUCED EFFECTS kills zoom blur');SET.calm=false;CAM.slowT=0}
     {solo('blaze','frost');giveBelt(G.B[0],true);let ok2=true;try{G.B[0].build(FBY.volt,0)}catch(e){ok2=false}ok(ok2&&!G.B[0].belt,'a fighter wearing the belt can be rebuilt (back to the title after a title win)')}
