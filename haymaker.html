@@ -517,10 +517,11 @@ body.touch #abil,body.touch #keys{display:none}
 <div class="ov dark" id="mpOv">
   <div class="panel">
     <h2>PLAY ONLINE</h2>
-    <p class="dimt">One on one against a friend. One of you makes a room and sends the invite link (or reads the code out); the other taps the link or types the code.</p>
+    <p class="dimt">QUICK MATCH pairs you with whoever else is looking. Or play a friend: one of you makes a room and sends the invite link (or reads the code out); the other taps the link or types the code.</p>
     <div class="lbl">YOUR NAME</div>
     <div class="row"><input class="txt" id="nameIn" maxlength="12" placeholder="BOXER"></div>
-    <button class="btn primary" id="mkRoom">MAKE A ROOM</button>
+    <button class="btn primary" id="qmBtn">⚡ QUICK MATCH</button>
+    <button class="btn" id="mkRoom">MAKE A ROOM</button>
     <div class="lbl">OR JOIN WITH A CODE</div>
     <div class="row"><input class="txt" id="codeIn" maxlength="6" placeholder="ABCD"><button class="btn" id="joinRoom" style="width:auto;margin:0">JOIN</button></div>
     <div class="err" id="mpErr"></div>
@@ -4250,6 +4251,14 @@ function netConnect(room,role){
   ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}onNet(m)};
   ws.onclose=()=>{if(NET.ws===ws){NET.ws=null;if(NET.mode!=='off')netLost('Lost the connection to the game.')}};
 }
+// QUICK MATCH: shared rooms HMQ1…HMQ6 — join the first one with a waiting boxer, or wait in the first empty one
+const QM_N=6;
+function qmStart(){NET.qm={i:1,tries:0};NET.qmHost=false;mpErr('Looking for an opponent…');netConnect('HMQ1','guest')}
+function qmError(t){const Q=NET.qm;if(!Q)return false;Q.tries++;if(Q.tries>QM_N*3){NET.qm=null;return false}
+  if(t==='No game with that code.'){NET.qmHost=true;setTimeout(()=>netConnect('HMQ'+Q.i,'host'),30);return true}
+  if(t==='That game is full.'){Q.i++;if(Q.i>QM_N){NET.qm=null;mpErr('Everyone\'s busy — make a room instead.');return true}setTimeout(()=>netConnect('HMQ'+Q.i,'guest'),30);return true}
+  if(/already in use/.test(t)){NET.qmHost=false;setTimeout(()=>netConnect('HMQ'+Q.i,'guest'),120);return true}
+  return false}
 function netSend(o){if(NET.sink){NET.sink.push(o);return}if(NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(o))}
 function netClose(){const w=NET.ws;NET.ws=null;if(w){w.onclose=null;try{w.close()}catch(e){}}}
 function netLeave(){if(NET.mode!=='off'){netSend({t:'bye'})}netClose();NET.mode='off';G.online=false}
@@ -4262,10 +4271,10 @@ function netLost(msg){netClose();NET.mode='off';G.online=false;G.paused=false;
     setPhase('end',{result:{w:G.ME,how:'FORFEIT',rnd:G.rnd,cards:judgeCards(),rd:G.rdmg}});return}
   showTitle();showOv('mpOv');mpErr(msg)}
 function onNet(m){
-  if(m.t==='created'){openSelect('online');return}
-  if(m.t==='joined'){openSelect('online');return}
+  if(m.t==='created'){if(NET.qm){NET.qm=null;NET.qmHost=true}openSelect('online');return}
+  if(m.t==='joined'){NET.qm=null;NET.qmHost=false;openSelect('online');return}
   if(m.t==='start'){netSend({t:'hi',name:myName(),f:SEL.f,a:SEL.alt,c:myCos(),mk:myMk(),ready:NET.myReady});return}
-  if(m.t==='error'){const t=m.msg||'That didn\'t work.';netClose();NET.mode='off';showOv('mpOv');mpErr(t==='No game with that code.'?'No room with that code — check the letters.':t==='That game is full.'?'That room already has two boxers.':t);return}
+  if(m.t==='error'){const t=m.msg||'That didn\'t work.';netClose();NET.mode='off';if(qmError(t))return;showOv('mpOv');mpErr(t==='No game with that code.'?'No room with that code — check the letters.':t==='That game is full.'?'That room already has two boxers.':t);return}
   if(m.t==='left'||m.t==='bye'){if(NET.mode!=='off')netLost('Your opponent left the arena.');return}
   switch(m.t){
     case 'hi':NET.peer=String(m.name||'').slice(0,12);NET.peerPick=m.mk?netPeerMk(m):FBY[m.f]&&!FBY[m.f].secret&&!FBY[m.f].made?m.f:null;NET.peerAlt=(m.a|0)%NALT;NET.peerCos=Array.isArray(m.c)?m.c.slice(0,2).map(String):null;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
@@ -4517,7 +4526,7 @@ function fighterInfo(f){
 }
 function renderSelect(){
   const on=SEL.mode==='online';
-  $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
+  $('selTitle').textContent=on?(/^HMQ/.test(NET.code)?'QUICK MATCH':'ROOM '+NET.code):SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
   const GL_=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).concat(madeF()),many=GL_.length+(on?0:1)>12;$('grid').classList.toggle('many',many);
   $('grid').innerHTML=GL_.map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
     return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,many?50:64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}${f.made?'<div class="mkt">YOURS</div>':''}</button>`}).join('')+(on?'':`<button class="card mkc" data-mk="new"><div class="em">+</div><div class="cn">CREATE</div></button>`);
@@ -4533,7 +4542,7 @@ function renderSelect(){
   $('venueBox').style.display=SEL.mode==='online'&&NET.mode!=='host'?'none':'';
   $('diffSeg').innerHTML=Object.entries(SEL.mode==='quick'?Object.assign({},DIFF,{p2:{name:'2 PLAYER'}}):DIFF).map(([k,d])=>`<button data-d="${k}" class="${SEL.diff===k?'on':''}">${d.name}</button>`).join('');
   $('netBox').classList.toggle('hide',!on);
-  if(on){const peer=NET.peer!=null?`${NET.peer||'RIVAL'}: ${NET.peerPick?FBY[NET.peerPick].name:'choosing…'} <span class="${NET.peerReady?'ready':'notready'}">${NET.peerReady?'READY':'NOT READY'}</span>`:`WAITING FOR A RIVAL…<br><span style="font:700 13px Rubik;color:var(--dim)">TELL THEM THE CODE: <b style="color:var(--gold);font-size:18px;letter-spacing:.2em">${NET.code}</b></span>`;
+  if(on){const peer=NET.peer!=null?`${NET.peer||'RIVAL'}: ${NET.peerPick?FBY[NET.peerPick].name:'choosing…'} <span class="${NET.peerReady?'ready':'notready'}">${NET.peerReady?'READY':'NOT READY'}</span>`:NET.qmHost&&/^HMQ/.test(NET.code)?`SEARCHING FOR AN OPPONENT…<br><span style="font:700 13px Rubik;color:var(--dim)">QUICK MATCH — the next boxer to search lands here. Or invite a friend:</span>`:`WAITING FOR A RIVAL…<br><span style="font:700 13px Rubik;color:var(--dim)">TELL THEM THE CODE: <b style="color:var(--gold);font-size:18px;letter-spacing:.2em">${NET.code}</b></span>`;
     $('netBox').innerHTML=`${myName()||'YOU'}: ${FBY[SEL.f].name} <span class="${NET.myReady?'ready':'notready'}">${NET.myReady?'READY':'NOT READY'}</span><br>${peer}${NET.peer==null?`<button class="btn" id="invBtn" style="margin:8px 0 0;padding:8px">${navigator.share&&TOUCH?'SEND INVITE':'COPY INVITE LINK'}</button>`:''}`}
   $('mkSmall').style.visibility=on?'hidden':'';$('selGo').textContent=on?(NET.myReady?'NOT READY':'READY'):SEL.mode==='ladder'?'START THE LADDER':'FIGHT!';
 }
@@ -4608,8 +4617,9 @@ function setupUI(){
   // a switch shows OFF while M-muted, so pressing it always turns that sound ON (and un-mutes)
   document.querySelectorAll('.tgl').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.s,vis=k==='flash'||k==='walk',shown=!!SET[k]&&!(SET.mute&&!vis);if(!vis)SET.mute=false;SET[k]=!shown;saveSet();auResume();auApply();renderToggles();if(SET.snd&&!SET.mute)SFX.ui()}));
   renderToggles();
-  $('mkRoom').onclick=()=>{saveName();mpErr('Making a room…');netConnect(rcode(4),'host')};
-  $('joinRoom').onclick=()=>{saveName();const c=$('codeIn').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length<3){mpErr('Type the room code first.');return}mpErr('Joining…');netConnect(c,'guest')};
+  $('qmBtn').onclick=()=>{saveName();qmStart()};
+  $('mkRoom').onclick=()=>{saveName();NET.qm=null;NET.qmHost=false;mpErr('Making a room…');netConnect(rcode(4),'host')};
+  $('joinRoom').onclick=()=>{saveName();NET.qm=null;NET.qmHost=false;const c=$('codeIn').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length<3){mpErr('Type the room code first.');return}mpErr('Joining…');netConnect(c,'guest')};
   $('codeIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('joinRoom').click()});
   $('mpBack').onclick=()=>{netLeave();hideOv('mpOv')};
   $('resume').onclick=()=>togglePause(false);
