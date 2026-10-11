@@ -473,7 +473,7 @@ body.touch #abil,body.touch #keys{display:none}
 <div class="ov dark" id="mpOv">
   <div class="panel">
     <h2>PLAY ONLINE</h2>
-    <p class="dimt">One on one against a friend. One of you makes a room and reads the code out; the other types it in.</p>
+    <p class="dimt">One on one against a friend. One of you makes a room and sends the invite link (or reads the code out); the other taps the link or types the code.</p>
     <div class="lbl">YOUR NAME</div>
     <div class="row"><input class="txt" id="nameIn" maxlength="12" placeholder="BOXER"></div>
     <button class="btn primary" id="mkRoom">MAKE A ROOM</button>
@@ -3874,6 +3874,9 @@ function netConnect(room,role){
 function netSend(o){if(NET.sink){NET.sink.push(o);return}if(NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(o))}
 function netClose(){const w=NET.ws;NET.ws=null;if(w){w.onclose=null;try{w.close()}catch(e){}}}
 function netLeave(){if(NET.mode!=='off'){netSend({t:'bye'})}netClose();NET.mode='off';G.online=false}
+function inviteURL(){return location.origin+location.pathname+'#room='+NET.code}
+async function invite(){const u=inviteURL(),t='Fight me in HAYMAKER! Room '+NET.code;
+  try{if(navigator.share&&TOUCH){await navigator.share({title:'HAYMAKER',text:t,url:u});return}await navigator.clipboard.writeText(u);sub('INVITE LINK COPIED — SEND IT TO A FRIEND',2.4)}catch(e){sub('ROOM CODE: '+NET.code,3)}}
 function netLost(msg){netClose();NET.mode='off';G.online=false;G.paused=false;
   // mid-fight: the bout ends properly — you win by forfeit — instead of dumping you on the title screen
   if(G.mode==='fight'&&G.phase!=='end'&&G.phase!=='none'&&/left/.test(msg)){G.forfeit=true;rpStop();hideAllOv();clearCombat();for(const b of G.B){b.down=false;if(b.act&&/down|ko/.test(b.act.k))b.act=null}
@@ -4134,7 +4137,7 @@ function renderSelect(){
   $('diffSeg').innerHTML=Object.entries(SEL.mode==='quick'?Object.assign({},DIFF,{p2:{name:'2 PLAYER'}}):DIFF).map(([k,d])=>`<button data-d="${k}" class="${SEL.diff===k?'on':''}">${d.name}</button>`).join('');
   $('netBox').classList.toggle('hide',!on);
   if(on){const peer=NET.peer!=null?`${NET.peer||'RIVAL'}: ${NET.peerPick?FBY[NET.peerPick].name:'choosing…'} <span class="${NET.peerReady?'ready':'notready'}">${NET.peerReady?'READY':'NOT READY'}</span>`:`WAITING FOR A RIVAL…<br><span style="font:700 13px Rubik;color:var(--dim)">TELL THEM THE CODE: <b style="color:var(--gold);font-size:18px;letter-spacing:.2em">${NET.code}</b></span>`;
-    $('netBox').innerHTML=`${myName()||'YOU'}: ${FBY[SEL.f].name} <span class="${NET.myReady?'ready':'notready'}">${NET.myReady?'READY':'NOT READY'}</span><br>${peer}`}
+    $('netBox').innerHTML=`${myName()||'YOU'}: ${FBY[SEL.f].name} <span class="${NET.myReady?'ready':'notready'}">${NET.myReady?'READY':'NOT READY'}</span><br>${peer}${NET.peer==null?`<button class="btn" id="invBtn" style="margin:8px 0 0;padding:8px">${navigator.share&&TOUCH?'SEND INVITE':'COPY INVITE LINK'}</button>`:''}`}
   $('selGo').textContent=on?(NET.myReady?'NOT READY':'READY'):SEL.mode==='ladder'?'START THE LADDER':'FIGHT!';
 }
 const PREV=[[-.72,-.55],[.78,-.75]];
@@ -4160,6 +4163,7 @@ function setupUI(){
   $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
   $('cBtn').onclick=()=>{SET.cam=SET.cam==='tv'?'back':'tv';saveSet();$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND'};
   $('helpBack').onclick=()=>hideOv('helpOv');
+  $('netBox').addEventListener('click',e=>{if(e.target.id==='invBtn'){SFX.ui();invite()}});
   $('emoMenu').innerHTML=EMOS.map((t,k)=>`<button data-e="${k}">${t}</button>`).join('');
   $('emoBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();$('emoMenu').classList.toggle('on')});
   $('emoMenu').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-e]');if(!b)return;e.preventDefault();e.stopPropagation();emote(G.ME,+b.dataset.e);$('emoMenu').classList.remove('on')});$('setBack').onclick=()=>{hideOv('setOv');renderToggles()};$('pSet').onclick=()=>{SFX.ui();showSettings()};
