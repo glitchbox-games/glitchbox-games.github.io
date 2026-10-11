@@ -4306,6 +4306,8 @@ function init(){
   if(DEBUG)window.__HM={applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();
+  // build the other venues while the player is on the title screen, so picking one never hitches
+  if(!SMOKE)setTimeout(()=>{try{buildRoof();buildRain();buildPit()}catch(e){console.warn(e)}},2500);
   const h=new URLSearchParams(HASH.replace(/^#/,'').replace(/-?debug$/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(room.length>=3&&room.length<=8){showOv('mpOv');mpErr(h.get('host')?'Making the room…':'Joining…');netConnect(room,h.get('host')?'host':'guest')}
   else if(/practice/.test(HASH))startSolo(SEL.f,'titan','bag');
