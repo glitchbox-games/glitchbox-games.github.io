@@ -535,7 +535,7 @@ body.touch #abil,body.touch #keys{display:none}
     <p>Every fight earns XP. Level up to unlock punch trails and KO finishers in the LOCKER — click your level under the title menu. Online, your opponent sees them too.</p>
     <h3>MODES</h3>
     <div class="kgrid">
-      <kbd>QUICK FIGHT</kbd><span>Any fighter, any venue (Arena, Rooftop — clear, storm or snow — The Pit, The Gym), any difficulty. Add MUTATORS for chaos, WATCH two CPUs, or pick 2 PLAYER.</span>
+      <kbd>QUICK FIGHT</kbd><span>Any fighter, any venue (Arena, Rooftop — clear, storm or snow — The Pit, The Gym, The Beach at sunset), any difficulty. Add MUTATORS for chaos, WATCH two CPUs, or pick 2 PLAYER.</span>
       <kbd>ARCADE LADDER</kbd><span>Five fights, a story for your fighter, a title fight at the end — and maybe a challenger after that.</span>
       <kbd>TOURNAMENT</kbd><span>An 8-fighter knockout bracket. Win three in a row to lift the trophy.</span>
       <kbd>SURVIVAL</kbd><span>Endless bouts, health carries over. How long can you last? Your best streak goes on the GLITCHBOX leaderboard.</span>
@@ -1072,7 +1072,7 @@ function crowdMats(){
         vec3 col=vC*(.07+.13*top*spill+.2*face*spill);
         // sweeping moving-head beams wash over sections of the crowd
         float a=atan(vW.z,vW.x);vec3 sw=vec3(0.);
-        for(int i=0;i<3;i++){float c=uSweep[i]+float(i)*2.094;float d=abs(mod(a-c+3.14159,6.28318)-3.14159);sw+=uSweepC[i]*smoothstep(.32,.05,d)*(.35+.65*smoothstep(.0,.4,N.y+.3));}
+        for(int i=0;i<3;i++){float c=uSweep[i]+float(i)*2.094;float d=abs(mod(a-c+3.14159,6.28318)-3.14159);sw+=uSweepC[i]*(1.-smoothstep(.05,.32,d))*(.35+.65*smoothstep(.0,.4,N.y+.3));}
         col+=(vC*.6+.06)*sw*uSweep.w*.55;
         // rim from the ring
         float rim=pow(1.-clamp(abs(dot(N,normalize(cameraPosition-vW))),0.,1.),3.);col+=vec3(1.,.85,.7)*rim*.1*spill;
@@ -1202,7 +1202,7 @@ function buildCrowd(){
 }
 // the corners' colours change per match: fans in team shirts follow their fighter
 function crowdTeams(c0,c1){const U=ARENA.crowdU;if(!U.uTeam0||!ARENA.fans)return;if(ARENA.signT&&G.B[0]&&G.B[0].f){SIGN.a=G.B[0].f;SIGN.b=G.B[1].f;redrawTex(ARENA.signT)}ARENA.B0=c0;ARENA.B1=c1;U.uTeam0.value.set(c0);U.uTeam1.value.set(c1);
-  for(const V of [ARENA.roof,ARENA.pit])if(V&&V.fans){const ra=V.fans.geometry.attributes.aShirt;for(const [i,t] of V.teamShirts){const c=t?U.uTeam1.value:U.uTeam0.value;ra.array[i*3]=c.r*.85;ra.array[i*3+1]=c.g*.85;ra.array[i*3+2]=c.b*.85}ra.needsUpdate=true}
+  for(const V of [ARENA.roof,ARENA.pit,ARENA.beach])if(V&&V.fans){const ra=V.fans.geometry.attributes.aShirt;for(const [i,t] of V.teamShirts){const c=t?U.uTeam1.value:U.uTeam0.value;ra.array[i*3]=c.r*.85;ra.array[i*3+1]=c.g*.85;ra.array[i*3+2]=c.b*.85}ra.needsUpdate=true}
   const a=ARENA.fans.geometry.attributes.aShirt;for(const [i,t] of ARENA.teamShirts||[]){const c=t?U.uTeam1.value:U.uTeam0.value;a.array[i*3]=c.r*.85;a.array[i*3+1]=c.g*.85;a.array[i*3+2]=c.b*.85}a.needsUpdate=true}
 // tiered risers with lit step edges, aisle stairs, a back wall and the fighters' banners hanging from the rafters
 function buildStands(rows){
@@ -1255,7 +1255,7 @@ function drawBanner(x,w,h,f){
 // called every frame: wave scheduling, cheers decaying, the moving-head beams sweeping
 function crowdTick(rdt){const U=ARENA.crowdU;if(!U.uWave)return;
   const hi=SET.q==='high',roof=ARENA.venue==='roof';ARENA.fans.count=hi?ARENA.fanN:Math.floor(ARENA.fanN*.55);ARENA.fanLine.visible=hi&&ARENA.venue==='arena';
-  if(ARENA.pit)ARENA.pit.fanLine.visible=hi&&ARENA.venue==='pit';if(ARENA.gym)ARENA.gym.fanLine.visible=hi&&ARENA.venue==='gym';
+  if(ARENA.pit)ARENA.pit.fanLine.visible=hi&&ARENA.venue==='pit';if(ARENA.gym)ARENA.gym.fanLine.visible=hi&&ARENA.venue==='gym';if(ARENA.beach)ARENA.beach.fanLine.visible=hi&&ARENA.venue==='beach';
   if(ARENA.roof){ARENA.roof.fanLine.visible=hi&&roof;if(roof&&ARENA.roof.search){const t2=U.uT.value;ARENA.roof.search.rotation.set(Math.sin(t2*.23)*.5,0,.35+Math.sin(t2*.17)*.3)}}
   ARENA.cheer[0]=Math.max(0,ARENA.cheer[0]-rdt*.8);ARENA.cheer[1]=Math.max(0,ARENA.cheer[1]-rdt*.8);
   U.uCh0.value=lerp(U.uCh0.value,ARENA.cheer[0],damp(6,rdt));U.uCh1.value=lerp(U.uCh1.value,ARENA.cheer[1],damp(6,rdt));
@@ -1363,12 +1363,12 @@ function photoFlash(n=1){if(!ARENA.cams||G.attract&&Math.random()<.5)return;
 function buildRoof(){if(ARENA.roof)return ARENA.roof;
   const g=new THREE.Group();g.visible=false;scene.add(g);const R={g,fans:null,door:new THREE.Vector3(-13.2,-1.15,0)};ARENA.roof=R;
   // night sky: deep blue fading to a city-glow horizon, with stars
-  const sky=new THREE.Mesh(new THREE.SphereGeometry(160,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{uT:ARENA.crowdU.uT},
+  const sky=new THREE.Mesh(new THREE.SphereGeometry(130,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{uT:ARENA.crowdU.uT},
     vertexShader:`varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader:`uniform float uT;varying vec3 vD;float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
       void main(){float y=clamp(vD.y,0.,1.);vec3 c=mix(vec3(.32,.13,.26),vec3(.02,.03,.09),smoothstep(0.,.35,y));c=mix(c,vec3(.01,.01,.04),smoothstep(.35,1.,y));
         vec2 q=vec2(atan(vD.z,vD.x)*80.,y*160.);vec2 id=floor(q);float s=h(id);float tw=.6+.4*sin(uT*2.+s*40.);
-        float star=step(.985,s)*smoothstep(.45,.0,length(fract(q)-.5))*tw*smoothstep(.08,.3,y);c+=vec3(star);
+        float star=step(.985,s)*(1.-smoothstep(.0,.45,length(fract(q)-.5)))*tw*smoothstep(.08,.3,y);c+=vec3(star);
         gl_FragColor=vec4(c,1.);
         #include <colorspace_fragment>
       }`}));sky.renderOrder=-10;sky.frustumCulled=false;g.add(sky);
@@ -1462,7 +1462,7 @@ function buildSnow(){if(ARENA.snow)return ARENA.snow;const n=TOUCH?1500:3500,pos
   const m=new THREE.ShaderMaterial({uniforms:{uT:ARENA.crowdU.uT,uPx:ARENA.flashU.uPx},transparent:true,depthWrite:false,
     vertexShader:`uniform float uT;uniform float uPx;attribute float aS;varying float vA;void main(){vec3 p=position;p.y=mod(p.y-uT*(.6+fract(aS)*.5),15.)-1.2;p.x+=sin(uT*.7+aS)*.6;p.z+=cos(uT*.5+aS*1.3)*.6;
       vec4 mv=modelViewMatrix*vec4(p,1.);vA=.55+.45*fract(aS*7.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(uPx*.24/max(-mv.z,.1),1.5,14.);}`,
-    fragmentShader:`varying float vA;void main(){float d=length(gl_PointCoord-.5);float a=smoothstep(.5,.15,d);gl_FragColor=vec4(vec3(1.),a*vA);}`});
+    fragmentShader:`varying float vA;void main(){float d=length(gl_PointCoord-.5);float a=(1.-smoothstep(.15,.5,d));gl_FragColor=vec4(vec3(1.),a*vA);}`});
   const P=new THREE.Points(g,m);P.frustumCulled=false;P.visible=false;scene.add(P);ARENA.snow=P;return P}
 function setSnow(on){if(!on&&!ARENA.snow)return;buildSnow().visible=on}
 function setRain(on){const R=buildRain();R.on=on;R.L.visible=on;if(!on&&ARENA.hemi&&ARENA.venue==='roof')ARENA.hemi.intensity=.62}
@@ -1574,14 +1574,107 @@ function pitTick(rdt){const P=ARENA.pit;if(!P||!P.g.visible)return;const t=ARENA
   for(const b of P.bulbs)b.piv.rotation.set(Math.sin(t*1.3+b.ph)*b.amp,0,Math.cos(t*1.1+b.ph)*b.amp);
   for(const f of P.fires){f.glow.material.opacity=.55+.25*Math.sin(t*13+f.p.x)+.1*Math.random();if(PA&&Math.random()<rdt*30)PA.emit(f.p.x+(Math.random()-.5)*.3,f.p.y,f.p.z+(Math.random()-.5)*.3,(Math.random()-.5)*.3,1+Math.random(),(Math.random()-.5)*.3,.6,.16,1,.45,.12,1,-1,1)}
   if(P.lamp)P.lamp.visible=G.phase!=='walk'||Math.sin(t*12)>0}
-function setVenue(v){v=v==='roof'||v==='pit'||v==='gym'?v:'arena';if(ARENA.venue===v)return;ARENA.venue=v;
-  const roof=v==='roof',pit=v==='pit',gym=v==='gym';for(const o of ARENA.dress||[])o.visible=v==='arena';
-  if(roof)buildRoof();if(pit)buildPit();if(gym)buildGym();if(ARENA.roof)ARENA.roof.g.visible=roof;if(ARENA.pit)ARENA.pit.g.visible=pit;if(ARENA.gym)ARENA.gym.g.visible=gym;if(!roof&&ARENA.rain)setRain(false);if(!roof)setSnow(false);
-  ARENA.tunnel=roof?ARENA.roof.door:pit?ARENA.pit.door:gym?ARENA.gym.door:ARENA.tunnel0;
-  scene.background=null;if(ARENA.hemi)ARENA.hemi.intensity=roof?.62:pit?.3:gym?.95:.42;
+// THE BEACH: a sand island at sunset — ocean all round, palms, tiki torches, string lights, gulls, and a beach hut to walk out of
+function buildBeach(){if(ARENA.beach)return ARENA.beach;
+  const g=new THREE.Group();g.visible=false;scene.add(g);const P={g,door:new THREE.Vector3(-12.6,-1.15,0),palms:[],fires:[],gulls:[],lights:[]};ARENA.beach=P;const G0=-1.15,R=Math.random;
+  const SUN=new THREE.Vector3(.35,.07,-1).normalize();P.sun=SUN;
+  // sunset sky: hot orange horizon → pink → violet overhead, a fat low sun and a few lit clouds
+  const sky=new THREE.Mesh(new THREE.SphereGeometry(130,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{uT:ARENA.crowdU.uT,uSun:{value:SUN}},
+    vertexShader:`varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform float uT;uniform vec3 uSun;varying vec3 vD;float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+      float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      void main(){float y=clamp(vD.y,0.,1.);vec3 c=mix(vec3(1.,.55,.22),vec3(1.,.36,.42),smoothstep(0.,.12,y));c=mix(c,vec3(.45,.24,.55),smoothstep(.12,.4,y));c=mix(c,vec3(.12,.1,.3),smoothstep(.4,1.,y));
+        float d=max(dot(vD,uSun),0.);c+=vec3(1.,.6,.25)*pow(d,12.)*.55+vec3(1.,.8,.5)*pow(d,180.)*1.2;c=mix(c,vec3(1.,.93,.7),smoothstep(.9985,.9992,d));
+        vec2 q=vec2(atan(vD.z,vD.x)*3.,y*14.);float cl=n2(q+vec2(uT*.01,0.))*.6+n2(q*2.3)*.4;cl=smoothstep(.55,.8,cl)*smoothstep(.02,.1,y)*(1.-smoothstep(.15,.45,y));
+        c=mix(c,mix(vec3(1.,.5,.4),vec3(.55,.3,.5),smoothstep(.05,.3,y))*(1.+pow(d,4.)*.8),cl*.75);
+        if(vD.y<0.)c=vec3(.08,.12,.2);gl_FragColor=vec4(c,1.);
+        #include <colorspace_fragment>
+      }`}));sky.renderOrder=-10;sky.frustumCulled=false;g.add(sky);
+  // the sea: rolling swell, the sky reflected toward the horizon, a glittering path to the sun
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(320,320,1,1),new THREE.ShaderMaterial({uniforms:{uT:ARENA.crowdU.uT,uSun:{value:SUN},uCam:{value:camera.position}},
+    vertexShader:`varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader:`uniform float uT;uniform vec3 uSun;uniform vec3 uCam;varying vec3 vW;float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+      float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      void main(){vec3 V=normalize(vW-uCam);vec2 p=vW.xz;float w=n2(p*.35+vec2(uT*.25,uT*.1))*.6+n2(p*1.3-vec2(uT*.4,0.))*.4;
+        vec3 N=normalize(vec3((w-.5)*.35,1.,(n2(p*.35+7.+uT*.2)-.5)*.35));vec3 Rf=reflect(V,N);float fr=pow(1.-max(dot(-V,N),0.),3.);
+        float y=clamp(Rf.y,0.,1.);vec3 sk=mix(vec3(1.,.55,.25),vec3(.5,.26,.55),smoothstep(0.,.35,y));
+        vec3 c=mix(vec3(.05,.18,.26),sk,clamp(.25+fr*.85,0.,1.));float s=max(dot(Rf,uSun),0.);c+=vec3(1.,.75,.4)*pow(s,60.)*(.6+.8*step(.72,w));
+        float far=length(p);c=mix(c,vec3(1.,.55,.32),smoothstep(60.,150.,far)*.6);gl_FragColor=vec4(c,1.);
+        #include <colorspace_fragment>
+      }`}));sea.rotation.x=-Math.PI/2;sea.position.y=G0-.3;sea.frustumCulled=false;g.add(sea);P.seaU=sea.material.uniforms;
+  // the island: warm sand, a wet rim and a breathing line of surf
+  const st=canvasTex(1024,1024,(x,w,h)=>{x.fillStyle='#e2b87e';x.fillRect(0,0,w,h);for(let i=0;i<9000;i++){const v=R();x.fillStyle=`rgba(${v<.5?120:255},${v<.5?80:235},${v<.5?40:190},${.05+R()*.12})`;x.fillRect(R()*w,R()*h,1+R()*3,1+R()*3)}
+    for(let i=0;i<40;i++){x.fillStyle='rgba(120,80,40,.10)';x.beginPath();x.ellipse(R()*w,R()*h,6,10,R()*3,0,6.3);x.fill()}
+    const g2=x.createRadialGradient(w/2,h/2,w*.38,w/2,h/2,w*.5);g2.addColorStop(0,'rgba(0,0,0,0)');g2.addColorStop(1,'rgba(90,60,40,.55)');x.fillStyle=g2;x.fillRect(0,0,w,h)});
+  const sand=new THREE.Mesh(new THREE.CircleGeometry(19,64),new THREE.MeshStandardMaterial({map:st,roughness:.95}));sand.rotation.x=-Math.PI/2;sand.position.y=G0+.005;sand.receiveShadow=true;g.add(sand);
+  const shelf=new THREE.Mesh(new THREE.CylinderGeometry(19,23,.6,64,1,true),new THREE.MeshStandardMaterial({color:0xb08a5a,roughness:1}));shelf.position.y=G0-.3;g.add(shelf);
+  const foam=new THREE.Mesh(new THREE.RingGeometry(18.6,20.4,96),new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uT:ARENA.crowdU.uT},
+    vertexShader:`varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
+    fragmentShader:`uniform float uT;varying vec3 vW;void main(){float r=length(vW.xz),a=atan(vW.z,vW.x);float edge=18.7+.5*(.5+.5*sin(uT*.8+a*3.))+.15*sin(a*17.+uT);
+      float f=(1.-smoothstep(edge,edge+.5,r))*smoothstep(18.55,18.8,r);f*=.55+.45*sin(a*60.+uT*2.);gl_FragColor=vec4(vec3(1.),clamp(f,0.,1.)*.75);}`}));
+  foam.rotation.x=-Math.PI/2;foam.position.y=G0-.12;g.add(foam);
+  // palms: a curved ringed trunk and a crown of drooping fronds
+  const trunkM=new THREE.MeshStandardMaterial({map:canvasTex(64,256,(x,w,h)=>{x.fillStyle='#7a5636';x.fillRect(0,0,w,h);for(let i=0;i<h;i+=10){x.fillStyle='#5c3e24';x.fillRect(0,i,w,4)}}),roughness:.9});
+  const leafM=new THREE.MeshStandardMaterial({color:0x2f8a3a,roughness:.7,side:THREE.DoubleSide});
+  const leafG=(()=>{const L=new THREE.PlaneGeometry(2.6,.55,10,1);const p=L.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i)+1.3,u=x/2.6;p.setX(i,x);p.setY(i,p.getY(i)*(1-u*.85));p.setZ(i,-u*u*1.1)}L.rotateX(-Math.PI/2);L.computeVertexNormals();return L})();
+  for(let i=0;i<9;i++){const a=i/9*TAU+.35+(R()-.5)*.3;if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a))-Math.PI)<.35)continue;const r=11+R()*4,x=Math.cos(a)*r,z=Math.sin(a)*r,H=5+R()*2.5;
+    const lean=new THREE.Vector3(-x,0,-z).normalize().multiplyScalar(.8+R()*.9);
+    const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(lean.x*.3,H*.4,lean.z*.3),new THREE.Vector3(lean.x*.75,H*.75,lean.z*.75),new THREE.Vector3(lean.x,H,lean.z)]);
+    const piv=new THREE.Group();piv.position.set(x,G0,z);g.add(piv);const tr=new THREE.Mesh(new THREE.TubeGeometry(curve,14,.17,8),trunkM);tr.castShadow=true;piv.add(tr);
+    const crown=new THREE.Group();crown.position.set(lean.x,H,lean.z);piv.add(crown);
+    for(let k=0;k<8;k++){const l=new THREE.Mesh(leafG,leafM);l.rotation.y=k/8*TAU+R()*.3;l.rotation.z=(R()-.3)*.25;crown.add(l)}
+    const nut=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),new THREE.MeshStandardMaterial({color:0x4a3018,roughness:.8}));for(let k=0;k<3;k++){const n=nut.clone();n.position.set(Math.cos(k*2.1)*.18,-.2,Math.sin(k*2.1)*.18);crown.add(n)}
+    P.palms.push({piv,crown,ph:R()*6,top:new THREE.Vector3(x+lean.x,G0+H-.3,z+lean.z)})}
+  // string lights swagged palm to palm
+  {const bulbM=[0xffd23a,0xff6a6a,0x7dff9a,0x6ac8ff,0xff8ad8].map(c=>new THREE.SpriteMaterial({map:flashTex(),color:c,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.9}));
+    const wireM=new THREE.LineBasicMaterial({color:0x1a1a1a});
+    for(let i=0;i<P.palms.length;i++){const A=P.palms[i].top,B=P.palms[(i+1)%P.palms.length].top;if(A.distanceTo(B)>14)continue;const pts=[];
+      for(let k=0;k<=24;k++){const u=k/24,p=new THREE.Vector3().lerpVectors(A,B,u);p.y-=Math.sin(u*Math.PI)*1.3;pts.push(p);
+        if(k%2===1){const s=new THREE.Sprite(bulbM[(k>>1)%bulbM.length]);s.scale.setScalar(.45);s.position.copy(p);g.add(s);P.lights.push(s)}}
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),wireM))}}
+  // tiki torches round the ring
+  const bam=new THREE.MeshStandardMaterial({color:0x8a6a3a,roughness:.8});
+  for(let i=0;i<6;i++){const a=i/6*TAU+.52,r=9.6,x=Math.cos(a)*r,z=Math.sin(a)*r;const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,2.3,8),bam);pole.position.set(x,G0+1.15,z);pole.castShadow=true;g.add(pole);
+    const cup=new THREE.Mesh(new THREE.CylinderGeometry(.14,.09,.3,10),new THREE.MeshStandardMaterial({color:0x3a2a1a,roughness:.7}));cup.position.set(x,G0+2.4,z);g.add(cup);
+    const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:flashTex(),color:0xff8a2a,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.75}));glow.scale.setScalar(1.6);glow.position.set(x,G0+2.75,z);g.add(glow);
+    P.fires.push({p:new THREE.Vector3(x,G0+2.55,z),glow})}
+  // the beach hut the fighters walk out of
+  {const hx=-13.4,hut=new THREE.Group();hut.position.set(hx,G0,0);g.add(hut);const wood=new THREE.MeshStandardMaterial({color:0x9a7448,roughness:.85});
+    const box=new THREE.Mesh(new THREE.BoxGeometry(2.2,2.6,3.6),wood);box.position.y=1.3;box.castShadow=true;hut.add(box);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(3.1,1.7,4,1),new THREE.MeshStandardMaterial({color:0xc9a25a,roughness:1}));roof.rotation.y=Math.PI/4;roof.position.y=3.4;roof.scale.set(1,1,1.35);hut.add(roof);
+    const door=new THREE.Mesh(new THREE.PlaneGeometry(1.3,2.1),new THREE.MeshBasicMaterial({color:0x140c06}));door.position.set(1.11,1.05,0);door.rotation.y=Math.PI/2;hut.add(door);
+    const sign=new THREE.Mesh(new THREE.PlaneGeometry(2,.5),new THREE.MeshBasicMaterial({map:canvasTex(512,128,(x,w,h)=>{x.fillStyle='#2a1a0e';x.fillRect(0,0,w,h);x.font=`64px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#ffd23a';x.fillText('HAYMAKER BEACH',w/2,h/2+4)})}));
+    sign.position.set(1.12,2.4,0);sign.rotation.y=Math.PI/2;hut.add(sign)}
+  // gulls wheeling overhead
+  {const gm=new THREE.MeshBasicMaterial({color:0xf4f0ea,side:THREE.DoubleSide});const wing=new THREE.BufferGeometry();wing.setAttribute('position',new THREE.Float32BufferAttribute([0,0,-.12,0,0,.12,.55,.06,0],3));wing.computeVertexNormals();
+    for(let i=0;i<6;i++){const b=new THREE.Group();const L=new THREE.Mesh(wing,gm),Rw=new THREE.Mesh(wing,gm);Rw.scale.x=-1;b.add(L,Rw);g.add(b);P.gulls.push({b,L,Rw,r:14+R()*14,h:7+R()*5,sp:.12+R()*.1,ph:R()*TAU})}}
+  // the crowd on the sand, three deep, in holiday colours
+  {const spots=[];for(let r=0;r<3;r++){const d=6.9+r*.8;for(let s=-d;s<d;s+=.62)for(const [nx,nz] of SIDE_DEFS){if(nx===-1&&Math.abs(s)<1.8)continue;if(R()<.14)continue;
+      const j=(R()-.5)*.2,x=nx?nx*(d+j):s+j,z=nz?nz*(d+j):s+j;if(Math.hypot(x,z)>12)continue;spots.push([x,z])}}
+    const n=spots.length,geo=fanGeo('stand'),fm=new THREE.InstancedMesh(geo,ARENA.crowdMat,n),c=new THREE.Color(),m=new THREE.Matrix4(),q=new THREE.Quaternion(),Y=new THREE.Vector3(0,1,0);
+    const a={aShirt:new Float32Array(n*3),aSkin:new Float32Array(n*3),aHair:new Float32Array(n*3),aInfo:new Float32Array(n*4)};P.teamShirts=[];
+    const shirts=[0xff6a5a,0x2ac4c4,0xffd23a,0xff8ad8,0x7dff9a,0xf2f2f2,0x3a7aff,0xff9a3a,0x9a6aff];
+    spots.forEach(([x,z],i)=>{const sc=.92+R()*.16;q.setFromAxisAngle(Y,Math.atan2(-x,-z)+(R()-.5)*.3);m.compose(new THREE.Vector3(x,G0+.6,z),q,new THREE.Vector3(sc,sc,sc));fm.setMatrixAt(i,m);
+      const team=R()<.4?0:R()<.67?1:.5,ts=team!==.5&&R()<.35;if(ts)P.teamShirts.push([i,team]);c.setHex(pick(shirts));a.aShirt.set([c.r,c.g,c.b],i*3);
+      c.setHex(pick([0xf1c9a5,0xd9a37c,0xb47b54,0x8a5a3c,0x5c3a26,0xe0b48f]));a.aSkin.set([c.r,c.g,c.b],i*3);c.setHex(pick([0x1a1410,0x2a1c12,0x4a3020,0x101010,0xd9b86a,0x7a2a1a]));a.aHair.set([c.r,c.g,c.b],i*3);
+      a.aInfo.set([R()*100,team,.3+R()*.7,Math.atan2(z,x)],i*4)});
+    for(const k in a)geo.setAttribute(k,new THREE.InstancedBufferAttribute(a[k],k==='aInfo'?4:3));fm.frustumCulled=false;g.add(fm);
+    const ol=new THREE.InstancedMesh(geo,ARENA.crowdLine,n);ol.instanceMatrix=fm.instanceMatrix;ol.frustumCulled=false;g.add(ol);P.fans=fm;P.fanLine=ol}
+  return P}
+function beachTick(rdt){const P=ARENA.beach;if(!P||!P.g.visible)return;const t=ARENA.crowdU.uT.value;
+  for(const p of P.palms){p.piv.rotation.z=Math.sin(t*.6+p.ph)*.015;p.crown.rotation.x=Math.sin(t*1.1+p.ph)*.06;p.crown.rotation.z=Math.cos(t*.9+p.ph)*.06}
+  for(const f of P.fires){f.glow.material.opacity=.55+.25*Math.sin(t*13+f.p.x)+.1*Math.random();if(PA&&Math.random()<rdt*24)PA.emit(f.p.x+(Math.random()-.5)*.12,f.p.y+.1,f.p.z+(Math.random()-.5)*.12,(Math.random()-.5)*.2,.9+Math.random()*.6,(Math.random()-.5)*.2,.5,.13,1,.5,.15,1,-1,1)}
+  for(const q of P.gulls){const a=t*q.sp+q.ph;q.b.position.set(Math.cos(a)*q.r,q.h+Math.sin(t*.5+q.ph)*.6,Math.sin(a)*q.r);q.b.rotation.y=-a;const f=Math.sin(t*9+q.ph)*.5;q.L.rotation.z=f;q.Rw.rotation.z=-f}
+  P.lights.forEach((s,i)=>{s.material.opacity=.7+.3*Math.sin(t*2+i*.7)})}
+const VENUES=['roof','pit','gym','beach'];
+function setVenue(v){v=VENUES.includes(v)?v:'arena';if(ARENA.venue===v)return;ARENA.venue=v;
+  const roof=v==='roof',pit=v==='pit',gym=v==='gym',beach=v==='beach';for(const o of ARENA.dress||[])o.visible=v==='arena';
+  if(roof)buildRoof();if(pit)buildPit();if(gym)buildGym();if(beach)buildBeach();if(ARENA.beach)ARENA.beach.g.visible=beach;if(ARENA.roof)ARENA.roof.g.visible=roof;if(ARENA.pit)ARENA.pit.g.visible=pit;if(ARENA.gym)ARENA.gym.g.visible=gym;if(!roof&&ARENA.rain)setRain(false);if(!roof)setSnow(false);
+  ARENA.tunnel=roof?ARENA.roof.door:pit?ARENA.pit.door:gym?ARENA.gym.door:beach?ARENA.beach.door:ARENA.tunnel0;
+  scene.background=null;if(ARENA.hemi){ARENA.hemi.intensity=roof?.62:pit?.3:gym?.95:beach?.85:.42;if(!ARENA.hemiC)ARENA.hemiC=[ARENA.hemi.color.getHex(),ARENA.hemi.groundColor.getHex()];ARENA.hemi.color.setHex(beach?0xffa070:ARENA.hemiC[0]);ARENA.hemi.groundColor.setHex(beach?0x6a4a3a:ARENA.hemiC[1])}
   if(ARENA.B0)crowdTeams(ARENA.B0,ARENA.B1)}
-function pickVenue(v){const r=v==='random'?pick(['arena','roof','pit','gym']):v||'arena';if(r!=='roof')return r;const w=Math.random();return w<.34?'roof-rain':w<.67?'roof-snow':'roof'}
-function applyVenue(v){v=v||'arena';setVenue(v.startsWith('roof')?'roof':v==='pit'||v==='gym'?v:'arena');setRain(v==='roof-rain');setSnow(v==='roof-snow')}
+function pickVenue(v){const r=v==='random'?pick(['arena','roof','pit','gym','beach']):v||'arena';if(r!=='roof')return r;const w=Math.random();return w<.34?'roof-rain':w<.67?'roof-snow':'roof'}
+function applyVenue(v){v=v||'arena';setVenue(v.startsWith('roof')?'roof':VENUES.includes(v)?v:'arena');setRain(v==='roof-rain');setSnow(v==='roof-snow')}
 // moving-head lights on the truss: long additive beams that sweep over the crowd
 function buildBeams(){
   ARENA.beams=[];const g=new THREE.CylinderGeometry(.06,1.1,16,20,1,true);g.translate(0,-8,0);g.rotateX(-Math.PI/2);
@@ -4076,7 +4169,7 @@ addEventListener('pagehide',()=>{if(NET.mode!=='off')netSend({t:'bye'})});
 const SEL={mode:'quick',f:'blaze',opp:'random',diff:'contender',alt:0,venue:'arena',mut:{}};
 const MUT={};   // the mutators live for this match: big (heads), dmg (double damage), ult (meter ×3)
 const mutOn=k=>!!MUT[k]&&!G.online;
-try{const s=JSON.parse(localStorage.getItem('haymaker.sel')||'{}');if(FBY[s.f])SEL.f=s.f;if(s.opp==='random'||FBY[s.opp])SEL.opp=s.opp;if(DIFF[s.diff]||s.diff==='p2')SEL.diff=s.diff;if(['arena','roof','pit','gym','random'].includes(s.venue))SEL.venue=s.venue;if(s.mut&&typeof s.mut==='object')SEL.mut={big:!!s.mut.big,dmg:!!s.mut.dmg,ult:!!s.mut.ult};SEL.alt=(s.alt|0)%(NALT+1);if(!altOK(SEL.f,SEL.alt))SEL.alt=0}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('haymaker.sel')||'{}');if(FBY[s.f])SEL.f=s.f;if(s.opp==='random'||FBY[s.opp])SEL.opp=s.opp;if(DIFF[s.diff]||s.diff==='p2')SEL.diff=s.diff;if(['arena','roof','pit','gym','beach','random'].includes(s.venue))SEL.venue=s.venue;if(s.mut&&typeof s.mut==='object')SEL.mut={big:!!s.mut.big,dmg:!!s.mut.dmg,ult:!!s.mut.ult};SEL.alt=(s.alt|0)%(NALT+1);if(!altOK(SEL.f,SEL.alt))SEL.alt=0}catch(e){}
 const saveSel=()=>{try{localStorage.setItem('haymaker.sel',JSON.stringify({f:SEL.f,opp:SEL.opp,diff:SEL.diff,alt:SEL.alt,venue:SEL.venue,mut:SEL.mut}))}catch(e){}};
 function showOv(id){$(id).classList.add('on')}
 function hideOv(id){$(id).classList.remove('on')}
@@ -4258,7 +4351,7 @@ function renderSelect(){
   {const f=FBY[SEL.f],hx=c=>'#'+new THREE.Color(c).getHexString();if(!altOK(f.id,SEL.alt))SEL.alt=0;$('altSeg').innerHTML=[0,1,2,3,4].map(a=>{const L=Object.assign({},f.look,a===CUSTOM?kitOf(f.id):f.alts[a]),ok2=altOK(f.id,a);return `<button data-a="${a}" class="${SEL.alt===a?'on':''} ${a===3?'leg':''} ${ok2?'':'lock'}" style="--a:${hx(L.shorts)};--b:${hx(L.glove)}" title="${a===CUSTOM?'Your own kit — tap again to edit':a===3?(ok2?'LEGEND colours':'LEGEND — win the arcade ladder with '+f.name+' to unlock'):'Colour '+(a+1)}">${a===CUSTOM?'✎':ok2?'':'🔒'}</button>`}).join('')+(SEL.alt===CUSTOM&&SEL.kitEdit?kitEditor(f.id):'')}
   $('oppBox').classList.toggle('hide',SEL.mode!=='quick');
   $('oppSeg').innerHTML=`<button data-o="random" class="${SEL.opp==='random'?'on':''}"><span style="width:20px;height:20px;display:block">${ICO('random')}</span>RANDOM</button>`+(bossOn()?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>`<button data-o="${f.id}" class="${SEL.opp===f.id?'on':''}" title="${f.name}">${portrait(f.id,25)}</button>`).join('');
-  $('venueSeg').innerHTML=[['arena','ARENA'],['roof','ROOFTOP'],['pit','THE PIT'],['gym','THE GYM'],['random','RANDOM']].map(([k,n])=>`<button data-v="${k}" class="${SEL.venue===k?'on':''}">${n}</button>`).join('');
+  $('venueSeg').innerHTML=[['arena','ARENA'],['roof','ROOFTOP'],['pit','THE PIT'],['gym','THE GYM'],['beach','THE BEACH'],['random','RANDOM']].map(([k,n])=>`<button data-v="${k}" class="${SEL.venue===k?'on':''}">${n}</button>`).join('');
   $('selWatch').style.display=SEL.mode==='quick'?'':'none';
   $('mutSeg').innerHTML=[['big','BIG HEADS'],['dmg','DOUBLE DMG'],['ult','ULT RUSH']].map(([k,n])=>`<button data-m="${k}" class="${SEL.mut[k]?'on':''}">${n}</button>`).join('');
   $('mutBox').style.display=SEL.mode==='online'?'none':'';
@@ -4514,7 +4607,7 @@ function renderEndButtons(){
 const DAILY={on:false,c:null};
 function dailyToday(){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();let h=key*2654435761>>>0;const r=()=>{h^=h<<13;h>>>=0;h^=h>>>17;h^=h<<5;h>>>=0;return h/4294967296};
   const ids=FIGHTERS.map(f=>f.id),me=ids[Math.floor(r()*ids.length)];let op;do op=ids[Math.floor(r()*ids.length)];while(op===me);
-  const venue=['arena','roof','roof-rain','pit','roof-snow','gym'][Math.floor(r()*6)],mut={};for(const k of ['big','dmg','ult'])if(r()<.3)mut[k]=true;
+  const venue=['arena','roof','roof-rain','pit','roof-snow','gym','beach'][Math.floor(r()*7)],mut={};for(const k of ['big','dmg','ult'])if(r()<.3)mut[k]=true;
   return {key,me,op,venue,mut,diff:r()<.5?'champion':'contender'}}
 function dailyScore(r){const me=G.B[G.ME];if(r.w!==G.ME)return 0;return Math.round(1000+me.hp/me.hpMax*600+(/KO/.test(r.how)?300+Math.max(0,G.tl)*8:0)-(G.rnd-1)*120+(DAILY.c.diff==='champion'?400:0))}
 function showDaily(){const c=dailyToday(),F=FBY[c.me],O=FBY[c.op],best=REC.daily&&REC.daily.key===c.key?REC.daily.best:0;
@@ -4869,7 +4962,7 @@ function visuals(rdt,adt){
   ropeVisuals(adt);PA.update(adt);PN.update(adt);fxUpdate(adt);updEmit(adt);updConfetti(adt);extras(rdt,adt);updPFX(rdt);
   ARENA.excite=Math.max(0,(ARENA.excite||0)-rdt*.22);
   const ex=G.mode==='fight'?.12+ARENA.excite*.9:.18;ARENA.crowdU.uEx.value=lerp(ARENA.crowdU.uEx.value,ex,damp(3,rdt));ARENA.crowdU.uT.value+=rdt;
-  crowdTick(rdt);cornerTick(rdt);throwTick(adt);trainTick(rdt);rainTick(rdt);pitTick(rdt);gymTick(rdt);ARENA.flashU.uT.value+=rdt;ARENA.flashU.uRate.value=1+ARENA.excite*7+(G.phase==='kd'||G.phase==='end'?5:0);
+  crowdTick(rdt);cornerTick(rdt);throwTick(adt);trainTick(rdt);rainTick(rdt);pitTick(rdt);gymTick(rdt);beachTick(rdt);ARENA.flashU.uT.value+=rdt;ARENA.flashU.uRate.value=1+ARENA.excite*7+(G.phase==='kd'||G.phase==='end'?5:0);
   ARENA.impact.intensity*=Math.exp(-16*rdt);if(ARENA.impact.intensity<.05)ARENA.impact.intensity=0;ARENA.led.offset.x+=rdt*.035;
   // the big screen only redraws (and re-uploads) when what it shows has changed
   jumboT-=rdt;if(jumboT<=0){jumboT=.25;const t=Math.max(0,Math.ceil(G.tl));
@@ -4919,7 +5012,7 @@ function init(){
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,get SEL(){return SEL},renderSelect,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,get SEL(){return SEL},renderSelect,THREE,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();document.body.classList.remove('booting');
   // build the other venues while the player is on the title screen, so picking one never hitches
@@ -5008,7 +5101,8 @@ function runSmoke(){
     abil('viper','frost','r');G.B[0].hp=50;startPunch(G.B[0],'cross');sim(.5);ok(G.B[0].hp>50,'Serpent\'s Kiss heals on hit');
     abil('viper','frost','e',3);sim(.7);ok(G.B[1].hp<100,'Coil Strike lunges in');
     solo('blaze','frost');place(1);G.bag=true;TR.dummy='stand';G.B[1].hp=3;startPunch(G.B[0],'hook');sim(.8);ok(G.B[1].hp>=1&&!G.B[1].down&&TR.last>0,'training: the standing dummy takes the hit but never goes down');G.bag=false;
-    setVenue('roof');ok(ARENA.roof&&ARENA.roof.g.visible&&ARENA.dress.every(o=>!o.visible)&&Math.abs(ARENA.tunnel.x+13.2)<.01,'the rooftop venue swaps in (and its stairwell becomes the walk-out door)');applyVenue('roof-rain');ok(ARENA.rain.L.visible,'rain falls on a wet rooftop night');applyVenue('roof-snow');ok(ARENA.snow.visible&&!ARENA.rain.L.visible,'…or snow on a cold one');applyVenue('pit');ok(ARENA.pit.g.visible&&!ARENA.roof.g.visible&&!ARENA.rain.L.visible&&Math.abs(ARENA.tunnel.x+11.2)<.01,'THE PIT swaps in, dry, with its roller door');applyVenue('gym');ok(ARENA.gym.g.visible&&!ARENA.pit.g.visible,'THE GYM swaps in');applyVenue('arena');ok(!ARENA.roof.g.visible&&!ARENA.pit.g.visible&&!ARENA.gym.g.visible&&!ARENA.rain.L.visible&&!ARENA.snow.visible&&ARENA.dress.every(o=>o.visible),'…and swaps back to a dry arena');
+    setVenue('beach');ok(ARENA.beach&&ARENA.beach.g.visible&&ARENA.dress.every(o=>!o.visible)&&Math.abs(ARENA.tunnel.x+12.6)<.01&&ARENA.beach.palms.length>4,'THE BEACH swaps in (palms, and the beach hut is the walk-out door)');ok(VENUES.every(v=>pickVenue(v)),'every venue can be picked');
+    setVenue('roof');ok(ARENA.roof&&!ARENA.beach.g.visible&&ARENA.roof.g.visible&&ARENA.dress.every(o=>!o.visible)&&Math.abs(ARENA.tunnel.x+13.2)<.01,'the rooftop venue swaps in (and its stairwell becomes the walk-out door)');applyVenue('roof-rain');ok(ARENA.rain.L.visible,'rain falls on a wet rooftop night');applyVenue('roof-snow');ok(ARENA.snow.visible&&!ARENA.rain.L.visible,'…or snow on a cold one');applyVenue('pit');ok(ARENA.pit.g.visible&&!ARENA.roof.g.visible&&!ARENA.rain.L.visible&&Math.abs(ARENA.tunnel.x+11.2)<.01,'THE PIT swaps in, dry, with its roller door');applyVenue('gym');ok(ARENA.gym.g.visible&&!ARENA.pit.g.visible,'THE GYM swaps in');applyVenue('arena');ok(!ARENA.roof.g.visible&&!ARENA.pit.g.visible&&!ARENA.gym.g.visible&&!ARENA.rain.L.visible&&!ARENA.snow.visible&&ARENA.dress.every(o=>o.visible),'…and swaps back to a dry arena');
     solo('blaze','frost');photoOn();ok(PHOTO.on&&G.paused&&document.body.classList.contains('photo')&&CAM.lock===null||PHOTO.on,'photo mode freezes the fight and hides the UI');photoTick();ok(Array.isArray(CAM.lock),'…and drives a free camera');photoOff();hideOv('pauseOv');G.paused=false;ok(!PHOTO.on&&!document.body.classList.contains('photo')&&CAM.lock===null,'…and hands everything back');
     {const w0=REC.w,l0=REC.l;startSolo('volt','titan','contender',true);ok(G.watch&&G.bots[0]&&G.bots[1],'WATCH: both corners are CPUs');G.forced=null;G.phase='fight';let n=0;while(G.phase!=='end'&&n<60*300){step(1/60);n++}ok(G.phase==='end'&&REC.w===w0&&REC.l===l0,'…the exhibition finishes and doesn\'t touch your record');G.watch=false;document.body.classList.remove('watching');G.forced=[EMPTY,EMPTY]}
     {const P0=JSON.stringify(REC.per);showRecords();ok($('recOv').classList.contains('on')&&$('recBody').querySelectorAll('.rc').length===FIGHTERS.length,'RECORDS lists every fighter');hideOv('recOv');ok(JSON.stringify(REC.per)===P0,'…and smoke fights never touch your career stats')}
