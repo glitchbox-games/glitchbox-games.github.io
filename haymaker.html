@@ -112,6 +112,7 @@ body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 #setOv .panel{max-height:92vh;overflow:auto}
 #titleOv .menu>button{position:relative}#titleOv .menu>button.isnew::after{content:'NEW';position:absolute;top:-7px;right:8px;background:#ff3b3f;color:#fff;font:900 9px Rubik;letter-spacing:.12em;padding:2px 6px;border-radius:6px;box-shadow:0 2px 0 #000;animation:nbump 1.6s ease-in-out infinite}
 @keyframes nbump{50%{transform:scale(1.12)}}
+.finfo .h2h{margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font:900 11px Rubik;letter-spacing:.15em;color:var(--dim)}.finfo .h2h b{font:400 16px Anton;color:#fff;letter-spacing:.04em}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -4181,6 +4182,7 @@ function renderSelect(){
   $('grid').innerHTML=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
     return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
   $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);
+  if(SEL.mode==='quick'&&FBY[SEL.opp]){const H=(REC.h2h||{})[SEL.f+'>'+SEL.opp];$('finfo').insertAdjacentHTML('beforeend',`<div class="h2h">${FBY[SEL.f].short||FBY[SEL.f].name} VS <b style="color:${FBY[SEL.opp].col}">${FBY[SEL.opp].short||FBY[SEL.opp].name}</b> · ${H?`<b>${H[0]}–${H[1]}</b>`:'FIRST MEETING'}</div>`)}
   {const f=FBY[SEL.f],hx=c=>'#'+new THREE.Color(c).getHexString();if(!altOK(f.id,SEL.alt))SEL.alt=0;$('altSeg').innerHTML=[0,1,2,3,4].map(a=>{const L=Object.assign({},f.look,a===CUSTOM?kitOf(f.id):f.alts[a]),ok2=altOK(f.id,a);return `<button data-a="${a}" class="${SEL.alt===a?'on':''} ${a===3?'leg':''} ${ok2?'':'lock'}" style="--a:${hx(L.shorts)};--b:${hx(L.glove)}" title="${a===CUSTOM?'Your own kit — tap again to edit':a===3?(ok2?'LEGEND colours':'LEGEND — win the arcade ladder with '+f.name+' to unlock'):'Colour '+(a+1)}">${a===CUSTOM?'✎':ok2?'':'🔒'}</button>`}).join('')+(SEL.alt===CUSTOM&&SEL.kitEdit?kitEditor(f.id):'')}
   $('oppBox').classList.toggle('hide',SEL.mode!=='quick');
   $('oppSeg').innerHTML=`<button data-o="random" class="${SEL.opp==='random'?'on':''}"><span style="width:20px;height:20px;display:block">${ICO('random')}</span>RANDOM</button>`+(bossOn()?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>`<button data-o="${f.id}" class="${SEL.opp===f.id?'on':''}" title="${f.name}">${portrait(f.id,25)}</button>`).join('');
@@ -4329,6 +4331,7 @@ function onEnd(r){
     if(!G.online&&!G.watch&&!G.local){REC.fwins=REC.fwins||{};REC.fwins[me.f.id]=1;if(FIGHTERS.every(f=>REC.fwins[f.id]))achGet('all')}}
   G.xpRes=null;if(!SMOKE&&!G.watch&&!G.local&&!G.bag&&!G.online){const before=xpInfo(),gain=xpGain(r);REC.xp=(REC.xp||0)+gain;{const fid=G.B[G.ME].f.id,m0=mastery(fid).tier,P=recOf(fid);P.xp=(P.xp||0)+gain;const m1=mastery(fid).tier;if(m1&&m1!==m0)setTimeout(()=>sub(G.B[G.ME].f.name+' — '+m1[1]+' MASTERY',3),1400)}G.xpRes={before,gain,af:xpInfo()}}
   if(G.online&&NET.series&&w>=0){NET.series[w===G.ME?0:1]++}
+  if(!SMOKE&&!G.watch&&!G.local&&!G.forfeit&&!G.online&&w>=0){REC.h2h=REC.h2h||{};const k=G.B[G.ME].f.id+'>'+G.B[1-G.ME].f.id,H=REC.h2h[k]||(REC.h2h[k]=[0,0]);H[w===G.ME?0:1]++}
   if(!SMOKE&&!G.watch&&!G.local&&!G.forfeit){const P=recOf(G.B[G.ME].f.id);if(w===G.ME){REC.w++;P.w++;if(ko){REC.ko++;P.ko++}}else if(w>=0){REC.l++;P.l++}saveRec()}
   if(G.ladder&&G.ladder.bossFight){if(w===G.ME&&!SMOKE){const fresh=!REC.boss;REC.boss=1;saveRec();achGet('boss');if(fresh)setTimeout(()=>sub('THE CHAMP IS NOW PLAYABLE',3),2500)}}
   else if(G.ladder&&w===G.ME){G.ladder.i++;if(G.ladder.i>=G.ladder.opps.length){REC.ladders++;REC.champ[G.ladder.f]=1;achGet('champ');if(Object.keys(REC.champ).length>=3)achGet('legend3');if(!SMOKE)recOf(G.ladder.f).titles++;saveRec()}}
