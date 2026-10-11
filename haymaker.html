@@ -99,6 +99,9 @@ body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{backg
 .chal{margin:10px 0;text-align:center;font:400 22px Anton;color:#ff3b3f;letter-spacing:.1em}.chal>span{animation:blink 1s infinite}.chal>div{display:flex;flex-direction:column;align-items:center;margin-top:6px;animation:none}.chal b{font:400 26px Anton;color:#ffd23a}.chal small{font:900 10px Rubik;letter-spacing:.3em;color:var(--dim)}.chal i{display:block;font:italic 600 13px Rubik;color:#ddd;letter-spacing:0;margin-top:4px;animation:none}
 .brk{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;align-items:center}.bc{display:flex;flex-direction:column;gap:4px;justify-content:space-around;min-height:250px}.bc small{font:900 9px Rubik;letter-spacing:.3em;color:var(--dim);text-align:center}
 .brk .bk{display:flex;align-items:center;gap:6px;background:#14141c;border:1px solid var(--line);border-radius:8px;padding:2px 6px;font:400 13px Anton;color:#ddd;position:static}.brk .bk.me{border-color:var(--gold);color:var(--gold)}.brk .bk.lost{opacity:.35}
+body.fontwait .logo,body.fontwait .tag,body.fontwait .menu,body.fontwait #bootMsg{visibility:hidden}
+#bootMsg{display:none;font:900 12px Rubik;letter-spacing:.35em;color:var(--gold);margin:6px 0}body.booting #bootMsg{display:block}#bootMsg i{font-style:normal;animation:blink 1s infinite}#bootMsg i:nth-child(2){animation-delay:.2s}#bootMsg i:nth-child(3){animation-delay:.4s}
+body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -368,7 +371,8 @@ body.touch #abil,body.touch #keys{display:none}
 {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
 </script>
 </head>
-<body>
+<body class="booting fontwait">
+<script>setTimeout(()=>document.body.classList.remove('fontwait'),1500);setTimeout(()=>document.body.classList.remove('booting'),12000);if(document.fonts)document.fonts.ready.then(()=>document.body.classList.remove('fontwait'))</script>
 <canvas id="cv"></canvas>
 <div id="vig"></div><div id="lowhp"></div><div id="sdvF"></div><div id="flash"></div><div id="white"></div><div id="impactF"></div><div id="lbT"></div><div id="lbB"></div>
 <div id="hud" class="hide">
@@ -419,6 +423,7 @@ body.touch #abil,body.touch #keys{display:none}
 
 <div class="ov on" id="titleOv">
   <div class="logo">HAYMAKER</div>
+  <div id="bootMsg">LOADING THE ARENA<i>.</i><i>.</i><i>.</i></div>
   <div class="tag">3D BOXING · ELEVEN FIGHTERS · SUPER ABILITIES</div>
   <div class="menu">
     <button class="primary" data-go="quick">QUICK FIGHT</button>
@@ -4695,7 +4700,7 @@ function init(){
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
   if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
-  showTitle();
+  showTitle();document.body.classList.remove('booting');
   // build the other venues while the player is on the title screen, so picking one never hitches
   if(!SMOKE)setTimeout(()=>{try{buildRoof();buildRain();buildPit();buildGym()}catch(e){console.warn(e)}},2500);
   const h=new URLSearchParams(HASH.replace(/^#/,'').replace(/-?debug$/,''));const room=(h.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
