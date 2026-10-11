@@ -85,6 +85,7 @@ body.watching #keys::after{content:'EXHIBITION · PRESS A PUNCH KEY TO TAKE OVER
 #titleOv .opts,#pauseOv .opts{display:none}
 .finfo .bio{font:italic 600 11.5px Rubik;color:#bbb;line-height:1.35;margin:2px 0 6px}
 @media (max-height:520px){.finfo .bio{display:none}}
+body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{background:#ffffff!important}body.hc .bar.hp .tr{background:#6a6a72!important}body.hc .bar.hp.low .fl{background:#ff2a2a!important}body.hc #timer{text-shadow:0 0 0 #000,2px 2px 0 #000;color:#fff}body.hc .bar.met .fl{background:#ffd23a!important}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -631,7 +632,7 @@ const DIFF={
   contender:{name:'CONTENDER',react:.25,block:.48,dodge:.2, aggr:.62,abil:.6, think:.42,getup:.8, parry:.07,hay:.35},
   champion: {name:'CHAMPION', react:.14,block:.66,dodge:.36,aggr:.82,abil:.95,think:.22,getup:.9, parry:.18,hay:.55},
 };
-const SET={q:TOUCH?'low':'high',snd:true,cam:'tv',mus:false,flash:true,mute:false,walk:true,vS:100,vM:60,shk:100,nums:true,words:true};
+const SET={q:TOUCH?'low':'high',snd:true,cam:'tv',mus:false,flash:true,mute:false,walk:true,vS:100,vM:60,shk:100,nums:true,words:true,calm:false,hc:false};
 try{Object.assign(SET,JSON.parse(localStorage.getItem('haymaker.set')||'{}'))}catch(e){}
 const saveSet=()=>{try{localStorage.setItem('haymaker.set',JSON.stringify(SET))}catch(e){}};
 const REC={w:0,l:0,ko:0,champ:{},ladders:0,per:{}};   // per[fighterId] = {w,l,ko,big,combo,titles}
@@ -744,12 +745,12 @@ function scr(p){_sp.copy(p).project(camera);return _sp.z<1?{x:_sp.x*.5+.5,y:_sp.
 function wave(p,s=1){const v=scr(p);if(!v||!PFX.pass)return;PFX.waves.push({x:v.x,y:v.y,t:0,d:.42+.12*s,s});if(PFX.waves.length>4)PFX.waves.shift()}
 function zoomBlur(p,a){const v=p&&scr(p);if(v)PFX.zc.set(v.x,v.y);else PFX.zc.set(.5,.5);PFX.zoom=Math.max(PFX.zoom,a)}
 // one black-and-white "impact frame" (anime style) — rationed, and off with FLASHES off
-function impactFrame(col=0xffffff){if(!SET.flash||G.attract||SMOKE)return;const n=performance.now()/1000;if(n-PFX.lastImp<.9)return;PFX.lastImp=n;
+function impactFrame(col=0xffffff){if(!SET.flash||SET.calm||G.attract||SMOKE)return;const n=performance.now()/1000;if(n-PFX.lastImp<.9)return;PFX.lastImp=n;
   if(PFX.pass){PFX.imp=1;PFX.impT=.075;PFX.pass.uniforms.uImpC.value.set(col)}
   else{const el=$('impactF');el.style.display='block';el.style.transition='none';el.style.opacity=1;setTimeout(()=>{el.style.transition='opacity .12s';el.style.opacity=0;setTimeout(()=>{el.style.display='none'},140)},70)}}
 function updPFX(rdt){
   for(let i=PFX.waves.length-1;i>=0;i--){const w=PFX.waves[i];w.t+=rdt;if(w.t>=w.d)PFX.waves.splice(i,1)}
-  PFX.ca=Math.max(0,PFX.ca-rdt*3.2);PFX.zoom=Math.max(0,PFX.zoom-rdt*2.6);
+  PFX.ca=Math.max(0,PFX.ca-rdt*3.2);PFX.zoom=Math.max(0,PFX.zoom-rdt*2.6);if(SET.calm){PFX.ca=0;PFX.zoom=0;PFX.imp=0}
   if(PFX.impT>0){PFX.impT-=rdt;if(PFX.impT<=0)PFX.imp=0}
   if(PFX.dimT>0){PFX.dimT-=rdt;PFX.dim=Math.min(1,PFX.dim+rdt*8)}else PFX.dim=Math.max(0,PFX.dim-rdt*4);
   {const o=!PFX.pass&&sdvOn()&&!G.attract?1:0;if(o!==PFX.sdvF){PFX.sdvF=o;const el=$('sdvF');el.style.transition='opacity '+(o?.12:.5)+'s';el.style.opacity=o}}
@@ -3189,6 +3190,7 @@ function zoneMesh(spec){
     g.add(new THREE.Mesh(new THREE.CircleGeometry(spec.r,48),mat({opacity:spec.shape==='ring'?.06:.14})));
     g.add(new THREE.Mesh(new THREE.RingGeometry(spec.r-.07,spec.r,48),mat({opacity:.95})));
     fill=new THREE.Mesh(new THREE.CircleGeometry(spec.r,48),mat({opacity:.3}));g.add(fill)}
+  if(SET.hc&&spec.shape!=='cone'){const o=new THREE.Mesh(new THREE.RingGeometry(spec.r,spec.r+.09,48),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthWrite:false,side:THREE.DoubleSide}));g.add(o)}
   g.rotation.x=-Math.PI/2;g.position.set(spec.x,.025,spec.z);fill.scale.setScalar(.01);g.userData.fill=fill;
   return g;
 }
@@ -3825,12 +3827,13 @@ function updateFloats(dt){for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i];
   const sc=f.t<.12?1.5-f.t*4:1;f.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;f.el.style.opacity=f.t>.6?(.95-f.t)/.35:1}}
 
 function togglePause(force){if(G.mode!=='fight')return;const on=force!=null?force:!$('pauseOv').classList.contains('on');if(on){showOv('pauseOv');$('pPhoto').style.display=G.online?'none':'';$('pReplay').style.display=G.online||RP.n<30?'none':'';if(!G.online)G.paused=true}else{hideOv('pauseOv');hideOv('helpOv');G.paused=false}}
+function applyAccess(){document.body.classList.toggle('hc',!!SET.hc)}
 function showSettings(){
   const sl=(k,n)=>`<div class="sr">${n}<input type="range" min="0" max="100" step="5" value="${SET[k]??100}" data-r="${k}"><span class="v" id="sv_${k}">${SET[k]??100}</span></div>`;
   const ch=(k,n,opts)=>`<div class="sr">${n}<div class="sb">${opts.map(([v,t])=>`<button data-c="${k}" data-v="${v}" class="${String(SET[k])===String(v)?'on':''}">${t}</button>`).join('')}</div></div>`;
   $('setBody').innerHTML=sl('vS','SOUND VOLUME')+sl('vM','MUSIC VOLUME')+sl('shk','SCREEN SHAKE')+
     ch('snd','SOUND',[[true,'ON'],[false,'OFF']])+ch('mus','MUSIC',[[true,'ON'],[false,'OFF']])+ch('q','GRAPHICS',[['high','HIGH'],['low','LOW']])+ch('cam','CAMERA',[['tv','BROADCAST'],['back','BEHIND YOU']])+
-    ch('flash','FLASHES',[[true,'ON'],[false,'OFF']])+ch('walk','ENTRANCES',[[true,'ON'],[false,'OFF']])+ch('nums','DAMAGE NUMBERS',[[true,'ON'],[false,'OFF']])+ch('words','COMIC WORDS',[[true,'ON'],[false,'OFF']]);
+    ch('flash','FLASHES',[[true,'ON'],[false,'OFF']])+ch('walk','ENTRANCES',[[true,'ON'],[false,'OFF']])+ch('nums','DAMAGE NUMBERS',[[true,'ON'],[false,'OFF']])+ch('words','COMIC WORDS',[[true,'ON'],[false,'OFF']])+ch('calm','REDUCED EFFECTS',[[false,'OFF'],[true,'ON']])+ch('hc','HIGH-CONTRAST HUD',[[false,'OFF'],[true,'ON']]);
   showOv('setOv')}
 function showRecords(){
   const tot=REC.w+REC.l;$('recBody').innerHTML=`<div class="rt"><span><b>${REC.w}–${REC.l}</b>RECORD</span><span><b>${tot?Math.round(REC.w/tot*100):0}%</b>WINS</span><span><b>${REC.ko}</b>KOs</span><span><b>${REC.ladders}</b>BELTS</span></div>
@@ -3954,7 +3957,7 @@ function setupUI(){
   $('setBody').addEventListener('input',e=>{const r=e.target.closest('[data-r]');if(!r)return;SET[r.dataset.r]=+r.value;$('sv_'+r.dataset.r).textContent=r.value;saveSet();auApply()});
   $('setBody').addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(!c)return;const k=c.dataset.c,raw=c.dataset.v,v=raw==='true'?true:raw==='false'?false:raw;
     const prevQ=SET.q;SET[k]=v;if(k==='snd'||k==='mus')SET.mute=false;saveSet();auResume&&auResume();auApply();if(k==='q'&&v!==prevQ){$('qBtn').textContent=v==='high'?'HIGH':'LOW';setupPost();prewarmFX()}
-    if(k==='cam')$('cBtn').textContent=v==='tv'?'BROADCAST':'BEHIND';SFX.ui();showSettings()});$('recBack').onclick=()=>hideOv('recOv');
+    if(k==='cam')$('cBtn').textContent=v==='tv'?'BROADCAST':'BEHIND';applyAccess();SFX.ui();showSettings()});applyAccess();$('recBack').onclick=()=>hideOv('recOv');
   $('pPhoto').onclick=()=>{SFX.ui();photoOn()};
   $('pReplay').onclick=()=>{SFX.ui();hideOv('pauseOv');if(!rpInstant(()=>togglePause(true)))togglePause(true)};$('phSave').onclick=photoSave;$('phFilt').onclick=()=>{PHOTO.film=(PHOTO.film+1)%FILMS.length};$('phExit').onclick=photoOff;
   addEventListener('pointerdown',e=>{if(PHOTO.on&&!e.target.closest('#photoBar'))PHOTO.drag={x:e.clientX,y:e.clientY};
@@ -4436,7 +4439,7 @@ function frame(now){
   requestAnimationFrame(frame);
   const raw=Math.max(0,(now-last)/1000),rdt=Math.min(.05,raw);last=now;padPoll();
   if(!PERF.checked&&G.mode==='fight'&&!document.hidden&&raw<.5){PERF.t+=raw;PERF.n++;if(PERF.t>4){PERF.checked=true;if(PERF.n/PERF.t<32&&SET.q==='high'){SET.q='low';saveSet();setupPost();prewarmFX();sub('GRAPHICS SET TO LOW FOR A SMOOTHER FIGHT',2.5)}}}
-  let sdt=rdt;if(CAM.slowT>0){CAM.slowT-=rdt;sdt*=CAM.slow}
+  let sdt=rdt;if(CAM.slowT>0){CAM.slowT-=rdt;if(!SET.calm)sdt*=CAM.slow}
   let adt=sdt;if(CAM.hitstop>0){CAM.hitstop-=rdt;if(!G.online)sdt*=.07;adt*=.07}
   if(CAM.freeze>0){CAM.freeze-=rdt;if(!G.online)sdt=0;adt*=.1}
   if(G.paused){sdt=0;adt=0}
@@ -4569,10 +4572,11 @@ function runSmoke(){
     {G.surv={f:'blaze',n:0,hp:null};survNext();const S=G.surv;ok(S&&G.B[0].f.id==='blaze'&&G.bots[1].diff==='rookie','SURVIVAL: bout one is against a rookie');G.B[0].hp=40;survEnd({w:G.ME});survNext();
      ok(G.surv.n===1&&near(G.B[0].hp,40+G.B[0].hpMax*.3,.5),'…health carries over with a 30% top-up');G.surv.n=5;survNext();ok(G.bots[1].diff==='champion','…and the CPU sharpens');G.surv=null}
     {const n0=Object.keys(REC.ach||{}).length;achGet('first');ok(Object.keys(REC.ach||{}).length===n0,'achievements never unlock during self-tests');showRecords();ok($('recBody').querySelectorAll('.ai').length===ACH.length,'RECORDS lists all '+ACH.length+' achievements');hideOv('recOv')}
-    {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===11,'SETTINGS lists every option');hideOv('setOv')}
+    {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===13,'SETTINGS lists every option');hideOv('setOv')}
     {solo('blaze','frost');G.flow=[];G.flowT=0;sim(2);ok(G.flow.length>=3&&G.flow.every(p=>p[0]>0&&p[1]>0),'the fight-flow graph samples both health bars ('+G.flow.length+')')}
     ok(rivalry('frost','blaze')&&rivalry('frost','blaze')[0]===RIVALS['blaze|frost'][1]&&!rivalry('blaze','volt')&&FIGHTERS.every(f=>BIOS[f.id]),'rivalries pair up the right lines, and every fighter has a bio');
     {solo('blaze','frost');rpReset();G.B[1].hp=100;for(let i=0;i<80;i++){step(1/60);rpRecord(1/60)}let back=0;ok(rpInstant(()=>back=1)&&RP.play&&RP.play.inst,'instant replay rolls the last seconds of tape');rpEnd();ok(back===1&&!RP.play,'…and hands back to the pause menu')}
+    {SET.calm=true;CAM.slowT=0;const t0=G.time;solo('blaze','frost');CAM.slow=.2;CAM.slowT=1;PFX.zoom=1;updPFX(.016);ok(PFX.zoom===0,'REDUCED EFFECTS kills zoom blur');SET.calm=false;CAM.slowT=0}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
