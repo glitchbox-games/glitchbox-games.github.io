@@ -229,7 +229,8 @@ body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 @keyframes portA{to{background-position-x:calc(var(--s) * var(--n) * -1)}}
 .isvg{width:100%;height:100%;display:block;overflow:visible}
 #ann.red{color:var(--red)}#ann.gold{color:var(--gold)}
-#sub{position:absolute;left:0;right:0;top:calc(34% + clamp(64px,13vw,150px));text-align:center;font:800 18px Rubik;letter-spacing:.3em;text-shadow:0 2px 0 #000;opacity:0;transition:opacity .3s}
+#sub{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 112px);width:max-content;max-width:min(980px,92vw);text-align:center;font:800 14px Rubik;letter-spacing:.2em;line-height:1.4;padding:7px 16px;border-radius:10px;background:rgba(6,6,10,.62);text-shadow:0 2px 0 #000;opacity:0;transition:opacity .3s;pointer-events:none}
+body.touch #sub{bottom:auto;top:96px;font-size:12px}
 #mash{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);text-align:center;font:900 18px Rubik;letter-spacing:.12em;text-shadow:0 2px 0 #000}
 #mash .mb{margin:8px auto 0;width:280px;height:16px;border:2px solid #000;background:rgba(0,0,0,.6);overflow:hidden;border-radius:8px}
 #mash .mb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb21a,#fff27a)}
@@ -3150,7 +3151,7 @@ function setPhase(ph,x={}){
   }
   if(ph==='fight'){clearTimeout(sub.t);$('sub').style.opacity=0}
   if(ph==='fight'&&!G.attract&&!G.watch&&!G.bag&&G.rnd===1&&!SMOKE){let seen=0;try{seen=+localStorage.getItem('haymaker.tip')||0}catch(e){}
-    if(seen<1)setTimeout(()=>{if(G.phase==='fight')sub(TOUCH?'TIP: HOLD HAYMAKER TO CHARGE · TAP BLOCK AS A PUNCH LANDS = PERFECT':'TIP: HOLD H TO CHARGE A HAYMAKER · TAP SPACE AS A PUNCH LANDS = PERFECT BLOCK',4.5)},1100)}
+    if(seen<1)setTimeout(()=>{if(G.phase==='fight')sub(TOUCH?'TIP: HOLD HAYMAKER TO CHARGE · TAP BLOCK AS A PUNCH LANDS = PERFECT':'TIP: HOLD '+keyName(BIND.hay)+' TO CHARGE A HAYMAKER · TAP '+keyName(BIND.block)+' AS A PUNCH LANDS = PERFECT BLOCK',4.5)},1100)}
   if(ph==='fight'&&!G.attract){announce('FIGHT!','',.8);SFX.bell(G.rnd===1&&G.phT===0?3:1);pyro(.9,G.rnd%2?[0,2]:[1,3],.8);ARENA.excite=Math.max(ARENA.excite||0,.7)}
   if(ph==='rest'){clearCombat();if(!G.attract){SFX.bell(1);G.cards=x.cards||G.cards;setTimeout(()=>{if(G.phase==='rest')showRoundCard(x)},900)}}
   if(ph==='end'){clearCombat();G.result=x.result;onEnd(x.result)}
