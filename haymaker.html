@@ -86,6 +86,8 @@ body.watching #keys::after{content:'EXHIBITION · PRESS A PUNCH KEY TO TAKE OVER
 .finfo .bio{font:italic 600 11.5px Rubik;color:#bbb;line-height:1.35;margin:2px 0 6px}
 @media (max-height:520px){.finfo .bio{display:none}}
 body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{background:#ffffff!important}body.hc .bar.hp .tr{background:#6a6a72!important}body.hc .bar.hp.low .fl{background:#ff2a2a!important}body.hc #timer{text-shadow:0 0 0 #000,2px 2px 0 #000;color:#fff}body.hc .bar.met .fl{background:#ffd23a!important}
+.emo{position:fixed;left:0;top:0;z-index:7;pointer-events:none;background:#fff;color:#111;font:400 18px Anton;letter-spacing:.04em;padding:5px 12px;border-radius:12px;border:3px solid var(--c);box-shadow:4px 4px 0 rgba(0,0,0,.5);white-space:nowrap}
+.emo::after{content:'';position:absolute;left:50%;bottom:-10px;margin-left:-7px;border:7px solid transparent;border-top-color:var(--c)}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -472,6 +474,7 @@ body.touch #abil,body.touch #keys{display:none}
       <kbd>T</kbd><span>Taunt. Finish it untouched for a chunk of meter — get hit and it hurts more.</span>
       <kbd>V · M</kbd><span>Switch camera (broadcast or behind you) · mute everything.</span>
       <kbd>ESC</kbd><span>Pause</span>
+      <kbd>1 2 3 4</kbd><span>Online only: quick chat — GG! · NICE ONE · OOPS · COME ON!</span>
       <kbd>2 PLAYER</kbd><span>Pick 2 PLAYER as the difficulty in Quick Fight: player 1 on the keyboard (or the first controller), player 2 on a controller. The opponent you pick is player 2's fighter.</span>
       <kbd>🎮 PAD</kbd><span>Stick moves · A B X Y punch · RB block · RT haymaker · LB dodge · LT duck · D-pad ← → abilities, ↑ ultimate, ↓ taunt · START pause. In menus A confirms, B goes back, D-pad picks a fighter.</span>
     </div>
@@ -3583,6 +3586,7 @@ addEventListener('keydown',e=>{
   if(RP.play&&!e.repeat){rpEnd();e.preventDefault();return}
   if(G.phase==='walk'&&G.mode==='fight'&&!e.repeat&&e.code!=='Escape'){hostPhase('intro');e.preventDefault();return}
   if(e.code==='KeyM'&&!e.repeat){toggleMute();return}
+  if(G.online&&G.mode==='fight'&&/^Digit[1-4]$/.test(e.code)&&!e.repeat){emote(G.ME,+e.code[5]-1);return}
   if(G.watch&&G.mode==='fight'&&G.phase==='fight'&&!e.repeat&&KMAP[e.code]){G.watch=false;G.bots[0]=null;document.body.classList.remove('watching');showHUD(true);sub('YOU HAVE CONTROL',1.4)}
   if(G.bag&&G.mode==='fight'&&/^Digit[1-6]$/.test(e.code)){const n=+e.code[5];if(n<=4)trainSet(['stand','block','dodge','fight'][n-1]);else if(n===5){TR.meter=!TR.meter;trainUI()}else{TR.cds=!TR.cds;trainUI()}SFX.ui();return}
   if(PHOTO.on){const c=e.code;if(c==='Escape'||c==='KeyP')photoOff();else if(c==='KeyF')PHOTO.film=(PHOTO.film+1)%FILMS.length;else if(c==='KeyS')photoSave();
@@ -3709,6 +3713,7 @@ function onNet(m){
     case 'res':G.projs=G.projs.filter(p=>{if(p.spec.id===m.res.id){dropMesh(p.mesh);return false}return true});applyResult(m.res);break;
     case 'cx':G.pending=G.pending.filter(p=>p.spec.id!==m.id);break;
     case 'ab':abilityVisual(m.b,m.k,m);break;
+    case 'emo':emote(m.b|0,m.k|0,true);break;
     case 'kd':{const b=G.B[m.b];if(!b||owned(b))break;b.kd=m.n;if(isHost())G.rkd[m.b][G.rnd-1]=(G.rkd[m.b][G.rnd-1]||0)+1;b.act={k:'down',t:0};startKD(m.b);break}
     case 'up':{const b=G.B[m.b];if(!b||owned(b))break;b.hp=m.hp;onUp(m.b);break}
     case 'out':if(!owned(G.B[m.b]))onOut(m.b,!!m.tko);break;
@@ -3822,7 +3827,15 @@ function vsHide(){const el=$('vs');clearTimeout(vsShow.t);clearTimeout(vsShow.t2
 const FLOATS=[],_fp=new THREE.Vector3();
 function floatAt(text,pos,cls='',dy=0,key){if(G.attract||SMOKE)return;if(SET.nums===false&&/^[\d.]+$/.test(String(text)))return;
   if(key){const f=FLOATS.find(f=>f.key===key&&f.t<.45);if(f){f.sum+=+text;f.el.textContent=String(Math.round(f.sum));f.t=Math.min(f.t,.08);f.p.copy(pos);return}}const el=document.createElement('div');el.className='fl '+cls;el.textContent=key?String(Math.round(+text)):text;$('floats').appendChild(el);FLOATS.push({el,p:pos.clone(),t:0,dy,ox:(Math.random()-.5)*36,key,sum:+text||0});if(FLOATS.length>24){const f=FLOATS.shift();f.el.remove()}}
-function updateFloats(dt){for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i];f.t+=dt;if(f.t>.95){f.el.remove();FLOATS.splice(i,1);continue}
+// quick-chat emotes in online fights: a speech bubble over the sender's fighter on both screens
+const EMOS=['GG!','NICE ONE','OOPS','COME ON!'],EMOB=[];let emoT=0;
+function emote(i,k,remote){if(!EMOS[k]||!G.B[i]||!G.B[i].f)return;if(!remote){if(!G.online||performance.now()-emoT<1500)return;emoT=performance.now();netSend({t:'emo',b:i,k})}
+  for(const e of EMOB.filter(e=>e.i===i)){e.el.remove();EMOB.splice(EMOB.indexOf(e),1)}
+  const el=document.createElement('div');el.className='emo';el.textContent=EMOS[k];el.style.setProperty('--c',G.B[i].f.col);$('floats').appendChild(el);EMOB.push({el,i,t:0});SFX.ui&&SFX.ui()}
+function updEmos(dt){for(let j=EMOB.length-1;j>=0;j--){const e=EMOB[j];e.t+=dt;if(e.t>2.2||G.mode!=='fight'){e.el.remove();EMOB.splice(j,1);continue}
+  _fp.copy(G.B[e.i].headW);_fp.y+=.45;_fp.project(camera);if(_fp.z>1){e.el.style.opacity=0;continue}
+  e.el.style.transform=`translate(${((_fp.x*.5+.5)*innerWidth).toFixed(0)}px,${((-_fp.y*.5+.5)*innerHeight).toFixed(0)}px) translate(-50%,-100%) scale(${e.t<.12?.6+e.t*3.3:1})`;e.el.style.opacity=e.t>1.8?(2.2-e.t)/.4:1}}
+function updateFloats(dt){updEmos(dt);for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i];f.t+=dt;if(f.t>.95){f.el.remove();FLOATS.splice(i,1);continue}
   _fp.copy(f.p).project(camera);if(_fp.z>1){f.el.style.opacity=0;continue}const x=(_fp.x*.5+.5)*innerWidth+f.ox,y=(-_fp.y*.5+.5)*innerHeight-f.t*70+f.dy;
   const sc=f.t<.12?1.5-f.t*4:1;f.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;f.el.style.opacity=f.t>.6?(.95-f.t)/.35:1}}
 
@@ -4578,6 +4591,7 @@ function runSmoke(){
     {solo('blaze','frost');rpReset();G.B[1].hp=100;for(let i=0;i<80;i++){step(1/60);rpRecord(1/60)}let back=0;ok(rpInstant(()=>back=1)&&RP.play&&RP.play.inst,'instant replay rolls the last seconds of tape');rpEnd();ok(back===1&&!RP.play,'…and hands back to the pause menu')}
     {SET.calm=true;CAM.slowT=0;const t0=G.time;solo('blaze','frost');CAM.slow=.2;CAM.slowT=1;PFX.zoom=1;updPFX(.016);ok(PFX.zoom===0,'REDUCED EFFECTS kills zoom blur');SET.calm=false;CAM.slowT=0}
     {solo('blaze','frost');giveBelt(G.B[0],true);let ok2=true;try{G.B[0].build(FBY.volt,0)}catch(e){ok2=false}ok(ok2&&!G.B[0].belt,'a fighter wearing the belt can be rebuilt (back to the title after a title win)')}
+    {solo('blaze','frost');emote(1,0,true);ok(EMOB.length===1&&EMOB[0].el.textContent==='GG!','a rival\'s emote shows over their fighter');updEmos(3);ok(EMOB.length===0,'…and fades away')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
