@@ -739,11 +739,14 @@ function xpGain(r){const me=G.B[G.ME],win=r.w===G.ME,ko=/KO/.test(r.how),D=(G.bo
 const COS={trail:[['classic','CLASSIC',1,0xffffff],['gold','GOLD',2,0xffc83a],['ice','GLACIER',3,0x8fe8ff],['toxic','TOXIC',5,0x6dff5a],['void','VOID',6,0x9a5cff],['crimson','CRIMSON',8,0xff2a3a],['rainbow','RAINBOW',10,'rainbow'],['plasma','PLASMA',13,'plasma']],
   fin:[['classic','CLASSIC',1,'Pyro and flame jets'],['thunder','THUNDERSTRUCK',4,'Lightning strikes the fallen'],['fireworks','FIREWORKS',7,'Shells burst over the ring'],['goldrain','GOLD RAIN',11,'The roof rains gold'],['nova','SUPERNOVA',15,'A shockwave rolls through the arena']]};
 const cosGet=k=>{const v=(REC.cos||{})[k],it=COS[k].find(x=>x[0]===v);return it&&xpInfo().l>=it[2]?it:COS[k][0]};
+const myCos=()=>[cosGet('trail')[0],cosGet('fin')[0]],cosKey=(k,v)=>COS[k].find(x=>x[0]===v)||COS[k][0];
+// online: each seat's cosmetics arrive in the go message, so both players see each other's trail and finisher
+const seatCos=(i,k)=>G.online&&G.cos&&G.cos[i]?cosKey(k,G.cos[i][k==='trail'?0:1]):null;
 const cosUnlocks=(l0,l1)=>Object.entries(COS).flatMap(([k,L])=>L.filter(x=>x[2]>l0&&x[2]<=l1).map(x=>x[1]+(k==='trail'?' TRAIL':' FINISHER')));
-function cosTrail(b){if(b.idx!==G.ME||G.watch||G.attract||G.mode!=='fight')return null;const it=cosGet('trail');if(it[0]==='classic')return null;
+function cosTrail(b){if(G.watch||G.attract||G.mode!=='fight'||!G.online&&b.idx!==G.ME)return null;const it=G.online?seatCos(b.idx,'trail')||COS.trail[0]:cosGet('trail');if(it[0]==='classic')return null;
   if(it[3]==='rainbow')return _c.setHSL((RIBT*.45)%1,1,.6).getHex();if(it[3]==='plasma')return _c.setHex(0x3fd4ff).lerp(_U2c.setHex(0xff4fd8),.5+.5*Math.sin(RIBT*7)).getHex();return it[3]}
 const _U2c=new THREE.Color();
-function finisher(v,W){const it=cosGet('fin')[0];if(it==='classic'||!PA||SMOKE)return;W=W||v;const R=Math.random;
+function finisher(v,W,key){const it=key||cosGet('fin')[0];if(it==='classic'||!PA||SMOKE)return;W=W||v;const R=Math.random;
   // centred on the winner, pushed behind them as the camera sees it, so it frames the celebration
   camera.getWorldDirection(_cw);_cw.y=0;_cw.normalize();const bx=W.x+_cw.x*1.6,bz=W.z+_cw.z*1.6,sx=-_cw.z,sz=_cw.x;
   if(it==='thunder'){for(let i=0;i<8;i++)setTimeout(()=>{if(G.phase!=='end')return;const sd=(i%2?1:-1)*(1+R()*1.4),tgt=new THREE.Vector3(bx+sx*sd,.05,bz+sz*sd);
@@ -3988,12 +3991,12 @@ function netLost(msg){netClose();NET.mode='off';G.online=false;G.paused=false;
 function onNet(m){
   if(m.t==='created'){openSelect('online');return}
   if(m.t==='joined'){openSelect('online');return}
-  if(m.t==='start'){netSend({t:'hi',name:myName(),f:SEL.f,a:SEL.alt,ready:NET.myReady});return}
+  if(m.t==='start'){netSend({t:'hi',name:myName(),f:SEL.f,a:SEL.alt,c:myCos(),ready:NET.myReady});return}
   if(m.t==='error'){const t=m.msg||'That didn\'t work.';netClose();NET.mode='off';showOv('mpOv');mpErr(t==='No game with that code.'?'No room with that code — check the letters.':t==='That game is full.'?'That room already has two boxers.':t);return}
   if(m.t==='left'||m.t==='bye'){if(NET.mode!=='off')netLost('Your opponent left the arena.');return}
   switch(m.t){
-    case 'hi':NET.peer=String(m.name||'').slice(0,12);NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:null;NET.peerAlt=(m.a|0)%NALT;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
-    case 'pick':NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:NET.peerPick;NET.peerAlt=(m.a|0)%NALT;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
+    case 'hi':NET.peer=String(m.name||'').slice(0,12);NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:null;NET.peerAlt=(m.a|0)%NALT;NET.peerCos=Array.isArray(m.c)?m.c.slice(0,2).map(String):null;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
+    case 'pick':NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:NET.peerPick;NET.peerAlt=(m.a|0)%NALT;NET.peerCos=Array.isArray(m.c)?m.c.slice(0,2).map(String):null;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
     case 'go':if(NET.mode==='guest')startOnlineMatch(m);break;
     case 's':applySnap(m);break;
     case 'atk':onAtk(m.s);break;
@@ -4012,7 +4015,7 @@ function onNet(m){
 }
 function checkStart(){if(NET.mode==='host'&&NET.myReady&&NET.peerReady&&NET.peerPick&&G.mode==='select')hostGo()}
 function checkRematch(){if(NET.mode==='host'&&NET.rm&&NET.peerRm)hostGo()}
-function hostGo(){const m={t:'go',v:pickVenue(SEL.venue),f:[SEL.f,NET.peerPick],n:[myName()||FBY[SEL.f].name,NET.peer||FBY[NET.peerPick].name],a:[SEL.alt|0,NET.peerAlt|0]};netSend(m);startOnlineMatch(m)}
+function hostGo(){const m={t:'go',v:pickVenue(SEL.venue),f:[SEL.f,NET.peerPick],n:[myName()||FBY[SEL.f].name,NET.peer||FBY[NET.peerPick].name],a:[SEL.alt|0,NET.peerAlt|0],c:[myCos(),NET.peerCos||null]};netSend(m);startOnlineMatch(m)}
 function startOnlineMatch(m){
   if(!NET.series||NET.seriesPeer!==NET.peer){NET.series=[0,0];NET.seriesPeer=NET.peer}
   G.forfeit=false;
@@ -4022,7 +4025,7 @@ function startOnlineMatch(m){
   for(const k in MUT)MUT[k]=false;
   G.watch=false;document.body.classList.remove('watching');
   applyVenue(m.v);
-  G.online=true;G.attract=false;G.bag=false;G.ME=NET.mode==='host'?0:1;G.bots=[null,null];G.ladder=null;G.paused=false;
+  G.online=true;G.cos=Array.isArray(m.c)?m.c:null;G.attract=false;G.bag=false;G.ME=NET.mode==='host'?0:1;G.bots=[null,null];G.ladder=null;G.paused=false;
   Object.assign(NET,{myReady:false,peerReady:false,rm:false,peerRm:false});
   rpStop();setupMatch(m.f,m.n,m.a);G.mode='fight';hideAllOv();showHUD(true);REF.b.root.visible=true;setPhase('intro');
 }
@@ -4301,7 +4304,7 @@ function setupUI(){
   addEventListener('wheel',e=>{if(PHOTO.on){PHOTO.r=clamp(PHOTO.r+e.deltaY*.004,1,10);e.preventDefault()}},{passive:false});
   $('train').addEventListener('click',e=>{if(e.target.id==='tutGo'){tutStart();SFX.ui();return}if(e.target.id==='tutStop'){TUT.on=false;TRL.on=false;tutUI();SFX.ui();return}if(e.target.id==='trlGo'){trialsStart();SFX.ui();return}const k=e.target.closest('[data-k]'),o=e.target.closest('[data-o]');if(k)trainSet(k.dataset.k);if(o){TR[o.dataset.o]=!TR[o.dataset.o];trainUI()}SFX.ui()});trainUI();
   $('grid').addEventListener('click',e=>{const c=e.target.closest('[data-f]');if(!c)return;SFX.ui();
-    if(e.shiftKey&&SEL.mode==='quick'){SEL.opp=c.dataset.f}else{SEL.f=c.dataset.f;if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,ready:false})}}
+    if(e.shiftKey&&SEL.mode==='quick'){SEL.opp=c.dataset.f}else{SEL.f=c.dataset.f;if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),ready:false})}}
     saveSel();renderSelect();placePreview()});
   $('oppSeg').addEventListener('click',e=>{const c=e.target.closest('[data-o]');if(!c)return;SEL.opp=c.dataset.o;saveSel();renderSelect();placePreview()});
   $('mutSeg').addEventListener('click',e=>{const c=e.target.closest('[data-m]');if(!c)return;SFX.ui();SEL.mut[c.dataset.m]=!SEL.mut[c.dataset.m];saveSel();renderSelect()});
@@ -4314,8 +4317,8 @@ function setupUI(){
     else if(SEL.mode==='tour'){DAILY.on=false;tourStart(SEL.f)}
     else if(SEL.mode==='surv'){DAILY.on=false;G.surv={f:SEL.f,n:0,hp:null};survNext()}
     else if(SEL.mode==='ladder'){const opps=FIGHTERS.map(f=>f.id).filter(id=>id!==SEL.f).sort(()=>Math.random()-.5).slice(0,LAD_DIFF.length);G.ladder={f:SEL.f,opps,i:0};showLadder()}
-    else{NET.myReady=!NET.myReady;netSend({t:'pick',f:SEL.f,a:SEL.alt,ready:NET.myReady});renderSelect();checkStart()}};
-  $('altSeg').addEventListener('click',e=>{const kc=e.target.closest('[data-kc]');if(kc){const K=kitOf(SEL.f);K[kc.dataset.kp]=+kc.dataset.kc;saveRec();SFX.ui();G.B[0].f=null;renderSelect();placePreview();return}const c=e.target.closest('[data-a]');if(!c)return;SFX.ui();if(+c.dataset.a===CUSTOM){if(SEL.mode==='online'){sub('CUSTOM KITS ARE FOR SOLO FIGHTS',2);return}SEL.kitEdit=SEL.alt===CUSTOM?!SEL.kitEdit:true;SEL.alt=CUSTOM;saveSel();renderSelect();placePreview();return}if(c.classList.contains('lock')){sub('WIN THE ARCADE LADDER WITH '+FBY[SEL.f].name+' TO UNLOCK THE LEGEND COLOURS',2.4);return}SEL.alt=+c.dataset.a;saveSel();if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,ready:false})}renderSelect();placePreview()});
+    else{NET.myReady=!NET.myReady;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),ready:NET.myReady});renderSelect();checkStart()}};
+  $('altSeg').addEventListener('click',e=>{const kc=e.target.closest('[data-kc]');if(kc){const K=kitOf(SEL.f);K[kc.dataset.kp]=+kc.dataset.kc;saveRec();SFX.ui();G.B[0].f=null;renderSelect();placePreview();return}const c=e.target.closest('[data-a]');if(!c)return;SFX.ui();if(+c.dataset.a===CUSTOM){if(SEL.mode==='online'){sub('CUSTOM KITS ARE FOR SOLO FIGHTS',2);return}SEL.kitEdit=SEL.alt===CUSTOM?!SEL.kitEdit:true;SEL.alt=CUSTOM;saveSel();renderSelect();placePreview();return}if(c.classList.contains('lock')){sub('WIN THE ARCADE LADDER WITH '+FBY[SEL.f].name+' TO UNLOCK THE LEGEND COLOURS',2.4);return}SEL.alt=+c.dataset.a;saveSel();if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),ready:false})}renderSelect();placePreview()});
   // a switch shows OFF while M-muted, so pressing it always turns that sound ON (and un-mutes)
   document.querySelectorAll('.tgl').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.s,vis=k==='flash'||k==='walk',shown=!!SET[k]&&!(SET.mute&&!vis);if(!vis)SET.mute=false;SET[k]=!shown;saveSet();auResume();auApply();renderToggles();if(SET.snd&&!SET.mute)SFX.ui()}));
   renderToggles();
@@ -4395,7 +4398,7 @@ function onEnd(r){
   clearTimeout(onEnd.t);
   // a knockout gets the slow-motion replay first
   // …then your KO finisher from the LOCKER, before the results card
-  const hasFin=ko&&w===G.ME&&!G.watch&&!SMOKE&&cosGet('fin')[0]!=='classic',after=()=>{clearTimeout(onEnd.t);if(hasFin&&G.phase==='end'&&G.mode==='fight'){finisher(G.B[1-w],G.B[w]);onEnd.t=setTimeout(fin,2700)}else onEnd.t=setTimeout(fin,500)};
+  const finKey=w<0?'classic':G.online?(seatCos(w,'fin')||COS.fin[0])[0]:w===G.ME?cosGet('fin')[0]:'classic',hasFin=ko&&!G.watch&&!SMOKE&&finKey!=='classic',after=()=>{clearTimeout(onEnd.t);if(hasFin&&G.phase==='end'&&G.mode==='fight'){finisher(G.B[1-w],G.B[w],finKey);onEnd.t=setTimeout(fin,2700)}else onEnd.t=setTimeout(fin,500)};
   if(ko)onEnd.t=setTimeout(()=>{if(G.phase!=='end'||G.mode!=='fight')return;if(!rpStart(after))after()},2000);
   else onEnd.t=setTimeout(fin,2400);
 }
@@ -5021,6 +5024,7 @@ function runSmoke(){
     {const x0=REC.xp,c0=REC.cos;REC.xp=0;REC.cos={trail:'rainbow',fin:'nova'};ok(cosGet('trail')[0]==='classic'&&cosGet('fin')[0]==='classic','LOCKER: locked cosmetics fall back to CLASSIC');
       REC.xp=99999;ok(cosGet('trail')[0]==='rainbow'&&cosGet('fin')[0]==='nova','…and equip once your level is high enough');ok(cosUnlocks(1,4).length===3,'level-ups list what they unlock ('+cosUnlocks(1,4).join(', ')+')');
       solo('volt','titan');RIBT=1;ok(cosTrail(G.B[0])!=null&&cosTrail(G.B[1])==null,'your trail is yours — the opponent keeps theirs');
+      {const o=G.online,c=G.cos;G.online=true;G.cos=[['gold','nova'],['ice','bogus']];ok(cosTrail(G.B[0])===0xffc83a&&cosTrail(G.B[1])===0x8fe8ff&&seatCos(1,'fin')[0]==='classic','online: both seats show their own cosmetics, junk keys fall back');G.online=o;G.cos=c}
       showLocker();ok($('lockOv').classList.contains('on')&&$('lockBody').querySelectorAll('.lk').length===COS.trail.length+COS.fin.length,'LOCKER lists every cosmetic');
       REC.xp=0;showLocker();ok($('lockBody').querySelectorAll('.lk.lock').length===COS.trail.length+COS.fin.length-2,'…with the locked ones greyed out');hideOv('lockOv');REC.xp=x0;REC.cos=c0}
     {const x0=REC.xp;REC.xp=0;ok(xpInfo().l===1&&xpInfo().title==='ROOKIE','a new player is a level 1 ROOKIE');REC.xp=xpNeed(1)+xpNeed(2)+5;ok(xpInfo().l===3&&xpInfo().x===5,'XP carries across levels');REC.xp=x0}
