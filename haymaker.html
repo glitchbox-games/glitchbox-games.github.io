@@ -1012,13 +1012,14 @@ function fanGeo(legs){
       const sh=blobG(.05,.04,.1,.6,.8,{nu:8,nv:6});sh.translate(sd*.1,-.22,.45);parts.push(tag(sh,6))}}
   return mergeG(parts)}
 // cardboard signs: an atlas of 8 messages, raised overhead when the fan gets loud
-function signTex(){return canvasTex(1024,512,(x,w,h)=>{
+const SIGN={a:null,b:null};
+function signTex(){const t=canvasTex(1024,512,(x,w,h)=>{const A=SIGN.a,B=SIGN.b;
   const S=[['KO!','#ff3b3f','#fff'],['HAYMAKER','#ffc83a','#16110f'],['10/10','#ffffff','#16110f'],['GLITCHBOX','#3fd4ff','#16110f'],
-    ['ONE MORE\nROUND','#7dff4a','#16110f'],['HIT HIM!','#ff6a1f','#fff'],['CHAMP','#b06bff','#fff'],['WOOO!','#ffe14a','#16110f']];
+    ['ONE MORE\nROUND','#7dff4a','#16110f'],A?['GO\n'+(A.short||A.name)+'!',A.col,'#16110f']:['HIT HIM!','#ff6a1f','#fff'],B?[(B.short||B.name)+'\n#1',B.col,'#16110f']:['CHAMP','#b06bff','#fff'],['WOOO!','#ffe14a','#16110f']];
   S.forEach(([t,bg,fg],i)=>{const cx=(i%4)*256,cy=Math.floor(i/4)*256;x.save();x.translate(cx,cy);
     x.fillStyle='#d9c39a';x.fillRect(14,40,228,176);x.fillStyle=bg;x.fillRect(22,48,212,160);
     x.fillStyle=fg;x.textAlign='center';x.textBaseline='middle';const ls=t.split('\n');x.font=`${ls.length>1?48:t.length>6?44:76}px ${FONT}`;
-    ls.forEach((l,j)=>x.fillText(l,128,128+(j-(ls.length-1)/2)*52));x.restore()})})}
+    ls.forEach((l,j)=>{const fs2=parseInt(x.font);let fsz=fs2;x.font=`${fsz}px ${FONT}`;while(x.measureText(l).width>196&&fsz>20){fsz-=4;x.font=`${fsz}px ${FONT}`}x.fillText(l,128,128+(j-(ls.length-1)/2)*52)});x.restore()})});ARENA.signT=t;return t}
 // Hundreds of static arena props (risers, step lights, tables, steps…) would each be a draw call every frame.
 // Anything static with a plain material gets baked into one merged mesh per material.
 function mergeStatic(){
@@ -1107,7 +1108,7 @@ function buildCrowd(){
   const gp=new THREE.Points(gg,gm);gp.frustumCulled=false;scene.add(gp);
 }
 // the corners' colours change per match: fans in team shirts follow their fighter
-function crowdTeams(c0,c1){const U=ARENA.crowdU;if(!U.uTeam0||!ARENA.fans)return;ARENA.B0=c0;ARENA.B1=c1;U.uTeam0.value.set(c0);U.uTeam1.value.set(c1);
+function crowdTeams(c0,c1){const U=ARENA.crowdU;if(!U.uTeam0||!ARENA.fans)return;if(ARENA.signT&&G.B[0]&&G.B[0].f){SIGN.a=G.B[0].f;SIGN.b=G.B[1].f;redrawTex(ARENA.signT)}ARENA.B0=c0;ARENA.B1=c1;U.uTeam0.value.set(c0);U.uTeam1.value.set(c1);
   for(const V of [ARENA.roof,ARENA.pit])if(V&&V.fans){const ra=V.fans.geometry.attributes.aShirt;for(const [i,t] of V.teamShirts){const c=t?U.uTeam1.value:U.uTeam0.value;ra.array[i*3]=c.r*.85;ra.array[i*3+1]=c.g*.85;ra.array[i*3+2]=c.b*.85}ra.needsUpdate=true}
   const a=ARENA.fans.geometry.attributes.aShirt;for(const [i,t] of ARENA.teamShirts||[]){const c=t?U.uTeam1.value:U.uTeam0.value;a.array[i*3]=c.r*.85;a.array[i*3+1]=c.g*.85;a.array[i*3+2]=c.b*.85}a.needsUpdate=true}
 // tiered risers with lit step edges, aisle stairs, a back wall and the fighters' banners hanging from the rafters
