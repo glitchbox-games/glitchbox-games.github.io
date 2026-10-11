@@ -3618,10 +3618,14 @@ class Bot{
     const dist=Math.hypot(o.x-b.x,o.z-b.z);
     // see the opponent wind up, react after a human-ish delay
     if(o.act&&o.act!==this.seen&&(o.act.k==='punch'||o.act.k==='cast')){this.seen=o.act;
-      if(dist<2.1||o.act.k==='cast'){const r=Math.random(),hay=o.act.p==='hay',dg=D.dodge*(hay?1.8:1);this.react=null;
+      // learning your habits (contender and up): a punch you keep throwing gets read
+      const learn=this.diff==='contender'||this.diff==='champion';if(learn&&o.act.k==='punch'){const h=this.habit||(this.habit={});for(const k in h)h[k]*=.88;h[o.act.p]=(h[o.act.p]||0)+1}
+      const fam=learn&&o.act.k==='punch'&&this.habit?clamp((this.habit[o.act.p]-2.2)/3,0,1):0;
+      if(fam>.6&&!this.toldRead&&o.idx===G.ME&&!G.attract&&!G.online){this.toldRead=1;sub('THEY\'RE READING YOUR '+(o.act.p==='hay'?'HAYMAKER':o.act.p.toUpperCase()),1.8)}
+      if(dist<2.1||o.act.k==='cast'){const r=Math.random(),hay=o.act.p==='hay',dg=D.dodge*(hay?1.8:1)*(1+fam*.6);this.react=null;
         // now and then a deliberate PERFECT block: the guard snaps up just before the punch lands
-        if(o.act.k==='punch'&&Math.random()<D.parry){const T=punchTimes(o.act),ti=T.w+T.a*.8-o.act.t;if(ti>.1)this.react={t:ti-.075,kind:'parry',p:o.act.p}}
-        if(!this.react)this.react={t:D.react*(.7+Math.random()*.6),kind:r<dg?'dodge':r<dg+D.block?'block':'none',p:o.act.p}}}
+        if(o.act.k==='punch'&&Math.random()<D.parry+(this.diff==='champion'?fam*.22:0)){const T=punchTimes(o.act),ti=T.w+T.a*.8-o.act.t;if(ti>.1)this.react={t:ti-.075,kind:'parry',p:o.act.p}}
+        if(!this.react)this.react={t:D.react*(.7+Math.random()*.6)*(1-fam*.35),kind:r<dg?'dodge':r<dg+D.block+fam*.3?'block':'none',p:o.act.p}}}
     if(this.react){this.react.t-=dt;if(this.react.t<=0){const R=this.react;this.react=null;
       if(R.kind==='parry'){this.parryNow=true;this.parryT=.3;this.blockT=.3}
       else if(R.kind==='block')this.blockT=.4+Math.random()*.35;
@@ -4821,6 +4825,7 @@ function runSmoke(){
      ok(TRL.i===1,'combo trials: JAB · JAB · CROSS completes the first trial');TRL.on=false;G.bag=false}
     {solo('blaze','frost');place(1);G.forced[0]={...EMPTY,punch:'hook',body:true};sim(SIM);G.forced[0]=EMPTY;const sta0=G.B[1].sta;sim(.6);ok(G.B[1].hp<100&&G.B[1].sta<sta0-2,'a body hook lands and drains stamina ('+G.B[1].hp.toFixed(1)+' hp, '+G.B[1].sta.toFixed(0)+' sta)');
      const bot=new Bot(1,'contender');let sawBody=false;for(let i=0;i<200&&!sawBody;i++){const c=pickCombo(.9,G.B[0]);sawBody=c.some(x=>x.startsWith('b:'))}ok(sawBody,'…and the CPU throws body shots too')}
+    {solo('blaze','frost');const bt=new Bot(1,'contender');G.bots[1]=bt;place(1);let blocks=0;for(let i=0;i<14;i++){G.B[0].act=null;startPunch(G.B[0],'jab');bt.intent(1/60);}ok(bt.habit&&bt.habit.jab>4,'the CPU notices a punch you keep throwing (habit '+(bt.habit?bt.habit.jab.toFixed(1):0)+')');G.bots[1]=null}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
