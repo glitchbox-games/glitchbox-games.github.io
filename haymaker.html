@@ -325,7 +325,8 @@ input.txt:focus{border-color:var(--gold)}
 #endHero .crh{margin-top:8px;font:900 15px Rubik;letter-spacing:.18em;color:var(--gold);text-shadow:0 2px 0 #000}
 #crBody .crb{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-top:4px}#crBody .crb .btn{margin:0}#crBody .crr{padding:1px 6px}
 #crBody .crn{margin-top:6px;font:700 11px Rubik;color:#bbb;text-align:center}
-@media (max-height:520px){#crBody .crl{grid-template-columns:1fr 1fr 1fr}#crBody .crr i{display:none}}
+#crBody .crb{position:sticky;bottom:-2px;background:rgba(14,14,20,.97);padding:6px 0 2px}
+@media (max-height:520px){#crBody .crl{grid-template-columns:1fr 1fr 1fr}#crBody .crr span i{display:none}#crBody .res{font-size:28px!important}#crBody .crc{margin-top:2px;padding:2px}#crBody .crc .port{display:none}#crBody .crr .port{transform:scale(.8)}#crBody .dimt{margin:4px 0 2px!important;font-size:12px}}
 #lockBody h3{font:400 18px Anton;letter-spacing:.06em;color:#fff;margin:16px 0 8px;text-align:left}#lockBody .lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 #lockBody .lk{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:#101016;color:#fff;cursor:pointer;font:inherit}
 #lockBody .lk:hover{border-color:#777}#lockBody .lk.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}#lockBody .lk.lock{opacity:.38;cursor:default}
@@ -4985,7 +4986,7 @@ function showCareer(){const C=REC.career;if(!C){openSelect('career');return}G.mo
     <div class="crb"><button class="btn primary" id="crGo">${crTitle()?'FIGHT FOR THE BELT':'FIGHT'}</button><button class="btn ghost" id="crMenu">MAIN MENU</button><button class="btn ghost" id="crNewB">NEW CAREER</button></div>`;
   $('crGo').onclick=()=>{SFX.ui();crFight()};$('crMenu').onclick=()=>{SFX.ui();showTitle()};
   $('crNewB').onclick=()=>{if(!confirm('Start a new career? This one is gone for good.'))return;REC.career=null;saveRec();openSelect('career')};
-  showOv('crOv');placePreview([C.f,opp]);
+  showOv('crOv');placePreview([C.f,opp]);{const m=$('crBody').querySelector('.crr.me');if(m&&$('crBody').scrollHeight>$('crBody').clientHeight)m.scrollIntoView({block:'center'})}
   // render the rivals' portraits a few at a time while you look at the table
   const miss=O.concat([C.holder]).filter(id=>id!=='me'&&FBY[id]&&!PORT[id]).slice(0,4);if(miss.length)setTimeout(()=>{if($('crOv').classList.contains('on')){try{makePortraits(miss.map(id=>FBY[id]))}catch(e){}if(O.some(id=>id!=='me'&&!PORT[id]))showCareer()}},120)}
 function survNext(){const S=G.surv;let o;do o=pick(FIGHTERS).id;while(o===S.f||o===S.last);S.last=o;
