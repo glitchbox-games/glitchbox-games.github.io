@@ -317,6 +317,15 @@ input.txt:focus{border-color:var(--gold)}
 @media (max-width:820px),(max-height:520px){#mkOv .mkp{width:min(440px,58vw)}}
 #mkSmall{display:none;margin-left:10px;vertical-align:middle;font:900 11px Rubik;letter-spacing:.1em;background:var(--gold);color:#111;border:0;border-radius:8px;padding:5px 9px;cursor:pointer}
 @media (max-height:520px){#selOv .card.mkc{display:none}#mkSmall{display:inline-block}body.online-sel #mkSmall{display:none}}
+#crBody .crl{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin-top:8px}#crBody .crr{display:flex;align-items:center;gap:7px;padding:2px 6px;border-radius:8px;border:1px solid transparent;position:relative}
+#crBody .crr b{font:400 15px Anton;color:var(--dim);width:30px}#crBody .crr span{font:400 15px Anton;letter-spacing:.03em;color:#fff;line-height:1}#crBody .crr i{display:block;font:700 9px Rubik;letter-spacing:.1em;color:#999;font-style:normal}
+#crBody .crr.me{background:rgba(255,200,58,.14);border-color:var(--gold)}#crBody .crr.me span{color:var(--gold)}#crBody .crr.nx{border-color:#ff3b3f}#crBody .crr em{position:absolute;right:6px;font:900 9px Rubik;letter-spacing:.15em;color:#ff3b3f;font-style:normal}
+#crBody .crr .port{position:static}#crBody .crc{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;padding:6px;border-radius:10px;background:linear-gradient(90deg,transparent,rgba(255,200,58,.18),transparent)}
+#crBody .crc small{font:900 10px Rubik;letter-spacing:.2em;color:var(--gold)}#crBody .crc b{font:400 22px Anton;color:#fff}#crBody .crc i{font:700 10px Rubik;color:var(--dim);font-style:normal}#crBody .crc .port{position:static}
+#endHero .crh{margin-top:8px;font:900 15px Rubik;letter-spacing:.18em;color:var(--gold);text-shadow:0 2px 0 #000}
+#crBody .crb{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-top:4px}#crBody .crb .btn{margin:0}#crBody .crr{padding:1px 6px}
+#crBody .crn{margin-top:6px;font:700 11px Rubik;color:#bbb;text-align:center}
+@media (max-height:520px){#crBody .crl{grid-template-columns:1fr 1fr 1fr}#crBody .crr i{display:none}}
 #lockBody h3{font:400 18px Anton;letter-spacing:.06em;color:#fff;margin:16px 0 8px;text-align:left}#lockBody .lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 #lockBody .lk{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:#101016;color:#fff;cursor:pointer;font:inherit}
 #lockBody .lk:hover{border-color:#777}#lockBody .lk.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}#lockBody .lk.lock{opacity:.38;cursor:default}
@@ -478,6 +487,7 @@ body.touch #abil,body.touch #keys{display:none}
   <div class="menu">
     <button class="primary" data-go="quick">QUICK FIGHT</button>
     <button data-go="ladder">ARCADE LADDER</button>
+    <button data-go="career">CAREER</button>
     <button data-go="surv">SURVIVAL</button>
     <button data-go="tour">TOURNAMENT</button>
     <button data-go="online">PLAY ONLINE · 1v1</button>
@@ -563,11 +573,12 @@ body.touch #abil,body.touch #keys{display:none}
       <kbd>QUICK FIGHT</kbd><span>Any fighter, any venue (Arena, Rooftop — clear, storm or snow — The Pit, The Gym, The Beach at sunset, a space station in ORBIT), any difficulty. Add MUTATORS for chaos, WATCH two CPUs, or pick 2 PLAYER.</span>
       <kbd>ARCADE LADDER</kbd><span>Five fights, a story for your fighter, a title fight at the end — and maybe a challenger after that.</span>
       <kbd>TOURNAMENT</kbd><span>An 8-fighter knockout bracket. Win three in a row to lift the trophy.</span>
+      <kbd>CAREER</kbd><span>Take any fighter — or one you made — into a division of 19 generated rivals. Win to climb the rankings (a KO jumps two places), reach #1, take the belt off THE CHAMP, then defend it.</span>
       <kbd>SURVIVAL</kbd><span>Endless bouts, health carries over. How long can you last? Your best streak goes on the GLITCHBOX leaderboard.</span>
       <kbd>DAILY</kbd><span>One set fight a day for everyone, scored on how well you win.</span>
       <kbd>TRAINING</kbd><span>A dummy you control, a step-by-step TUTORIAL and six COMBO TRIALS. RECORD a few seconds of your own moves and the dummy plays them back on loop — practise blocking exactly what gives you trouble.</span>
       <kbd>ONLINE</kbd><span>1v1 with a friend by room code. Keys 1–4 send quick chat.</span>
-      <kbd>PROGRESS</kbd><span>Fights earn XP for your level and your fighter's MASTERY (bronze → silver → gold). 29 achievements, career RECORDS, a LEGEND kit per fighter for winning the ladder, and a custom kit (✎) you design.</span>
+      <kbd>PROGRESS</kbd><span>Fights earn XP for your level and your fighter's MASTERY (bronze → silver → gold). 30 achievements, career RECORDS, a LEGEND kit per fighter for winning the ladder, and a custom kit (✎) you design.</span>
       <kbd>PAUSE</kbd><span>MOVE LIST, INSTANT REPLAY, PHOTO MODE and SETTINGS live in the pause menu.</span>
     </div>
     <button class="btn primary" id="helpBack">GOT IT</button>
@@ -576,6 +587,7 @@ body.touch #abil,body.touch #keys{display:none}
 
 <div class="ov dark" id="movesOv"><div class="panel finfo" style="max-width:560px;width:94vw"><div id="movesBody"></div><div class="mvk" id="movesKeys"></div><button class="btn primary" id="movesBack" style="margin-top:12px">BACK TO THE FIGHT</button></div></div>
 <div class="ov dark" id="setOv"><div class="panel" style="max-width:520px;width:94vw"><h2>SETTINGS</h2><div id="setBody"></div><button class="btn primary" id="setBack" style="margin-top:12px">DONE</button></div></div>
+<div class="ov dark" id="crOv"><div class="card2" id="crBody" style="width:min(780px,96vw);max-height:96vh;overflow:auto"></div></div>
 <div class="ov dark" id="tourOv"><div class="card2" id="tourBody" style="width:min(720px,96vw)"></div></div>
 <div class="ov dark" id="dayOv"><div class="card2" id="dayBody"></div></div>
 <div class="ov" id="mkOv"><div class="mkp"><h2 id="mkTitle">CREATE A FIGHTER</h2><div id="mkBody"></div><div class="mkbtn"><button class="btn primary" id="mkSave">SAVE FIGHTER</button><button class="btn" id="mkCancel">CANCEL</button><button class="btn ghost" id="mkDel">DELETE</button></div></div></div>
@@ -764,7 +776,7 @@ const saveSet=()=>{try{localStorage.setItem('haymaker.set',JSON.stringify(SET))}
 const REC={w:0,l:0,ko:0,champ:{},ladders:0,per:{}};   // per[fighterId] = {w,l,ko,big,combo,titles}
 try{Object.assign(REC,JSON.parse(localStorage.getItem('haymaker.rec')||'{}'))}catch(e){}
 // ════ ACHIEVEMENTS ════
-const ACH=[['first','FIRST BLOOD','Win a fight'],['beach','BEACH BODY','Win a fight at The Beach'],['orbit','ZERO G','Win a fight in ORBIT'],['rope','ROPE-A-DOPE','Soak 3 punches in one Rope-a-Dope'],['finisher','SHOWSTOPPER','Win by KO with a Locker finisher'],['reel','HIGHLIGHT REEL','Watch your fight highlights'],['ko','LIGHTS OUT','Win by knockout'],['parry','READ YOU','Land a PERFECT block'],['hayko','HAYMAKER!','Knock someone out with a full haymaker'],
+const ACH=[['first','FIRST BLOOD','Win a fight'],['beach','BEACH BODY','Win a fight at The Beach'],['orbit','ZERO G','Win a fight in ORBIT'],['career','UNDISPUTED','Win the world title in CAREER'],['rope','ROPE-A-DOPE','Soak 3 punches in one Rope-a-Dope'],['finisher','SHOWSTOPPER','Win by KO with a Locker finisher'],['reel','HIGHLIGHT REEL','Watch your fight highlights'],['ko','LIGHTS OUT','Win by knockout'],['parry','READ YOU','Land a PERFECT block'],['hayko','HAYMAKER!','Knock someone out with a full haymaker'],
   ['clash','CLASH OF TITANS','Clash two haymakers'],['combo10','COMBO KING','Land a 10-hit combo'],['flawless','FLAWLESS','Win without taking a hit'],['comeback','COMEBACK','Win from under 10% health'],
   ['champ','CHAMPION','Win the arcade ladder'],['legend3','HALL OF FAME','Win the ladder with three different fighters'],['surv5','SURVIVOR','Win 5 in a row in survival'],['surv10','IRON WILL','Win 10 in a row in survival'],
   ['venues','WORLD TOUR','Win in the arena, on the rooftop and in the Pit'],['storm','STORM CHASER','Win on a stormy rooftop'],['all','COMPLETE ROSTER','Win with every fighter'],
@@ -4449,7 +4461,7 @@ function showRecords(){
         <div class="s">${fought?`<b>${P.w||0}–${P.l||0}</b> · <b>${P.ko||0}</b> KO<br>BEST HIT <b>${(P.big||0).toFixed(1)}</b> · COMBO <b>${P.combo||0}</b>`:'<span style="opacity:.5">NOT FOUGHT YET</span>'}${P.titles?`<br><b>${P.titles}×</b> CHAMPION`:''}${P.surv?`<br>SURVIVAL BEST <b>${P.surv}</b>`:''}${fought?`<br>MASTERY <b>${MM.tier?MM.tier[1]:'—'}</b>${MM.next?` · ${MM.xp}/${MM.next[0]}`:''}`:''}</div></div>`}).join('')}</div>
     <div class="rt" style="margin:14px 0 0"><span><b>${Object.keys(REC.ach||{}).length}/${ACH.length}</b>ACHIEVEMENTS</span></div><div class="ag">${ACH.map(([k,n,d])=>`<div class="ai ${(REC.ach||{})[k]?'on':''}"><b>${n}</b><small>${d}</small></div>`).join('')}</div>`;
   showOv('recOv')}
-const NEWMODES=['ladder','surv','tour','daily','train','online'];
+const NEWMODES=['career','ladder','surv','tour','daily','train','online'];
 function renderNewTags(){const T=REC.tried||{};document.querySelectorAll('#titleOv [data-go]').forEach(b=>{const g=b.dataset.go;b.classList.toggle('isnew',NEWMODES.includes(g)&&!T[g])})}
 function renderRec(){renderNewTags();const X=xpInfo(),nx=Object.values(COS).flat().filter(x=>x[2]>X.l).sort((a,b)=>a[2]-b[2])[0];$('recLine').innerHTML=`<span class="lvb"><i style="width:${(X.x/X.need*100).toFixed(0)}%"></i></span>LEVEL ${X.l} · ${X.title} · <b>LOCKER ▸</b>`+((REC.w||REC.l)?`<span class="dt"> · </span><br>RECORD ${REC.w}–${REC.l} · ${REC.ko} KOs`+(REC.ladders?` · ${REC.ladders}× CHAMPION`:''):'')+(nx?`<br><small>NEXT UNLOCK · ${nx[1]} AT LEVEL ${nx[2]}</small>`:'')}
 const HUDC={};
@@ -4526,7 +4538,7 @@ function fighterInfo(f){
 }
 function renderSelect(){
   const on=SEL.mode==='online';
-  $('selTitle').textContent=on?(/^HMQ/.test(NET.code)?'QUICK MATCH':'ROOM '+NET.code):SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
+  $('selTitle').textContent=on?(/^HMQ/.test(NET.code)?'QUICK MATCH':'ROOM '+NET.code):SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='career'?'NEW CAREER':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
   const GL_=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).concat(madeF()),many=GL_.length+(on?0:1)>12;$('grid').classList.toggle('many',many);
   $('grid').innerHTML=GL_.map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
     return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,many?50:64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}${f.made?'<div class="mkt">YOURS</div>':''}</button>`}).join('')+(on?'':`<button class="card mkc" data-mk="new"><div class="em">+</div><div class="cn">CREATE</div></button>`);
@@ -4544,7 +4556,7 @@ function renderSelect(){
   $('netBox').classList.toggle('hide',!on);
   if(on){const peer=NET.peer!=null?`${NET.peer||'RIVAL'}: ${NET.peerPick?FBY[NET.peerPick].name:'choosing…'} <span class="${NET.peerReady?'ready':'notready'}">${NET.peerReady?'READY':'NOT READY'}</span>`:NET.qmHost&&/^HMQ/.test(NET.code)?`SEARCHING FOR AN OPPONENT…<br><span style="font:700 13px Rubik;color:var(--dim)">QUICK MATCH — the next boxer to search lands here. Or invite a friend:</span>`:`WAITING FOR A RIVAL…<br><span style="font:700 13px Rubik;color:var(--dim)">TELL THEM THE CODE: <b style="color:var(--gold);font-size:18px;letter-spacing:.2em">${NET.code}</b></span>`;
     $('netBox').innerHTML=`${myName()||'YOU'}: ${FBY[SEL.f].name} <span class="${NET.myReady?'ready':'notready'}">${NET.myReady?'READY':'NOT READY'}</span><br>${peer}${NET.peer==null?`<button class="btn" id="invBtn" style="margin:8px 0 0;padding:8px">${navigator.share&&TOUCH?'SEND INVITE':'COPY INVITE LINK'}</button>`:''}`}
-  $('mkSmall').style.visibility=on?'hidden':'';$('selGo').textContent=on?(NET.myReady?'NOT READY':'READY'):SEL.mode==='ladder'?'START THE LADDER':'FIGHT!';
+  $('mkSmall').style.visibility=on?'hidden':'';$('selGo').textContent=on?(NET.myReady?'NOT READY':'READY'):SEL.mode==='ladder'?'START THE LADDER':SEL.mode==='career'?'START CAREER':'FIGHT!';
 }
 const PREV=[[-.72,-.55],[.78,-.75]];
 function placePreview(ids){
@@ -4565,7 +4577,7 @@ function selectStep(dt){
 }
 function setupUI(){
   document.querySelectorAll('#titleOv [data-go]').forEach(b=>b.addEventListener('click',()=>{if(NEWMODES.includes(b.dataset.go)&&!SMOKE){REC.tried=REC.tried||{};if(!REC.tried[b.dataset.go]){REC.tried[b.dataset.go]=1;saveRec();renderNewTags()}}auInit();if(AU.ctx&&AU.ctx.state!=='running')AU.ctx.resume();SFX.ui();const g=b.dataset.go;
-    if(g==='surv')openSelect('surv');else if(g==='tour')openSelect('tour');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
+    if(g==='career'){if(REC.career)showCareer();else openSelect('career')}else if(g==='surv')openSelect('surv');else if(g==='tour')openSelect('tour');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
   $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
   $('cBtn').onclick=()=>{SET.cam=SET.cam==='tv'?'back':'tv';saveSet();$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND'};
   $('helpBack').onclick=()=>hideOv('helpOv');
@@ -4611,6 +4623,7 @@ function setupUI(){
     if(SEL.mode==='quick'){let o=SEL.opp;if(o==='random'){const others=FIGHTERS.filter(f=>f.id!==SEL.f);o=pick(others).id}startSolo(SEL.f,o,SEL.diff)}
     else if(SEL.mode==='tour'){DAILY.on=false;tourStart(SEL.f)}
     else if(SEL.mode==='surv'){DAILY.on=false;G.surv={f:SEL.f,n:0,hp:null};survNext()}
+    else if(SEL.mode==='career'){crNew(SEL.f)}
     else if(SEL.mode==='ladder'){const opps=FIGHTERS.map(f=>f.id).filter(id=>id!==SEL.f).sort(()=>Math.random()-.5).slice(0,LAD_DIFF.length);G.ladder={f:SEL.f,opps,i:0};showLadder()}
     else{NET.myReady=!NET.myReady;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),mk:myMk(),ready:NET.myReady});renderSelect();checkStart()}};
   $('altSeg').addEventListener('click',e=>{const kc=e.target.closest('[data-kc]');if(kc){const K=kitOf(SEL.f);K[kc.dataset.kp]=+kc.dataset.kc;saveRec();SFX.ui();G.B[0].f=null;renderSelect();placePreview();return}const c=e.target.closest('[data-a]');if(!c)return;SFX.ui();if(+c.dataset.a===CUSTOM){if(SEL.mode==='online'){sub('CUSTOM KITS ARE FOR SOLO FIGHTS',2);return}SEL.kitEdit=SEL.alt===CUSTOM?!SEL.kitEdit:true;SEL.alt=CUSTOM;saveSel();renderSelect();placePreview();return}if(c.classList.contains('lock')){sub('WIN THE ARCADE LADDER WITH '+FBY[SEL.f].name+' TO UNLOCK THE LEGEND COLOURS',2.4);return}SEL.alt=+c.dataset.a;saveSel();if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),mk:myMk(),ready:false})}renderSelect();placePreview()});
@@ -4631,7 +4644,7 @@ function saveName(){NAME=$('nameIn').value.trim().toUpperCase().slice(0,12);try{
 // ── fights ──
 function rpStop(){if(RP.play){RP.play.done=null;rpEnd()}}
 function renderToggles(){document.querySelectorAll('.tgl').forEach(b=>{const on=!!SET[b.dataset.s]&&!(SET.mute&&b.dataset.s!=='flash'&&b.dataset.s!=='walk');b.textContent=on?'ON':'OFF';b.classList.toggle('off',!on)})}
-function startSolo(myF,oppF,diff,watch){rpStop();G.forfeit=false;G.surv=null;G.tour=null;G.local=diff==='p2'&&!watch;if(G.local)diff='contender';PAD2.press.length=0;for(const k of ['big','dmg','ult'])MUT[k]=!!(SEL.mut[k]&&diff!=='bag'&&!SMOKE);G.watch=!!watch;document.body.classList.toggle('watching',G.watch);
+function startSolo(myF,oppF,diff,watch){rpStop();G.forfeit=false;G.surv=null;G.tour=null;G.career=null;G.local=diff==='p2'&&!watch;if(G.local)diff='contender';PAD2.press.length=0;for(const k of ['big','dmg','ult'])MUT[k]=!!(SEL.mut[k]&&diff!=='bag'&&!SMOKE);G.watch=!!watch;document.body.classList.toggle('watching',G.watch);
   G.online=false;G.attract=false;G.ME=0;G.bag=diff==='bag';G.paused=false;
   const oa=G.ladder?(G.ladder.i===G.ladder.opps.length-1?3:Math.floor(Math.random()*3)):myF===oppF?(SEL.alt+1)%3:0;setupMatch([myF,oppF],[FBY[myF].name,FBY[oppF].name],[SEL.alt,oa]);G.bots=[null,new Bot(1,diff)];G.diff=diff;
   applyVenue(diff==='bag'?'gym':pickVenue(SEL.venue));G.mode='fight';hideAllOv();showHUD(true);REF.b.root.visible=true;setPhase(G.bag||SMOKE||!SET.walk?'intro':'walk');
@@ -4720,7 +4733,7 @@ function showLadder(){rpStop();vsHide();clearConfetti();
 }
 function onEnd(r){
   const w=r.w;
-  if(w>=0)setTimeout(()=>{if(G.phase!=='end')return;const W=G.B[w],L=G.B[1-w];W.act={k:'win',t:0};giveBelt(W);if(!L.down)L.act={k:'lose',t:0}},r.how.includes('KO')?1500:500);
+  if(w>=0)setTimeout(()=>{if(G.phase!=='end')return;const W=G.B[w],L=G.B[1-w];W.act={k:'win',t:0};if(!(G.career&&!G.career.title))giveBelt(W);if(!L.down)L.act={k:'lose',t:0}},r.how.includes('KO')?1500:500);
   else G.B.forEach(b=>{if(!b.down)b.act={k:'lose',t:0}});
   if(G.attract){setTimeout(()=>{if(G.attract&&G.mode==='title')startAttract()},4500);return}
   const ko=r.how==='KO'||r.how==='TKO';
@@ -4810,6 +4823,7 @@ function showEnd(r){
     setTimeout(()=>{const i=document.querySelector('.xpbar i');if(i)i.style.width=(af.x/af.need*100).toFixed(1)+'%'},120);
     if(af.l>before.l)setTimeout(()=>{const el=document.createElement('div');el.className='achT';el.innerHTML=`<span>${ICO('trophy')}</span><div><small>LEVEL UP</small><b>LEVEL ${af.l}</b><i>${af.title}${cosUnlocks(before.l,af.l).map(u=>' · UNLOCKED '+u).join('')}</i></div>`;document.body.appendChild(el);setTimeout(()=>el.classList.add('out'),3000);setTimeout(()=>el.remove(),3600)},700)}
   if(G.tour&&!G.online&&!G.tour.done){G.tour.done=1;tourAdvance(r.w===G.ME)}
+  if(G.career&&!G.online){const ln=crEnd(r);$('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">CAREER · <b>${ln}</b></div>`);$('endHero').insertAdjacentHTML('beforeend',`<div class="crh">${ln}</div>`)}
   if(G.surv&&!G.online){survEnd(r);const S=G.surv,P=recOf(S.f);$('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">SURVIVAL <b>${S.n}</b> ${S.over?(S.best&&S.n?'<i>NEW BEST!</i>':'· BEST '+(P.surv||0)):'WINS SO FAR'}</div>`)}
   if(DAILY.on&&!G.online){const sc=dailyScore(r),c=DAILY.c;let best=REC.daily&&REC.daily.key===c.key?REC.daily.best:0;const nb=sc>best;if(sc>0)achGet('daily');if(nb){REC.daily={key:c.key,best:sc};saveRec();best=sc}
     $('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">DAILY SCORE <b>${sc.toLocaleString()}</b>${nb&&sc?' <i>NEW BEST!</i>':` · BEST ${best.toLocaleString()}`}</div>`)}
@@ -4879,6 +4893,7 @@ function renderEndButtons(){
   else if(G.ladder&&G.ladder.bossFight){h=r.w===G.ME?`<button class="primary" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eBoss">TRY AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`}
   else if(G.ladder){const done=G.ladder.i>=G.ladder.opps.length;h=r.w===G.ME?`<button class="primary" id="eNext">${done?'CLAIM THE BELT':'NEXT FIGHT'}</button>`:`<button class="primary" id="eRetry">TRY AGAIN</button>`;h+=`<button class="ghost" id="eMenu">MAIN MENU</button>`}
   else if(G.tour)h=`<button class="primary" id="eTour">${G.tour.won?'LIFT THE TROPHY':G.tour.out?'SEE THE BRACKET':'NEXT ROUND'}</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
+  else if(G.career)h=`<button class="primary" id="eCareer">CAREER</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   else if(G.surv)h=G.surv.over?`<button class="primary" id="eSurv">GO AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eSurvN">NEXT OPPONENT</button><button class="ghost" id="eMenu">CASH OUT</button>`;
   else h=`<button class="primary" id="eRetry">REMATCH</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   if(!G.attract&&HL.clips.length)h+=`<button class="ghost" id="eHl">▶ HIGHLIGHTS</button>`;
@@ -4891,7 +4906,7 @@ function renderEndButtons(){
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eShare',shareResult);on('ePoster',savePoster);on('eClip',saveClip);on('eHl',()=>{achGet('reel');hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eCareer',()=>showCareer());on('eShare',shareResult);on('ePoster',savePoster);on('eClip',saveClip);on('eHl',()=>{achGet('reel');hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
@@ -4935,6 +4950,44 @@ function showTour(){const T=G.tour;G.mode='select';G.phase='none';clearCombat();
   else $('tourAgain').onclick=()=>tourStart(T.f);
   $('tourMenu').onclick=()=>{G.tour=null;showTitle()}}
 function survDiff(n){return n<2?'rookie':n<5?'contender':'champion'}
+// ════ CAREER: your fighter vs a world of 19 generated contenders — climb the rankings, take the title off THE CHAMP, then defend it ════
+const CR_FIRST=['RICO','VEGA','KANE','DIESEL','MONTY','JAX','SOLANA','BRUNO','IVY','KOJI','ZEKE','NADIA','ROCCO','TEX','OZ','LUNA','CRUZ','BOOMER','SASHA','DRAKE','MILO','REX','JUNO','AXEL','PIPER','HUGO','KIRA','DUKE','MARISOL','TANK'];
+const CR_NICK=['THE HAMMER','IRON JAW','NIGHT TRAIN','THE SURGEON','BAD NEWS','THE ROCK','HURRICANE','LIGHTS OUT','SUGAR','THE PROFESSOR','STONE HANDS','KID DYNAMITE','THE CANNON','SILK','THE WALL','BUZZSAW','THUNDER','THE SNIPER','GHOST','THE BUTCHER','SLICK','BIG TIME','THE ANVIL','RAZOR'];
+const CR_N=19;
+function crRival(i,used){let n;do n=pick(CR_FIRST);while(used.has(n));used.add(n);const body=pick(MK.bodies)[0];
+  return {name:n,nick:pick(CR_NICK),base:pick(FIGHTERS).id,body,hair:pick(MK.hairs)[0],beard:Math.random()<.3&&body!=='fem'?1:0,band:Math.random()<.4?1:0,eye:pick(Object.keys(MK.eyes)),
+    skin:pick(MK.skin),hairCol:pick(MK.hair),iris:pick(MK.iris),shorts:pick(MK.kit),trim:pick(MK.kit),glove:pick(MK.kit),emblem:pick(MK.embs)}}
+function crRegister(){const C=REC.career;if(!C)return;if(!FBY[C.f]){REC.career=null;return}for(const id in C.roster){const f=mkFighter(C.roster[id],id),B=FBY[C.roster[id].base];BIOS[id]=`Ranked contender. Fights like ${B?B.short||B.name:'a pro'}.`;f.made=0;f.rival=1}}
+function crNew(fid){const used=new Set(),roster={},order=[];for(let i=0;i<CR_N;i++){const id='cr'+i;roster[id]=crRival(i,used);order.push(id)}order.push('me');
+  REC.career={f:fid,roster,order,holder:'champ',w:0,l:0,ko:0,def:0,titles:0,news:[]};saveRec();crRegister();showCareer()}
+const crRank=()=>REC.career.order.indexOf('me');
+function crOpp(){const C=REC.career,i=crRank();if(C.holder==='me')return C.order[0];if(i>0)return C.order[i-1];return C.holder}
+const crTitle=()=>{const C=REC.career;return C.holder==='me'||crRank()===0};
+function crDiff(){const i=crRank();return crTitle()||i<0?'champion':i>=13?'rookie':i>=5?'contender':'champion'}
+const crName=id=>id==='me'?(FBY[REC.career.f].short||FBY[REC.career.f].name):(FBY[id].short||FBY[id].name);
+function crFight(){const C=REC.career,o=crOpp();if(!FBY[o])return;startSolo(C.f,o,crDiff());G.career={opp:o,title:crTitle(),rank0:crRank()};G.title=G.career.title;try{if(!PORT[o])makePortraits([FBY[o]])}catch(e){}}
+function crEnd(r){const C=REC.career,K=G.career;if(!C||!K||K.done)return'';K.done=1;const won=r.w===G.ME,ko=/KO/.test(r.how||''),O=C.order;let line='';
+  if(won){C.w++;if(ko)C.ko++}else if(r.w>=0)C.l++;
+  if(K.title&&C.holder==='me'){if(won){C.def++;line=`TITLE DEFENCE #${C.def} — STILL CHAMPION`}else{const j=O.indexOf(K.opp);O.splice(j,1);O.unshift('me');C.holder=K.opp;line=`${crName(K.opp)} TAKES YOUR BELT`}}
+  else if(K.title){if(won){O.splice(O.indexOf('me'),1);if(C.holder!=='champ')O.splice(Math.min(2,O.length),0,C.holder);C.holder='me';C.titles++;line='WORLD CHAMPION!';achGet('career');setTimeout(()=>{confetti();SFX.fanfare(true)},400)}else line='THE CHAMP KEEPS THE BELT — GO AGAIN'}
+  else{const i=O.indexOf('me');if(won){const to=Math.max(0,i-(ko&&i>=2?2:1));O.splice(i,1);O.splice(to,0,'me');line=`NOW RANKED #${to+1} ▲${i-to}`}
+    else if(r.w>=0&&i<O.length-1){O.splice(i,1);O.splice(i+1,0,'me');line=`DROPPED TO #${i+2} ▼1`}else line=`STILL RANKED #${i+1}`}
+  // elsewhere in the division: one upset
+  const cand=[];for(let i=0;i<O.length-1;i++)if(O[i]!=='me'&&O[i+1]!=='me')cand.push(i);if(cand.length&&Math.random()<.7){const i=pick(cand),a=O[i],b=O[i+1];O[i]=b;O[i+1]=a;C.news.unshift(`${crName(b)} upsets ${crName(a)} for #${i+1}`);C.news.length=Math.min(C.news.length,3)}
+  if(!SMOKE)saveRec();return line}
+function showCareer(){const C=REC.career;if(!C){openSelect('career');return}G.mode='select';G.phase='none';G.career=null;clearCombat();hideAllOv();showHUD(false);REF.b.root.visible=false;
+  const me=FBY[C.f],opp=crOpp(),O=C.order,hold=C.holder==='me'?me:FBY[C.holder]||BOSS,row=(id,k)=>{const f=id==='me'?me:FBY[id];return `<div class="crr ${id==='me'?'me':''} ${id===opp?'nx':''}" style="--c:${f.col}"><b>${k}</b>${portrait(id==='me'?C.f:id,26)}<span>${crName(id)}<i>${id==='me'?'YOU':f.nick}</i></span>${id===opp?'<em>NEXT</em>':''}</div>`};
+  $('crBody').innerHTML=`<div class="res" style="font-size:44px">CAREER</div><div class="how">${me.name} · ${C.w}–${C.l} · ${C.ko} KO${C.titles?` · ${C.titles}× CHAMPION`:''}${C.def?` · ${C.def} DEFENCE${C.def>1?'S':''}`:''}</div>
+    <div class="crc" style="--c:${hold.col}"><small>WORLD CHAMPION</small>${portrait(C.holder==='me'?C.f:hold.id,40)}<b>${C.holder==='me'?'YOU — '+(me.short||me.name):hold.short||hold.name}</b>${C.holder==='champ'?'<i>UNDEFEATED</i>':''}</div>
+    <div class="crl">${O.map((id,i)=>row(id,'#'+(i+1))).join('')}</div>
+    ${C.news.length?`<div class="crn">${C.news.map(n=>'· '+n).join('<br>')}</div>`:''}
+    <p class="dimt" style="text-align:center;margin:8px 0 4px">${crTitle()?(C.holder==='me'?'Title defence':'TITLE FIGHT')+' vs ':'Next: '}<b style="color:${FBY[opp].col}">${FBY[opp].name}</b> — “${FBY[opp].nick}” · ${DIFF[crDiff()].name}</p>
+    <div class="crb"><button class="btn primary" id="crGo">${crTitle()?'FIGHT FOR THE BELT':'FIGHT'}</button><button class="btn ghost" id="crMenu">MAIN MENU</button><button class="btn ghost" id="crNewB">NEW CAREER</button></div>`;
+  $('crGo').onclick=()=>{SFX.ui();crFight()};$('crMenu').onclick=()=>{SFX.ui();showTitle()};
+  $('crNewB').onclick=()=>{if(!confirm('Start a new career? This one is gone for good.'))return;REC.career=null;saveRec();openSelect('career')};
+  showOv('crOv');placePreview([C.f,opp]);
+  // render the rivals' portraits a few at a time while you look at the table
+  const miss=O.concat([C.holder]).filter(id=>id!=='me'&&FBY[id]&&!PORT[id]).slice(0,4);if(miss.length)setTimeout(()=>{if($('crOv').classList.contains('on')){try{makePortraits(miss.map(id=>FBY[id]))}catch(e){}if(O.some(id=>id!=='me'&&!PORT[id]))showCareer()}},120)}
 function survNext(){const S=G.surv;let o;do o=pick(FIGHTERS).id;while(o===S.f||o===S.last);S.last=o;
   startSolo(S.f,o,survDiff(S.n));G.surv=S;if(S.hp!=null){const me=G.B[0];me.hp=Math.min(me.hpMax,S.hp+me.hpMax*.3)}
   sub('SURVIVAL · BOUT '+(S.n+1)+(S.n?' · '+S.n+' DOWN':''),2.2)}
@@ -5322,12 +5375,12 @@ function init(){
   PA=new Particles(4200,THREE.AdditiveBlending);PN=new Particles(1600,THREE.NormalBlending);
   buildArena();buildFxTex();G.B=[new Boxer(0),new Boxer(1)];buildRef();prewarmFX();
   setupUI();setupTouch();$('rotIco').innerHTML=ICO('phone');
-  try{registerMade();const s0=JSON.parse(localStorage.getItem('haymaker.sel')||'{}');if(FBY[s0.f]&&FBY[s0.f].made)SEL.f=s0.f}catch(e){console.warn(e)}
+  try{registerMade();crRegister();const s0=JSON.parse(localStorage.getItem('haymaker.sel')||'{}');if(FBY[s0.f]&&FBY[s0.f].made)SEL.f=s0.f}catch(e){console.warn(e)}
   setTimeout(()=>{try{makePortraits()}catch(e){console.warn(e)}},60);
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,openMaker,mkFighter,showLadder,get SEL(){return SEL},renderSelect,THREE,posterCanvas,posterLoad,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,openMaker,mkFighter,showLadder,showCareer,crNew,get SEL(){return SEL},renderSelect,THREE,posterCanvas,posterLoad,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();document.body.classList.remove('booting');
   // build the other venues while the player is on the title screen, so picking one never hitches
@@ -5451,6 +5504,13 @@ function runSmoke(){
       abil('pops','titan','r',1);sim(.7);ok(G.B[0].st.prime>4,'One More Round turns back the clock');G.B[0].act=null;G.B[0].counterT=0;G.pending.length=0;startPunch(G.B[0],'jab');ok(G.pending.some(q=>q.spec.a===0&&q.spec.counter),'…every punch lands like a counter')}
     abil('grizz','frost','r',1.5);sim(.6);ok(G.B[1].st.fear>0,'Roar scares them');G.forced[1]={...EMPTY,punch:'jab'};const h0=G.B[0].hp;sim(.5);G.forced[1]=EMPTY;ok(G.B[0].hp===h0,'…and a scared fighter can\'t attack');
     abil('grizz','frost','e');G.B[0].hp=60;G.forced[0]={...EMPTY,block:true};sim(1);G.forced[0]=EMPTY;ok(G.B[0].hp>63,'Hibernate heals while blocking ('+G.B[0].hp.toFixed(1)+')');
+    {const C0=REC.career;REC.career=null;const used=new Set(),roster={},order=[];for(let i=0;i<CR_N;i++){roster['cr'+i]=crRival(i,used);order.push('cr'+i)}order.push('me');REC.career={f:'blaze',roster,order,holder:'champ',w:0,l:0,ko:0,def:0,titles:0,news:[]};crRegister();
+      const C=REC.career;ok(Object.keys(C.roster).length===19&&FBY.cr0&&FBY.cr0.rival&&crRank()===19&&crOpp()===C.order[18],'CAREER: 19 generated contenders, you start #20');
+      crFight();ok(G.B[1].f.id===G.career.opp&&G.bots[1].diff==='rookie','…the first fight is against the next man up, at rookie level');crEnd({w:G.ME,how:'KO'});ok(crRank()===17,'…a KO win jumps two places ('+(crRank()+1)+')');
+      crFight();crEnd({w:1-G.ME,how:'DECISION'});ok(crRank()===18,'…a loss drops one');C.order.splice(C.order.indexOf('me'),1);C.order.unshift('me');ok(crTitle()&&crOpp()==='champ','…#1 earns a title shot at THE CHAMP');
+      crFight();ok(G.title&&G.bots[1].diff==='champion','…a title fight at champion level');crEnd({w:G.ME,how:'KO'});ok(C.holder==='me'&&!C.order.includes('me')&&C.titles===1,'…win it and you hold the belt');
+      crFight();const ch=G.career.opp;crEnd({w:1-G.ME,how:'KO'});ok(C.holder===ch&&C.order[0]==='me','…lose a defence and the challenger takes it, you drop to #1 contender');
+      for(const id in C.roster){delete FBY[id];delete STYLE[id]}REC.career=C0;crRegister();G.career=null}
     {G.surv={f:'blaze',n:0,hp:null};survNext();const S=G.surv;ok(S&&G.B[0].f.kit==='blaze'&&G.bots[1].diff==='rookie','SURVIVAL: bout one is against a rookie');G.B[0].hp=40;survEnd({w:G.ME});survNext();
      ok(G.surv.n===1&&near(G.B[0].hp,40+G.B[0].hpMax*.3,.5),'…health carries over with a 30% top-up');G.surv.n=5;survNext();ok(G.bots[1].diff==='champion','…and the CPU sharpens');G.surv=null}
     {const n0=Object.keys(REC.ach||{}).length;achGet('first');ok(Object.keys(REC.ach||{}).length===n0,'achievements never unlock during self-tests');showRecords();ok($('recBody').querySelectorAll('.ai').length===ACH.length,'RECORDS lists all '+ACH.length+' achievements');hideOv('recOv')}
