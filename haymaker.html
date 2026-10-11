@@ -71,6 +71,9 @@ body.watching #keys::after{content:'EXHIBITION · PRESS A PUNCH KEY TO TAKE OVER
 #recBody .rc .port{position:absolute;left:6px;top:6px}#recBody .rc .n{font:400 18px Anton;color:var(--c)}#recBody .rc .s{font:700 11px Rubik;color:#ccc;line-height:1.5}#recBody .rc .s b{color:#fff}
 #recBody .rc .t{position:absolute;right:6px;top:6px;width:20px;height:20px}
 #altSeg .leg{box-shadow:0 0 0 2px #ffd23a,0 0 10px rgba(255,210,58,.6)}#altSeg .lock{opacity:.45;font-size:13px;display:grid;place-items:center}
+#dayBody .dvs{display:flex;align-items:center;justify-content:center;gap:22px;margin:10px 0}#dayBody .dvs>div{display:flex;flex-direction:column;align-items:center;gap:2px}
+#dayBody .dvs b{font:400 24px Anton}#dayBody .dvs small{font:900 10px Rubik;letter-spacing:.3em;color:var(--dim)}#dayBody .dvs>span{font:400 34px Anton;color:var(--gold)}
+#endBody .dsc{text-align:center;font:900 12px Rubik;letter-spacing:.25em;color:var(--dim);margin-bottom:6px}#endBody .dsc b{font:400 30px Anton;color:var(--gold);letter-spacing:.02em}#endBody .dsc i{color:#7dff4a;font-style:normal}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -392,6 +395,7 @@ body.touch #abil,body.touch #keys{display:none}
     <button data-go="ladder">ARCADE LADDER</button>
     <button data-go="online">PLAY ONLINE · 1v1</button>
     <button data-go="train">TRAINING</button>
+    <button data-go="daily">DAILY CHALLENGE</button>
     <button data-go="records">RECORDS</button>
     <button data-go="help">HOW TO PLAY</button>
     <a class="ghost" href="index.html">QUIT TO ARCADE</a>
@@ -464,6 +468,7 @@ body.touch #abil,body.touch #keys{display:none}
   </div>
 </div>
 
+<div class="ov dark" id="dayOv"><div class="card2" id="dayBody"></div></div>
 <div class="ov dark" id="recOv"><div class="panel" style="max-width:760px;width:94vw"><h2>RECORDS</h2><div id="recBody"></div><button class="btn primary" id="recBack" style="margin-top:12px">BACK</button></div></div>
 <div class="ov dark" id="pauseOv">
   <div class="panel" style="max-width:380px">
@@ -3630,6 +3635,7 @@ function checkStart(){if(NET.mode==='host'&&NET.myReady&&NET.peerReady&&NET.peer
 function checkRematch(){if(NET.mode==='host'&&NET.rm&&NET.peerRm)hostGo()}
 function hostGo(){const m={t:'go',v:pickVenue(SEL.venue),f:[SEL.f,NET.peerPick],n:[myName()||FBY[SEL.f].name,NET.peer||FBY[NET.peerPick].name],a:[SEL.alt|0,NET.peerAlt|0]};netSend(m);startOnlineMatch(m)}
 function startOnlineMatch(m){
+  DAILY.on=false;
   G.local=false;
   for(const k in MUT)MUT[k]=false;
   G.watch=false;document.body.classList.remove('watching');
@@ -3771,6 +3777,7 @@ function showTitle(){
   startAttract();
 }
 function startAttract(){
+  DAILY.on=false;
   G.local=false;
   for(const k in MUT)MUT[k]=false;
   G.watch=false;document.body.classList.remove('watching');
@@ -3827,7 +3834,7 @@ function selectStep(dt){
 }
 function setupUI(){
   document.querySelectorAll('#titleOv [data-go]').forEach(b=>b.addEventListener('click',()=>{auInit();if(AU.ctx&&AU.ctx.state!=='running')AU.ctx.resume();SFX.ui();const g=b.dataset.go;
-    if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords()}));
+    if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily()}));
   $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
   $('cBtn').onclick=()=>{SET.cam=SET.cam==='tv'?'back':'tv';saveSet();$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND'};
   $('helpBack').onclick=()=>hideOv('helpOv');$('recBack').onclick=()=>hideOv('recOv');
@@ -3845,8 +3852,8 @@ function setupUI(){
   $('venueSeg').addEventListener('click',e=>{const c=e.target.closest('[data-v]');if(!c)return;SFX.ui();SEL.venue=c.dataset.v;saveSel();renderSelect();if(SEL.venue!=='random')setVenue(SEL.venue)});
   $('diffSeg').addEventListener('click',e=>{const c=e.target.closest('[data-d]');if(!c)return;SEL.diff=c.dataset.d;saveSel();renderSelect()});
   $('selBack').onclick=()=>{if(SEL.mode==='online')netLeave();showTitle()};
-  $('selWatch').onclick=()=>{SFX.ui();let o=SEL.opp;if(o==='random'||!FBY[o]){const others=FIGHTERS.filter(f=>f.id!==SEL.f);o=pick(others).id}startSolo(SEL.f,o,SEL.diff,true)};
-  $('selGo').onclick=()=>{SFX.ui();
+  $('selWatch').onclick=()=>{SFX.ui();DAILY.on=false;let o=SEL.opp;if(o==='random'||!FBY[o]){const others=FIGHTERS.filter(f=>f.id!==SEL.f);o=pick(others).id}startSolo(SEL.f,o,SEL.diff,true)};
+  $('selGo').onclick=()=>{SFX.ui();DAILY.on=false;
     if(SEL.mode==='quick'){let o=SEL.opp;if(o==='random'){const others=FIGHTERS.filter(f=>f.id!==SEL.f);o=pick(others).id}startSolo(SEL.f,o,SEL.diff)}
     else if(SEL.mode==='ladder'){const opps=FIGHTERS.map(f=>f.id).filter(id=>id!==SEL.f).sort(()=>Math.random()-.5).slice(0,LAD_DIFF.length);G.ladder={f:SEL.f,opps,i:0};showLadder()}
     else{NET.myReady=!NET.myReady;netSend({t:'pick',f:SEL.f,a:SEL.alt,ready:NET.myReady});renderSelect();checkStart()}};
@@ -3939,6 +3946,8 @@ function showEnd(r){
     ${row('KNOCKDOWNS',(x,i)=>s[1-i].kd)}${row('DODGES',x=>x.dodged)}${row('BLOCKS',x=>x.blocked)}</table>
     <div class="menu" id="endBtns" style="margin-top:14px"></div>`;
   const W=w>=0?G.B[w]:null;$('endHero').innerHTML=W?`<div class="k">${G.ladder&&G.ladder.i>=G.ladder.opps.length&&w===me?'NEW GLITCHBOX CHAMPION':'AND THE WINNER'}</div><div class="n" style="--c:${W.f.col}">${W.f.name}</div><div class="s">${how}</div>`:`<div class="k">THE JUDGES CAN'T SPLIT THEM</div><div class="n">DRAW</div>`;
+  if(DAILY.on&&!G.online){const sc=dailyScore(r),c=DAILY.c;let best=REC.daily&&REC.daily.key===c.key?REC.daily.best:0;const nb=sc>best;if(nb){REC.daily={key:c.key,best:sc};saveRec();best=sc}
+    $('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">DAILY SCORE <b>${sc.toLocaleString()}</b>${nb&&sc?' <i>NEW BEST!</i>':` · BEST ${best.toLocaleString()}`}</div>`)}
   showOv('endOv');renderEndButtons();
 }
 function renderEndButtons(){
@@ -3952,9 +3961,27 @@ function renderEndButtons(){
   on('eRm',()=>{NET.rm=true;netSend({t:'rm'});renderEndButtons();checkRematch()});
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();showTitle()});
-  on('eRetry',()=>{if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
+  on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
   on('eNext',()=>showLadder());
 }
+// ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
+const DAILY={on:false,c:null};
+function dailyToday(){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();let h=key*2654435761>>>0;const r=()=>{h^=h<<13;h>>>=0;h^=h>>>17;h^=h<<5;h>>>=0;return h/4294967296};
+  const ids=FIGHTERS.map(f=>f.id),me=ids[Math.floor(r()*ids.length)];let op;do op=ids[Math.floor(r()*ids.length)];while(op===me);
+  const venue=['arena','roof','roof-rain','pit'][Math.floor(r()*4)],mut={};for(const k of ['big','dmg','ult'])if(r()<.3)mut[k]=true;
+  return {key,me,op,venue,mut,diff:r()<.5?'champion':'contender'}}
+function dailyScore(r){const me=G.B[G.ME];if(r.w!==G.ME)return 0;return Math.round(1000+me.hp/me.hpMax*600+(/KO/.test(r.how)?300+Math.max(0,G.tl)*8:0)-(G.rnd-1)*120+(DAILY.c.diff==='champion'?400:0))}
+function showDaily(){const c=dailyToday(),F=FBY[c.me],O=FBY[c.op],best=REC.daily&&REC.daily.key===c.key?REC.daily.best:0;
+  const mutTxt=Object.keys(c.mut).map(k=>({big:'BIG HEADS',dmg:'DOUBLE DAMAGE',ult:'ULT RUSH'})[k]).join(' · ')||'NONE';
+  const venTxt={arena:'THE ARENA',roof:'THE ROOFTOP','roof-rain':'THE ROOFTOP · STORM',pit:'THE PIT'}[c.venue];
+  $('dayBody').innerHTML=`<div class="res" style="font-size:44px">DAILY CHALLENGE</div><div class="how">${new Date().toDateString().toUpperCase()}</div>
+    <div class="dvs"><div>${portrait(c.me,96)}<b style="color:${F.col}">${F.name}</b><small>YOU</small></div><span>VS</span><div>${portrait(c.op,96,true)}<b style="color:${O.col}">${O.name}</b><small>${DIFF[c.diff].name}</small></div></div>
+    <table class="stt"><tr><td class="k">VENUE</td><td>${venTxt}</td></tr><tr><td class="k">MUTATORS</td><td>${mutTxt}</td></tr><tr><td class="k">TODAY'S BEST</td><td>${best?best.toLocaleString():'—'}</td></tr></table>
+    <p class="dimt" style="text-align:center">Win for 1,000 · keep your health · knock them out early · beat the champion for a bonus.</p>
+    <div class="menu"><button class="primary" id="dayGo">FIGHT</button><button class="ghost" id="dayBack">BACK</button></div>`;
+  showOv('dayOv');$('dayGo').onclick=()=>{SFX.ui();hideOv('dayOv');dailyStart(c)};$('dayBack').onclick=()=>{SFX.ui();hideOv('dayOv')}}
+function dailyStart(c){DAILY.on=true;DAILY.c=c;const keep={mut:SEL.mut,venue:SEL.venue,alt:SEL.alt};SEL.mut=c.mut;SEL.venue=c.venue==='roof-rain'?'roof':c.venue;SEL.alt=0;
+  startSolo(c.me,c.op,c.diff);applyVenue(c.venue);Object.assign(SEL,keep)}
 function showRoundCard(x){
   if(G.mode!=='fight')return;const A=G.B[0],B=G.B[1],r=G.rnd,rd=x.rd||[0,0];
   const cards=x.cards||[];const tot=cards.map(c=>[c[0].reduce((a,b)=>a+b,0),c[1].reduce((a,b)=>a+b,0)]);
@@ -4364,6 +4391,7 @@ function runSmoke(){
      padPoll();ok(PRESS.filter(k=>k==='jab').length===1,'…and a held button only fires once');
      try{Object.defineProperty(navigator,'getGamepads',{value:real,configurable:true})}catch(e){}PAD.on=false;PAD.x=PAD.y=0;PAD.block=false;PRESS.length=0}
     {startSolo('blaze','titan','p2');G.forced=null;G.phase='fight';ok(G.local&&!G.bots[0]&&!G.bots[1],'2 PLAYER: both corners are human');PAD2.on=true;PAD2.press.push('jab');const it=getIntent(1,1/60);ok(it.punch==='jab','…and player 2\'s controller drives the blue corner');G.local=false;PAD2.on=false;G.forced=[EMPTY,EMPTY]}
+    {const a=dailyToday(),b2=dailyToday();ok(a.me!==a.op&&JSON.stringify(a)===JSON.stringify(b2)&&FBY[a.me]&&FBY[a.op],'daily challenge: one fixed fight per day ('+a.me+' vs '+a.op+', '+a.venue+')')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
