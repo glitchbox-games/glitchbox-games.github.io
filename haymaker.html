@@ -108,6 +108,8 @@ body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 .kitEd i{width:16px;height:16px;border-radius:4px;cursor:pointer;border:2px solid rgba(0,0,0,.6)}.kitEd i.on{border-color:#fff;transform:scale(1.15)}
 .mvk{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;font:600 11.5px Rubik;color:#ccc}.mvk div{display:flex;gap:8px;align-items:center}.mvk kbd{min-width:72px;text-align:center}
 .cadv{margin-top:12px;padding:8px 12px;border-left:3px solid var(--gold);background:rgba(255,200,58,.07);font:italic 700 13.5px Rubik;color:#fff;border-radius:0 8px 8px 0}.cadv small{display:block;font:900 9px Rubik;font-style:normal;letter-spacing:.3em;color:var(--gold);margin-bottom:3px}
+.binds{display:grid;grid-template-columns:1fr 1fr;gap:4px}.binds button{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);background:#16161e;color:#bbb;border-radius:8px;padding:6px 10px;font:800 10px Rubik;letter-spacing:.08em;cursor:pointer}.binds button b{font:400 15px Anton;color:#fff;letter-spacing:.04em}.binds button.on{border-color:var(--gold)}.binds button.on b{color:var(--gold)}
+#setOv .panel{max-height:92vh;overflow:auto}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -3760,7 +3762,13 @@ const AIAB={
 // ════════════════════ INPUT ════════════════════
 const KEYS={},PRESS=[];let touchBody=false,touchBlock=false,touchHay=false,mouseHay=false;const STICK={x:0,y:0,on:false};
 const EMPTY={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};
-const KMAP={KeyJ:'jab',KeyK:'cross',KeyL:'hook',KeyI:'upper',KeyU:'hook',KeyO:'upper',Numpad4:'jab',Numpad5:'cross',Numpad6:'hook',Numpad8:'upper',KeyQ:'q',KeyE:'e',KeyR:'r',ShiftLeft:'dodge',ShiftRight:'dodge',KeyC:'duck',KeyT:'taunt'};
+// player 1's keys — rebindable in SETTINGS (SET.bind), the extras (U/O, numpad) always work
+const BIND0={up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',jab:'KeyJ',cross:'KeyK',hook:'KeyL',upper:'KeyI',block:'Space',hay:'KeyH',body:'KeyF',dodge:'ShiftLeft',duck:'KeyC',q:'KeyQ',e:'KeyE',r:'KeyR',taunt:'KeyT'};
+const BIND=Object.assign({},BIND0,SET.bind||{});
+const KMAP={};
+function rebuildKMAP(){for(const k in KMAP)delete KMAP[k];Object.assign(KMAP,{KeyU:'hook',KeyO:'upper',Numpad4:'jab',Numpad5:'cross',Numpad6:'hook',Numpad8:'upper',ShiftRight:'dodge'});
+  for(const a of ['jab','cross','hook','upper','dodge','duck','q','e','r','taunt'])KMAP[BIND[a]]=a}
+rebuildKMAP();
 function toggleMute(){SET.mute=!SET.mute;saveSet();auResume();auApply();renderToggles();sub(SET.mute?'SOUND MUTED (M)':'SOUND ON',1.1)}
 addEventListener('pointerdown',()=>{if(G.phase==='walk'&&G.mode==='fight'&&!G.online)hostPhase('intro')});
 const KMAP2={Comma:'jab',Period:'cross',Slash:'hook',Quote:'upper',ShiftRight:'dodge',BracketLeft:'q',BracketRight:'e',Equal:'r',Semicolon:'taunt'};
@@ -3768,6 +3776,7 @@ const p2Keys=()=>G.local&&G.mode==='fight'&&!(PAD2.on&&PAD2.pad);
 function p2KeyPoll(){if(!p2Keys())return;const P=PAD2;P.x=(KEYS.ArrowRight?1:0)-(KEYS.ArrowLeft?1:0);P.y=(KEYS.ArrowDown?1:0)-(KEYS.ArrowUp?1:0);P.block=!!(KEYS.Enter||KEYS.NumpadEnter);P.hay=!!KEYS.Backslash;P.body=!!KEYS.Minus;P.on=true}
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT')return;
+  if(REBIND){e.preventDefault();if(e.code!=='Escape'){for(const a in BIND)if(BIND[a]===e.code&&a!==REBIND)BIND[a]=BIND[REBIND];BIND[REBIND]=e.code;SET.bind=Object.assign({},BIND);saveSet();rebuildKMAP()}REBIND=null;showSettings();return}
   if(p2Keys()&&!e.repeat&&KMAP2[e.code]){PAD2.press.push(KMAP2[e.code]);if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&PUNCH[KMAP2[e.code]]){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.id==='toro'?2:1}KEYS[e.code]=true;e.preventDefault();return}
   auResume();
   if(RP.play&&!e.repeat){rpEnd();e.preventDefault();return}
@@ -3833,7 +3842,7 @@ function padIntent(i,P){const it={mx:0,mz:0,block:false,punch:null,dodge:false,a
   if(duck){it.mx=0;it.mz=0}return it}
 function playerIntent(){
   const it={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};
-  const ar=!p2Keys();let up=(KEYS.KeyW||ar&&KEYS.ArrowUp?1:0)-(KEYS.KeyS||ar&&KEYS.ArrowDown?1:0),rt=(KEYS.KeyD||ar&&KEYS.ArrowRight?1:0)-(KEYS.KeyA||ar&&KEYS.ArrowLeft?1:0);
+  const ar=!p2Keys();let up=(KEYS[BIND.up]||ar&&KEYS.ArrowUp?1:0)-(KEYS[BIND.down]||ar&&KEYS.ArrowDown?1:0),rt=(KEYS[BIND.right]||ar&&KEYS.ArrowRight?1:0)-(KEYS[BIND.left]||ar&&KEYS.ArrowLeft?1:0);
   if(STICK.on){rt=STICK.x;up=-STICK.y}
   if(PAD.on&&(PAD.x||PAD.y)){rt=PAD.x;up=-PAD.y}
   if(up||rt){
@@ -3843,7 +3852,7 @@ function playerIntent(){
     const me=G.B[G.ME],o=other(me),dx=o.x-me.x,dz=o.z-me.z,dl=Math.hypot(dx,dz)||1,fx=dx/dl,fz=dz/dl;
     it.mz=wx*fx+wz*fz;it.mx=wx*fz-wz*fx;const l=Math.hypot(it.mx,it.mz);if(l>1){it.mx/=l;it.mz/=l}
   }
-  it.body=!!(KEYS.KeyF||PAD.body||touchBody);it.block=!!(KEYS.Space||touchBlock||PAD.block);it.hay=!!(KEYS.KeyH||touchHay||mouseHay||PAD.hay);
+  it.body=!!(KEYS[BIND.body]||PAD.body||touchBody);it.block=!!(KEYS[BIND.block]||touchBlock||PAD.block);it.hay=!!(KEYS[BIND.hay]||touchHay||mouseHay||PAD.hay);
   let duck=false;
   while(PRESS.length){const k=PRESS.shift();if(PUNCH[k]){if(!it.punch)it.punch=k}else if(k==='dodge')it.dodge=true;else if(k==='duck'){it.dodge=true;duck=true}else if(k==='q'||k==='e'||k==='r')it.abil=k;else if(k==='taunt')it.taunt=true}
   if(duck){it.mx=0;it.mz=0}
@@ -4044,12 +4053,16 @@ function updateFloats(dt){updEmos(dt);for(let i=FLOATS.length-1;i>=0;i--){const 
 
 function togglePause(force){if(G.mode!=='fight')return;const on=force!=null?force:!$('pauseOv').classList.contains('on');if(on){showOv('pauseOv');$('pPhoto').style.display=G.online?'none':'';$('pReplay').style.display=G.online||RP.n<30?'none':'';if(!G.online)G.paused=true}else{hideOv('pauseOv');hideOv('helpOv');G.paused=false}}
 function applyAccess(){document.body.classList.toggle('hc',!!SET.hc)}
+let REBIND=null;const keyName=c=>c.replace(/^Key/,'').replace(/^Digit/,'').replace('ShiftLeft','L-SHIFT').replace('ShiftRight','R-SHIFT').replace('Space','SPACE').replace(/^Arrow/,'').toUpperCase();
+function keysLine(){const k=a=>keyName(BIND[a]);return `${k('up')}${k('left')}${k('down')}${k('right')} move · ${k('jab')} jab · ${k('cross')} cross · ${k('hook')} hook · ${k('upper')} upper · ${k('body')}+punch body · HOLD ${k('hay')} haymaker · ${k('block')} block (tap = perfect) · ${k('dodge')} dodge · ${k('q')} ${k('e')} abilities · ${k('r')} ultimate · ${k('taunt')} taunt · V camera · M mute`}
+function bindRows(){if(TOUCH)return'';const N={up:'MOVE UP',down:'MOVE DOWN',left:'MOVE LEFT',right:'MOVE RIGHT',jab:'JAB',cross:'CROSS',hook:'HOOK',upper:'UPPERCUT',block:'BLOCK',hay:'HAYMAKER',body:'BODY (hold)',dodge:'DODGE',duck:'DUCK',q:'ABILITY 1',e:'ABILITY 2',r:'ULTIMATE',taunt:'TAUNT'};
+  return `<div class="lbl" style="margin-top:12px">CONTROLS — click, then press a key (ESC cancels)</div><div class="binds">${Object.keys(BIND0).map(a=>`<button data-bind="${a}" class="${REBIND===a?'on':''}"><span>${N[a]}</span><b>${REBIND===a?'PRESS A KEY…':keyName(BIND[a])}</b></button>`).join('')}</div><button class="btn ghost" id="bindReset" style="margin-top:6px;padding:8px">RESET KEYS</button>`}
 function showSettings(){
   const sl=(k,n)=>`<div class="sr">${n}<input type="range" min="0" max="100" step="5" value="${SET[k]??100}" data-r="${k}"><span class="v" id="sv_${k}">${SET[k]??100}</span></div>`;
   const ch=(k,n,opts)=>`<div class="sr">${n}<div class="sb">${opts.map(([v,t])=>`<button data-c="${k}" data-v="${v}" class="${String(SET[k])===String(v)?'on':''}">${t}</button>`).join('')}</div></div>`;
   $('setBody').innerHTML=sl('vS','SOUND VOLUME')+sl('vM','MUSIC VOLUME')+sl('shk','SCREEN SHAKE')+
     ch('snd','SOUND',[[true,'ON'],[false,'OFF']])+ch('mus','MUSIC',[[true,'ON'],[false,'OFF']])+ch('q','GRAPHICS',[['high','HIGH'],['low','LOW']])+ch('cam','CAMERA',[['tv','BROADCAST'],['back','BEHIND YOU']])+
-    ch('flash','FLASHES',[[true,'ON'],[false,'OFF']])+ch('walk','ENTRANCES',[[true,'ON'],[false,'OFF']])+ch('nums','DAMAGE NUMBERS',[[true,'ON'],[false,'OFF']])+ch('words','COMIC WORDS',[[true,'ON'],[false,'OFF']])+ch('calm','REDUCED EFFECTS',[[false,'OFF'],[true,'ON']])+ch('hc','HIGH-CONTRAST HUD',[[false,'OFF'],[true,'ON']]);
+    ch('flash','FLASHES',[[true,'ON'],[false,'OFF']])+ch('walk','ENTRANCES',[[true,'ON'],[false,'OFF']])+ch('nums','DAMAGE NUMBERS',[[true,'ON'],[false,'OFF']])+ch('words','COMIC WORDS',[[true,'ON'],[false,'OFF']])+ch('calm','REDUCED EFFECTS',[[false,'OFF'],[true,'ON']])+ch('hc','HIGH-CONTRAST HUD',[[false,'OFF'],[true,'ON']])+bindRows();
   showOv('setOv')}
 function showRecords(){
   const tot=REC.w+REC.l;$('recBody').innerHTML=`<div class="rt"><span><b>${REC.w}–${REC.l}</b>RECORD</span><span><b>${tot?Math.round(REC.w/tot*100):0}%</b>WINS</span><span><b>${REC.ko}</b>KOs</span><span><b>${REC.ladders}</b>BELTS</span></div>
@@ -4063,6 +4076,7 @@ const HUDC={};
 function showHUD(on){
   $('hud').classList.toggle('hide',!on);$('touch').classList.toggle('hide',!(on&&TOUCH));document.body.classList.toggle('infight',!!on);
   if(!on)return;
+  if(!TOUCH)$('keys').textContent=keysLine();
   G.B.forEach((b,i)=>{const el=$('hb'+i);el.querySelector('.nm').innerHTML=(b.name||b.f.name).replace(/[<>&]/g,'')+(G.local?` <span style="color:var(--gold);font-size:.75em">P${i+1}</span>`:'')+(i===G.ME&&!G.attract&&!G.watch&&!G.local?' <span style="color:var(--gold);font-size:.75em">YOU</span>':'');const ic=el.querySelector('.ico');ic.innerHTML=portrait(b.f.id,46,i===1);ic.style.setProperty('--c',b.f.col);b.trail=b.hp;b._lastHp=b.hp});
   const me=G.B[G.ME].f;if(TOUCH)['q','e','r'].forEach(k=>{document.querySelector(`#touch [data-k=${k}]`).innerHTML=`<i class="tcd"></i><span class="tic">${abIcon(me,k)}</span>`});$('abQ').querySelector('.ic').innerHTML=abIcon(me,'q');$('abE').querySelector('.ic').innerHTML=abIcon(me,'e');$('abR').querySelector('.ic').innerHTML=abIcon(me,'r');
   ['abQ','abE','abR'].forEach((id,i)=>$(id).title=[me.q,me.e,me.r][i].name);
@@ -4176,15 +4190,17 @@ function setupUI(){
   $('netBox').addEventListener('click',e=>{if(e.target.id==='invBtn'){SFX.ui();invite()}});
   $('emoMenu').innerHTML=EMOS.map((t,k)=>`<button data-e="${k}">${t}</button>`).join('');
   $('emoBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();$('emoMenu').classList.toggle('on')});
-  $('emoMenu').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-e]');if(!b)return;e.preventDefault();e.stopPropagation();emote(G.ME,+b.dataset.e);$('emoMenu').classList.remove('on')});$('setBack').onclick=()=>{hideOv('setOv');renderToggles()};$('pSet').onclick=()=>{SFX.ui();showSettings()};
+  $('emoMenu').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-e]');if(!b)return;e.preventDefault();e.stopPropagation();emote(G.ME,+b.dataset.e);$('emoMenu').classList.remove('on')});$('setBack').onclick=()=>{REBIND=null;hideOv('setOv');renderToggles()};$('pSet').onclick=()=>{SFX.ui();showSettings()};
   $('setBody').addEventListener('input',e=>{const r=e.target.closest('[data-r]');if(!r)return;SET[r.dataset.r]=+r.value;$('sv_'+r.dataset.r).textContent=r.value;saveSet();auApply()});
-  $('setBody').addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(!c)return;const k=c.dataset.c,raw=c.dataset.v,v=raw==='true'?true:raw==='false'?false:raw;
+  $('setBody').addEventListener('click',e=>{const bb=e.target.closest('[data-bind]');if(bb){REBIND=bb.dataset.bind;SFX.ui();showSettings();return}
+    if(e.target.id==='bindReset'){Object.assign(BIND,BIND0);SET.bind=null;saveSet();rebuildKMAP();SFX.ui();showSettings();return}
+    const c=e.target.closest('[data-c]');if(!c)return;const k=c.dataset.c,raw=c.dataset.v,v=raw==='true'?true:raw==='false'?false:raw;
     const prevQ=SET.q;SET[k]=v;if(k==='snd'||k==='mus')SET.mute=false;saveSet();auResume&&auResume();auApply();if(k==='q'&&v!==prevQ){$('qBtn').textContent=v==='high'?'HIGH':'LOW';setupPost();prewarmFX()}
     if(k==='cam')$('cBtn').textContent=v==='tv'?'BROADCAST':'BEHIND';applyAccess();SFX.ui();showSettings()});applyAccess();$('recBack').onclick=()=>hideOv('recOv');
   $('pPhoto').onclick=()=>{SFX.ui();photoOn()};
   $('pMoves').onclick=()=>{SFX.ui();const f=G.B[G.ME].f;$('movesBody').innerHTML=fighterInfo(f);
     $('movesKeys').innerHTML=(TOUCH?[['JAB · CROSS · HOOK · UPPER','the round buttons'],['BODY','toggle, then punch'],['HAYMAKER','hold, release'],['BLOCK','hold · tap as it lands = PERFECT']]
-      :[['J K L I','jab · cross · hook · uppercut'],['F + punch','body shot'],['HOLD H','haymaker'],['SPACE','block · tap as it lands = PERFECT'],['SHIFT','dodge (counter ready)'],['Q E · R','abilities · ultimate']]).map(([k,d])=>`<div><kbd>${k}</kbd><span>${d}</span></div>`).join('');hideOv('pauseOv');showOv('movesOv')};
+      :[[['jab','cross','hook','upper'].map(a=>keyName(BIND[a])).join(' '),'jab · cross · hook · uppercut'],[keyName(BIND.body)+' + punch','body shot'],['HOLD '+keyName(BIND.hay),'haymaker'],[keyName(BIND.block),'block · tap as it lands = PERFECT'],[keyName(BIND.dodge),'dodge (counter ready)'],[keyName(BIND.q)+' '+keyName(BIND.e)+' · '+keyName(BIND.r),'abilities · ultimate']]).map(([k,d])=>`<div><kbd>${k}</kbd><span>${d}</span></div>`).join('');hideOv('pauseOv');showOv('movesOv')};
   $('movesBack').onclick=()=>{SFX.ui();hideOv('movesOv');togglePause(true)};
   $('pReplay').onclick=()=>{SFX.ui();hideOv('pauseOv');if(!rpInstant(()=>togglePause(true)))togglePause(true)};$('phSave').onclick=photoSave;$('phFilt').onclick=()=>{PHOTO.film=(PHOTO.film+1)%FILMS.length};$('phExit').onclick=photoOff;
   addEventListener('pointerdown',e=>{if(PHOTO.on&&!e.target.closest('#photoBar'))PHOTO.drag={x:e.clientX,y:e.clientY};
@@ -4917,6 +4933,8 @@ function runSmoke(){
     {solo('grizz','frost');togglePause(true);$('pMoves').click();ok($('movesOv').classList.contains('on')&&$('movesBody').textContent.includes('Hibernate'),'pause → MOVE LIST shows your own fighter\'s moves');$('movesBack').click();ok($('pauseOv').classList.contains('on'),'…and goes back to the pause menu');togglePause(false)}
     {solo('blaze','frost');G.B[0].meter=100;ok(/ultimate/i.test(cornerAdvice()),'the corner tells you to use a ready ultimate');G.B[0].meter=0;Object.assign(G.B[0].stats,{thrown:20,landed:3});ok(/air/.test(cornerAdvice()),'…and to stop swinging at air')}
     {solo('blaze','frost');NET.mode='host';G.online=true;const w0=REC.w;netLost('Your opponent left the arena.');ok(G.phase==='end'&&G.result&&G.result.how==='FORFEIT'&&G.result.w===G.ME&&REC.w===w0,'a rival leaving mid-fight ends it as your win by forfeit (records untouched)');G.forfeit=false}
+    {const B0=Object.assign({},BIND);REBIND='jab';dispatchEvent(new KeyboardEvent('keydown',{code:'KeyY'}));ok(BIND.jab==='KeyY'&&KMAP.KeyY==='jab'&&!KMAP.KeyJ,'rebinding JAB to Y moves it');
+     REBIND='cross';dispatchEvent(new KeyboardEvent('keydown',{code:'KeyY'}));ok(BIND.cross==='KeyY'&&BIND.jab==='KeyK','…and taking a used key swaps the two');Object.assign(BIND,B0);SET.bind=null;rebuildKMAP();hideOv('setOv')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
