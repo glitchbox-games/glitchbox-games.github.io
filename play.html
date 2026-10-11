@@ -313,7 +313,7 @@ function favList(){ const v=jsonGet(FAV_KEY,[]); return Array.isArray(v)?v:[]; }
 function isFav(file){ return !isGuest() && favList().indexOf(file)!==-1; }
 
 // Same terms gate as the hub and glitchbox-menu.js — keep TOS_VERSION in step.
-const TOS_VERSION='2026-10-07.3';
+const TOS_VERSION='2026-10-11.1';
 function tosAgreed(){
   // newest version ever agreed on this device; anything at or past ours counts
   try{ const u=JSON.parse(localStorage.getItem('glitchbox_user')||'null'), id=u&&u.sub?u.sub:'guest';

@@ -363,7 +363,7 @@
     } else {
       const a = d.account || {};
       html += '<div class="gbs-h">// YOUR ACCOUNT</div>' + kv([
-        ['Name', E(a.name)], ['Email', E(a.email)], ['Friend code', E(a.code)], ['Joined', a.created ? when(a.created) : ''],
+        ['Nametag (what others see)', E(a.nametag || a.name)], ['Google name (private)', E(a.google_name || '')], ['Email', E(a.email)], ['Friend code', E(a.code)], ['Joined', a.created ? when(a.created) : ''],
         ['Last seen', a.last_seen ? when(a.last_seen) : ''], ['IP address', E(a.ip)], ['Device', E(deviceOf(a.device))],
         ['Terms', a.tos_version ? 'agreed (' + E(a.tos_version) + ') ' + (a.tos_at ? when(a.tos_at) : '') : 'not agreed'],
         ['Activity', a.hide_activity ? 'hidden from friends' : 'friends can see it'], ['Role', a.role === 'mod' ? 'moderator' : '']]) +

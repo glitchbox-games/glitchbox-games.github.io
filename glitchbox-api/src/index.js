@@ -102,8 +102,37 @@ function ownerPin(env) { return String((env && env.OWNER_EMAIL) || "").toLowerCa
 // An avatar chosen from the hub's icon grid, stored in `picture` as "icon:<id>".
 function isIcon(p) { return /^icon:[a-z0-9-]{1,24}$/.test(String(p || "")); }
 // Public view of another user — never leaks email.
+// Public view of another user — never leaks email, real name or a Google photo (only arcade icons).
 function pub(u) {
-  return u ? { sub: u.sub, name: u.name, picture: u.picture } : null;
+  return u ? { sub: u.sub, name: u.name, picture: isIcon(u.picture) ? u.picture : "" } : null;
+}
+// SQL for a public avatar column: arcade icons only — a Google photo is a face, and faces identify.
+const PUB_PIC = "CASE WHEN u.picture LIKE 'icon:%' THEN u.picture ELSE '' END";
+
+// ── nametags ── `users.name` is the player's chosen NAMETAG, which is all anyone else ever sees.
+// The Google account name lives in `real_name`, for the owner console only.
+const TAG_A = ["Neon","Pixel","Turbo","Cosmic","Shadow","Glitch","Hyper","Retro","Laser","Mega","Ultra","Rocket","Frost","Blaze","Thunder","Sneaky","Lucky","Wild","Atomic","Cyber","Electric","Silent","Fuzzy","Crimson"];
+const TAG_B = ["Fox","Wolf","Tiger","Panda","Falcon","Ninja","Dragon","Shark","Otter","Raccoon","Comet","Viper","Golem","Phantom","Wizard","Pilot","Racer","Llama","Yeti","Kraken","Moose","Badger","Gecko","Bandit"];
+const TAG_BLOCK = ["admin","owner","moderator","staff","glitchbox","official","system","support",
+  "fuck","shit","bitch","cunt","nigg","fag","dick","cock","pussy","porn","sex","rape","nazi","hitler","whore","slut","retard","penis","vagina","anal","boob","kill yourself","kys"];
+function randomTag() { const r = n => Math.floor(Math.random() * n); return TAG_A[r(TAG_A.length)] + TAG_B[r(TAG_B.length)] + (10 + r(90)); }
+// Returns the cleaned tag, or throws a 400 the hub shows to the player as-is.
+function cleanTag(raw) {
+  const t = String(raw || "").replace(/\s+/g, " ").trim();
+  if (t.length < 3 || t.length > 16) throw new HttpError(400, "Nametags are 3 to 16 characters.");
+  if (!/^[A-Za-z0-9 _.\-]+$/.test(t)) throw new HttpError(400, "Use letters, numbers, spaces, _ - and . only.");
+  if (!/[A-Za-z]/.test(t)) throw new HttpError(400, "Put at least one letter in it.");
+  const flat = t.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const leet = flat.replace(/0/g, "o").replace(/1/g, "i").replace(/3/g, "e").replace(/4/g, "a").replace(/5/g, "s").replace(/7/g, "t");
+  if (TAG_BLOCK.some(w => { const k = w.replace(/[^a-z]/g, ""); return flat.includes(k) || leet.includes(k); })) throw new HttpError(400, "That nametag isn't allowed — pick another.");
+  if (/^player\s*\d*$/i.test(t)) throw new HttpError(400, "Make it yours — not just \"Player\".");
+  return t;
+}
+// A nametag that contains your real first/last name or email name would defeat the point.
+function looksLikeRealName(tag, realName, email) {
+  const flat = String(tag).toLowerCase().replace(/[^a-z]/g, "");
+  const parts = String(realName || "").toLowerCase().split(/[^a-z]+/).concat([String(email || "").toLowerCase().split("@")[0].replace(/[^a-z]/g, "")]);
+  return parts.some(w => w && w.length >= 3 && flat.includes(w));
 }
 
 // NOTE: errors thrown from a Durable Object RPC method lose custom properties
@@ -216,6 +245,15 @@ export class Hub extends DurableObject {
         status TEXT, winners TEXT, created INTEGER)`);
       this.sql.exec(`CREATE TABLE IF NOT EXISTS contest_scores (
         cid INTEGER, sub TEXT, score REAL, at INTEGER, PRIMARY KEY (cid, sub))`);
+      // Nametags: `name` becomes the chosen tag; the Google name moves to `real_name` (owner-only).
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN real_name TEXT"); } catch (e) { /* already there */ }
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN tag_set INTEGER"); } catch (e) { /* already there */ }
+      try { this.sql.exec("ALTER TABLE users ADD COLUMN tag_at INTEGER"); } catch (e) { /* already there */ }
+      // One-time move for accounts made before nametags: keep the Google name privately and give
+      // everyone a random tag until they choose their own (the hub asks them on their next visit).
+      for (const u of this.sql.exec("SELECT sub, name FROM users WHERE real_name IS NULL").toArray()) {
+        this.sql.exec("UPDATE users SET real_name = ?, name = ?, tag_set = 0 WHERE sub = ?", u.name || "", this.freeTag(), u.sub);
+      }
       // Ensure a signing secret exists.
       const row = this.sql.exec("SELECT v FROM meta WHERE k='secret'").toArray()[0];
       if (!row) {
@@ -260,8 +298,29 @@ export class Hub extends DurableObject {
 
   userOf(sub) {
     return this.sql.exec(
-      "SELECT sub, email, name, picture, code, created, banned, ban_reason, ban_until, email_verified, tos_version, tos_at, role, hide_activity FROM users WHERE sub = ?",
+      "SELECT sub, email, name, picture, code, created, banned, ban_reason, ban_until, email_verified, tos_version, tos_at, role, hide_activity, tag_set FROM users WHERE sub = ?",
       sub).toArray()[0] || null;
+  }
+
+  tagTaken(tag, notSub) {
+    return !!this.sql.exec("SELECT 1 FROM users WHERE LOWER(name) = LOWER(?) AND sub != ?", tag, notSub || "").toArray()[0];
+  }
+  freeTag() { for (let i = 0; i < 30; i++) { const t = randomTag(); if (!this.tagTaken(t)) return t; } return "Player" + Date.now().toString(36).slice(-5); }
+
+  // A few unused suggestions for the picker's 🎲 button.
+  async tagIdeas(token) { await this.verifySession(token, true); const out = new Set(); for (let i = 0; i < 40 && out.size < 6; i++) { const t = randomTag(); if (!this.tagTaken(t)) out.add(t); } return { ideas: [...out] }; }
+
+  async setTag(token, raw) {
+    const me = await this.verifySession(token);
+    const tag = cleanTag(raw);
+    const u = this.sql.exec("SELECT name, real_name, email, tag_at FROM users WHERE sub = ?", me).toArray()[0];
+    if (!u) throw new HttpError(404, "no such user");
+    if (u.name === tag) { this.sql.exec("UPDATE users SET tag_set = 1 WHERE sub = ?", me); return { ok: true, name: tag }; }
+    if (u.tag_at && Date.now() - u.tag_at < 20000) throw new HttpError(429, "Slow down — you can change your nametag again in a few seconds.");
+    if (looksLikeRealName(tag, u.real_name, u.email)) throw new HttpError(400, "That looks like your real name — the point is to keep it private. Pick something else.");
+    if (this.tagTaken(tag, me)) throw new HttpError(409, "Someone already has that nametag.");
+    this.sql.exec("UPDATE users SET name = ?, tag_set = 1, tag_at = ? WHERE sub = ?", tag, Date.now(), me);
+    return { ok: true, name: tag };
   }
 
   // The 403 message for a banned user, or null. Format "banned:<until>:<reason>",
@@ -559,11 +618,11 @@ export class Hub extends DurableObject {
     // quietly reset the player's avatar back to their Google account picture.
     const picture = isIcon(existing && existing.picture) ? existing.picture : (info.picture || "");
     this.sql.exec(
-      `INSERT INTO users (sub, email, name, picture, created, last_seen)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(sub) DO UPDATE SET email=excluded.email, name=excluded.name,
+      `INSERT INTO users (sub, email, name, real_name, tag_set, picture, created, last_seen)
+       VALUES (?, ?, ?, ?, 0, ?, ?, ?)
+       ON CONFLICT(sub) DO UPDATE SET email=excluded.email, real_name=excluded.real_name,
          picture=excluded.picture, last_seen=excluded.last_seen`,
-      info.sub, info.email || "", info.name || info.email || "Player",
+      info.sub, info.email || "", this.freeTag(), info.name || info.email || "",
       picture, now, now);
     if (ip) this.sql.exec("UPDATE users SET last_ip = ? WHERE sub = ?", ip, info.sub);
     if (!existing) this.sql.exec("UPDATE users SET created = ? WHERE sub = ?", now, info.sub);
@@ -601,26 +660,26 @@ export class Hub extends DurableObject {
     const profile = this.userOf(me); // self — includes email + code
     // Friends see what you're playing (and can join your room) unless you hid it.
     const friends = this.sql.exec(
-      `SELECT u.sub, u.name, u.picture, (u.last_seen > ?) AS online,
+      `SELECT u.sub, u.name, ${PUB_PIC} AS picture, (u.last_seen > ?) AS online,
               CASE WHEN u.last_seen > ? AND u.playing_at > ? AND NOT IFNULL(u.hide_activity, 0) THEN u.playing ELSE NULL END AS playing,
               CASE WHEN u.last_seen > ? AND u.playing_at > ? AND NOT IFNULL(u.hide_activity, 0) THEN u.room ELSE NULL END AS room
        FROM friends f JOIN users u ON u.sub = f.b WHERE f.a = ? ORDER BY online DESC, u.name`,
       now - ONLINE_WINDOW, now - ONLINE_WINDOW, now - ONLINE_WINDOW, now - ONLINE_WINDOW, now - ONLINE_WINDOW, me).toArray()
       .map(f => ({ ...f, room: f.room && MP_FILES.includes(f.playing) ? f.room : null }));
     const incoming = this.sql.exec(
-      `SELECT u.sub, u.name, u.picture, r.created FROM requests r
+      `SELECT u.sub, u.name, ${PUB_PIC} AS picture, r.created FROM requests r
        JOIN users u ON u.sub = r.from_sub WHERE r.to_sub = ? ORDER BY r.created DESC`, me).toArray();
     const outgoing = this.sql.exec(
-      `SELECT u.sub, u.name, u.picture, r.created FROM requests r
+      `SELECT u.sub, u.name, ${PUB_PIC} AS picture, r.created FROM requests r
        JOIN users u ON u.sub = r.to_sub WHERE r.from_sub = ? ORDER BY r.created DESC`, me).toArray();
     const blocked = this.sql.exec(
-      `SELECT u.sub, u.name, u.picture FROM blocks bl
+      `SELECT u.sub, u.name, ${PUB_PIC} AS picture FROM blocks bl
        JOIN users u ON u.sub = bl.blocked WHERE bl.blocker = ? ORDER BY u.name`, me).toArray();
     const invitesIn = this.sql.exec(
-      `SELECT i.game, i.room, i.created, u.sub, u.name, u.picture FROM invites i
+      `SELECT i.game, i.room, i.created, u.sub, u.name, ${PUB_PIC} AS picture FROM invites i
        JOIN users u ON u.sub = i.from_sub WHERE i.to_sub = ? ORDER BY i.created DESC`, me).toArray();
     const invitesOut = this.sql.exec(
-      `SELECT i.game, i.room, i.created, u.sub, u.name, u.picture FROM invites i
+      `SELECT i.game, i.room, i.created, u.sub, u.name, ${PUB_PIC} AS picture FROM invites i
        JOIN users u ON u.sub = i.to_sub WHERE i.from_sub = ? ORDER BY i.created DESC`, me).toArray();
     const gifts = this.sql.exec(
       "SELECT id, tokens, games, icons, note, created FROM gifts WHERE sub = ? ORDER BY id", me).toArray()
@@ -788,7 +847,7 @@ export class Hub extends DurableObject {
     return {
       owner: this.ownerSub(),
       players: this.sql.exec(
-        `SELECT u.sub, u.name, u.email, u.picture, u.code, u.created, u.last_seen,
+        `SELECT u.sub, u.name, u.real_name, u.tag_set, u.email, u.picture, u.code, u.created, u.last_seen,
                 u.banned, u.ban_reason, u.ban_until, u.tos_version, u.tos_at, u.role,
                 CASE WHEN u.playing_at > ? THEN u.playing ELSE NULL END AS playing,
                 (SELECT COUNT(*) FROM friends f WHERE f.a = u.sub)      AS friends,
@@ -796,11 +855,11 @@ export class Hub extends DurableObject {
                 (SELECT COUNT(*) FROM reports r WHERE r.reported = u.sub) AS reports,
                 (SELECT COUNT(*) FROM gifts g   WHERE g.sub = u.sub)    AS gifts
          FROM users u
-         WHERE ? = '%%' OR LOWER(u.name) LIKE ? OR LOWER(u.email) LIKE ? OR LOWER(u.code) LIKE ?
+         WHERE ? = '%%' OR LOWER(u.name) LIKE ? OR LOWER(IFNULL(u.real_name,'')) LIKE ? OR LOWER(u.email) LIKE ? OR LOWER(u.code) LIKE ?
          ORDER BY u.last_seen DESC LIMIT ?`,
-        Date.now() - ONLINE_WINDOW, term, term, term, term, lim).toArray()
-        // moderators can search by email but never see one
-        .map(p => st.owner ? p : { ...p, email: "", isOwner: this.isOwnerSub(p.sub) }),
+        Date.now() - ONLINE_WINDOW, term, term, term, term, term, lim).toArray()
+        // moderators can search by email but never see one (nor a real name)
+        .map(p => st.owner ? p : { ...p, email: "", real_name: "", isOwner: this.isOwnerSub(p.sub) }),
     };
   }
 
@@ -1131,6 +1190,18 @@ export class Hub extends DurableObject {
   }
 
   // ── moderators ── owner only.
+  // A rude or real-name nametag: swap it for a random one and make them pick again.
+  async adminResetTag(token, sub) {
+    const st = await this.requireStaff(token);
+    const u = this.userOf(sub);
+    if (!u) throw new HttpError(404, "no such player");
+    if (!st.owner && (this.isOwnerSub(sub) || u.role === "mod")) throw new HttpError(403, "moderators can't reset staff nametags");
+    const tag = this.freeTag();
+    this.sql.exec("UPDATE users SET name = ?, tag_set = 0 WHERE sub = ?", tag, sub);
+    this.log("tag-reset", sub, (st.actor ? st.actor + ": " : "") + u.name + " → " + tag);
+    return { ok: true, name: tag };
+  }
+
   async adminSetMod(token, sub, on) {
     const me = await this.requireOwner(token);
     if (!this.userOf(sub)) throw new HttpError(404, "no such player");
@@ -1302,7 +1373,7 @@ export class Hub extends DurableObject {
     segs.forEach(sg => per[sg.game] = (per[sg.game] || 0) + sg.ms);
     const online = row.last_seen > now - ONLINE_WINDOW;
     return {
-      sub: target, name: u.name, picture: u.picture, created: u.created, self,
+      sub: target, name: u.name, picture: self ? u.picture : pub(u).picture, created: u.created, self,
       friends: this.sql.exec("SELECT COUNT(*) AS n FROM friends WHERE a = ?", target).toArray()[0].n,
       badges: this.badgesFor(target), hidden, online,
       playing: hidden || !online || !(row.playing_at > now - ONLINE_WINDOW) ? null : (row.playing || ""),
@@ -1350,17 +1421,17 @@ export class Hub extends DurableObject {
     const per = {};
     segs.forEach(sg => { if (g === "*" || sg.game === g) per[sg.who] = (per[sg.who] || 0) + sg.ms; });
     const people = {};
-    for (const u of this.sql.exec("SELECT sub, name, picture FROM users WHERE NOT IFNULL(hide_activity, 0) AND NOT IFNULL(banned, 0)").toArray()) people["u:" + u.sub] = u;
+    for (const u of this.sql.exec("SELECT sub, name, CASE WHEN picture LIKE 'icon:%' THEN picture ELSE '' END AS picture FROM users WHERE NOT IFNULL(hide_activity, 0) AND NOT IFNULL(banned, 0)").toArray()) people["u:" + u.sub] = u;
     const time = Object.keys(per).filter(w => people[w] && per[w] >= 60000).sort((a, b) => per[b] - per[a]).slice(0, 10)
-      .map(w => ({ sub: people[w].sub, name: shortName(people[w].name), picture: people[w].picture, minutes: Math.round(per[w] / 60000) }));
+      .map(w => ({ sub: people[w].sub, name: people[w].name, picture: people[w].picture, minutes: Math.round(per[w] / 60000) }));
     let scores = [];
     if (g !== "*") {
       const dir = this.sql.exec("SELECT low FROM scores WHERE game = ? GROUP BY low ORDER BY COUNT(*) DESC LIMIT 1", g).toArray()[0];
       const low = dir && dir.low;
       scores = this.sql.exec(
-        `SELECT s.sub, s.score, s.at, u.name, u.picture FROM scores s JOIN users u ON u.sub = s.sub
+        `SELECT s.sub, s.score, s.at, u.name, ${PUB_PIC} AS picture FROM scores s JOIN users u ON u.sub = s.sub
          WHERE s.game = ? AND s.low = ? AND NOT IFNULL(u.banned, 0) ORDER BY s.score ${low ? "ASC" : "DESC"} LIMIT 10`, g, low ? 1 : 0).toArray()
-        .map(r => ({ ...r, name: shortName(r.name) }));
+        .map(r => ({ ...r, name: r.name }));
       return { game: g, time, scores, low: !!low };
     }
     return { game: g, time, scores };
@@ -1393,7 +1464,7 @@ export class Hub extends DurableObject {
     for (const x of list) {
       const u = this.userOf(x.sub);
       if (!u || u.banned || this.isOwnerSub(x.sub)) continue;
-      out.push({ sub: x.sub, name: shortName(u.name), picture: u.picture, score: x.score });
+      out.push({ sub: x.sub, name: u.name, picture: pub(u).picture, score: x.score });
       if (out.length >= (limit || 10)) break;
     }
     return out;
@@ -1471,7 +1542,7 @@ export class Hub extends DurableObject {
   async myData(token) {
     const me = await this.verifySession(token);
     const u = this.sql.exec(
-      `SELECT sub, name, email, picture, code, created, last_seen, last_ip AS ip, last_ua AS device,
+      `SELECT sub, name AS nametag, real_name AS google_name, email, picture, code, created, last_seen, last_ip AS ip, last_ua AS device,
               tos_version, tos_at, hide_activity, role, playing FROM users WHERE sub = ?`, me).toArray()[0];
     const names = q => this.sql.exec(q, me).toArray();
     return {
@@ -1817,10 +1888,13 @@ export default {
         if (path === "/api/score")    return json(await stub.postScore(auth, body.game, body.score, body.low), 200, origin);
         if (path === "/api/delete-me")    return json(await stub.deleteMe(auth, body.confirm), 200, origin);
         if (path === "/api/guest-forget") return json(await stub.guestForget(body.gid), 200, origin);
+        if (path === "/api/admin/reset-tag")     return json(await stub.adminResetTag(auth, body.sub), 200, origin);
         if (path === "/api/admin/set-mod")       return json(await stub.adminSetMod(auth, body.sub, body.on), 200, origin);
         if (path === "/api/admin/appeal-decide") return json(await stub.adminAppealDecide(auth, body.id, body.accept, body.reply), 200, origin);
         if (path === "/api/admin/featured")      return json(await stub.adminFeatured(auth, body.file), 200, origin);
         if (path === "/api/avatar")   return json(await stub.setAvatar(auth, body.picture), 200, origin);
+        if (path === "/api/nametag")  return json(await stub.setTag(auth, body.tag), 200, origin);
+        if (path === "/api/nametag-ideas") return json(await stub.tagIdeas(auth), 200, origin);
         if (path === "/api/admin/claim")  return json(await stub.adminClaim(auth, body.code), 200, origin);
         if (path === "/api/admin/ban")    return json(await stub.adminBan(auth, body.sub, body.banned, body.reason, body.hours), 200, origin);
         if (path === "/api/admin/announce")    return json(await stub.adminAnnounce(auth, body.text, body.hours, body.tone), 200, origin);

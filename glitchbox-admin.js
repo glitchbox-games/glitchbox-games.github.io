@@ -306,7 +306,8 @@
           (p.isOwner ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">owner</span>' : '') +
           (p.playing != null ? ' <span style="color:#00ff88" title="online">●</span> <span class="adm-meta">' +
             (p.playing ? '▶ ' + esc(gameName(p.playing)) : 'in the hub') + '</span>' : '') + '</div>' +
-        '<div class="adm-meta">' + (p.email ? esc(p.email) + ' · ' : '') + 'code ' + esc(p.code || '—') + '</div>' +
+        '<div class="adm-meta">' + (p.real_name ? '👤 ' + esc(p.real_name) + ' · ' : '') + (p.email ? esc(p.email) + ' · ' : '') + 'code ' + esc(p.code || '—') +
+          (p.tag_set ? '' : ' · <span style="color:#ffb400">🏷️ hasn\'t picked a nametag</span>') + '</div>' +
         '<div class="adm-meta">' + p.friends + ' friends · ' + p.saves + ' saves · ' + p.reports +
           ' reports · seen ' + ago(p.last_seen) + (p.gifts ? ' · ' + p.gifts + ' gift' + (p.gifts > 1 ? 's' : '') + ' waiting' : '') +
           (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div>' +
@@ -316,6 +317,7 @@
         (isOwner ? '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' : '') +
         (p.banned ? '' : energyBtn('u:' + p.sub, p.name)) +
         (self ? '' : msgBtn(p.sub, p.name, '✉')) +
+        (self || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' : '<button class="adm-btn warn" data-act="resettag" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '" title="Give them a random nametag and make them pick a new one">🏷️ Reset tag</button>') +
         (self || p.playing == null || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' : kickBtn('u:' + p.sub, p.name)) +
         (self || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' :
           '<button class="adm-btn ' + (p.banned ? 'warn' : 'danger') + '" data-act="' + (p.banned ? 'unban' : 'ban') +
@@ -780,6 +782,13 @@
           const r = await call('/api/admin/appeal-decide', { method:'POST', body:{ id: +el.dataset.id, accept: ok, reply } });
           appeals = null; players = null; guests = null; overview = null; logRows = null;
           notice = { text: (ok ? '✅ ' + name + ' is unbanned' : '⚖ The ban on ' + name + ' stays') + (r.note || '') + '.' };
+        }});
+      }
+      else if (act === 'resettag') {
+        const name = el.dataset.name || 'them';
+        askFor({ text:'Reset ' + name + '\'s nametag?\nThey get a random one now and must pick a new nametag next time they open the arcade.', yes:'Reset nametag', run: async () => {
+          const r = await call('/api/admin/reset-tag', { method:'POST', body:{ sub: el.dataset.sub } });
+          players = null; logRows = null; notice = { text:'🏷️ ' + name + ' is now ' + r.name + ' until they pick a new nametag.' };
         }});
       }
       else if (act === 'setmod') {

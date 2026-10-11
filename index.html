@@ -11,8 +11,8 @@
 <!-- Game roster + thumbnail art, shared with play.html -->
 <script src="glitchbox-games.js"></script>
 <!-- Owner console (Ctrl+Shift+A). Deferred so it loads after the hub's own script. -->
-<script src="glitchbox-social.js" defer></script>
-<script src="glitchbox-admin.js?v=20261008e" defer></script>
+<script src="glitchbox-social.js?v=20261011a" defer></script>
+<script src="glitchbox-admin.js?v=20261011a" defer></script>
 <script src="glitchbox-cmd.js?v=20261008e" defer></script>
 <script src="glitchbox-contests.js?v=20261009b" defer></script>
 <style>
@@ -453,6 +453,22 @@ body.leaving .page-wipe { opacity:1; }
 .sidebar-user-meta { font-size:10px; color:var(--cyan); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .sidebar-user-meta b { color:#fff; }
 
+/* ── NAMETAG PICKER ── */
+.tag-card { max-width:440px; margin-top:8vh; }
+.tag-body { padding:18px 24px 24px; }
+.tag-title { font-family:'Orbitron',sans-serif; font-weight:900; font-size:20px; letter-spacing:2px; color:#fff; text-shadow:0 0 14px rgba(0,245,255,.5); }
+.tag-hint { font-size:13px; color:var(--muted); line-height:1.5; margin:8px 0 14px; } .tag-hint b { color:var(--pink,#ff2d8a); }
+.tag-row { display:flex; gap:8px; }
+.tag-input { flex:1; min-width:0; background:rgba(0,245,255,.06); border:1px solid rgba(0,245,255,.35); color:#fff; font:700 18px 'Orbitron',sans-serif; letter-spacing:1px; padding:10px 12px; outline:none; }
+.tag-input:focus { border-color:var(--cyan); box-shadow:0 0 14px rgba(0,245,255,.25); }
+.tag-dice { width:48px; font-size:20px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.18); color:#fff; cursor:pointer; }
+.tag-ideas { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; min-height:4px; }
+.tag-ideas button { background:rgba(255,0,128,.1); border:1px solid rgba(255,0,128,.4); color:#fff; font:700 12px 'Rajdhani',sans-serif; letter-spacing:.5px; padding:5px 10px; cursor:pointer; }
+.tag-err { color:#ff5a6e; font-size:13px; font-weight:700; min-height:18px; margin-top:8px; }
+.tag-rules { font-size:11px; color:var(--muted); letter-spacing:.5px; margin-top:2px; }
+.tag-save { width:100%; margin-top:14px; padding:12px; background:linear-gradient(90deg,var(--cyan),#00a3ff); color:#001018; border:none; font:900 14px 'Orbitron',sans-serif; letter-spacing:2px; cursor:pointer; }
+.tag-save:disabled { opacity:.5; cursor:default; }
+.tag-edit { margin:4px 0 2px; background:none; border:1px solid rgba(0,245,255,.35); color:var(--cyan); font:700 10px 'Orbitron',sans-serif; letter-spacing:1px; padding:3px 8px; cursor:pointer; }
 /* ── PROFILE MODAL ── */
 .profile-modal {
   position:fixed; inset:0; z-index:9000; display:none; align-items:flex-start; justify-content:center;
@@ -771,7 +787,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       3. Add authorized JavaScript origin: <code>https://glitchbox-games.github.io</code><br>
       4. Copy the Client ID and paste it into <code>GOOGLE_CLIENT_ID</code> in this file.
     </div>
-    <div class="auth-note">🔒 We only read your name, email &amp; profile photo — verified by Google.</div>
+    <div class="auth-note">🔒 Google tells us your name, email &amp; photo — those stay private. Other players only see the nametag you pick.</div>
     <div class="auth-note">Signing in means agreeing to the <a href="#" onclick="viewTos();return false;" style="color:var(--cyan)">Terms of Service</a>.</div>
   </div>
 </div>
@@ -801,14 +817,14 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <ul>
         <li>No bullying, hate, threats or harassing other players.</li>
         <li>No cheating, exploiting bugs on purpose, or spamming invites and reports.</li>
-        <li>Pick a name and icon that are OK for everyone.</li>
+        <li>Pick a nametag and icon that are OK for everyone — and don't use your real name.</li>
       </ul>
       <h4>2. The owner can see what you do on GLITCHBOX</h4>
       <div class="tos-key">
         <p>To keep GLITCHBOX safe, the owner can see your activity <b>on GLITCHBOX</b> from the owner console, including:</p>
         <ul>
           <li>whether you're online, which game you're playing right now, and which games you've played recently (and for how long)</li>
-          <li>your name, email address, picture and friend code</li>
+          <li>your nametag, the name on your Google account, your email address, picture and friend code</li>
           <li>your friends, reports made by or about you, and cloud saves</li>
           <li>the kind of device and browser you use, and your IP address (your internet connection)</li>
         </ul>
@@ -820,8 +836,10 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
         <li><b>Your friends</b> see whether you're online, which game you're playing (so they can join you),
           and your profile: icon, badges, favourite games and play time. You can hide your activity from friends
           in your profile.</li>
-        <li><b>Leaderboards</b> show your first name and last initial (e.g. "Dave S."), your icon, your play time
-          this week and your best scores — unless you hide your activity.</li>
+        <li><b>Everyone else</b> only ever sees your <b>nametag</b> and your arcade icon — never your real name,
+          your email or your Google photo.</li>
+        <li><b>Leaderboards</b> show your nametag, your icon, your play time this week and your best scores —
+          unless you hide your activity.</li>
       </ul>
       <h4>4. Moderation</h4>
       <p>The owner can message you, kick you back to the hub, switch games off, or ban your account, your device
@@ -830,7 +848,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
         email address or IP address), message you, kick you, and ban you for up to a day.</p>
       <p>If you're banned you can send an appeal, and the owner or a moderator will answer it.</p>
       <h4>5. Your account and your data</h4>
-      <p>You sign in with Google. GLITCHBOX keeps your name, email and picture so friends and saves work.
+      <p>You sign in with Google. GLITCHBOX keeps your Google name, email and picture privately so friends and saves work; other players only see the nametag you choose.
         <b>My Data</b> in the menu shows everything GLITCHBOX keeps about you, lets you download it, and lets you
         delete your account — that erases everything about you. Guests can see and erase their data there too.</p>
       <h4>6. Tokens and unlocks</h4>
@@ -903,6 +921,22 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
     <button onclick="openAuth('signup')" style="flex:1;padding:10px;background:var(--cyan);border:1px solid var(--cyan);color:#001014;border-radius:8px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;">Sign Up</button>
   </div>
 </nav>
+<div class="profile-modal" id="tag-modal" onclick="if(event.target===this&&!tagForced)closeTag()">
+  <div class="profile-card tag-card">
+    <div class="profile-banner"><button class="profile-close" id="tag-close" onclick="closeTag()" title="Close">✕</button></div>
+    <div class="tag-body">
+      <div class="tag-title">PICK YOUR NAMETAG</div>
+      <div class="tag-hint">This is the only name other players ever see — on leaderboards, friend lists and in games.
+        <b>Don't use your real name.</b> Your Google name stays private.</div>
+      <div class="tag-row"><input id="tag-input" class="tag-input" maxlength="16" autocomplete="off" spellcheck="false" placeholder="e.g. NeonFox42"
+        onkeydown="if(event.key==='Enter')saveTag()"><button class="tag-dice" onclick="tagIdeas()" title="Suggest some">🎲</button></div>
+      <div class="tag-ideas" id="tag-ideas"></div>
+      <div class="tag-err" id="tag-err"></div>
+      <div class="tag-rules">3–16 characters · letters, numbers, spaces, _ - . · keep it friendly</div>
+      <button class="tag-save" id="tag-save" onclick="saveTag()">SAVE NAMETAG</button>
+    </div>
+  </div>
+</div>
 <div class="profile-modal" id="profile-modal" onclick="if(event.target===this)closeProfile()">
   <div class="profile-card">
     <div class="profile-banner"><button class="profile-close" onclick="closeProfile()" title="Close">✕</button></div>
@@ -910,7 +944,8 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <span class="profile-avatar" id="profile-avatar"></span>
       <div class="profile-headtext">
         <div class="profile-name" id="profile-name"></div>
-        <div class="profile-email" id="profile-email"></div>
+        <button class="tag-edit" onclick="openTag(false)">✏️ CHANGE NAMETAG</button>
+        <div class="profile-email" id="profile-email" title="Only you can see this"></div>
       </div>
     </div>
     <div class="profile-stats">
@@ -1749,7 +1784,8 @@ function handleCredential(response){
   if(data.picture) localStorage.setItem('glitchbox_gphoto', data.picture);
   let prev = null; try { prev = JSON.parse(localStorage.getItem('glitchbox_user')||'null'); } catch(e){}
   const keptIcon = (prev && prev.sub === data.sub && iconOf(prev.picture)) ? prev.picture : '';
-  const user = { sub:data.sub, name:data.name||data.email, email:data.email, picture:keptIcon || data.picture || '' };
+  // Your Google name is never shown: until the server answers with your nametag, the sidebar says PLAYER.
+  const user = { sub:data.sub, name:(prev && prev.sub === data.sub && prev.name) || 'PLAYER', email:data.email, picture:keptIcon || data.picture || '' };
   localStorage.setItem('glitchbox_user', JSON.stringify(user));
   applyUser(user);
   backendLogin(response.credential);
@@ -1910,7 +1946,7 @@ async function backendLogin(credential){
 // ── terms of service ── bump TOS_VERSION whenever the terms text changes and every
 // player is asked to agree again. Agreement is saved per account on the server (the
 // record of consent) and cached locally so the screen doesn't flash on every visit.
-const TOS_VERSION = '2026-10-07.3';
+const TOS_VERSION = '2026-10-11.1';
 // Guests agree once per browser, under the 'guest' key.
 function tosId(){ return currentUser ? currentUser.sub : 'guest'; }
 function tosKey(){ return 'glitchbox.tos.' + tosId(); }
@@ -1994,6 +2030,54 @@ if(/^#terms:/.test(location.hash)) addEventListener('load', () => setTimeout(() 
   showTos(false);
 }, 0));
 
+// ── NAMETAGS ── the server's `name` is the player's chosen nametag; the Google name never leaves the server.
+var tagForced = false;
+function persistUser(){ try { localStorage.setItem('glitchbox_user', JSON.stringify(currentUser)); } catch(e){} }
+function syncTag(){
+  const p = lastState.profile;
+  if(!currentUser || !p || p.sub !== currentUser.sub) return;
+  if(p.name && p.name !== currentUser.name){
+    currentUser.name = p.name; persistUser();
+    document.getElementById('user-name').textContent = p.name;
+    const pn = document.getElementById('profile-name'); if(pn) pn.textContent = p.name;
+  }
+  if(!p.tag_set && !document.getElementById('tag-modal').classList.contains('show')) openTag(true);
+}
+function openTag(first){
+  tagForced = !!first;
+  document.getElementById('tag-close').style.display = first ? 'none' : '';
+  const inp = document.getElementById('tag-input');
+  inp.value = first ? '' : (currentUser && currentUser.name) || '';
+  document.getElementById('tag-err').textContent = '';
+  document.getElementById('tag-ideas').innerHTML = '';
+  document.getElementById('tag-modal').classList.add('show');
+  if(first) tagIdeas();
+  setTimeout(() => inp.focus(), 60);
+}
+function closeTag(){ if(tagForced) return; document.getElementById('tag-modal').classList.remove('show'); }
+async function tagIdeas(){
+  try {
+    const r = await api('/api/nametag-ideas', { method:'POST', body:{} });
+    document.getElementById('tag-ideas').innerHTML = (r.ideas || []).map(t => '<button onclick="pickIdea(this)">'+esc(t)+'</button>').join('');
+  } catch(e){}
+}
+function pickIdea(b){ const inp = document.getElementById('tag-input'); inp.value = b.textContent; inp.focus(); }
+async function saveTag(){
+  const inp = document.getElementById('tag-input'), err = document.getElementById('tag-err'), btn = document.getElementById('tag-save');
+  const tag = inp.value.replace(/\s+/g, ' ').trim();
+  if(tag.length < 3){ err.textContent = 'Nametags are 3 to 16 characters.'; return; }
+  btn.disabled = true; err.textContent = '';
+  try {
+    const r = await api('/api/nametag', { method:'POST', body:{ tag } });
+    currentUser.name = r.name; persistUser();
+    if(lastState.profile){ lastState.profile.name = r.name; lastState.profile.tag_set = 1; }
+    document.getElementById('user-name').textContent = r.name;
+    const pn = document.getElementById('profile-name'); if(pn) pn.textContent = r.name;
+    tagForced = false; document.getElementById('tag-modal').classList.remove('show');
+    noticeToast('🏷️ NAMETAG SET', 'Other players now see you as ' + r.name + '.', 4000);
+  } catch(e){ err.textContent = e.message || 'Couldn\'t save that — try again.'; }
+  btn.disabled = false;
+}
 function applyUser(user){
   currentUser = user;
   grantWelcome();
@@ -2020,6 +2104,7 @@ async function refreshState(){
     applyGifts(lastState.gifts);
     // The server is the source of truth for your icon, so a pick made on your phone
     // shows up here too.
+    syncTag();
     const srv = lastState.profile && lastState.profile.picture;
     if(currentUser && srv && srv !== currentUser.picture && iconOf(srv)){
       currentUser.picture = srv;
