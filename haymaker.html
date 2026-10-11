@@ -458,7 +458,7 @@ body.touch #abil,body.touch #keys{display:none}
 <div class="ov on" id="titleOv">
   <div class="logo">HAYMAKER</div>
   <div id="bootMsg">LOADING THE ARENA<i>.</i><i>.</i><i>.</i></div>
-  <div class="tag">3D BOXING · ELEVEN FIGHTERS · SUPER ABILITIES</div>
+  <div class="tag">3D BOXING · TWELVE FIGHTERS · SUPER ABILITIES</div>
   <div class="menu">
     <button class="primary" data-go="quick">QUICK FIGHT</button>
     <button data-go="ladder">ARCADE LADDER</button>
@@ -538,7 +538,7 @@ body.touch #abil,body.touch #keys{display:none}
     <h3>THE FIGHT</h3>
     <p>Three rounds of a minute. Drop to zero health and you're down — mash punch to beat the ten-count. Three knockdowns is a TKO. Still standing at the end? The judges score each round on damage and knockdowns.</p>
     <p>Punches cost stamina. Throw too many and you gas out: slower, weaker, and your guard crumbles. Chain punches together for a combo bonus. Under a quarter health you go into RAGE: punches hit 15% harder.</p>
-    <p>Eleven fighters, each with a passive, two abilities and an ultimate — pick one on the select screen to read them. Before the first bell both fighters walk out to the ring: press any key (or tap) to skip, or switch ENTRANCES off in SETTINGS. Win the arcade ladder to take the belt home.</p>
+    <p>Twelve fighters, each with a passive, two abilities and an ultimate — pick one on the select screen to read them. Before the first bell both fighters walk out to the ring: press any key (or tap) to skip, or switch ENTRANCES off in SETTINGS. Win the arcade ladder to take the belt home.</p>
     <p>Every fight earns XP. Level up to unlock punch trails and KO finishers in the LOCKER — click your level under the title menu. Online, your opponent sees them too.</p>
     <h3>MODES</h3>
     <div class="kgrid">
@@ -616,7 +616,7 @@ const PUNCH={
   // THE HAYMAKER: held to charge (HAY_T for a full wind-up), thrown on release. Numbers scale with the charge.
   hay:  {hand:'R',w:.17,a:.13,r:.5, dmg:12,st:16,range:1.34,hs:.5, kb:2.2,guard:.6, meter:12},
 };
-const TAUNT_FACE={wave:['half','grin'],cool:['half','set'],shimmy:['happy','grin'],kiss:['blink','grin'],horns:['angry','grit'],scan:['open','set'],roar:['angry','shout'],crowd:['happy','shout'],shrug:['half','grin']};
+const TAUNT_FACE={wave:['half','grin'],cool:['half','set'],shimmy:['happy','grin'],kiss:['blink','grin'],horns:['angry','grit'],scan:['open','set'],roar:['angry','shout'],crowd:['happy','shout'],shrug:['half','grin'],wag:['half','grin']};
 const HAY_T=1, HAY_HOLD=.45, PARRY_W=.16, RAGE_AT=.25, RAGE_DMG=1.15, TAUNT_T=1.25;
 const FIGHTERS=[
  {id:'blaze',name:'BLAZE',nick:'KID INFERNO',col:'#ff6a1f',
@@ -707,6 +707,14 @@ const FIGHTERS=[
   q:{name:'Plancha',cd:9,desc:'A flying dive across the ring that crashes through a guard.'},
   e:{name:'Showboat',cd:12,desc:'Play to the crowd: +25 meter and 5 health back.'},
   r:{name:'Tornado',desc:'A spinning whirlwind of seven blows, then a big finish.'}},
+ {id:'pops',name:'POPS',nick:'THE OLD MASTER',col:'#e0a84a',
+  look:{skin:0x8a5636,shorts:0x7a1424,trim:0xf2ead8,glove:0x6e3a1c,hair:'pops',hairCol:0xd6d2ca,glow:0xffd27a},
+  taunt:'wag',alts:[{},{shorts:0x16161a,trim:0xffd23a,glove:0x16161a,hairCol:0xf2f2f2},{shorts:0xf2ead8,trim:0x1f4a8a,glove:0xf2ead8,hairCol:0xbab4aa}],
+  size:.99,hp:104,pow:1.12,spd:.95,pspd:.98,reach:1.03,stats:[3,3,4],
+  passive:{name:'Old School',desc:'A perfect block heals him 5 and gives back 10 stamina.'},
+  q:{name:'Rope-a-Dope',cd:11,desc:'Covers up on the ropes for 2 seconds: every punch is fully blocked and drains the attacker\'s stamina. Then his counter is ready.'},
+  e:{name:'Second Wind',cd:15,desc:'Shakes off every status effect, refills his stamina and heals 6.'},
+  r:{name:'One More Round',desc:'Turns back the clock for 6 seconds: 15% faster, and every punch lands like a counter.'}},
 ];
 // LEGEND colourway: black satin and gold, unlocked by winning the arcade ladder with that fighter
 FIGHTERS.forEach(f=>f.alts.push({shorts:0x14110a,trim:0xffd23a,glove:0xe8b42a,shoe:0x14110a,glow:0xffd23a,legend:1}));
@@ -2151,6 +2159,8 @@ const STYLE={
     face:{iris:'#ffd23a',eye:'small',ew:16,eh:9,bt:12,bin:9,bout:-3,lid:6,mark:'scar'}},
   lucha:{body:'std',hair:'lucha',emblem:'star',cape:1,
     face:{iris:'#2a1408',eye:'round',ew:19,eh:12,bt:7,bin:6,bout:-5,lid:5}},
+  pops:{body:'std',hair:'pops',beard:1,beardCol:0xe4dfd4,emblem:'bell',
+    face:{iris:'#4a2e18',eye:'small',ew:17,eh:10,bt:12,bin:8,bout:-2,lid:6.5,mark:'age'}},
   grizz:{body:'heavy',hair:'bear',emblem:'paw',
     face:{iris:'#2a1408',eye:'small',ew:15,eh:10,bt:11,bin:8,bout:-4,lid:6}},
   unit:{body:'std',hair:'robot',emblem:'gear',mask:1,maskCol:0x2a303c,metal:1,
@@ -2171,6 +2181,7 @@ function emblem(x,kind,col,s){x.save();x.scale(s,s);x.lineJoin='round';x.lineWid
   else if(kind==='ghost'){x.moveTo(-.7,.9);x.lineTo(-.7,-.2);x.bezierCurveTo(-.7,-1.05,.7,-1.05,.7,-.2);x.lineTo(.7,.9);x.lineTo(.45,.65);x.lineTo(.22,.9);x.lineTo(0,.65);x.lineTo(-.22,.9);x.lineTo(-.45,.65)}
   else if(kind==='flake'){for(let i=0;i<6;i++){const a=i*Math.PI/3;x.moveTo(0,0);x.lineTo(Math.cos(a),Math.sin(a))}x.lineWidth=.34;x.lineCap='round';x.stroke();x.strokeStyle=col;x.lineWidth=.16;x.stroke();x.restore();return}
   else if(kind==='star'){for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?.42:1;x.lineTo(Math.cos(a)*r,Math.sin(a)*r)}}
+  else if(kind==='bell'){x.moveTo(-.85,.5);x.bezierCurveTo(-.85,-.95,.85,-.95,.85,.5);x.closePath();x.moveTo(-1,.5);x.lineTo(1,.5);x.lineTo(1,.72);x.lineTo(-1,.72);x.closePath();x.moveTo(.12,-.8);x.arc(0,-.8,.12,0,6.3)}
   else if(kind==='paw'){x.ellipse(0,.35,.55,.45,0,0,6.3);for(const [px,py] of [[-.62,-.25],[-.22,-.62],[.22,-.62],[.62,-.25]]){x.moveTo(px+.2,py);x.ellipse(px,py,.2,.24,0,0,6.3)}}
   else if(kind==='gear'){for(let i=0;i<8;i++){const a=i/8*6.283;x.lineTo(Math.cos(a-.18)*.95,Math.sin(a-.18)*.95);x.lineTo(Math.cos(a+.18)*.95,Math.sin(a+.18)*.95);x.lineTo(Math.cos(a+.32)*.7,Math.sin(a+.32)*.7);x.lineTo(Math.cos(a+.62)*.7,Math.sin(a+.62)*.7)}}
   else if(kind==='fox'){x.moveTo(0,.95);x.lineTo(-.72,.1);x.lineTo(-.85,-.95);x.lineTo(-.3,-.42);x.lineTo(.3,-.42);x.lineTo(.85,-.95);x.lineTo(.72,.1)}
@@ -2289,6 +2300,8 @@ function drawEyes(x,st,F,sk,lidDark,browCol){
     // marks under / around the eye (always there)
     if(F.mark==='paint'){x.fillStyle='#ff5a14';x.strokeStyle=K2;x.lineWidth=2;for(let k=0;k<2;k++){x.beginPath();const y0=cy+eh*1.5+k*9,x0=cx+s*(ew*.15+k*6);x.moveTo(x0-s*10,y0);x.lineTo(x0+s*12,y0-4);x.lineTo(x0+s*16,y0+2);x.lineTo(x0-s*8,y0+5);x.closePath();x.fill();x.stroke()}}
     if(F.mark==='scales'&&st!==EYES.ko){x.strokeStyle='rgba(40,140,20,.75)';x.lineWidth=2.5;for(let k=0;k<5;k++){const a=k*.5-1,r=ew*1.35;x.beginPath();x.arc(cx+s*(Math.cos(a)*r*.6+ew*.55),cy+Math.sin(a)*r*.55,5,0,Math.PI);x.stroke()}}
+    if(F.mark==='age'&&st!==EYES.ko){x.strokeStyle='rgba(70,35,15,.5)';x.lineWidth=2.2;x.lineCap='round';for(let k=0;k<3;k++){x.beginPath();x.moveTo(ox+s*3,cy-3+k*5);x.lineTo(ox+s*(13+k),cy-7+k*8);x.stroke()}
+      x.beginPath();x.moveTo(cx-s*ew*.6,cy+eh*1.35);x.quadraticCurveTo(cx,cy+eh*1.75,cx+s*ew*.7,cy+eh*1.3);x.stroke();x.beginPath();x.moveTo(cx-s*ew*.95,12);x.quadraticCurveTo(cx,7,cx+s*ew*1.1,13);x.moveTo(cx-s*ew*.8,20);x.quadraticCurveTo(cx,15,cx+s*ew*.95,21);x.stroke()}
     if(F.mark==='flake'&&s>0){x.save();x.translate(cx+s*ew*.7,cy+eh*1.75);emblem(x,'flake','#bff0ff',7);x.restore()}
     if(F.mark==='scar'&&s<0){x.strokeStyle='#e8a39a';x.lineWidth=4;x.lineCap='round';x.beginPath();x.moveTo(cx-ew*.4,BY-16);x.lineTo(cx+ew*.25,cy+eh*1.9);x.stroke();
       x.strokeStyle='rgba(120,50,40,.6)';x.lineWidth=2;for(let k=0;k<4;k++){const t=.15+k*.22,px=lerp(cx-ew*.4,cx+ew*.25,t),py=lerp(BY-16,cy+eh*1.9,t);x.beginPath();x.moveTo(px-5,py-2);x.lineTo(px+5,py+2);x.stroke()}}
@@ -2397,7 +2410,7 @@ class Boxer{
     Object.assign(this,{hp:f.hp,hpMax:f.hp,sta:100,meter:0,act:null,blocking:false,vx:0,vz:0,kx:0,kz:0,cd:{q:0,e:0},dodgeCd:0,
       combo:0,comboT:0,counterT:0,taken:0,takenT:0,dash:null,upAt:99,down:false,kd:0,ko:false,getup:0,buf:null,trail:f.hp,trailT:0,net:null,fxBits:0,
       tauntCd:0,minHp:null,sweat:0,hayLatch:false,blockT0:-9,blkRelT:-9,_wasBlk:false,parryOK:false,flashT:0,dbuf:null,abuf:null,
-      st:{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0,quick:0,dtick:0},
+      st:{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0,quick:0,rope:0,prime:0,dtick:0},
       stats:{thrown:0,landed:0,dmg:0,blocked:0,dodged:0,kd:0}});
   }
   capeCloth(t,sp){const [NU,NV]=this.capeN,p=this.capeGeo.attributes.position.array,fl=.45+Math.min(1.4,sp)*.75;let k=0;
@@ -2513,7 +2526,8 @@ class Boxer{
           L2.push(tintG(lockG(p.clone().addScaledVector(n,-.01),p.clone().addScaledVector(n,.07).add(V3(0,.03,-.03)),tip,.05,{flat:.55,pw:.9}),hc(1),hc(1,0xffffff,.6),1))}
         hf(.25,.17,p);const q=p.clone();L2.push(tintG(lockG(q.clone().add(V3(.03,0,0)),q.clone().add(V3(-.03,.05,.07)),q.clone().add(V3(.05,.1,.12)),.035,{flat:.5}),hc(1),hc(1,0xffffff,.75),1));
         return mergeG(L2)}),mHair))}
-    if(ST.beard){const mB=tm({color:0x3b281a,side:THREE.DoubleSide},hairS);
+    if(ST.beard){const bt=ST.beardCol?canvasTex(256,128,(x,w,h)=>{x.fillStyle='#fff';x.fillRect(0,0,w,h);for(let i=0;i<260;i++){const px=Math.random()*w,py=Math.random()*h*.4,l=20+Math.random()*60;x.strokeStyle=`rgba(${60+Math.random()*40|0},${50+Math.random()*30|0},40,${.12+Math.random()*.2})`;x.lineWidth=1+Math.random()*1.6;x.beginPath();x.moveTo(px,py);x.quadraticCurveTo(px+(Math.random()-.5)*10,py+l*.5,px+(Math.random()-.5)*14,py+l);x.stroke()}}):null;if(bt)this.ownTex.push(bt);
+      const mB=tm(Object.assign({color:ST.beardCol||0x3b281a,side:THREE.DoubleSide},bt?{map:bt}:{}),hairS);
       head.add(bare(mesh(geo('beard',()=>surface((u,w,o)=>{const uu=.25+(u-.5)*.6,jag=.03*Math.abs(Math.sin(u*Math.PI*9)),v=lerp(.7,.97+jag,w);hf(uu,v,o);const r=Math.hypot(o.x,o.z)||1;const t=.016*(1-w*.3);o.x+=o.x/r*t;o.z+=o.z/r*t;o.y-=w*.02},30,8,{closed:false})),mB)));
       head.add(mesh(geo('stache',()=>{const p=new THREE.Vector3();hf(.25,.62,p);const L2=[];for(const s of [-1,1])L2.push(lockG(p.clone().add(V3(0,-.004,.01)),p.clone().add(V3(s*.035,-.008,.006)),p.clone().add(V3(s*.052,-.03,-.006)),.015,{flat:.55,pw:.7}));return mergeG(L2)}),mB))}
     if(hs==='hood'){
@@ -2529,6 +2543,8 @@ class Boxer{
       pg.add(mesh(geo('scrunch',()=>{const s=blobG(.035,.022,.035);return s}),tm({color:new THREE.Color(L.trim)},{shade:SHADE.cloth,spec:.3})));
       if(ST.tiara){const tmI=tm({color:0xcff6ff,emissive:0x3aa8e0,emissiveIntensity:.5},{shade:[.6,.7,.9],spec:.8,gloss:.85});tmI.userData.glow=1;
         head.add(mesh(geo('tiara',()=>{const p=new THREE.Vector3(),n=new THREE.Vector3(),L2=[];for(let i=-2;i<=2;i++){hf(.25+i*.045,.16,p);n.copy(p).sub(V3(0,H.cy,0)).normalize();const h2=.05+.035*(2-Math.abs(i));L2.push(lockG(p.clone(),p.clone().addScaledVector(n,h2*.4).add(V3(0,h2*.5,0)),p.clone().addScaledVector(n,h2*.5).add(V3(0,h2,0)),.016,{pw:1,nu:4,nv:4}))}return mergeG(L2)}),tmI))}}
+    if(hs==='pops'){   // bald on top, a silver horseshoe round the back and sides
+      head.add(mesh(geo('popshair'+hk,()=>{const c=V3(0,H.cy,0);return tintG(surface((u,w,o)=>{const uu=.25+.17+u*.66,jag=.025*Math.abs(Math.sin(u*Math.PI*14));hf(uu,lerp(.27-jag*.6,.6+jag,w),o);const n=o.clone().sub(c).normalize();o.addScaledVector(n,.013*(1-Math.abs(w-.5)*.9))},40,8,{closed:false}),hc(.78),hc(1.05))}),mHair))}
     if(hs==='mohawk'){
       head.add(mesh(geo('fins'+hk,()=>{const L2=[],p=new THREE.Vector3(),n=new THREE.Vector3();
         for(let i=0;i<9;i++){const s=i/8,u=s<.45?.25:.75,v=s<.45?.33*(1-s/.45):.58*((s-.45)/.55);hf(u,Math.max(.02,v),p);n.copy(p).sub(V3(0,H.cy,0)).normalize();
@@ -2646,6 +2662,8 @@ class Boxer{
     gL.y+=Math.sin(this.anT*4.6+.6)*.012;gR.y+=Math.sin(this.anT*4.6+1.4)*.012;
     const dazed=(bits&FX.stun)||(a&&a.k==='hurt'&&a.big);
     if(this.blocking&&!(a&&a.k==='punch')){crouch+=.05;lean+=.06;gL.copy(BLOCK_L);gR.copy(BLOCK_R);headP=.12;twist=.12;elIn=1;k=30}
+    if(bits&FX.rope){crouch+=.1;lean-=.2;headP=.22;twist=.04;roll=Math.sin(this.anT*5)*.04;gL.y+=.04;gR.y+=.04}   // Rope-a-Dope: lying back on the ropes, covered up
+    if(bits&FX.prime&&PA&&Math.random()<.5){const c2=this.chestW;PA.emit(c2.x+(Math.random()-.5)*.5,c2.y-.3+Math.random()*.8,c2.z+(Math.random()-.5)*.5,0,.8,0,.6,.07,1,.82,.4,1,0,1)}   // One More Round: a golden glow
     if(dazed){gL.set(-.22,1.18,.22);gR.set(.22,1.16,.22);headR=Math.sin(this.anT*6)*.18;roll+=Math.sin(this.anT*3)*.12;crouch+=.06}
     // a body shot doubles you over: guard drops to the stomach, chin comes down
     if(a&&a.k==='hurt'&&a.body){const q=1-clamp(a.t/a.d,0,1),e2=Math.min(1,q*1.6);crouch+=.13*e2;lean+=.34*e2;gL.lerp(_U.set(-.13,1.12,.2),e2);gR.lerp(_V.set(.13,1.08,.18),e2);headP+=.22*e2;twist=lerp(twist,.05,e2);k=26}
@@ -2706,6 +2724,7 @@ class Boxer{
           if(q>.5)gR.lerp(_V.set(.2,1.68,.14),io);else gR.lerp(_V.set(.13,1.4,.3),io);twist=lerp(twist,0,io);k=40}
         else if(a.style==='roar'){const sh=(Math.random()-.5)*.03;gL.lerp(_U.set(-.56,1.55+sh,.2),io);gR.lerp(_V.set(.56,1.55-sh,.2),io);twist=lerp(twist,0,io);headP=-.36*io;lean-=.12*io;crouch+=.06*io;roll+=sh;this.flexIO=.5*io}
         else if(a.style==='crowd'){const sw=Math.sin(this.anT*5);gR.lerp(_U.set(.3,2.15,.24),io);gL.lerp(_V.set(-.32,1.0,-.05),io);roll=sw*.1*io;headY=.3*io;headP=-.18*io;twist=lerp(twist,-.1,io);crouch+=Math.max(0,sw)*.04*io}
+        else if(a.style==='wag'){const w2=Math.sin(this.anT*13);gR.lerp(_U.set(.16+w2*.07,1.6,.34),io);gL.lerp(_V.set(-.26,1.05,.14),io);twist=lerp(twist,.05,io);headY=Math.sin(this.anT*6.5)*.16*io;headR=.08*io;lean-=.05*io}
         else if(a.style==='shrug'){gL.lerp(_U.set(-.44,1.16,.26),io);gR.lerp(_V.set(.44,1.16,.26),io);twist=lerp(twist,0,io);headR=.18*io;headY=Math.sin(this.anT*7)*.18*io;headP=-.04*io;lean-=.06*io}
         else{const b2=Math.abs(Math.sin(this.anT*9));gL.lerp(_U.set(-.2,1.12,.18),io);gR.lerp(_V.set(.2,1.12,.18),io);crouch+=(.02-b2*.06)*io;headR=Math.sin(this.anT*5)*.25*io;twist=lerp(twist,.15,io)}
       }else if(a.k==='dodge'){
@@ -2738,6 +2757,7 @@ class Boxer{
         else if(id==='viper'){gL.set(-.3,1.02,-.02);gR.set(.3,1.02,-.02);lean=-.22-.06*Math.abs(Math.sin(T*9));headP=-.4;if(pe)PA.emit(this.headW.x,this.headW.y,this.headW.z,(R()-.5)*.5,.8,(R()-.5)*.5,.6,.07,.45,1,.25,.9,0,1)}
         else if(id==='kitsune'){gR.set(.1,1.66,.32);gL.set(-.3,1.04,-.02);headR=.22+Math.sin(T*3)*.05;roll=-.1;crouch=.03+Math.max(0,Math.sin(T*4))*.03;if(pe)PA.emit(this.headW.x+(R()-.5)*.4,this.headW.y+.2,this.headW.z+(R()-.5)*.4,0,.7,0,.9,.09,1,.35,.85,1,0,1)}
         else if(id==='lucha'){const ph=Math.floor(T*1.5)%2;gL.set(-.36,ph?2.05:1.75,.05);gR.set(.36,ph?1.75:2.05,.05);headP=-.3;crouch=.05;roll=ph?.08:-.08;if(pe)PA.emit(this.headW.x,this.headW.y+.4,this.headW.z,(R()-.5)*2,1+R(),(R()-.5)*2,.8,.07,R()<.5?.12:1,R()<.5?.84:.82,R()<.5?.64:.23,1,4,1)}
+        else if(id==='pops'){gR.set(.22,2.12+Math.sin(T*4)*.03,.1);gL.set(-.16,1.0,-.26);headP=-.22;lean=.06;crouch=.05;roll=-.05;if(pe)PA.emit(this.headW.x+(R()-.5)*.5,this.headW.y+.3,this.headW.z+(R()-.5)*.5,0,.6,0,.8,.07,1,.85,.45,1,0,1)}
         else if(id==='grizz'){gL.set(-.48,1.78,.05);gR.set(.48,1.78,.05);this.flexIO=.6;headP=-.42;lean=-.12;crouch=.08+Math.max(0,Math.sin(T*3))*.05;if(pe)PA.emit(this.headW.x,this.headW.y,this.headW.z+.15,(R()-.5)*1.5,.6,1+R(),.4,.06,.9,.8,.6,.6,0,1)}
         else if(id==='unit'){const st2=Math.floor(T*3)%4;gL.set(-.32,st2<2?1.62:1.2,st2%2?.35:.05);gR.set(.32,st2<2?1.2:1.62,st2%2?.05:.35);twist=st2%2?.25:-.25;headY=st2<2?.2:-.2;k=40;if(pe){const g=this.gW[st2%2];PA.emit(g.x,g.y,g.z,(R()-.5),(R()-.2),(R()-.5),.3,.05,1,.85,.3,1,3,1)}}
         else if(id==='toro'){gL.set(-.17,1.82,.12);gR.set(.17,1.82,.12);headP=.15;lean=.12;crouch=.06+Math.max(0,Math.sin(T*6))*.07;if(pe)PA.emit(this.x+(R()-.5)*.8,.05,this.z+(R()-.5)*.8,(R()-.5),.7,(R()-.5),.6,.13,.78,.66,.5,.7,0,1)}
@@ -2887,7 +2907,7 @@ function foxTail(b,n){if(!b.f||!b.root.visible)return;const sd=n%2?1:-1,yaw=b.ya
   const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:n===8?0xffffff:0xff4fd8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
   fxAdd(m,.28,(o,k)=>{o.material.opacity=1-k;o.scale.setScalar(1+k*.15)});if(PA)for(let i=0;i<10;i++){const p=pts[2];PA.emit(p.x,p.y,p.z,(Math.random()-.5)*2,(Math.random()-.5)*2,(Math.random()-.5)*2,.4,.08,1,.4,.9,1,0,1)}}
 function bez(out,a,c,b,t){const u=1-t;out.set(u*u*a.x+2*u*t*c.x+t*t*b.x,u*u*a.y+2*u*t*c.y+t*t*b.y,u*u*a.z+2*u*t*c.z+t*t*b.z);return out}
-const FX={burn:1,poison:2,slow:4,stun:8,freeze:16,sealed:32,phase:64,iron:128,colossus:256,firefist:512,icefist:1024,shield:2048,drain:4096,rage:8192,charm:16384,cape:32768,overclock:65536,fear:131072,hib:262144};
+const FX={rope:524288,prime:1048576,burn:1,poison:2,slow:4,stun:8,freeze:16,sealed:32,phase:64,iron:128,colossus:256,firefist:512,icefist:1024,shield:2048,drain:4096,rage:8192,charm:16384,cape:32768,overclock:65536,fear:131072,hib:262144};
 
 // ── the referee: a boxer rig in a white shirt that keeps out of the way ──
 const REF={b:null,x:0,z:2.4,yaw:0,count:-1,beat:0,mode:'idle'};
@@ -2944,7 +2964,7 @@ const fighting=()=>G.phase==='fight';
 function fxBitsOf(b){const s=b.st;let m=0;
   if(s.burn>0)m|=FX.burn;if(s.pstk>0&&s.poison>0)m|=FX.poison;if(s.slow>0)m|=FX.slow;if(s.stun>0)m|=FX.stun;if(s.freeze>0)m|=FX.freeze;if(s.sealed>0)m|=FX.sealed;
   if(s.phase>0)m|=FX.phase;if(s.iron>0)m|=FX.iron;if(s.colossus>0)m|=FX.colossus;if(s.firefist>0)m|=FX.firefist;if(s.icefist>0)m|=FX.icefist;if(s.shield>0)m|=FX.shield;if(s.drain>0)m|=FX.drain;
-  if(s.charm>0)m|=FX.charm;if(s.cape>0)m|=FX.cape;if(s.overclock>0)m|=FX.overclock;if(s.fear>0)m|=FX.fear;if(s.hib>0)m|=FX.hib;if(rage(b))m|=FX.rage;return m}
+  if(s.charm>0)m|=FX.charm;if(s.cape>0)m|=FX.cape;if(s.overclock>0)m|=FX.overclock;if(s.fear>0)m|=FX.fear;if(s.hib>0)m|=FX.hib;if(s.rope>0)m|=FX.rope;if(s.prime>0)m|=FX.prime;if(rage(b))m|=FX.rage;return m}
 const rage=b=>b.hp>0&&b.hp<b.hpMax*RAGE_AT&&!b.down;
 const locked=b=>b.down||b.st.stun>0||b.st.freeze>0||(b.act&&((b.act.k==='hurt'&&b.act.t<b.act.d*.8)||(b.act.k==='cast'&&b.act.lock)||b.act.k==='getup'||b.act.k==='down'||b.act.k==='ko'));
 function punchTimes(a){const p=PUNCH[a.p],sp=a.sp||1;return {w:p.w/sp,a:p.a/sp,r:p.r/sp}}
@@ -2953,7 +2973,7 @@ function inRecovery(a){if(!a)return true;if(a.k==='punch'){const T=punchTimes(a)
 // ════════════════════ OWNED-BOXER SIMULATION ════════════════════
 function logicBoxer(b,it,dt){
   const o=other(b),st=b.st,f=b.f;
-  for(const k of ['burn','slow','stun','freeze','sealed','phase','iron','colossus','drain','charm','cape','overclock','fear','hib','quick'])if(st[k]>0)st[k]=Math.max(0,st[k]-dt);
+  for(const k of ['burn','slow','stun','freeze','sealed','phase','iron','colossus','drain','charm','cape','overclock','fear','hib','quick','rope','prime'])if(st[k]>0)st[k]=Math.max(0,st[k]-dt);
   if(st.poison>0){st.poison-=dt;if(st.poison<=0)st.pstk=0}
   if(st.shieldT>0){st.shieldT-=dt;if(st.shieldT<=0){st.shield=0;st.shieldT=0}}
   // damage over time — burn and poison tick twice a second
@@ -2966,6 +2986,8 @@ function logicBoxer(b,it,dt){
   if(b.act){b.act.t+=dt;if(b.act.d!=null&&b.act.t>=b.act.d&&!['down','ko','win','lose'].includes(b.act.k)){if(b.act.k==='taunt')tauntDone(b);b.act=null}}
   const lk=locked(b),fight=fighting();
   if(st.fear>0){it={...it,punch:null,abil:null,hay:false,taunt:false}}
+  if(st.rope>0){it={...it,punch:null,abil:null,hay:false,taunt:false,dodge:false,block:true}}   // Rope-a-Dope: covered up
+  if(b._rope&&!(st.rope>0)&&fight&&!b.down){b.counterT=1.3;if(b.idx===G.ME&&!G.attract)callout('COUNTER READY','#ffd27a')}b._rope=st.rope>0;
   if(st.hib>0&&b.blocking&&fight&&!b.down)b.hp=Math.min(b.hpMax,b.hp+dt*5);
   // ── facing + movement ──
   let dx=o.x-b.x,dz=o.z-b.z;const dist=Math.hypot(dx,dz)||1;const fx=dx/dist,fz=dz/dist,rx=fz,rz=-fx;
@@ -2979,7 +3001,7 @@ function logicBoxer(b,it,dt){
   const meet=G.phase==='intro'&&G.rnd===1&&!G.attract&&G.phT<3.2,hx=meet?b.home[0]*.24:b.home&&b.home[0],hz=meet?b.home[1]*.24:b.home&&b.home[1];
   if((G.phase==='ready'||G.phase==='intro')&&b.home){const ex=hx-b.x,ez=hz-b.z,el=Math.hypot(ex,ez);if(el>.1){mz=(ex*fx+ez*fz)/el*Math.min(1,el);mx=(ex*rx+ez*rz)/el*Math.min(1,el)}}
   const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
-  let spd=2.35*f.spd*(b.blocking?.55:1)*(st.slow>0?.72:1)*(b.sta<15?.82:1)*(b.act&&b.act.k==='punch'?.4:1)*(st.colossus>0?.92:1)*(st.phase>0?1.25:1)*(st.quick>0?1.15:1)*(b.act&&b.act.k==='charge'?.38:1)*(b.act&&b.act.k==='taunt'?0:1);
+  let spd=2.35*f.spd*(b.blocking?.55:1)*(st.slow>0?.72:1)*(b.sta<15?.82:1)*(b.act&&b.act.k==='punch'?.4:1)*(st.colossus>0?.92:1)*(st.phase>0?1.25:1)*(st.quick>0?1.15:1)*(st.prime>0?1.15:1)*(st.rope>0?.35:1)*(b.act&&b.act.k==='charge'?.38:1)*(b.act&&b.act.k==='taunt'?0:1);
   let tvx=(fx*mz+rx*mx)*spd,tvz=(fz*mz+rz*mx)*spd;
   if(b.act&&b.act.k==='dodge'&&b.act.dir!=='duck'&&b.act.t<b.act.d*.6){const sd=b.act.dir==='L'?-1:b.act.dir==='R'?1:0;const bk=b.act.dir==='back'?-1:0;tvx=(rx*sd+fx*bk)*3.6;tvz=(rz*sd+fz*bk)*3.6}
   if(b.dash){b.dash.t+=dt;tvx=b.dash.vx;tvz=b.dash.vz;if(b.dash.t>=b.dash.d||dist<MIN_GAP*b.worldScale+.12){b.dash=null;tvx*=.2;tvz*=.2}}
@@ -3034,13 +3056,13 @@ function ropeVisuals(dt){
 
 // ════════════════════ ATTACKS ════════════════════
 function startPunch(b,kind,body,c=0){
-  const p=PUNCH[kind],hay=kind==='hay',sp=(b.f.pspd||b.f.spd)*(b.sta<20?(hay?.88:.78):1)*(b.st.overclock>0&&!hay?1.3:1);
+  const p=PUNCH[kind],hay=kind==='hay',sp=(b.f.pspd||b.f.spd)*(b.sta<20?(hay?.88:.78):1)*(b.st.overclock>0&&!hay?1.3:1)*(b.st.prime>0?1.1:1);
   if(hay){c=clamp(c,.15,1);body=false;if(b.idx===G.ME&&!G.attract&&!SMOKE&&owned(b)&&!G.bots[b.idx]){try{localStorage.setItem('haymaker.tip','1')}catch(e){}}}
   b.act={k:'punch',p:kind,t:0,sp,d:(p.w+p.a+p.r)/sp,id:nid(b),body,c};
   b.sta=Math.max(0,b.sta-p.st);b.stats.thrown++;if(body)b.stats.bodyT=(b.stats.bodyT||0)+1;if(hay)b.stats.hayT=(b.stats.hayT||0)+1;b.blocking=false;
   if(!G.attract)SFX.whoosh(kind==='jab'?.45:hay?1.2:.8,b.chestW,kind);
   let m=b.f.pow*(b.sta<20?.72:1)*(1+Math.min(b.combo,5)*.07)*(rage(b)?RAGE_DMG:1);
-  const fx=[];const counter=b.counterT>0;if(counter){m*=1.6;b.counterT=0}
+  const fx=[];const counter=b.counterT>0||b.st.prime>0;if(counter){m*=1.6;if(!(b.st.prime>0))b.counterT=0}
   if(b.st.firefist>0){m*=1.4;fx.push('burn');b.st.firefist--}
   if(b.st.icefist>0){fx.push('freeze');b.st.icefist--}
   if(b.st.colossus>0)m*=1.6;
@@ -3080,7 +3102,8 @@ function resolve(spec){
   if(r==='hit'&&v.st.cape>0&&spec.k==='melee'){r='dodge';v.st.cape=0;netAb(v,'olé')}   // Red Cape
   if(r==='hit'&&v.act&&v.act.k==='dodge'&&v.act.t>.02&&v.act.t<.38&&!spec.undodge){if(spec.antiDuck&&v.act.dir==='duck')caught=true;else r='dodge'}
   let dmg=spec.dmg*(mutOn('dmg')?2:1);
-  let shatter=0,taunted=0,interrupted=0;
+  let shatter=0,taunted=0,interrupted=0,roped=0;
+  if(r==='hit'&&v.st.rope>0&&!spec.unblock&&spec.k!=='zone'){r='block';dmg=0;roped=1}   // Rope-a-Dope soaks it all
   if(r==='hit'){
     if(caught)dmg*=1.4;
     if(v.st.freeze>0&&spec.delay>0){dmg*=1.3;shatter=1}
@@ -3107,7 +3130,7 @@ function resolve(spec){
   const dx=v.x-a.x,dz=v.z-a.z,dl=Math.hypot(dx,dz)||1;
   const res={id:spec.id,a:spec.a,r,dmg:(hitLike||r==='block')?Math.round(dmg*10)/10:0,cue:spec.cue,fx:r==='hit'?spec.fx:[],counter:spec.counter&&hitLike?1:0,caught:caught?1:0,
     hs,kb:hitLike?spec.kb:r==='block'?spec.kb*.35:0,kx:dx/dl,kz:dz/dl,meter:spec.meter||0,freezeT:spec.freezeT,stunT:spec.stunT,sealT:spec.sealT,k:spec.k,body:spec.body,shatter,
-    hay:spec.hay||0,taunted,interrupted,ko:0};
+    hay:spec.hay||0,taunted,interrupted,ko:0,rope:roped};
   if(hitLike&&v.hp-res.dmg<=0)res.ko=1;
   applyResult(res);
   if(G.online)netSend({t:'res',res});
@@ -3136,7 +3159,9 @@ function applyResult(res){
     if(res.r==='dodge'){v.counterT=.8;v.meter=Math.min(100,v.meter+8);v.stats.dodged++;if(v.f.id==='shade'){v.sta=Math.min(100,v.sta+14);v.dodgeCd=0}}
     if(res.r==='clash'){cancelPunch(v);v.act={k:'hurt',t:0,d:.5,big:true,parried:true};v.kx+=res.kx*3.4;v.kz+=res.kz*3.4;v.meter=Math.min(100,v.meter+20)}
     if(res.r==='parry'&&v.idx===G.ME)achGet('parry');if(res.r==='clash')achGet('clash');
-    if(res.r==='parry'){v.counterT=.9;v.meter=Math.min(100,v.meter+10);v.sta=Math.min(100,v.sta+8);v.stats.parried=(v.stats.parried||0)+1}
+    if(res.r==='parry'){v.counterT=.9;v.meter=Math.min(100,v.meter+10);v.sta=Math.min(100,v.sta+8);v.stats.parried=(v.stats.parried||0)+1;
+      if(v.f.id==='pops'){v.hp=Math.min(v.hpMax,v.hp+5);v.sta=Math.min(100,v.sta+10);floatAt('+5',v.headW,'heal')}}   // Old School
+    if(res.rope)v.meter=Math.min(100,v.meter+6);
     v.fxBits=fxBitsOf(v);
     if(v.hp<=0&&!v.down&&fighting())knockdown(v);
   }else{
@@ -3146,6 +3171,7 @@ function applyResult(res){
   // parried: the attacker is thrown off balance (applied by whoever owns the attacker)
   if(res.r==='clash'&&owned(a)){cancelPunch(a);a.act={k:'hurt',t:0,d:.5,big:true,parried:true};a.kx-=res.kx*3.4;a.kz-=res.kz*3.4;a.meter=Math.min(100,a.meter+20);a.buf=null;a.dash=null}
   if(res.r==='parry'){if(owned(a)){cancelPunch(a);a.combo=0;a.blocking=false;a.buf=null;a.dash=null}a.act={k:'hurt',t:0,d:.55,big:true,parried:true}}
+  if(res.rope){if(owned(a))a.sta=Math.max(0,a.sta-15);floatAt('ROPE-A-DOPE',v.headW,'blk')}
   if(owned(a)){
     if(hitLike&&a.idx===G.ME&&!G.online&&!G.watch&&!G.bag&&!G.attract&&!SMOKE){const P=recOf(a.f.id);if(res.dmg>P.big)P.big=res.dmg;if(a.combo+1>P.combo)P.combo=a.combo+1;}
     if(hitLike&&a.idx===G.ME){if(a.combo+1>=10)achGet('combo10');if(res.ko&&res.cue==='hay'&&res.hay>=.97)achGet('hayko')}
@@ -3233,6 +3259,11 @@ const ABIL={
       launch({id:nid(b),a:b.idx,k:'melee',cue:'plancha',dmg:12*b.f.pow,range:1.4,guard:.5,gbreak:1,hs:.6,kb:2.6,meter:6,fx:[],delay:.42});netAb(b,'q')},
     e(b){b.act={k:'taunt',t:0,d:.9,style:'flex'};b.meter=Math.min(100,b.meter+25);b.hp=Math.min(b.hpMax,b.hp+5);netAb(b,'e')},
     r(b){b.act={k:'cast',anim:'flurry',t:0,d:1.5,lock:1};for(let i=0;i<8;i++)launch({id:nid(b),a:b.idx,k:'melee',cue:'tornado',dmg:(i===7?8:3)*b.f.pow,range:1.5,guard:.5,hs:i===7?.55:.12,kb:i===7?3:.1,meter:1,fx:[],delay:.15+i*.16});netAb(b,'r')},
+  },
+  pops:{
+    q(b){b.st.rope=2.2;b.act=null;b.blocking=true;netAb(b,'q')},
+    e(b){for(const k of ['burn','poison','pstk','slow','stun','freeze','sealed','charm','fear'])b.st[k]=0;b.sta=100;b.hp=Math.min(b.hpMax,b.hp+6);b.act={k:'cast',anim:'charge',t:0,d:.35};netAb(b,'e')},
+    r(b){b.st.prime=6;b.act={k:'cast',anim:'roar',t:0,d:.6,lock:1};netAb(b,'r')},
   },
   grizz:{
     q(b){b.act={k:'cast',anim:'flurry',t:0,d:.62,lock:1};for(const [i,dl] of [[0,.2],[1,.42]])launch({id:nid(b),a:b.idx,k:'melee',cue:'maul',dmg:7*b.f.pow,range:1.45*(b.f.size||1),guard:.6,hs:.3,kb:1.2,meter:4,fx:[],delay:dl});netAb(b,'q')},
@@ -3347,7 +3378,7 @@ function setPhase(ph,x={}){
       const call=G.rnd>1&&G.call?G.call[b.idx]:null,CC=CALLS.find(c=>c[0]===call);
       if(G.rnd>1)b.hp=Math.min(b.hpMax,b.hp+(b.hpMax-b.hp)*(CC?CC[3]:.35));
       b.sta=100;b.act=null;b.combo=0;b.counterT=0;b.cd.q=b.cd.e=0;b.dash=null;b.kx=b.kz=0;
-      Object.assign(b.st,{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0,quick:0});
+      Object.assign(b.st,{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0,quick:0,rope:0,prime:0});
       if(CC&&CC[0]==='fire')b.meter=Math.min(100,b.meter+35);if(CC&&CC[0]==='move')b.st.quick=25;
       b.x=b.home[0];b.z=b.home[1];b.yaw=Math.atan2(-b.x,-b.z)}
     if(G.rnd>1&&G.call&&G.call[G.ME]&&!G.attract){const CC=CALLS.find(c=>c[0]===G.call[G.ME]);setTimeout(()=>sub('CORNER CALL · '+CC[1],2),1300)}
@@ -3438,6 +3469,9 @@ const ICONS={
   rocket:()=>SVG(`<g>${AT('translate','-6 0;6 0;-6 0',.5)}<path d="M2 20h10M0 27h12M4 34h8" stroke="#ffb02e" stroke-width="3.5"/>${GLOVE('#2a3240',6,4,.82)}</g>`),
   overclock:()=>SVG(`<circle cx="24" cy="26" r="16" fill="#1c2230" stroke="${K}" stroke-width="2.6"/><circle cx="24" cy="26" r="16" fill="none" stroke="#ffd23a" stroke-width="3" stroke-dasharray="6 4"><animateTransform attributeName="transform" type="rotate" values="0 24 26;360 24 26" dur=".8s" repeatCount="indefinite"/></circle><path d="M24 26l7-8" stroke="#ffd23a" stroke-width="3.5"/><circle cx="24" cy="26" r="3" fill="#ffd23a"/>`),
   beam:()=>SVG(`<circle cx="10" cy="24" r="7" fill="#ffd23a" stroke="${K}" stroke-width="2.4"/><g>${AO('1;.4;1',.3)}<path d="M14 21h32v6H14z" fill="#fff6c8" stroke="#ffd23a" stroke-width="2"/></g>`),
+  rope:()=>SVG(`<g>${AT('translate','-2 0;2 0;-2 0',.9)}<path d="M4 14h40M4 24h40M4 34h40" stroke="${K}" stroke-width="5"/><path d="M4 14h40" stroke="#ff3b3f" stroke-width="2.6"/><path d="M4 24h40" stroke="#f2f2f2" stroke-width="2.6"/><path d="M4 34h40" stroke="#2f86ff" stroke-width="2.6"/>${GLOVE('#6e3a1c',10,4,.62)}</g>`),
+  wind:()=>SVG(`<g>${AT('rotate','0 24 24;-360 24 24',1.6)}<path d="M24 8a16 16 0 1 1-15 10" fill="none" stroke="${K}" stroke-width="6"/><path d="M24 8a16 16 0 1 1-15 10" fill="none" stroke="#9fe6ff" stroke-width="3"/><path d="M9 18l-2-8 8 3z" fill="#9fe6ff" stroke="${K}" stroke-width="2"/></g>`),
+  bellI:()=>SVG(`<g>${AT('rotate','-14 24 10;14 24 10;-14 24 10',.5)}<path d="M10 34c0-18 4-24 14-24s14 6 14 24z" fill="#ffd23a" stroke="${K}" stroke-width="2.6"/><rect x="6" y="33" width="36" height="5" rx="2" fill="#e0a84a" stroke="${K}" stroke-width="2.4"/><circle cx="24" cy="8" r="3" fill="#ffd23a" stroke="${K}" stroke-width="2"/></g>`),
   maul:()=>SVG(`<g>${AT('rotate','-12 24 24;12 24 24;-12 24 24',.5)}${[0,1,2].map(i=>`<path d="M${12+i*9} 8c-3 10-3 22 2 32" fill="none" stroke="${K}" stroke-width="5"/><path d="M${12+i*9} 8c-3 10-3 22 2 32" fill="none" stroke="#ffb05a" stroke-width="2.5"/>`).join('')}</g>`),
   hib:()=>SVG(`<path d="M30 8a14 14 0 1 0 10 24A12 12 0 0 1 30 8z" fill="#9fe6ff" stroke="${K}" stroke-width="2.6"/><g>${AO('0;1;0',1.4)}<text x="10" y="16" font-size="10" font-weight="900" fill="#fff" stroke="${K}" stroke-width=".8">z</text></g>`),
   roarI:()=>SVG(`<circle cx="24" cy="24" r="10" fill="#c98a4a" stroke="${K}" stroke-width="2.6"/><path d="M19 27q5 5 10 0" fill="#2a090d" stroke="${K}" stroke-width="2"/><g>${AT('scale','.8;1.2;.8',.6)}<circle cx="24" cy="24" r="18" fill="none" stroke="#ffb05a" stroke-width="2.5" transform-origin="24 24"/></g>`),
@@ -3460,7 +3494,7 @@ const ICONS={
 };
 const ABICON={blaze:{q:'firefist',e:'comet',r:'inferno'},volt:{q:'blink',e:'shock',r:'sandy'},titan:{q:'iron',e:'pound',r:'colossus'},
   shade:{q:'phase',e:'seal',r:'fists'},frost:{q:'icefist',e:'frostshield',r:'zero'},viper:{q:'spit',e:'coil',r:'kiss'},
-  kitsune:{q:'foxfire',e:'charm',r:'tails'},toro:{q:'rush',e:'cape',r:'stampede'},unit:{q:'rocket',e:'overclock',r:'beam'},grizz:{q:'maul',e:'hib',r:'roarI'},lucha:{q:'plancha',e:'showboat',r:'tornado'},champ:{q:'pound',e:'iron',r:'stampede'}};
+  kitsune:{q:'foxfire',e:'charm',r:'tails'},toro:{q:'rush',e:'cape',r:'stampede'},unit:{q:'rocket',e:'overclock',r:'beam'},grizz:{q:'maul',e:'hib',r:'roarI'},pops:{q:'rope',e:'wind',r:'bellI'},lucha:{q:'plancha',e:'showboat',r:'tornado'},champ:{q:'pound',e:'iron',r:'stampede'}};
 const ICO=(k)=>(ICONS[k]||ICONS.random)();
 const abIcon=(f,k)=>ICO(ABICON[f.id][k]);
 
@@ -3721,6 +3755,7 @@ function abilityVisual(i,k,x){
     if(k==='r'){if(!q)SFX.whoosh(1,P,'dodge');for(let n=0;n<9;n++)after(.15+n*.11,()=>foxTail(b,n))}
     if(k==='taunt'){}}
   if(id==='lucha'){if(k==='q'){b.trail={c:0x1fd6a4,t:.5};b.ghostT=.5;b.ghostC=0x1fd6a4;if(!q){SFX.whoosh(1.2,P,'hay');SFX.ooh(.9)}}if(k==='e'){burst(b.headW,40,0xffd23a,3,.7,.08,{up:1});ARENA.excite=1;if(ARENA.cheer)ARENA.cheer[b.idx]=1.2;if(!q)SFX.cheer(1)}if(k==='r'){groundRing(b.x,b.z,1.8,0x1fd6a4,.5,.2);if(!q)SFX.whoosh(1,P,'dodge')}}
+  if(id==='pops'){if(k==='q'){if(!owned(b)){b.st.rope=2.2}if(!q)SFX.rope(P)}if(k==='e'){burst(P,36,0x9fe6ff,2.4,.7,.08,{up:1});groundRing(b.x,b.z,1.4,0x9fe6ff,.4,.15);if(!q)SFX.heal(P)}if(k==='r'&&!q){SFX.bell(3);groundRing(b.x,b.z,2.6,0xffd27a,.6,.22);afterimage(b,0xffd27a,.6,1)}}
   if(id==='grizz'){if(k==='q'){if(!q)SFX.roar(P)}if(k==='e'){burst(b.chestW,24,0x9fe6ff,2,.6,.07,{});if(!q)SFX.shield(P)}if(k==='r'&&!q){SFX.roar(P);SFX.rumble();shake(.5)}}
   if(id==='unit'){if(k==='q'){burst(b.gW[1],24,0xffd23a,3,.4,.08,{});if(!q)SFX.whoosh(1,P,'cross')}if(k==='e'){b.gW.forEach(g=>burst(g,18,0xffd23a,2,.4,.07,{}));if(!q)SFX.zap(.5,P)}if(k==='r'&&!q)SFX.zap(.8,P)}
   if(id==='toro'){if(k==='rush'){b.trail={c:0xff3b3f,t:.45};b.ghostT=.45;b.ghostC=0xff3b3f;burst(_hp.set(b.x,.1,b.z),26,0xc9a27a,2.6,.6,.1,{up:1});if(!q)SFX.roar(P)}
@@ -3850,7 +3885,7 @@ const SFX={
   splat(p){if(!sOK())return;const pan=panOf(p);noise({dur:.12,vol:.3,lp:900,pan});tone({type:'sine',f:300,f2:80,dur:.1,vol:.25,pan})},
   heal(p){if(!sOK())return;const pan=panOf(p);[72,76,79,84].forEach((m,i)=>tone({at:i*.06,type:'sine',f:440*Math.pow(2,(m-69)/12),dur:.4,vol:.06,pan,rev:.5}))},
   pyro(d=1.5){if(!sOK())return;for(let i=0;i<Math.round(16*d);i++)noise({at:rr(0,d),dur:.01,vol:rr(.03,.07),hp:rr(2500,6000),pan:rr(-.8,.8)});tone({type:'sine',f:90,f2:45,dur:.4,vol:.3,rev:.4})},
-  taunt(id,p){if(!sOK())return;({blaze:()=>SFX.fire(.8,p),volt:()=>SFX.zap(.7,p),titan:()=>SFX.roar(p),shade:()=>SFX.shadow(p),frost:()=>SFX.ice(.7,p),viper:()=>SFX.hiss(p),kitsune:()=>SFX.fire(.45,p),toro:()=>SFX.roar(p),unit:()=>SFX.clang(p),grizz:()=>SFX.roar(p),lucha:()=>SFX.cheer(.6)}[id]||(()=>{}))()},
+  taunt(id,p){if(!sOK())return;({blaze:()=>SFX.fire(.8,p),volt:()=>SFX.zap(.7,p),titan:()=>SFX.roar(p),shade:()=>SFX.shadow(p),frost:()=>SFX.ice(.7,p),viper:()=>SFX.hiss(p),kitsune:()=>SFX.fire(.45,p),toro:()=>SFX.roar(p),unit:()=>SFX.clang(p),grizz:()=>SFX.roar(p),lucha:()=>SFX.cheer(.6),pops:()=>SFX.bell(1)}[id]||(()=>{}))()},
   rage(){if(!sOK())return;tone({type:'sine',f:60,f2:40,dur:.5,vol:.55,rev:.3});SFX.roar()},
   heart(){if(!sOK())return;tone({type:'sine',f:62,f2:40,dur:.14,vol:.27});tone({at:.19,type:'sine',f:56,f2:38,dur:.12,vol:.19})},
   clapper(){if(!sOK())return;for(let k=0;k<3;k++){noise({at:k*.16,dur:.035,vol:.4,bp:2300,q:3,rev:.3});tone({at:k*.16,type:'triangle',f:1300,f2:800,dur:.03,vol:.1})}},
@@ -3893,7 +3928,7 @@ function say(){}
 const CPU_STYLE={volt:{aggr:1.05,block:.8,dodge:1.4,range:.35,label:'hit and run'},kitsune:{aggr:1,block:.85,dodge:1.12,range:.25},
   titan:{aggr:1.02,block:1.2,dodge:.92,range:-.12},grizz:{aggr:.95,block:1.3,dodge:.6,range:-.15},shade:{aggr:.9,block:.9,dodge:1,range:.1},
   toro:{aggr:1.25,block:.85,dodge:.8,range:-.25},blaze:{aggr:1.08,block:1,dodge:1,range:-.08},viper:{aggr:1,block:1,dodge:1.15,range:.15},
-  frost:{aggr:1,block:1.1,dodge:1,range:0},lucha:{aggr:1.1,block:.9,dodge:1.1,range:.05},champ:{aggr:1.05,block:1.2,dodge:.8,range:-.1},unit:{aggr:1.05,block:1.05,dodge:.9,range:.05}};
+  frost:{aggr:1,block:1.1,dodge:1,range:0},lucha:{aggr:1.1,block:.9,dodge:1.1,range:.05},champ:{aggr:1.05,block:1.2,dodge:.8,range:-.1},pops:{aggr:.95,block:1.15,dodge:1.05,range:-.05},unit:{aggr:1.05,block:1.05,dodge:.9,range:.05}};
 function styled(D,id){const S=CPU_STYLE[id];if(!S||D.aggr===0)return D;return Object.assign({},D,{aggr:clamp(D.aggr*S.aggr,0,.97),block:clamp(D.block*S.block,0,.95),dodge:clamp(D.dodge*S.dodge,0,.7),range:S.range})}
 class Bot{
   constructor(idx,diff){this.idx=idx;this.diff=diff;this.D=DIFF[diff]||DIFF.contender;this.plan=[];this.think=1;this.react=null;this.strafe=Math.random()<.5?1:-1;this.strafeT=0;this.blockT=0;this.seen=null;this.abilT=1.5;this.planT=0;this.guardT=0}
@@ -3984,6 +4019,7 @@ const AIAB={
   unit:(b,o,d)=>b.meter>=100&&d<4.5&&!o.act?'r':b.cd.q<=0&&d>2&&d<5.5?'q':b.cd.e<=0&&d<2?'e':null,
   champ:(b,o,d)=>b.meter>=100&&d>1.4&&d<4?'r':b.cd.q<=0&&d<2.2?'q':b.cd.e<=0&&b.hp<b.hpMax*.8?'e':null,
   lucha:(b,o,d)=>b.meter>=100&&d<1.6?'r':b.cd.q<=0&&d>1.6&&d<4?'q':b.cd.e<=0&&d>2.2?'e':null,
+  pops:(b,o,d)=>b.meter>=100&&d<2.2?'r':b.cd.e<=0&&(b.sta<35||b.st.burn>0||b.st.poison>0||b.st.slow>0||b.st.charm>0||b.st.fear>0)?'e':b.cd.q<=0&&o.act&&o.act.k==='punch'&&d<1.8?'q':null,
   grizz:(b,o,d)=>b.meter>=100&&d<2.6?'r':b.cd.q<=0&&d<1.6?'q':b.cd.e<=0&&b.hp<b.hpMax*.7?'e':null,
   toro:(b,o,d)=>b.meter>=100&&d>1.5&&d<4.2?'r':b.cd.q<=0&&d>1.7&&d<3.8?'q':b.cd.e<=0&&o.act&&o.act.k==='punch'&&d<1.9?'e':null,
 };
@@ -4230,7 +4266,7 @@ function cutin(b){if(G.attract||SMOKE)return;const el=$('cutin'),f=b.f,right=b.i
   clearTimeout(cutin.t);cutin.t=setTimeout(()=>el.classList.remove('on'),1050);
   if(!G.online){CAM.freeze=.6}PFX.dimT=.55;SFX.slide()}
 // fighter VS splash over the ring-walk camera
-const QUOTES={blaze:['Hope you brought a fire extinguisher.','I\'m already warmed up.','Things are about to get heated.'],
+const QUOTES={pops:['I was fighting before your parents met.','Old man strength. Look it up.','Float like a butterfly. Mostly.'],blaze:['Hope you brought a fire extinguisher.','I\'m already warmed up.','Things are about to get heated.'],
   volt:['Blink and you\'ll miss it.','Ten thousand volts with your name on them.','Too slow.'],
   titan:['Mountains don\'t move.','Hit me. I dare you.','Gravity\'s on my side.'],
   shade:['You never see the one that gets you.','…','I\'m already behind you.'],
@@ -4242,7 +4278,7 @@ const QUOTES={blaze:['Hope you brought a fire extinguisher.','I\'m already warme
   lucha:['¡Vámonos!','The people want a show. I give them one.','Nobody has seen my face. Nobody will.'],
   grizz:['GRRRRR.','I eat fighters like you for breakfast.','Hibernation\'s over.'],
   unit:['TARGET ACQUIRED.','14,000,605 SIMULATIONS. YOU LOSE IN ALL OF THEM.','RESISTANCE IS INEFFICIENT.']};
-const BIOS={blaze:'A street kid from the boiler district who learned to box in a foundry. Hits hard, burns hotter, never backs off.',
+const BIOS={pops:'Three-time champion of a league that doesn\'t exist any more. Retired twice, unretired twice. Still does roadwork at 5am in the same sweatpants.',blaze:'A street kid from the boiler district who learned to box in a foundry. Hits hard, burns hotter, never backs off.',
   volt:'Ex-courier who outran a lightning strike — and kept some of it. The fastest hands in GLITCHBOX.',
   titan:'Thirty-one fights, zero times off his feet. Trains by pushing trucks up the mountain road.',
   shade:'Nobody has seen the face under the hood. Nobody has landed a clean punch either.',
@@ -4254,17 +4290,17 @@ const BIOS={blaze:'A street kid from the boiler district who learned to box in a
   champ:'Retired undefeated forty years ago. Came back because he heard someone new had the belt.',
   lucha:'Fourth-generation luchador from the Arena Ciudad. Flies off the top rope in a sport that doesn\'t have a top rope.',
   grizz:'Wandered out of the forest, into a gym, and has refused to leave. Eats salmon between rounds.'};
-const RIVALS={'blaze|frost':['Fire and ice. Again.','You\'re going to melt, Blaze.'],'unit|volt':['Faster than a machine? Let\'s find out.','ELECTRICITY IS MY FOOD.'],
+const RIVALS={'champ|pops':['You taught me everything, old man.','Not everything, kid. Not this.'],'lucha|pops':['¡Abuelo! You came out of retirement?','Somebody had to teach you to keep your hands up.'],'blaze|frost':['Fire and ice. Again.','You\'re going to melt, Blaze.'],'unit|volt':['Faster than a machine? Let\'s find out.','ELECTRICITY IS MY FOOD.'],
   'grizz|titan':['Two mountains. One ring.','GRRR.'],'kitsune|shade':['I see right through you.','There\'s nothing to see.'],
   'toro|viper':['Big horns, slow feet.','Come here, little snake.'],'lucha|toro':['The cape is mine, señor.','I don\'t charge at masks.'],'champ|titan':['Thirty-one fights? Cute.','I never fell either, old man.'],'lucha|unit':['Can a robot feel the crowd?','CROWD NOISE: IRRELEVANT.'],'blaze|toro':['Red rag to a bull.','You\'re the one who\'ll get burned.']};
-const WINQ={blaze:['Told you it\'d get hot.','Somebody call the fire brigade — for you.'],volt:['Was that it? I barely charged up.','Too slow. Again.'],
+const WINQ={pops:['Still got it.','Somebody get me an ice pack. For my back.'],blaze:['Told you it\'d get hot.','Somebody call the fire brigade — for you.'],volt:['Was that it? I barely charged up.','Too slow. Again.'],
   titan:['The mountain stands.','You hit hard. Not hard enough.'],shade:['You were swinging at shadows.','…'],frost:['Stay down. Stay cold.','Cool, calm, champion.'],
   viper:['The venom always wins.','Sssssweet victory.'],kitsune:['Was it me, or my illusion? Hehe~','Nine tails, zero worries.'],toro:['¡Olé!','Next time, wear red.'],
   unit:['VICTORY LOGGED.','OPPONENT STATUS: RESTING.'],grizz:['Rrraaarrgh! (Salmon time.)','Back to hibernation.'],lucha:['¡Para mi gente!','The people\'s champion!'],champ:['Still undefeated.','Forty years, and nobody\'s close.']};
 function rivalry(a,b){const k=[a,b].sort().join('|'),L=RIVALS[k];if(!L)return null;const first=[a,b].sort()[0];return a===first?L:[L[1],L[0]]}
 // TALE OF THE TAPE: height, weight and reach from each fighter's build, plus a (fictional, stable) pro record
 function tape(f){const body=(STYLE[f.id]||{}).body||'std',sz=f.size||1,H=Math.round(70*sz*(body==='fem'?.96:1)),W=Math.round(({std:172,lean:158,heavy:226,fem:138}[body]||170)*sz*sz*sz+(f.id==='unit'?70:f.id==='grizz'?40:0));
-  let h=0;for(const ch of f.id)h=(h*31+ch.charCodeAt(0))>>>0;const w=f.id==='champ'?99:18+h%23,l=f.id==='champ'?0:(h>>>5)%5,ko=f.id==='champ'?97:Math.round(w*(.55+((h>>>9)%30)/100));
+  let h=0;for(const ch of f.id)h=(h*31+ch.charCodeAt(0))>>>0;const w=f.id==='champ'?99:f.id==='pops'?61:18+h%23,l=f.id==='champ'?0:f.id==='pops'?9:(h>>>5)%5,ko=f.id==='champ'?97:f.id==='pops'?44:Math.round(w*(.55+((h>>>9)%30)/100));
   return {h:`${Math.floor(H/12)}'${H%12}"`,w:W+' LB',r:Math.round(H*1.03*(f.reach||1))+'"',rec:`${w}-${l}`,ko:ko+' KO'}}
 function vsShow(){if(G.attract||SMOKE)return;const el=$('vs'),[A,B]=G.B,RV=rivalry(A.f.id,B.f.id),side=(b,i)=>`<div class="vport">${portrait(b.f.id,Math.min(300,innerHeight*.42)|0,i===1)}</div><div class="tag">${G.local?'PLAYER '+(i+1):i===G.ME&&!G.watch?'YOU':G.online?'RIVAL':'CPU'} · ${i?'BLUE':'RED'} CORNER</div><div class="nm">${(b.name||b.f.name).replace(/[<>&]/g,'')}</div><div class="nk">“${b.f.nick}”</div><div class="qt">${RV?RV[i]:pick(QUOTES[b.f.id]||['…'])}</div>`;
   const l=el.querySelector('.l'),r=el.querySelector('.r');l.style.setProperty('--c',A.f.col);r.style.setProperty('--c',B.f.col);l.innerHTML=side(A,0);r.innerHTML=side(B,1);
@@ -4326,7 +4362,7 @@ function showHUD(on){
   for(const k in HUDC)delete HUDC[k];
 }
 const setC=(key,el,prop,val)=>{if(HUDC[key]!==val){HUDC[key]=val;if(prop==='text')el.textContent=val;else if(prop==='html')el.innerHTML=val;else if(prop.startsWith('--'))el.style.setProperty(prop,val);else el.style[prop]=val}};
-const STATUS_ICONS=[['fear','fear'],['hib','hib'],['overclock','overclock'],['charm','charm'],['cape','cape'],['rage','rage'],['burn','burn'],['poison','poison'],['slow','slow'],['stun','stun'],['freeze','freeze'],['sealed','sealed'],['phase','ghost'],['iron','iron'],['colossus','grow'],['firefist','firefist'],['icefist','icefist'],['shield','shield'],['drain','heart']];
+const STATUS_ICONS=[['prime','bellI'],['rope','rope'],['fear','fear'],['hib','hib'],['overclock','overclock'],['charm','charm'],['cape','cape'],['rage','rage'],['burn','burn'],['poison','poison'],['slow','slow'],['stun','stun'],['freeze','freeze'],['sealed','sealed'],['phase','ghost'],['iron','iron'],['colossus','grow'],['firefist','firefist'],['icefist','icefist'],['shield','shield'],['drain','heart']];
 const q240=v=>(Math.round(clamp(v,0,1)*240)/240).toFixed(4);
 function updateHUD(dt){
   if($('hud').classList.contains('hide'))return;
@@ -4499,6 +4535,7 @@ function startSolo(myF,oppF,diff,watch){rpStop();G.forfeit=false;G.surv=null;G.t
 const LAD_DIFF=['rookie','rookie','contender','contender','champion'];
 // each fighter's ladder is a little story: why they climb, the night before the title, and what the belt means
 const STORY={
+  pops:['Pops\' old gym is about to become a juice bar. One last title run to buy it back.','The night before the title, Pops tapes his hands the way he did in 1979. The tape is also from 1979.','The gym stays open. Pops hangs the belt over the door and goes back to teaching jab-cross to eight-year-olds.'],
   blaze:['The foundry\'s closing. Win the belt and the purse keeps the furnaces lit for one more winter.','Tomorrow\'s the title. The whole boiler district is crammed into one bar to watch.','The furnaces roar back to life. Kids in the district start wrapping their hands with rags.'],
   volt:['Couriers get paid by the delivery. Champions get paid by the second. Volt did the maths.','One fight left. Volt hasn\'t slept — too much charge in the hands.','Volt does a lap of the ring so fast the cameras only catch the belt.'],
   titan:['Thirty-one fights, never down. But never a belt. The mountain wants its summit.','His father fought for this belt and lost. Titan keeps the old gloves in his bag.','He hangs the belt on the summit cairn above his village. It\'s still there.'],
@@ -5094,7 +5131,7 @@ function runSmoke(){
   const near=(a,b,e=.01)=>Math.abs(a-b)<=e;
   const abil=(f0,f1,key,d=1)=>{solo(f0,f1);place(d);G.B[0].meter=100;return castAbility(G.B[0],key)};
   try{
-    ok(FIGHTERS.length===11,'eleven fighters');
+    ok(FIGHTERS.length===12,'twelve fighters');
     ok([...FIGHTERS,BOSS].every(f=>{const t=tape(f);return /^\d'\d+"$/.test(t.h)&&/^\d+ LB$/.test(t.w)&&/^\d+-\d$/.test(t.rec)&&/^\d+ KO$/.test(t.ko)}),'TALE OF THE TAPE is well-formed for everyone');
     for(const f of FIGHTERS){ok(ABIL[f.id]&&ABIL[f.id].q&&ABIL[f.id].e&&ABIL[f.id].r,f.id+' has three abilities');ok(!!AIAB[f.id],f.id+' has CPU ability rules');ok(f.q.cd>0&&f.e.cd>0,f.id+' has cooldowns')}
     // ── rig ──
@@ -5185,6 +5222,10 @@ function runSmoke(){
     {solo('titan','toro');place(1.1);const A=G.B[0],B=G.B[1];G.forced=[{...EMPTY,hay:true},{...EMPTY,hay:true}];sim(1.05);G.forced=[EMPTY,EMPTY];sim(.9);
      ok(A.hp===A.hpMax&&B.hp===B.hpMax&&A.meter>=20&&B.meter>=20,'two full haymakers at once CLASH: no damage, both get meter ('+A.hp.toFixed(0)+'/'+B.hp.toFixed(0)+')')}
     abil('grizz','frost','q',1.1);sim(.8);ok(G.B[1].hp<100-8,'Maul swipes twice ('+G.B[1].hp.toFixed(1)+')');
+    {abil('pops','titan','q',1);const h0=G.B[0].hp,s0=G.B[1].sta;G.forced[1]={...EMPTY,punch:'cross'};sim(.7);G.forced[1]=EMPTY;ok(G.B[0].hp===h0&&G.B[1].sta<s0-14,'Rope-a-Dope soaks the punch and tires the puncher');
+      sim(2);ok(G.B[0].counterT>0&&!G.B[0].st.rope,'…then Pops comes off the ropes with a counter ready')}
+    {solo('pops','viper');place(1);const P=G.B[0];Object.assign(P.st,{poison:3,pstk:4,slow:2,fear:1});P.sta=10;P.hp=50;castAbility(P,'e');ok(!P.st.poison&&!P.st.slow&&!P.st.fear&&P.sta===100&&P.hp===56,'Second Wind: statuses gone, stamina full, +6 health');
+      abil('pops','titan','r',1);sim(.7);ok(G.B[0].st.prime>4,'One More Round turns back the clock');G.B[0].act=null;G.B[0].counterT=0;G.pending.length=0;startPunch(G.B[0],'jab');ok(G.pending.some(q=>q.spec.a===0&&q.spec.counter),'…every punch lands like a counter')}
     abil('grizz','frost','r',1.5);sim(.6);ok(G.B[1].st.fear>0,'Roar scares them');G.forced[1]={...EMPTY,punch:'jab'};const h0=G.B[0].hp;sim(.5);G.forced[1]=EMPTY;ok(G.B[0].hp===h0,'…and a scared fighter can\'t attack');
     abil('grizz','frost','e');G.B[0].hp=60;G.forced[0]={...EMPTY,block:true};sim(1);G.forced[0]=EMPTY;ok(G.B[0].hp>63,'Hibernate heals while blocking ('+G.B[0].hp.toFixed(1)+')');
     {G.surv={f:'blaze',n:0,hp:null};survNext();const S=G.surv;ok(S&&G.B[0].f.id==='blaze'&&G.bots[1].diff==='rookie','SURVIVAL: bout one is against a rookie');G.B[0].hp=40;survEnd({w:G.ME});survNext();
