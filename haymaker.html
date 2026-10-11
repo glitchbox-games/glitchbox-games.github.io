@@ -106,6 +106,7 @@ body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 #recBody .rc .mb{top:auto;bottom:6px;right:6px}
 #altSeg{flex-wrap:wrap}.kitEd{flex-basis:100%;display:flex;flex-direction:column;gap:3px;margin-top:4px}.kitEd>div{display:flex;align-items:center;gap:3px}.kitEd small{width:52px;font:900 9px Rubik;letter-spacing:.15em;color:var(--dim)}
 .kitEd i{width:16px;height:16px;border-radius:4px;cursor:pointer;border:2px solid rgba(0,0,0,.6)}.kitEd i.on{border-color:#fff;transform:scale(1.15)}
+.mvk{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;font:600 11.5px Rubik;color:#ccc}.mvk div{display:flex;gap:8px;align-items:center}.mvk kbd{min-width:72px;text-align:center}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -512,6 +513,7 @@ body.touch #abil,body.touch #keys{display:none}
   </div>
 </div>
 
+<div class="ov dark" id="movesOv"><div class="panel finfo" style="max-width:560px;width:94vw"><div id="movesBody"></div><div class="mvk" id="movesKeys"></div><button class="btn primary" id="movesBack" style="margin-top:12px">BACK TO THE FIGHT</button></div></div>
 <div class="ov dark" id="setOv"><div class="panel" style="max-width:520px;width:94vw"><h2>SETTINGS</h2><div id="setBody"></div><button class="btn primary" id="setBack" style="margin-top:12px">DONE</button></div></div>
 <div class="ov dark" id="tourOv"><div class="card2" id="tourBody" style="width:min(720px,96vw)"></div></div>
 <div class="ov dark" id="dayOv"><div class="card2" id="dayBody"></div></div>
@@ -521,6 +523,7 @@ body.touch #abil,body.touch #keys{display:none}
     <h2>PAUSED</h2>
     <div class="menu">
       <button class="primary" id="resume">RESUME</button>
+      <button id="pMoves">MOVE LIST</button>
       <button id="pHelp">CONTROLS</button>
       <button id="pReplay">INSTANT REPLAY</button>
       <button id="pPhoto">PHOTO MODE</button>
@@ -4142,6 +4145,10 @@ function setupUI(){
     const prevQ=SET.q;SET[k]=v;if(k==='snd'||k==='mus')SET.mute=false;saveSet();auResume&&auResume();auApply();if(k==='q'&&v!==prevQ){$('qBtn').textContent=v==='high'?'HIGH':'LOW';setupPost();prewarmFX()}
     if(k==='cam')$('cBtn').textContent=v==='tv'?'BROADCAST':'BEHIND';applyAccess();SFX.ui();showSettings()});applyAccess();$('recBack').onclick=()=>hideOv('recOv');
   $('pPhoto').onclick=()=>{SFX.ui();photoOn()};
+  $('pMoves').onclick=()=>{SFX.ui();const f=G.B[G.ME].f;$('movesBody').innerHTML=fighterInfo(f);
+    $('movesKeys').innerHTML=(TOUCH?[['JAB · CROSS · HOOK · UPPER','the round buttons'],['BODY','toggle, then punch'],['HAYMAKER','hold, release'],['BLOCK','hold · tap as it lands = PERFECT']]
+      :[['J K L I','jab · cross · hook · uppercut'],['F + punch','body shot'],['HOLD H','haymaker'],['SPACE','block · tap as it lands = PERFECT'],['SHIFT','dodge (counter ready)'],['Q E · R','abilities · ultimate']]).map(([k,d])=>`<div><kbd>${k}</kbd><span>${d}</span></div>`).join('');hideOv('pauseOv');showOv('movesOv')};
+  $('movesBack').onclick=()=>{SFX.ui();hideOv('movesOv');togglePause(true)};
   $('pReplay').onclick=()=>{SFX.ui();hideOv('pauseOv');if(!rpInstant(()=>togglePause(true)))togglePause(true)};$('phSave').onclick=photoSave;$('phFilt').onclick=()=>{PHOTO.film=(PHOTO.film+1)%FILMS.length};$('phExit').onclick=photoOff;
   addEventListener('pointerdown',e=>{if(PHOTO.on&&!e.target.closest('#photoBar'))PHOTO.drag={x:e.clientX,y:e.clientY};
     if(G.mode==='select'&&e.target.tagName==='CANVAS'){SPIN.on=true;SPIN.x=e.clientX;SPIN.v=0}});
@@ -4854,6 +4861,7 @@ function runSmoke(){
     {solo('blaze','frost');const bt=new Bot(1,'contender');G.bots[1]=bt;place(1);let blocks=0;for(let i=0;i<14;i++){G.B[0].act=null;startPunch(G.B[0],'jab');bt.intent(1/60);}ok(bt.habit&&bt.habit.jab>4,'the CPU notices a punch you keep throwing (habit '+(bt.habit?bt.habit.jab.toFixed(1):0)+')');G.bots[1]=null}
     {const P=recOf('volt'),x0=P.xp;P.xp=3500;ok(mastery('volt').tier[1]==='SILVER'&&mastery('volt').next[1]==='GOLD','fighter mastery climbs bronze → silver → gold');P.xp=x0}
     {const K=kitOf('volt'),k0=Object.assign({},K);K.shorts=0x7dff4a;solo('volt','frost');G.B[0].build(FBY.volt,CUSTOM);ok(G.B[0].look.shorts===0x7dff4a&&altOK('volt',CUSTOM),'a custom kit builds with your colours');Object.assign(K,k0)}
+    {solo('grizz','frost');togglePause(true);$('pMoves').click();ok($('movesOv').classList.contains('on')&&$('movesBody').textContent.includes('Hibernate'),'pause → MOVE LIST shows your own fighter\'s moves');$('movesBack').click();ok($('pauseOv').classList.contains('on'),'…and goes back to the pause menu');togglePause(false)}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
