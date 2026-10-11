@@ -2157,7 +2157,7 @@ class Boxer{
     const f=this.f||{hp:100};
     Object.assign(this,{hp:f.hp,hpMax:f.hp,sta:100,meter:0,act:null,blocking:false,vx:0,vz:0,kx:0,kz:0,cd:{q:0,e:0},dodgeCd:0,
       combo:0,comboT:0,counterT:0,taken:0,takenT:0,dash:null,upAt:99,down:false,kd:0,ko:false,getup:0,buf:null,trail:f.hp,trailT:0,net:null,fxBits:0,
-      tauntCd:0,minHp:null,hayLatch:false,blockT0:-9,blkRelT:-9,_wasBlk:false,parryOK:false,flashT:0,dbuf:null,abuf:null,
+      tauntCd:0,minHp:null,sweat:0,hayLatch:false,blockT0:-9,blkRelT:-9,_wasBlk:false,parryOK:false,flashT:0,dbuf:null,abuf:null,
       st:{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0,dtick:0},
       stats:{thrown:0,landed:0,dmg:0,blocked:0,dodged:0,kd:0}});
   }
@@ -2182,7 +2182,7 @@ class Boxer{
     const mUA=[-1,1].map(sd=>tm({map:armTex(sd)},ref?{shade:SHADE.cloth,spec:.05}:skinS));
     const mFA=tm({map:paintLimb('fa'+key,skinHex,{lines:[[.25,.15,.6],[.32,.2,.55]]})},skinS);
     const legTex=paintLimb('lg'+key,skinHex,ref?{sleeve:'#1c1c24'}:{}),mLeg=tm({map:legTex},ref?{shade:SHADE.dark,spec:.1}:skinS);
-    this.skinMats=[mSkin,mTorso,mFA,mLeg,...mUA];this.skinMat=mSkin;
+    this.skinMats=[mSkin,mTorso,mFA,mLeg,...mUA];this.skinMat=mSkin;this.skinSpec=this.skinMats.map(m=>[m.userData.S.uSpec.value,m.userData.S.uGloss.value]);
     const mTrunk=tm({map:ref?paintLimb('rp'+key,0x1c1c24,{sleeve:'#1c1c24'}):paintTrunks('tr'+key,shortsC,trimC,f.name)},{shade:SHADE.cloth,spec:ref?.1:.38,gloss:.82});
     const mSleeve=[-1,1].map(sd=>tm({map:ref?legTex:paintSleeve('sl'+key+sd,shortsC,trimC,sd>0?0:.5,ST.emblem,trimC),side:THREE.DoubleSide},{shade:SHADE.cloth,spec:ref?.1:.38,gloss:.82}));
     const mGlove=this.gloveMat=tm({map:paintGlove('gv'+key,gloveC,trimC,ST.emblem)},{shade:SHADE.cloth,spec:.6,gloss:.86});
@@ -2558,6 +2558,9 @@ class Boxer{
     const iron=!!(b&FX.iron),ref=!!this.look.ref,rage=!!(b&FX.rage);
     // skin flushes as the damage adds up; Iron Skin turns it to steel
     const dk=ref?0:clamp(1-this.hp/this.hpMax,0,1);
+    // sweat: the skin picks up a sheen through the rounds, faster when tired or hurt
+    if(this.skinSpec&&!ref&&this.idx<2){const want=G.mode==='fight'&&!G.attract?clamp((G.rnd-1)*.3+(1-this.sta/100)*.3+dk*.35+(G.phase==='rest'?.15:0),0,1):0;this.sweat=lerp(this.sweat||0,want,damp(.6,dt));
+      this.skinMats.forEach((m,i)=>{const S=m.userData.S;S.uSpec.value=this.skinSpec[i][0]+this.sweat*.55;S.uGloss.value=this.skinSpec[i][1]-this.sweat*.04})}
     const tc=iron?_c.setRGB(.5,.56,.66):_c2.setRGB(1,1,1).lerp(BRUISE_T,dk*.3),kk=damp(8,dt);for(const m of this.skinMats){m.color.lerp(tc,kk);if(!phase)m.emissive.setHex(iron?0x2a3644:0)}
     // rim light: fighter colour, pulsing red in RAGE, brighter when the ultimate is ready; white-out on a hit
     this.rimU.uRimC.value.setHex(rage?0xff2a10:ref?0xbfc8ff:(this.look.glow||0xffffff));
