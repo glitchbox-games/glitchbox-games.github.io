@@ -56,6 +56,7 @@ body.cine #sub{opacity:0!important}
 body.training #train{display:block}
 #train .th{font:400 22px Anton;letter-spacing:.06em;color:var(--gold)}#train .tl{font:900 10px Rubik;letter-spacing:.3em;color:var(--dim);margin:8px 0 4px}
 #train .tst{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:4px}#train .tst b{color:#fff;font:400 16px Anton;text-align:right}
+#tut button{display:block;width:100%;margin-top:4px}
 #tut{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}#tut .ts{font:700 11px Rubik;color:#888;padding:2px 0}#tut .ts.done{color:#7dff4a}#tut .ts.cur{color:#fff;font-size:12.5px}#tut .ts small{display:block;color:var(--gold);font-size:10.5px;margin:2px 0 3px 12px}
 #train .tseg{display:flex;flex-wrap:wrap;gap:4px}#train button{flex:1;min-width:46%;border:1px solid var(--line);background:#16161e;color:#bbb;border-radius:8px;padding:6px 4px;font:800 10px Rubik;letter-spacing:.08em;cursor:pointer}
 #train button.on{background:var(--gold);color:#000}#train .tk{margin-top:8px;font:700 9.5px Rubik;color:var(--dim);letter-spacing:.06em}
@@ -237,6 +238,7 @@ body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{backg
 .tb.on{background:rgba(255,200,58,.5)}
 .tb.p{width:64px;height:64px}
 .tb.sm{width:50px;height:50px;font-size:20px}
+.tb.lit{background:rgba(255,200,58,.7)!important;color:#000}
 .tb.blk{width:78px;height:78px;border-radius:20px;background:rgba(47,134,255,.35)}
 
 /* ── overlays ── */
@@ -387,7 +389,7 @@ body.touch #abil,body.touch #keys{display:none}
   <div id="callout"></div>
   <div id="sub"></div>
   <div id="mash" class="hide"><div>MASH <b id="mashKeys">J / K</b> TO GET UP!</div><div class="mb"><i id="mashFill"></i></div></div>
-  <div id="keys">WASD move · J jab · K cross · L hook · I upper · HOLD H haymaker · SPACE block (tap = perfect) · SHIFT dodge · Q E abilities · R ultimate · T taunt · V camera · M mute</div>
+  <div id="keys">WASD move · J jab · K cross · L hook · I upper · F+punch body · HOLD H haymaker · SPACE block (tap = perfect) · SHIFT dodge · Q E abilities · R ultimate · T taunt · V camera · M mute</div>
 </div>
 <div id="floats"></div>
 <div id="cutin"><div class="band"></div><div class="cport"></div><div class="ctxt"></div></div>
@@ -406,6 +408,7 @@ body.touch #abil,body.touch #keys{display:none}
   <button class="tb p" data-k="upper" style="right:96px;bottom:18px">UPPER</button>
   <button class="tb blk" data-k="block" style="right:250px;bottom:18px">BLOCK</button>
   <button class="tb p" data-k="dodge" style="right:250px;bottom:110px">DODGE</button>
+  <button class="tb sm" data-k="body" style="right:178px;bottom:156px;font-size:9px">BODY</button>
   <button class="tb sm" data-k="q" style="right:170px;bottom:220px">Q</button>
   <button class="tb sm" data-k="e" style="right:110px;bottom:240px">E</button>
   <button class="tb sm" data-k="r" style="right:40px;bottom:220px">R</button>
@@ -479,6 +482,7 @@ body.touch #abil,body.touch #keys{display:none}
       <kbd>K</kbd><span>Cross — straight right hand. Mouse right also crosses.</span>
       <kbd>L</kbd><span>Hook — short range, big damage, hard to block.</span>
       <kbd>I</kbd><span>Uppercut — very short range. Breaks a guard and punishes ducking.</span>
+      <kbd>HOLD F</kbd><span>…and punch for a BODY SHOT: less damage, but it drains their stamina and doubles them over. (Controller: hold the left stick in.)</span>
       <kbd>HOLD H</kbd><span>THE HAYMAKER. Hold to wind up, let go to throw. A full charge breaks any guard and sends them flying — but they can see it coming. Dodge cancels the wind-up.</span>
       <kbd>SPACE</kbd><span>Hold to block. Stops most of a straight punch, less of a hook, and costs stamina. Tap it just as a punch lands for a PERFECT block: no damage, they stagger, your counter is ready.</span>
       <kbd>SHIFT</kbd><span>Dodge in the direction you're moving — on its own you duck. Dodge a punch and your next one is a COUNTER (×1.6).</span>
@@ -678,7 +682,7 @@ const ACH=[['first','FIRST BLOOD','Win a fight'],['ko','LIGHTS OUT','Win by knoc
   ['champ','CHAMPION','Win the arcade ladder'],['legend3','HALL OF FAME','Win the ladder with three different fighters'],['surv5','SURVIVOR','Win 5 in a row in survival'],['surv10','IRON WILL','Win 10 in a row in survival'],
   ['venues','WORLD TOUR','Win in the arena, on the rooftop and in the Pit'],['storm','STORM CHASER','Win on a stormy rooftop'],['all','COMPLETE ROSTER','Win with every fighter'],
   ['tut','STUDENT','Finish the tutorial'],['champcpu','GIANT SLAYER','Beat a CHAMPION CPU'],['daily','DAILY GRIND','Score in the daily challenge'],['ult5','SHOWTIME','Land 5 ultimates'],
-  ['photo','PAPARAZZI','Save a photo'],['boss','GIANT KILLER','Beat THE CHAMP'],['tour','BRACKET BUSTER','Win a tournament'],['online','WORLDWIDE','Win an online match']];
+  ['photo','PAPARAZZI','Save a photo'],['boss','GIANT KILLER','Beat THE CHAMP'],['tour','BRACKET BUSTER','Win a tournament'],['trials','TECHNICIAN','Complete every combo trial'],['online','WORLDWIDE','Win an online match']];
 function achGet(k){if(SMOKE||G.watch||G.local&&k!=='tut')return;REC.ach=REC.ach||{};if(REC.ach[k])return;REC.ach[k]=Date.now();saveRec();const a=ACH.find(x=>x[0]===k);if(!a)return;
   const el=document.createElement('div');el.className='achT';el.innerHTML=`<span>${ICO('trophy')}</span><div><small>ACHIEVEMENT UNLOCKED</small><b>${a[1]}</b><i>${a[2]}</i></div>`;document.body.appendChild(el);
   SFX.ui&&SFX.ui();setTimeout(()=>el.classList.add('out'),3200);setTimeout(()=>el.remove(),3800)}
@@ -3653,7 +3657,7 @@ class Bot{
     if(D.aggr===0){it.mx=it.mz=0;return it}
     if(!this.styled&&b.f){this.styled=1;this.D=styled(this.D,b.f.id)}
     // spacing
-    let want=b.sta<20?2.1:this.plan.length?PUNCH[this.plan[0]].range*.85:1.2+(1-D.aggr)*.5+(D.range||0);
+    const pn=x=>x.replace('b:','');let want=b.sta<20?2.1:this.plan.length?PUNCH[pn(this.plan[0])].range*.85:1.2+(1-D.aggr)*.5+(D.range||0);
     it.mz=Math.abs(dist-want)<.12?0:clamp((dist-want)*2.2,-1,1);
     this.strafeT-=dt;if(this.strafeT<=0){this.strafe=Math.random()<.75?-this.strafe:this.strafe;this.strafeT=.7+Math.random()*1.6}
     it.mx=this.strafe*.65;
@@ -3664,8 +3668,8 @@ class Bot{
     if(!this.plan.length&&this.think<=0&&dist<1.6&&b.sta>14&&D.aggr>0){
       if(Math.random()<D.aggr){this.plan=pickCombo(dist,o);this.planT=0}
       this.think=D.think*(.6+Math.random()*.9)}
-    if(this.plan.length){this.planT+=dt;const nx=this.plan[0];
-      if(dist<=PUNCH[nx].range*.95){if(inRecovery(b.act)&&!locked(b)){it.punch=this.plan.shift();it.block=false}}
+    if(this.plan.length){this.planT+=dt;const nx=pn(this.plan[0]);
+      if(dist<=PUNCH[nx].range*.95){if(inRecovery(b.act)&&!locked(b)){const pp=this.plan.shift();it.punch=pn(pp);it.body=pp.startsWith('b:');it.block=false}}
       else if(this.planT>1.4)this.plan=[]}
     this.abilT-=dt;if(this.abilT<=0){this.abilT=.45;if(Math.random()<D.abil*.6){const k=AIAB[b.f.id](b,o,dist);if(k&&(k==='r'?b.meter>=100:b.cd[k]<=0))it.abil=k}}
     // the haymaker: punish an opening (stunned, frozen, sealed, gassed, reeling), or now and then just go for it
@@ -3682,7 +3686,7 @@ class Bot{
 function pickCombo(dist,o){
   const close=dist<1.05,mid=dist<1.28;
   if(o.blocking&&close&&Math.random()<.55)return ['upper','hook'];
-  const opts=close?[['jab','hook'],['hook','upper'],['jab','jab','cross'],['upper'],['cross','hook'],['jab','cross','hook'],['hook'],['jab','upper']]
+  const opts=close?[['jab','hook'],['hook','upper'],['jab','jab','cross'],['upper'],['cross','hook'],['jab','cross','hook'],['hook'],['jab','upper'],['b:hook','upper'],['jab','b:cross'],['b:hook','hook']]
     :mid?[['jab'],['jab','jab'],['jab','cross'],['cross'],['jab','jab','cross']]:[['jab'],['jab','cross']];
   return pick(opts).slice();
 }
@@ -3702,14 +3706,14 @@ const AIAB={
 };
 
 // ════════════════════ INPUT ════════════════════
-const KEYS={},PRESS=[];let touchBlock=false,touchHay=false,mouseHay=false;const STICK={x:0,y:0,on:false};
+const KEYS={},PRESS=[];let touchBody=false,touchBlock=false,touchHay=false,mouseHay=false;const STICK={x:0,y:0,on:false};
 const EMPTY={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};
 const KMAP={KeyJ:'jab',KeyK:'cross',KeyL:'hook',KeyI:'upper',KeyU:'hook',KeyO:'upper',Numpad4:'jab',Numpad5:'cross',Numpad6:'hook',Numpad8:'upper',KeyQ:'q',KeyE:'e',KeyR:'r',ShiftLeft:'dodge',ShiftRight:'dodge',KeyC:'duck',KeyT:'taunt'};
 function toggleMute(){SET.mute=!SET.mute;saveSet();auResume();auApply();renderToggles();sub(SET.mute?'SOUND MUTED (M)':'SOUND ON',1.1)}
 addEventListener('pointerdown',()=>{if(G.phase==='walk'&&G.mode==='fight'&&!G.online)hostPhase('intro')});
 const KMAP2={Comma:'jab',Period:'cross',Slash:'hook',Quote:'upper',ShiftRight:'dodge',BracketLeft:'q',BracketRight:'e',Equal:'r',Semicolon:'taunt'};
 const p2Keys=()=>G.local&&G.mode==='fight'&&!(PAD2.on&&PAD2.pad);
-function p2KeyPoll(){if(!p2Keys())return;const P=PAD2;P.x=(KEYS.ArrowRight?1:0)-(KEYS.ArrowLeft?1:0);P.y=(KEYS.ArrowDown?1:0)-(KEYS.ArrowUp?1:0);P.block=!!(KEYS.Enter||KEYS.NumpadEnter);P.hay=!!KEYS.Backslash;P.on=true}
+function p2KeyPoll(){if(!p2Keys())return;const P=PAD2;P.x=(KEYS.ArrowRight?1:0)-(KEYS.ArrowLeft?1:0);P.y=(KEYS.ArrowDown?1:0)-(KEYS.ArrowUp?1:0);P.block=!!(KEYS.Enter||KEYS.NumpadEnter);P.hay=!!KEYS.Backslash;P.body=!!KEYS.Minus;P.on=true}
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT')return;
   if(p2Keys()&&!e.repeat&&KMAP2[e.code]){PAD2.press.push(KMAP2[e.code]);if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&PUNCH[KMAP2[e.code]]){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.id==='toro'?2:1}KEYS[e.code]=true;e.preventDefault();return}
@@ -3749,7 +3753,7 @@ function padPoll(){const ps=navigator.getGamepads?navigator.getGamepads():[];con
   if(!PAD.on){PAD.on=true;sub('CONTROLLER CONNECTED',1.6)}
   let x=gp.axes[0]||0,y=gp.axes[1]||0;if(Math.hypot(x,y)<.22){x=0;y=0}
   const inFight=G.mode==='fight'&&!$('pauseOv').classList.contains('on')&&!PHOTO.on;
-  if(inFight){PAD.x=x;PAD.y=y;PAD.block=!!b[5];PAD.hay=!!b[7];
+  if(inFight){PAD.x=x;PAD.y=y;PAD.block=!!b[5];PAD.hay=!!b[7];PAD.body=!!b[10];
     if(G.phase==='walk'&&b.some((v,i)=>v&&!pr[i])){hostPhase('intro');return}
     if(RP.play&&b.some((v,i)=>v&&!pr[i])){rpEnd();return}
     if(G.watch&&[0,1,2,3].some(down)){G.watch=false;G.bots[0]=null;document.body.classList.remove('watching');showHUD(true)}
@@ -3764,7 +3768,7 @@ function padPoll(){const ps=navigator.getGamepads?navigator.getGamepads():[];con
     if(down(0)){const go=document.querySelector('.ov.on .primary, .ov.on #selGo');if(go)go.click()}}}
 function padP2(gp){const P=PAD2;if(!gp){P.pad=false;if(!p2Keys()){P.on=false;P.x=P.y=0;P.block=P.hay=false}return}P.pad=true;
   const b=gp.buttons.map(x=>x.pressed||x.value>.5),pr=P.prev,down=i=>b[i]&&!pr[i];P.prev=b;P.on=true;
-  let x=gp.axes[0]||0,y=gp.axes[1]||0;if(Math.hypot(x,y)<.22){x=0;y=0}if(b[12]&&!b[14]&&!b[15])y=y;P.x=x;P.y=y;P.block=!!b[5];P.hay=!!b[7];
+  let x=gp.axes[0]||0,y=gp.axes[1]||0;if(Math.hypot(x,y)<.22){x=0;y=0}if(b[12]&&!b[14]&&!b[15])y=y;P.x=x;P.y=y;P.block=!!b[5];P.hay=!!b[7];P.body=!!b[10];
   const map={0:'jab',1:'cross',2:'hook',3:'upper',4:'dodge',6:'duck',14:'q',15:'e',12:'r',13:'taunt'};for(const i in map)if(down(+i))P.press.push(map[i]);
   if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&[0,1,2,3].some(down)){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.id==='toro'?2:1}
   if(down(9))togglePause()}
@@ -3772,7 +3776,7 @@ function padP2(gp){const P=PAD2;if(!gp){P.pad=false;if(!p2Keys()){P.on=false;P.x
 function padIntent(i,P){const it={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};const rt=P.x,up=-P.y;
   if(up||rt){camera.getWorldDirection(_U);let cx=_U.x,cz=_U.z;const cl=Math.hypot(cx,cz)||1;cx/=cl;cz/=cl;const wx=cx*up-cz*rt,wz=cz*up+cx*rt;
     const me=G.B[i],o=other(me),dx=o.x-me.x,dz=o.z-me.z,dl=Math.hypot(dx,dz)||1,fx=dx/dl,fz=dz/dl;it.mz=wx*fx+wz*fz;it.mx=wx*fz-wz*fx;const l=Math.hypot(it.mx,it.mz);if(l>1){it.mx/=l;it.mz/=l}}
-  it.block=P.block;it.hay=P.hay;let duck=false;
+  it.block=P.block;it.hay=P.hay;it.body=!!P.body;let duck=false;
   while(P.press.length){const k=P.press.shift();if(PUNCH[k]){if(!it.punch)it.punch=k}else if(k==='dodge')it.dodge=true;else if(k==='duck'){it.dodge=true;duck=true}else if(k==='q'||k==='e'||k==='r')it.abil=k;else if(k==='taunt')it.taunt=true}
   if(duck){it.mx=0;it.mz=0}return it}
 function playerIntent(){
@@ -3787,7 +3791,7 @@ function playerIntent(){
     const me=G.B[G.ME],o=other(me),dx=o.x-me.x,dz=o.z-me.z,dl=Math.hypot(dx,dz)||1,fx=dx/dl,fz=dz/dl;
     it.mz=wx*fx+wz*fz;it.mx=wx*fz-wz*fx;const l=Math.hypot(it.mx,it.mz);if(l>1){it.mx/=l;it.mz/=l}
   }
-  it.block=!!(KEYS.Space||touchBlock||PAD.block);it.hay=!!(KEYS.KeyH||touchHay||mouseHay||PAD.hay);
+  it.body=!!(KEYS.KeyF||PAD.body||touchBody);it.block=!!(KEYS.Space||touchBlock||PAD.block);it.hay=!!(KEYS.KeyH||touchHay||mouseHay||PAD.hay);
   let duck=false;
   while(PRESS.length){const k=PRESS.shift();if(PUNCH[k]){if(!it.punch)it.punch=k}else if(k==='dodge')it.dodge=true;else if(k==='duck'){it.dodge=true;duck=true}else if(k==='q'||k==='e'||k==='r')it.abil=k;else if(k==='taunt')it.taunt=true}
   if(duck){it.mx=0;it.mz=0}
@@ -3802,7 +3806,7 @@ function setupTouch(){
   st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end);
   document.querySelectorAll('#touch .tb').forEach(btn=>{const k=btn.dataset.k;
     btn.addEventListener('pointerdown',e=>{e.preventDefault();auResume();if(RP.play){rpEnd();return}btn.classList.add('on');
-      if(k==='block')touchBlock=true;else if(k==='hay')touchHay=true;else if(k==='pause')togglePause();else{PRESS.push(k);if(PUNCH[k])mashGetup()}});
+      if(k==='body'){touchBody=!touchBody;btn.classList.toggle('lit',touchBody);return}if(k==='block')touchBlock=true;else if(k==='hay')touchHay=true;else if(k==='pause')togglePause();else{PRESS.push(k);if(PUNCH[k])mashGetup()}});
     const up=()=>{btn.classList.remove('on');if(k==='block')touchBlock=false;if(k==='hay')touchHay=false};
     ['pointerup','pointercancel','pointerleave'].forEach(ev=>btn.addEventListener(ev,up))});
 }
@@ -4122,7 +4126,7 @@ function setupUI(){
   addEventListener('pointermove',e=>{const d=PHOTO.drag;if(!PHOTO.on||!d)return;PHOTO.a-=(e.clientX-d.x)*.008;PHOTO.e=clamp(PHOTO.e+(e.clientY-d.y)*.006,-.2,1.35);d.x=e.clientX;d.y=e.clientY});
   addEventListener('pointerup',()=>{PHOTO.drag=null});
   addEventListener('wheel',e=>{if(PHOTO.on){PHOTO.r=clamp(PHOTO.r+e.deltaY*.004,1,10);e.preventDefault()}},{passive:false});
-  $('train').addEventListener('click',e=>{if(e.target.id==='tutGo'){tutStart();SFX.ui();return}if(e.target.id==='tutStop'){TUT.on=false;tutUI();SFX.ui();return}const k=e.target.closest('[data-k]'),o=e.target.closest('[data-o]');if(k)trainSet(k.dataset.k);if(o){TR[o.dataset.o]=!TR[o.dataset.o];trainUI()}SFX.ui()});trainUI();
+  $('train').addEventListener('click',e=>{if(e.target.id==='tutGo'){tutStart();SFX.ui();return}if(e.target.id==='tutStop'){TUT.on=false;TRL.on=false;tutUI();SFX.ui();return}if(e.target.id==='trlGo'){trialsStart();SFX.ui();return}const k=e.target.closest('[data-k]'),o=e.target.closest('[data-o]');if(k)trainSet(k.dataset.k);if(o){TR[o.dataset.o]=!TR[o.dataset.o];trainUI()}SFX.ui()});trainUI();
   $('grid').addEventListener('click',e=>{const c=e.target.closest('[data-f]');if(!c)return;SFX.ui();
     if(e.shiftKey&&SEL.mode==='quick'){SEL.opp=c.dataset.f}else{SEL.f=c.dataset.f;if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,ready:false})}}
     saveSel();renderSelect();placePreview()});
@@ -4159,7 +4163,7 @@ function startSolo(myF,oppF,diff,watch){rpStop();G.surv=null;G.tour=null;G.local
   G.online=false;G.attract=false;G.ME=0;G.bag=diff==='bag';G.paused=false;
   const oa=G.ladder?(G.ladder.i===G.ladder.opps.length-1?3:Math.floor(Math.random()*3)):myF===oppF?(SEL.alt+1)%3:0;setupMatch([myF,oppF],[FBY[myF].name,FBY[oppF].name],[SEL.alt,oa]);G.bots=[null,new Bot(1,diff)];G.diff=diff;
   applyVenue(diff==='bag'?'gym':pickVenue(SEL.venue));G.mode='fight';hideAllOv();showHUD(true);REF.b.root.visible=true;setPhase(G.bag||SMOKE||!SET.walk?'intro':'walk');
-  if(G.bag){Object.assign(TR,{last:0,combo:0,comboT:0,log:[],perfect:0});TUT.on=false;trainSet(TR.dummy);tutUI()}
+  if(G.bag){Object.assign(TR,{last:0,combo:0,comboT:0,log:[],perfect:0});TUT.on=false;TRL.on=false;trainSet(TR.dummy);tutUI()}
   if(G.local){G.bots=[null,null];PAD2.prev=[];if(!(navigator.getGamepads&&[...navigator.getGamepads()].some(p=>p&&p.connected)))sub('PLAYER 2: ARROWS MOVE · , . / \' PUNCH · ENTER BLOCK · R-SHIFT DODGE (OR PLUG IN A CONTROLLER)',5)}
   if(G.watch){G.bots[0]=new Bot(0,diff==='bag'?'contender':diff);if(G.bots[1].diff==='bag')G.bots[1]=new Bot(1,'contender')}
   // the last bout of the ladder is for the belt: the champion walks out wearing it
@@ -4461,13 +4465,33 @@ const TUT={on:false,i:0,steps:[
   {k:'block',t:'BLOCK a punch',h:'Hold SPACE as the dummy swings',d:'fight'},{k:'parry',t:'PERFECT block',h:'Tap SPACE just as a punch lands',d:'fight'},
   {k:'dodge',t:'DODGE a punch',h:'SHIFT as it comes in',d:'fight'},{k:'hay',t:'Land a full HAYMAKER',h:'Hold H until it glows, then let go',d:'stand'},
   {k:'abil',t:'Use an ABILITY',h:'Q or E',d:'stand'},{k:'ult',t:'Fire your ULTIMATE',h:'R — the meter is full',d:'stand'}]};
-function tutStart(){TUT.on=true;TUT.i=0;TR.meter=false;TR.cds=true;tutStep()}
+// COMBO TRIALS: advanced challenges after the tutorial; completions are saved
+const TRIALS=[{k:'jjc',t:'JAB · JAB · CROSS',h:'J J K in one combo',d:'stand'},{k:'chook',t:'COUNTER HOOK',h:'Dodge (SHIFT), then L',d:'fight'},
+  {k:'punish',t:'PARRY PUNISH',h:'Tap SPACE as it lands, then hit back within a second',d:'fight'},{k:'bodyhead',t:'BODY TO HEAD',h:'Hold F + a punch for the body, then go upstairs',d:'stand'},
+  {k:'c5',t:'5-HIT COMBO',h:'Keep the hits coming',d:'stand'},{k:'gbreak',t:'GUARD BREAKER',h:'A full HAYMAKER through a raised guard',d:'block'}];
+const TRL={on:false,i:0,seq:[],parryT:-9};
+function trialsStart(){TRL.on=true;TUT.on=false;TRL.i=TRIALS.findIndex(t=>!(REC.trials||{})[t.k]);if(TRL.i<0)TRL.i=0;TRL.seq=[];TR.meter=false;TR.cds=true;trialStep()}
+function trialStep(){const T=TRIALS[TRL.i];if(!T){TRL.on=false;sub('ALL TRIALS COMPLETE',3);confetti();achGet('trials');tutUI();return}trainSet(T.d);tutUI()}
+function trialDone(){const T=TRIALS[TRL.i];REC.trials=REC.trials||{};if(!SMOKE){REC.trials[T.k]=1;saveRec()}SFX.ui();floatAt('✓ '+T.t,G.B[G.ME].headW,'heal',-30);TRL.i++;TRL.seq=[];setTimeout(trialStep,700)}
+function trialHit(res){if(!TRL.on)return;const T=TRIALS[TRL.i];if(!T)return;const me=G.B[G.ME];
+  if(res.a!==G.ME){if(res.r==='parry')TRL.parryT=G.time;return}
+  const hit=res.r==='hit'||res.r==='break';if(!hit)return;
+  if(me.combo<=0)TRL.seq=[];TRL.seq.push((res.body?'b':'')+res.cue);const q=TRL.seq;
+  if(T.k==='jjc'&&q.slice(-3).join()==='jab,jab,cross')trialDone();
+  else if(T.k==='chook'&&res.counter&&res.cue==='hook')trialDone();
+  else if(T.k==='punish'&&G.time-TRL.parryT<1.1)trialDone();
+  else if(T.k==='bodyhead'&&q.length>=2&&q[q.length-2][0]==='b'&&q[q.length-1][0]!=='b')trialDone();
+  else if(T.k==='c5'&&me.combo+1>=5)trialDone();
+  else if(T.k==='gbreak'&&res.r==='break'&&res.cue==='hay')trialDone()}
+function tutStart(){TRL.on=false;TUT.on=true;TUT.i=0;TR.meter=false;TR.cds=true;tutStep()}
 function tutStep(){const S=TUT.steps[TUT.i];if(!S){TUT.on=false;achGet('tut');sub('TUTORIAL COMPLETE — YOU\'RE READY',3);SFX.fanfare&&SFX.fanfare(true);confetti();TR.meter=true;trainUI();tutUI();return}
   trainSet(S.d);if(S.k==='ult')G.B[G.ME].meter=100;tutUI()}
 function tutDone(k){if(!TUT.on||!G.bag)return;const S=TUT.steps[TUT.i];if(!S||S.k!==k)return;TUT.i++;SFX.ui();floatAt('✓',G.B[G.ME].headW,'heal',-30);setTimeout(tutStep,650)}
-function tutUI(){const el=$('tut');if(!el)return;if(!TUT.on){el.innerHTML='<button id="tutGo">▶ TUTORIAL</button>';return}
+function tutUI(){const el=$('tut');if(!el)return;
+  if(TRL.on){el.innerHTML=TRIALS.map((S,i)=>`<div class="ts ${(REC.trials||{})[S.k]||i<TRL.i?'done':i===TRL.i?'cur':''}">${(REC.trials||{})[S.k]?'✓':i+1}. ${S.t}${i===TRL.i?`<small>${S.h}</small>`:''}</div>`).join('')+'<button id="tutStop">STOP</button>';return}
+  if(!TUT.on){const n=Object.keys(REC.trials||{}).length;el.innerHTML=`<button id="tutGo">▶ TUTORIAL</button><button id="trlGo">▶ COMBO TRIALS ${n}/${TRIALS.length}</button>`;return}
   el.innerHTML=TUT.steps.map((S,i)=>`<div class="ts ${i<TUT.i?'done':i===TUT.i?'cur':''}">${i<TUT.i?'✓':i+1}. ${S.t}${i===TUT.i?`<small>${S.h}</small>`:''}</div>`).join('')+'<button id="tutStop">STOP</button>'}
-function trainHit(res){if(!G.bag)return;
+function trainHit(res){if(!G.bag)return;trialHit(res);
   if(TUT.on){if(res.a===G.ME&&(res.r==='hit'||res.r==='break')){if(['jab','cross','hook','upper'].includes(res.cue))tutDone(res.cue);if(res.cue==='hay'&&res.hay>=.97)tutDone('hay')}
     if(res.a!==G.ME){if(res.r==='block')tutDone('block');if(res.r==='parry')tutDone('parry');if(res.r==='dodge')tutDone('dodge')}}const v=G.B[1-res.a];if(res.a===G.ME&&res.dmg>0){TR.last=res.dmg;TR.combo=(TR.comboT>0?TR.combo:0)+res.dmg;TR.comboT=1.4;TR.log.push({t:G.time,d:res.dmg});TR.hpT=2.2;if(v.hp<=1){v.hp=Math.max(v.hp,1)}}
   if(res.r==='parry'&&res.a!==G.ME)TR.perfect++}
@@ -4799,6 +4823,10 @@ function runSmoke(){
     {startSolo('blaze','titan','p2');G.forced=null;G.phase='fight';PAD2.pad=false;PAD2.press.length=0;dispatchEvent(new KeyboardEvent('keydown',{code:'Period'}));KEYS.ArrowLeft=true;p2KeyPoll();const it=getIntent(1,1/60);KEYS.ArrowLeft=false;
      ok(it.punch==='cross'&&PAD2.x===-1,'2 PLAYER on one keyboard: player 2 punches with . and moves with the arrows');const i1=playerIntent();ok(!i1.mx&&!i1.mz,'…and the arrows no longer move player 1');G.local=false;PAD2.on=false;G.forced=[EMPTY,EMPTY]}
     ok([...FIGHTERS,BOSS].every(f=>WINQ[f.id]&&WINQ[f.id].length),'every fighter has victory quotes');
+    {solo('blaze','frost');G.bag=true;trialsStart();TRL.i=0;place(1);G.forced[1]=EMPTY;const r0={a:0,r:'hit',cue:'jab'};G.B[0].combo=0;trialHit(r0);G.B[0].combo=1;trialHit(r0);G.B[0].combo=2;trialHit({a:0,r:'hit',cue:'cross'});
+     ok(TRL.i===1,'combo trials: JAB · JAB · CROSS completes the first trial');TRL.on=false;G.bag=false}
+    {solo('blaze','frost');place(1);G.forced[0]={...EMPTY,punch:'hook',body:true};sim(SIM);G.forced[0]=EMPTY;const sta0=G.B[1].sta;sim(.6);ok(G.B[1].hp<100&&G.B[1].sta<sta0-2,'a body hook lands and drains stamina ('+G.B[1].hp.toFixed(1)+' hp, '+G.B[1].sta.toFixed(0)+' sta)');
+     const bot=new Bot(1,'contender');let sawBody=false;for(let i=0;i<200&&!sawBody;i++){const c=pickCombo(.9,G.B[0]);sawBody=c.some(x=>x.startsWith('b:'))}ok(sawBody,'…and the CPU throws body shots too')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
