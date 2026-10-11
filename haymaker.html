@@ -710,7 +710,7 @@ const FIGHTERS=[
  {id:'pops',name:'POPS',nick:'THE OLD MASTER',col:'#e0a84a',
   look:{skin:0x8a5636,shorts:0x7a1424,trim:0xf2ead8,glove:0x6e3a1c,hair:'pops',hairCol:0xd6d2ca,glow:0xffd27a},
   taunt:'wag',alts:[{},{shorts:0x16161a,trim:0xffd23a,glove:0x16161a,hairCol:0xf2f2f2},{shorts:0xf2ead8,trim:0x1f4a8a,glove:0xf2ead8,hairCol:0xbab4aa}],
-  size:.99,hp:104,pow:1.12,spd:.95,pspd:.98,reach:1.03,stats:[3,3,4],
+  size:.99,hp:104,pow:1.15,spd:.95,pspd:.98,reach:1.03,stats:[3,3,4],
   passive:{name:'Old School',desc:'A perfect block heals him 5 and gives back 10 stamina.'},
   q:{name:'Rope-a-Dope',cd:11,desc:'Covers up on the ropes for 2 seconds: every punch is fully blocked and drains the attacker\'s stamina. Then his counter is ready.'},
   e:{name:'Second Wind',cd:15,desc:'Shakes off every status effect, refills his stamina and heals 6.'},
@@ -2724,7 +2724,7 @@ class Boxer{
           if(q>.5)gR.lerp(_V.set(.2,1.68,.14),io);else gR.lerp(_V.set(.13,1.4,.3),io);twist=lerp(twist,0,io);k=40}
         else if(a.style==='roar'){const sh=(Math.random()-.5)*.03;gL.lerp(_U.set(-.56,1.55+sh,.2),io);gR.lerp(_V.set(.56,1.55-sh,.2),io);twist=lerp(twist,0,io);headP=-.36*io;lean-=.12*io;crouch+=.06*io;roll+=sh;this.flexIO=.5*io}
         else if(a.style==='crowd'){const sw=Math.sin(this.anT*5);gR.lerp(_U.set(.3,2.15,.24),io);gL.lerp(_V.set(-.32,1.0,-.05),io);roll=sw*.1*io;headY=.3*io;headP=-.18*io;twist=lerp(twist,-.1,io);crouch+=Math.max(0,sw)*.04*io}
-        else if(a.style==='wag'){const w2=Math.sin(this.anT*13);gR.lerp(_U.set(.16+w2*.07,1.6,.34),io);gL.lerp(_V.set(-.26,1.05,.14),io);twist=lerp(twist,.05,io);headY=Math.sin(this.anT*6.5)*.16*io;headR=.08*io;lean-=.05*io}
+        else if(a.style==='wag'){const w2=Math.sin(this.anT*13);gR.lerp(_U.set(.34+w2*.07,1.58,.24),io);gL.lerp(_V.set(-.26,1.05,.14),io);twist=lerp(twist,.05,io);headY=Math.sin(this.anT*6.5)*.16*io;headR=.08*io;lean-=.05*io}
         else if(a.style==='shrug'){gL.lerp(_U.set(-.44,1.16,.26),io);gR.lerp(_V.set(.44,1.16,.26),io);twist=lerp(twist,0,io);headR=.18*io;headY=Math.sin(this.anT*7)*.18*io;headP=-.04*io;lean-=.06*io}
         else{const b2=Math.abs(Math.sin(this.anT*9));gL.lerp(_U.set(-.2,1.12,.18),io);gR.lerp(_V.set(.2,1.12,.18),io);crouch+=(.02-b2*.06)*io;headR=Math.sin(this.anT*5)*.25*io;twist=lerp(twist,.15,io)}
       }else if(a.k==='dodge'){
