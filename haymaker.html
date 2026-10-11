@@ -2546,6 +2546,8 @@ class Boxer{
     this.sit=lerp(this.sit||0,sitOn?1:0,damp(sitOn?5:9,dt));
     if(this.sit>.01){const q=this.sit,br=Math.sin(this.anT*3.4);crouch=lerp(crouch,.43+br*.012,q);lean=lerp(lean,-.16+br*.03,q);twist=lerp(twist,0,q);roll=lerp(roll,0,q);
       gL.lerp(_U.set(-.6,1.28,-.36),q);gR.lerp(_V.set(.6,1.28,-.36),q);headP=lerp(headP,-.12+br*.05,q);k=lerp(k,6,q)}
+    // touching gloves in the middle before the first bell
+    if(G.phase==='intro'&&G.rnd===1&&!G.attract&&this.idx<2&&G.phT>1.9&&G.phT<2.8){const q=Math.sin((G.phT-1.9)/.9*Math.PI);gL.lerp(_U.set(-.08,1.32,.42+.12*q),q);gR.lerp(_V.set(.08,1.32,.42+.12*q),q);twist=lerp(twist,0,q);k=14}
     if(this.override){gL.copy(this.override[0]);gR.copy(this.override[1]);k=7;lean+=this.override[2]||0;twist=0}
     if(this.down&&!(a&&(a.k==='down'||a.k==='ko'||a.k==='getup')))fall=1;
     // smooth everything
@@ -2769,7 +2771,8 @@ function logicBoxer(b,it,dt){
     const d=G.B[G.kdInfo.b];const l0=Math.hypot(b.x-d.x,b.z-d.z)||1;const tx=clamp(d.x+(b.x-d.x)/l0*2.7,-RING+.3,RING-.3),tz=clamp(d.z+(b.z-d.z)/l0*2.7,-RING+.3,RING-.3);
     const ex=tx-b.x,ez=tz-b.z,el=Math.hypot(ex,ez);if(el>.2){mz=(ex*fx+ez*fz)/el;mx=(ex*rx+ez*rz)/el}}
   if(G.phase==='rest'&&b.home&&!b.down){const sx=Math.sign(b.home[0]),ex=sx*3.12-b.x,ez=sx*3.12-b.z,el=Math.hypot(ex,ez);if(el>.06){mz=(ex*fx+ez*fz)/el*Math.min(1,el*1.5);mx=(ex*rx+ez*rz)/el*Math.min(1,el*1.5)}}
-  if((G.phase==='ready'||G.phase==='intro')&&b.home){const ex=b.home[0]-b.x,ez=b.home[1]-b.z,el=Math.hypot(ex,ez);if(el>.1){mz=(ex*fx+ez*fz)/el*Math.min(1,el);mx=(ex*rx+ez*rz)/el*Math.min(1,el)}}
+  const meet=G.phase==='intro'&&G.rnd===1&&!G.attract&&G.phT<3.2,hx=meet?b.home[0]*.24:b.home&&b.home[0],hz=meet?b.home[1]*.24:b.home&&b.home[1];
+  if((G.phase==='ready'||G.phase==='intro')&&b.home){const ex=hx-b.x,ez=hz-b.z,el=Math.hypot(ex,ez);if(el>.1){mz=(ex*fx+ez*fz)/el*Math.min(1,el);mx=(ex*rx+ez*rz)/el*Math.min(1,el)}}
   const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml}
   let spd=2.35*f.spd*(b.blocking?.55:1)*(st.slow>0?.72:1)*(b.sta<15?.82:1)*(b.act&&b.act.k==='punch'?.4:1)*(st.colossus>0?.92:1)*(st.phase>0?1.25:1)*(b.act&&b.act.k==='charge'?.38:1)*(b.act&&b.act.k==='taunt'?0:1);
   let tvx=(fx*mz+rx*mx)*spd,tvz=(fz*mz+rz*mx)*spd;
