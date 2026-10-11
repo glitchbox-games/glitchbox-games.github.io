@@ -2084,8 +2084,8 @@ class Boxer{
     while(this.body.children.length)this.body.remove(this.body.children[0]);
     // status props hang off the root, not the body — drop the previous fighter's (shield/ice) too
     for(const o of [this.ice,this.shieldM])if(o){this.root.remove(o);o.geometry.dispose();o.material.dispose()}
-    this._phase=false;this._ph2=false;this.pony=null;this.tails=null;this.foxTails=null;
-    this.mats.forEach(m=>m.dispose());this.mats=[];(this.ownTex||[]).forEach(t=>t.dispose());
+    this._phase=false;this._ph2=false;this.pony=null;this.tails=null;this.foxTails=null;this.belt=null;
+    this.mats.flat().forEach(m=>m&&m.dispose&&m.dispose());this.mats=[];(this.ownTex||[]).forEach(t=>t.dispose());
     const ST=STYLE[f.id]||STYLE.blaze,A=ARCH[L.ref?'ref':ST.body]||ARCH.std,ref=!!L.ref,key=f.id+'|'+alt;
     this.rimU={uRimC:{value:new THREE.Color(ref?0xbfc8ff:(L.glow||0xffffff))},uRimK:{value:ref?.1:.4},uFlash:{value:0}};
     const U=this.rimU,reg=m=>{this.mats.push(m);return m};
@@ -4076,7 +4076,7 @@ function giveBelt(b,quiet){if(!b||!b.pelvis||b.belt)return;
   const plate=new THREE.Mesh(new THREE.CylinderGeometry(.115,.115,.025,40),[gold,new THREE.MeshStandardMaterial({map:beltTex(),metalness:.7,roughness:.3,envMap:ENV,envMapIntensity:1.2}),gold]);
   plate.rotation.x=Math.PI/2;plate.position.set(0,.005,.178);g.add(plate);
   for(const sd of [-1,1]){const sp=new THREE.Mesh(new THREE.BoxGeometry(.07,.075,.02),gold);sp.position.set(sd*.17,0,.12);sp.rotation.y=sd*.75;g.add(sp)}
-  g.traverse(o=>{if(o.isMesh){o.castShadow=true;b.mats.push(o.material)}});b.pelvis.add(g);b.belt=g;g.scale.setScalar(.01);
+  g.traverse(o=>{if(o.isMesh){o.castShadow=true;for(const mm of [].concat(o.material))b.mats.push(mm)}});b.pelvis.add(g);b.belt=g;g.scale.setScalar(.01);
   emitter(.45,(dt,k)=>{g.scale.setScalar(Math.min(1,easeOut(k)*1.15))});
   if(!G.attract&&!quiet){const P=b.chestW.clone();P.y-=.35;burst(P,40,0xffd24a,3.5,.6,.06,{up:1});impactFlash(P,0xffd24a,1.2);photoFlash(5)}}
 function dropBelts(){for(const b of G.B)if(b.belt){b.pelvis.remove(b.belt);b.belt=null}}
@@ -4577,6 +4577,7 @@ function runSmoke(){
     ok(rivalry('frost','blaze')&&rivalry('frost','blaze')[0]===RIVALS['blaze|frost'][1]&&!rivalry('blaze','volt')&&FIGHTERS.every(f=>BIOS[f.id]),'rivalries pair up the right lines, and every fighter has a bio');
     {solo('blaze','frost');rpReset();G.B[1].hp=100;for(let i=0;i<80;i++){step(1/60);rpRecord(1/60)}let back=0;ok(rpInstant(()=>back=1)&&RP.play&&RP.play.inst,'instant replay rolls the last seconds of tape');rpEnd();ok(back===1&&!RP.play,'…and hands back to the pause menu')}
     {SET.calm=true;CAM.slowT=0;const t0=G.time;solo('blaze','frost');CAM.slow=.2;CAM.slowT=1;PFX.zoom=1;updPFX(.016);ok(PFX.zoom===0,'REDUCED EFFECTS kills zoom blur');SET.calm=false;CAM.slowT=0}
+    {solo('blaze','frost');giveBelt(G.B[0],true);let ok2=true;try{G.B[0].build(FBY.volt,0)}catch(e){ok2=false}ok(ok2&&!G.B[0].belt,'a fighter wearing the belt can be rebuilt (back to the title after a title win)')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
