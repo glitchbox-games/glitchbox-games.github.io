@@ -305,6 +305,7 @@ input.txt:focus{border-color:var(--gold)}
 #cardBody .cc button{position:relative;border:1px solid var(--line);border-radius:10px;background:#101016;color:#fff;padding:8px 6px;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:2px;align-items:center}
 #cardBody .cc button:hover{border-color:#888}#cardBody .cc button.on{border-color:var(--gold);background:#2a2210;box-shadow:0 0 0 1px var(--gold) inset}#cardBody .cc b{font:400 16px Anton;letter-spacing:.04em}#cardBody .cc span{font:700 10px Rubik;color:#aaa;line-height:1.25}
 @media (max-height:520px){#cardBody .res{font-size:30px!important}#cardBody .how{margin:0}#cardBody .judges,#cardBody .lbl,#cardBody .cadv,#cardBody .cc span{display:none!important}#cardBody .stt{margin:4px auto}#cardBody .stt td{padding:1px 6px}#cardBody .cc{margin-top:6px}#cardBody .cc button{padding:7px 4px}}
+#cardBody .cc em{font-style:normal;color:#ff8a8a}
 #cardBody .cc i{position:absolute;top:4px;left:7px;font:900 10px Rubik;font-style:normal;color:var(--gold)}
 #lockBody .lkn{font:700 11px Rubik;color:var(--dim);margin-top:12px;letter-spacing:.05em}
 .opts button.off{opacity:.5;text-decoration:line-through}
@@ -4580,7 +4581,7 @@ function showRoundCard(x){
     ${row('DAMAGE THIS ROUND',Math.round(rd[0]),Math.round(rd[1]))}${row('HEALTH',Math.round(A.hp),Math.round(B.hp))}${row('LANDED',A.stats.landed+' / '+A.stats.thrown,B.stats.landed+' / '+B.stats.thrown)}${row('KNOCKDOWNS',B.kd,A.kd)}</table>
     ${tot.length?`<div class="lbl" style="text-align:center;margin-top:10px">THE JUDGES SO FAR</div><div class="judges">${tot.map((c,i)=>`<div><small>JUDGE ${i+1}</small>${c[0]}–${c[1]}</div>`).join('')}</div>`:''}`;
   if(!G.online&&!G.watch){const t=cornerAdvice();$('cardBody').insertAdjacentHTML('beforeend',`<div class="cadv"><small>YOUR CORNER</small>“${t}”</div>`)}
-  if(!G.watch&&!G.local&&G.call)$('cardBody').insertAdjacentHTML('beforeend',`<div class="cc"><small>CORNER CALL${TOUCH?'':' · 1 2 3'} — PICK ONE BEFORE THE BELL</small><div>${CALLS.map((c,i)=>`<button data-cc="${c[0]}" class="${G.call[G.ME]===c[0]?'on':''}">${TOUCH?'':`<i>${i+1}</i>`}<b>${c[1]}</b><span>${c[2]}</span></button>`).join('')}</div></div>`);
+  if(!G.watch&&!G.local&&G.call)$('cardBody').insertAdjacentHTML('beforeend',`<div class="cc"><small>CORNER CALL${TOUCH?'':' · 1 2 3'} — PICK ONE BEFORE THE BELL${!G.online&&G.call[1-G.ME]?` · <em>${(G.B[1-G.ME].f.short||G.B[1-G.ME].f.name)}'S CORNER: ${CALLS.find(c=>c[0]===G.call[1-G.ME])[1]}</em>`:''}</small><div>${CALLS.map((c,i)=>`<button data-cc="${c[0]}" class="${G.call[G.ME]===c[0]?'on':''}">${TOUCH?'':`<i>${i+1}</i>`}<b>${c[1]}</b><span>${c[2]}</span></button>`).join('')}</div></div>`);
   showOv('cardOv');
 }
 
