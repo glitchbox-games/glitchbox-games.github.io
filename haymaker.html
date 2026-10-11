@@ -302,6 +302,18 @@ input.txt:focus{border-color:var(--gold)}
 .opts button{padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#14141a;font:800 12px Rubik;letter-spacing:.12em}
 #recLine{margin-top:14px;font:700 12px Rubik;letter-spacing:.14em;color:var(--dim);background:none;border:0;padding:4px 0;text-align:left;cursor:pointer;line-height:1.7}#recLine:hover,#recLine:focus-visible{color:#fff}#recLine b{color:var(--gold)}#recLine small{font-size:10px;opacity:.75}#recLine .dt{display:none}
 #recLine .lvb{display:inline-block;vertical-align:middle;width:60px;height:5px;border-radius:3px;background:#2a2a34;margin-right:8px;overflow:hidden}#recLine .lvb i{display:block;height:100%;background:var(--gold)}
+#mkOv{align-items:flex-end;justify-content:center;padding:12px 3vw;pointer-events:none;background:linear-gradient(90deg,transparent 42%,rgba(0,0,0,.55))}
+#mkOv .mkp{pointer-events:auto;width:min(500px,48vw);max-height:96vh;overflow:auto;background:rgba(10,10,16,.93);border:1px solid var(--line);border-radius:16px;padding:12px 16px}#mkOv h2{margin:0 0 4px}
+#mkOv .mr{margin-top:9px}#mkOv .mr small{display:block;font:900 10px Rubik;letter-spacing:.2em;color:var(--dim);margin-bottom:5px}
+#mkOv .mc{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px}#mkOv .mc button{font:900 11px Rubik;letter-spacing:.08em;color:#ddd;background:#16161e;border:1px solid var(--line);border-radius:8px;padding:6px 9px;cursor:pointer}
+#mkOv .mc button.on{background:var(--gold);color:#111;border-color:var(--gold)}
+#mkOv .ms{display:flex;flex-wrap:wrap;gap:6px}#mkOv .ms button{width:24px;height:24px;border-radius:50%;border:2px solid rgba(0,0,0,.6);cursor:pointer;padding:0}#mkOv .ms button.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--gold)}
+#mkOv .mkb{display:flex;flex-wrap:wrap;gap:4px}#mkOv .mkb button{background:#16161e;border:1px solid var(--line);border-radius:8px;padding:2px;cursor:pointer;width:42px;height:42px;display:grid;place-items:center}#mkOv .mkb button.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+#mkOv .mkb .port{position:static}#mkOv .mab{font:700 11px Rubik;color:#bbb;margin-top:5px;line-height:1.4}
+#mkOv .me{display:flex;flex-wrap:wrap;gap:5px}#mkOv .me button{background:#16161e;border:1px solid var(--line);border-radius:8px;padding:2px;cursor:pointer;width:44px;height:44px}#mkOv .me button.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+#mkOv .mn{display:flex;gap:6px}#mkOv .mn input{flex:1;min-width:0;text-transform:uppercase}#mkOv .mkbtn{display:flex;gap:8px;margin-top:12px;position:sticky;bottom:-12px;background:rgba(10,10,16,.96);padding:8px 0}#mkOv .mkbtn .btn{margin:0;flex:1}
+.card.mkc .em{font:400 46px Anton;color:var(--gold);display:grid;place-items:center;height:64px}.card .mkt{position:absolute;top:3px;right:4px;font:900 8px Rubik;letter-spacing:.12em;background:var(--gold);color:#111;border-radius:4px;padding:1px 4px}
+@media (max-width:820px),(max-height:520px){#mkOv .mkp{width:min(440px,58vw)}}
 #lockBody h3{font:400 18px Anton;letter-spacing:.06em;color:#fff;margin:16px 0 8px;text-align:left}#lockBody .lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 #lockBody .lk{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:#101016;color:#fff;cursor:pointer;font:inherit}
 #lockBody .lk:hover{border-color:#777}#lockBody .lk.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}#lockBody .lk.lock{opacity:.38;cursor:default}
@@ -539,6 +551,7 @@ body.touch #abil,body.touch #keys{display:none}
     <p>Three rounds of a minute. Drop to zero health and you're down — mash punch to beat the ten-count. Three knockdowns is a TKO. Still standing at the end? The judges score each round on damage and knockdowns.</p>
     <p>Punches cost stamina. Throw too many and you gas out: slower, weaker, and your guard crumbles. Chain punches together for a combo bonus. Under a quarter health you go into RAGE: punches hit 15% harder.</p>
     <p>Twelve fighters, each with a passive, two abilities and an ultimate — pick one on the select screen to read them. Before the first bell both fighters walk out to the ring: press any key (or tap) to skip, or switch ENTRANCES off in SETTINGS. Win the arcade ladder to take the belt home.</p>
+    <p>Make your own boxer: tap <b>+ CREATE</b> on the fighter grid. Pick a name, build, hair, eyes, colours and emblem, and choose who they fight like — they get that fighter's stats and moves. Up to six, saved on this device (offline modes only).</p>
     <p>Every fight earns XP. Level up to unlock punch trails and KO finishers in the LOCKER — click your level under the title menu. Online, your opponent sees them too.</p>
     <h3>MODES</h3>
     <div class="kgrid">
@@ -560,6 +573,7 @@ body.touch #abil,body.touch #keys{display:none}
 <div class="ov dark" id="setOv"><div class="panel" style="max-width:520px;width:94vw"><h2>SETTINGS</h2><div id="setBody"></div><button class="btn primary" id="setBack" style="margin-top:12px">DONE</button></div></div>
 <div class="ov dark" id="tourOv"><div class="card2" id="tourBody" style="width:min(720px,96vw)"></div></div>
 <div class="ov dark" id="dayOv"><div class="card2" id="dayBody"></div></div>
+<div class="ov" id="mkOv"><div class="mkp"><h2 id="mkTitle">CREATE A FIGHTER</h2><div id="mkBody"></div><div class="mkbtn"><button class="btn primary" id="mkSave">SAVE FIGHTER</button><button class="btn" id="mkCancel">CANCEL</button><button class="btn ghost" id="mkDel">DELETE</button></div></div></div>
 <div class="ov dark" id="lockOv"><div class="panel" style="max-width:720px;width:94vw"><h2>LOCKER</h2><div id="lockBody"></div><button class="btn primary" id="lockBack" style="margin-top:12px">BACK</button></div></div>
 <div class="ov dark" id="recOv"><div class="panel" style="max-width:760px;width:94vw"><h2>RECORDS</h2><div id="recBody"></div><button class="btn primary" id="recBack" style="margin-top:12px">BACK</button></div></div>
 <div class="ov dark" id="pauseOv">
@@ -2426,7 +2440,7 @@ class Boxer{
     for(const o of [this.ice,this.shieldM])if(o){this.root.remove(o);o.geometry.dispose();o.material.dispose()}
     this._phase=false;this._ph2=false;this.pony=null;this.tails=null;this.foxTails=null;this.belt=null;this.capeG=null;if(this.capeGeo){this.capeGeo.dispose();this.capeGeo=null}
     this.mats.flat().forEach(m=>m&&m.dispose&&m.dispose());this.mats=[];(this.ownTex||[]).forEach(t=>t.dispose());
-    const ST=STYLE[f.id]||STYLE.blaze,A=ARCH[L.ref?'ref':ST.body]||ARCH.std,ref=!!L.ref,key=f.id+'|'+alt+(alt===CUSTOM?'|'+L.shorts+'.'+L.trim+'.'+L.glove:'');
+    const ST=STYLE[f.id]||STYLE.blaze,A=ARCH[L.ref?'ref':ST.body]||ARCH.std,ref=!!L.ref,key=(f.vkey||f.id)+'|'+alt+(alt===CUSTOM?'|'+L.shorts+'.'+L.trim+'.'+L.glove:'');
     this.rimU={uRimC:{value:new THREE.Color(ref?0xbfc8ff:(L.glow||0xffffff))},uRimK:{value:ref?.1:.4},uFlash:{value:0}};
     const U=this.rimU,reg=m=>{this.mats.push(m);return m};
     const tm=(p,S)=>reg(toonMat(Object.assign({color:0xffffff},p),S,U));
@@ -2452,7 +2466,7 @@ class Boxer{
     const mesh=(g,m,x=0,y=0,z=0)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;return o},bare=o=>{o.userData.noOutline=1;return o};
     const g=(x=0,y=0,z=0)=>{const o=new THREE.Group();o.position.set(x,y,z);return o};
     const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
-    const geo=(name,fn)=>{const k='g|'+(ref?'ref':f.id)+'|'+name;return GEO[k]||(GEO[k]=fn())};   // shapes depend only on the fighter, not the colourway
+    const geo=(name,fn)=>{const k='g|'+(ref?'ref':(f.gkey||f.id))+'|'+name;return GEO[k]||(GEO[k]=fn())};   // shapes depend only on the fighter, not the colourway
     const aS=A.arm,lS=A.leg;
     // ── pelvis + trunks ──
     const pelvis=this.pelvis=g(0,.93,0);this.body.add(pelvis);
@@ -3505,7 +3519,7 @@ function portrait(id,size,flip){
   const f=FBY[id],u=PORT[id];
   return `<i class="port${flip?' flip':''}" data-f="${id}" style="--s:${size}px;--n:${PN_};${u?`background-image:url(${u});`:''}--c:${f.col}">${u?'':`<b>${f.name[0]}</b>`}</i>`;
 }
-function makePortraits(){
+function makePortraits(list){
   if(!GL||SMOKE)return;
   let pr;try{pr=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true})}catch(e){return}
   pr.setPixelRatio(1);pr.setSize(PS,PS,false);pr.setClearColor(0x000000,0);pr.toneMapping=THREE.ACESFilmicToneMapping;
@@ -3516,7 +3530,7 @@ function makePortraits(){
   const sheet=document.createElement('canvas');sheet.width=PS*PN_;sheet.height=PS;const sx=sheet.getContext('2d');
   const sv=OUTLINE_U.uRes.value.clone(),sw=OUTLINE_U.uW.value;OUTLINE_U.uRes.value.set(PS,PS);OUTLINE_U.uW.value=2.4;
   const loop=2*Math.PI/4.6,dt=loop/PN_;
-  try{for(const f of [...FIGHTERS,BOSS]){
+  try{for(const f of list||[...FIGHTERS,BOSS,...madeF()]){
     pb.build(f);pb.reset();pb.x=0;pb.z=0;pb.yaw=-.32;pb.act=null;pb.anT=0;pb.override=null;
     // portrait pose: gloves low at the chest so the face reads, then a quick jab across the frame
     const V=THREE.Vector3,lowL=new V(-.2,1.27,.3),lowR=new V(.21,1.24,.24),jab=new V(-.04,1.5,.78);
@@ -4411,7 +4425,7 @@ function startAttract(){
 }
 function openSelect(mode){
   rpStop();vsHide();clearConfetti();clearDecals();
-  SEL.mode=mode;if(mode==='online'&&FBY[SEL.f]&&FBY[SEL.f].secret)SEL.f='blaze';G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;
+  SEL.mode=mode;if(mode==='online'&&FBY[SEL.f]&&(FBY[SEL.f].secret||FBY[SEL.f].made))SEL.f='blaze';G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;
   hideAllOv();showOv('selOv');showHUD(false);REF.b.root.visible=false;G.B.forEach(b=>{b.down=false;b.act=null;b.fxBits=0;b.P.fall=0});
   renderSelect();placePreview();
 }
@@ -4426,13 +4440,13 @@ function fighterInfo(f){
 function renderSelect(){
   const on=SEL.mode==='online';
   $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
-  $('grid').innerHTML=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
-    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
-  $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);
+  $('grid').innerHTML=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).concat(on?[]:madeF()).map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
+    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}${f.made?'<div class="mkt">YOURS</div>':''}</button>`}).join('')+(on?'':`<button class="card mkc" data-mk="new"><div class="em">+</div><div class="cn">CREATE</div></button>`);
+  $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);if(FBY[SEL.f].made&&!on)$('finfo').insertAdjacentHTML('beforeend','<button class="btn small" id="mkEdit" style="margin-top:8px">EDIT FIGHTER</button>');
   if(SEL.mode==='quick'&&FBY[SEL.opp]){const H=(REC.h2h||{})[SEL.f+'>'+SEL.opp];$('finfo').insertAdjacentHTML('beforeend',`<div class="h2h">${FBY[SEL.f].short||FBY[SEL.f].name} VS <b style="color:${FBY[SEL.opp].col}">${FBY[SEL.opp].short||FBY[SEL.opp].name}</b> · ${H?`<b>${H[0]}–${H[1]}</b>`:'FIRST MEETING'}</div>`)}
-  {const f=FBY[SEL.f],hx=c=>'#'+new THREE.Color(c).getHexString();if(!altOK(f.id,SEL.alt))SEL.alt=0;$('altSeg').innerHTML=[0,1,2,3,4].map(a=>{const L=Object.assign({},f.look,a===CUSTOM?kitOf(f.id):f.alts[a]),ok2=altOK(f.id,a);return `<button data-a="${a}" class="${SEL.alt===a?'on':''} ${a===3?'leg':''} ${ok2?'':'lock'}" style="--a:${hx(L.shorts)};--b:${hx(L.glove)}" title="${a===CUSTOM?'Your own kit — tap again to edit':a===3?(ok2?'LEGEND colours':'LEGEND — win the arcade ladder with '+f.name+' to unlock'):'Colour '+(a+1)}">${a===CUSTOM?'✎':ok2?'':'🔒'}</button>`}).join('')+(SEL.alt===CUSTOM&&SEL.kitEdit?kitEditor(f.id):'')}
+  {const f=FBY[SEL.f],hx=c=>'#'+new THREE.Color(c).getHexString();if(f.made)SEL.alt=0;$('altSeg').parentNode.style.display=f.made?'none':'';if(!altOK(f.id,SEL.alt))SEL.alt=0;$('altSeg').innerHTML=[0,1,2,3,4].map(a=>{const L=Object.assign({},f.look,a===CUSTOM?kitOf(f.id):f.alts[a]),ok2=altOK(f.id,a);return `<button data-a="${a}" class="${SEL.alt===a?'on':''} ${a===3?'leg':''} ${ok2?'':'lock'}" style="--a:${hx(L.shorts)};--b:${hx(L.glove)}" title="${a===CUSTOM?'Your own kit — tap again to edit':a===3?(ok2?'LEGEND colours':'LEGEND — win the arcade ladder with '+f.name+' to unlock'):'Colour '+(a+1)}">${a===CUSTOM?'✎':ok2?'':'🔒'}</button>`}).join('')+(SEL.alt===CUSTOM&&SEL.kitEdit?kitEditor(f.id):'')}
   $('oppBox').classList.toggle('hide',SEL.mode!=='quick');
-  $('oppSeg').innerHTML=`<button data-o="random" class="${SEL.opp==='random'?'on':''}"><span style="width:20px;height:20px;display:block">${ICO('random')}</span>RANDOM</button>`+(bossOn()?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>`<button data-o="${f.id}" class="${SEL.opp===f.id?'on':''}" title="${f.name}">${portrait(f.id,25)}</button>`).join('');
+  $('oppSeg').innerHTML=`<button data-o="random" class="${SEL.opp==='random'?'on':''}"><span style="width:20px;height:20px;display:block">${ICO('random')}</span>RANDOM</button>`+(bossOn()?[...FIGHTERS,BOSS]:FIGHTERS).concat(madeF()).map(f=>`<button data-o="${f.id}" class="${SEL.opp===f.id?'on':''}" title="${f.name}">${portrait(f.id,25)}</button>`).join('');
   $('venueSeg').innerHTML=[['arena','ARENA'],['roof','ROOFTOP'],['pit','THE PIT'],['gym','THE GYM'],['beach','THE BEACH'],['random','RANDOM']].map(([k,n])=>`<button data-v="${k}" class="${SEL.venue===k?'on':''}">${n}</button>`).join('');
   $('selWatch').style.display=SEL.mode==='quick'?'':'none';
   $('mutSeg').innerHTML=[['big','BIG HEADS'],['dmg','DOUBLE DMG'],['ult','ULT RUSH']].map(([k,n])=>`<button data-m="${k}" class="${SEL.mut[k]?'on':''}">${n}</button>`).join('');
@@ -4491,7 +4505,11 @@ function setupUI(){
   addEventListener('pointerup',()=>{PHOTO.drag=null});
   addEventListener('wheel',e=>{if(PHOTO.on){PHOTO.r=clamp(PHOTO.r+e.deltaY*.004,1,10);e.preventDefault()}},{passive:false});
   $('train').addEventListener('click',e=>{if(e.target.id==='tutGo'){tutStart();SFX.ui();return}if(e.target.id==='tutStop'){TUT.on=false;TRL.on=false;tutUI();SFX.ui();return}if(e.target.id==='trlGo'){trialsStart();SFX.ui();return}const k=e.target.closest('[data-k]'),o=e.target.closest('[data-o]');if(k)trainSet(k.dataset.k);if(o){TR[o.dataset.o]=!TR[o.dataset.o];trainUI()}SFX.ui()});trainUI();
-  $('grid').addEventListener('click',e=>{const c=e.target.closest('[data-f]');if(!c)return;SFX.ui();
+  $('finfo').addEventListener('click',e=>{if(e.target.id==='mkEdit'){SFX.ui();openMaker(SEL.f)}});
+  $('mkBody').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;SFX.ui();const k=b.dataset.k,v=b.dataset.v;MKS.sp.name=mkClean($('mkName').value,10)||MKS.sp.name;MKS.sp.nick=mkClean($('mkNick').value,18);
+    MKS.sp[k]=/^(skin|hairCol|shorts|trim|glove|beard|band)$/.test(k)?+v:v;mkRender();mkPreview()});
+  $('mkSave').onclick=mkSave;$('mkCancel').onclick=()=>{SFX.ui();mkClose()};$('mkDel').onclick=()=>{SFX.ui();mkDelete()};
+  $('grid').addEventListener('click',e=>{const mk=e.target.closest('[data-mk]');if(mk){SFX.ui();openMaker(null);return}const c=e.target.closest('[data-f]');if(!c)return;SFX.ui();
     if(e.shiftKey&&SEL.mode==='quick'){SEL.opp=c.dataset.f}else{SEL.f=c.dataset.f;if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),ready:false})}}
     saveSel();renderSelect();placePreview()});
   $('oppSeg').addEventListener('click',e=>{const c=e.target.closest('[data-o]');if(!c)return;SEL.opp=c.dataset.o;saveSel();renderSelect();placePreview()});
@@ -4548,6 +4566,46 @@ const STORY={
   unit:['PROGRAM: SPARRING PARTNER. NEW PROGRAM: CHAMPION. REASON: UNKNOWN.','ONE OPPONENT REMAINS. PROBABILITY OF VICTORY: IRRELEVANT.','UNIT-7 POLISHES THE BELT 1,438 TIMES. IT DOES NOT KNOW WHY THIS FEELS GOOD.'],
   lucha:['Abuela\'s gym needs a new roof. El Tornado promises the whole barrio he\'ll bring it home.','The barrio paints a mural of him on the gym wall the night before the title. Unfinished — on purpose.','They finish the mural with the belt in it. The new roof is mask-green.'],
   grizz:['The gym has a fridge full of salmon. The champion gets the key to the fridge.','The night before the title, Grizz eats twelve fish and sleeps like a log.','Grizz gets the fridge key. He also gets the belt, which he uses to hold the fridge shut.']};
+// ════ FIGHTER CREATOR: build your own boxer on any fighter's moveset (offline; same stats as the fighter you copy) ════
+const MK={skin:[0xf1c9a5,0xd9a37c,0xc68a5a,0xa8673e,0x8a5636,0x5c3a26,0x3a2418],hair:[0x1a1410,0x4a3020,0x8a4a1e,0xd8a040,0xf2e2b0,0xd6d2ca,0xff4a12,0x3fd4ff,0x7dff4a,0xff4fd8,0x9a5cff,0xf2f2f2],
+  kit:[0xd11f1a,0xe0461a,0xffcc33,0x1f6bff,0x3fd4ff,0x1fd6a4,0x2a5a2a,0x7dff4a,0x7a2bd9,0xff4fd8,0x7a1424,0x16161a,0xf2f2f2,0xc8a032],iris:['#2a1408','#4a2e18','#28c8ff','#7dff4a','#ff4fd8','#ffd23a','#ff3b3f','#9a7aff'],
+  hairs:[['flame','FLAME'],['bolt','SWEPT'],['mohawk','MOHAWK'],['pony','PONYTAIL'],['pops','SILVER FOX'],['horns','HORNS'],['bald','BALD']],
+  bodies:[['std','STANDARD'],['lean','LEAN'],['heavy','HEAVY'],['fem','SLIM']],
+  eyes:{round:{eye:'round',ew:20,eh:12,bt:8,bin:6,bout:-5,lid:5.5},narrow:{eye:'narrow',ew:22,eh:10,bt:7,bin:6,bout:-7,lid:5},small:{eye:'small',ew:17,eh:10,bt:12,bin:8,bout:-3,lid:6},almond:{eye:'almond',ew:20,eh:12,bt:5,bin:3,bout:-4,lid:5,lash:1}},
+  embs:['flame','bolt','mountain','ghost','flake','star','paw','gear','fox','bull','snake','bell'],MAX:6};
+const MADE=()=>(REC.made||[]),madeF=()=>MADE().map(m=>FBY[m.id]).filter(Boolean);
+function mkDefault(){return {name:'ROOKIE',nick:'THE NEW KID',base:'blaze',body:'std',hair:'flame',beard:0,band:1,eye:'round',skin:0xc68a5a,hairCol:0x1a1410,iris:'#4a2e18',shorts:0x1f6bff,trim:0xffcc33,glove:0xd11f1a,emblem:'star'}}
+function mkClean(t,n){return String(t||'').toUpperCase().replace(/[^A-Z0-9 .'!-]/g,'').trim().slice(0,n)}
+function mkFighter(sp,id){const B=FBY[sp.base]&&!FBY[sp.base].made?FBY[sp.base]:FBY.blaze,K=B.kit||B.id,name=mkClean(sp.name,10)||'ROOKIE';
+  const f=Object.assign({},B,{id,name,short:name,nick:mkClean(sp.nick,18),col:'#'+new THREE.Color(sp.trim).getHexString(),secret:0,made:1,kit:K,spec:Object.assign({},sp),winq:WINQ[K],
+    look:{skin:sp.skin,shorts:sp.shorts,trim:sp.trim,glove:sp.glove,hair:sp.hair,hairCol:sp.hairCol,glow:sp.trim},alts:[{},{},{},{}]});
+  const vk=[sp.body,sp.hair,sp.beard?1:0,sp.band?1:0].join('.');f.gkey=id+'.'+vk;f.vkey=f.gkey+'.'+[sp.eye,sp.iris,sp.skin,sp.hairCol,sp.emblem,sp.shorts,sp.trim,sp.glove,mkClean(sp.name,10)].join('.');
+  STYLE[id]={body:sp.body,hair:sp.hair,beard:sp.beard?1:0,band:sp.band?1:0,emblem:sp.emblem,top:sp.body==='fem'?1:0,beardCol:sp.hairCol,face:Object.assign({iris:sp.iris},MK.eyes[sp.eye]||MK.eyes.round)};
+  BIOS[id]=`Your own fighter — fights like ${B.short||B.name}.`;QUOTES[id]=QUOTES[K]||['Let\'s go.'];STORY[id]=STORY[K];FBY[id]=f;return f}
+function registerMade(){for(const m of MADE())if(m&&m.id&&m.spec)mkFighter(m.spec,m.id)}
+const MKS={sp:null,id:null};
+function openMaker(id){if(G.mode!=='select'||SEL.mode==='online')return;MKS.id=id&&FBY[id]&&FBY[id].made?id:null;MKS.sp=Object.assign(mkDefault(),MKS.id?FBY[MKS.id].spec:{});
+  if(!MKS.id&&MADE().length>=MK.MAX){sub(MK.MAX+' FIGHTERS MAX — EDIT OR DELETE ONE',2.2);return}
+  hideOv('selOv');showOv('mkOv');mkRender();mkPreview()}
+function mkPreview(){mkFighter(MKS.sp,'mk_tmp');G.B[0].f=null;placePreview(['mk_tmp',null])}
+function mkRender(){const S=MKS.sp,hx=c=>'#'+new THREE.Color(c).getHexString(),B=FBY[S.base]||FBY.blaze;
+  const chips=(k,L)=>`<div class="mc">${L.map(([v,n])=>`<button data-k="${k}" data-v="${v}" class="${String(S[k])===String(v)?'on':''}">${n}</button>`).join('')}</div>`;
+  const sw=(k,L)=>`<div class="ms">${L.map(c=>`<button data-k="${k}" data-v="${c}" class="${String(S[k])===String(c)?'on':''}" style="background:${typeof c==='number'?hx(c):c}"></button>`).join('')}</div>`;
+  const row=(t,h)=>`<div class="mr"><small>${t}</small>${h}</div>`;
+  $('mkBody').innerHTML=row('NAME · NICKNAME',`<div class="mn"><input class="txt" id="mkName" maxlength="10" value="${S.name.replace(/"/g,'')}" placeholder="NAME"><input class="txt" id="mkNick" maxlength="18" value="${(S.nick||'').replace(/"/g,'')}" placeholder="NICKNAME"></div>`)+
+    row('FIGHTS LIKE',`<div class="mkb">${(bossOn()?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>`<button data-k="base" data-v="${f.id}" class="${S.base===f.id?'on':''}" title="${f.name}">${portrait(f.id,34)}</button>`).join('')}</div><div class="mab"><b style="color:${B.col}">${B.short||B.name}</b> · ${B.passive.name} · ${B.q.name} · ${B.e.name} · <i>${B.r.name}</i></div>`)+
+    row('BUILD',chips('body',MK.bodies))+row('HAIR',chips('hair',MK.hairs))+row('EYES',chips('eye',[['round','ROUND'],['narrow','NARROW'],['small','DEEP-SET'],['almond','ALMOND']]))+
+    row('EXTRAS',chips('beard',[[1,'BEARD'],[0,'CLEAN-SHAVEN']])+chips('band',[[1,'HEADBAND'],[0,'NO BAND']]))+
+    row('SKIN',sw('skin',MK.skin))+row('HAIR COLOUR',sw('hairCol',MK.hair))+row('EYE COLOUR',sw('iris',MK.iris))+
+    row('SHORTS',sw('shorts',MK.kit))+row('TRIM · YOUR COLOUR',sw('trim',MK.kit))+row('GLOVES',sw('glove',MK.kit))+
+    row('EMBLEM',`<div class="me">${MK.embs.map(e=>`<button data-k="emblem" data-v="${e}" class="${S.emblem===e?'on':''}"><canvas data-emb="${e}" width="40" height="40"></canvas></button>`).join('')}</div>`);
+  $('mkBody').querySelectorAll('canvas[data-emb]').forEach(c=>{const x=c.getContext('2d');x.translate(20,20);emblem(x,c.dataset.emb,hx(S.trim),14)});
+  $('mkDel').style.display=MKS.id?'':'none';$('mkTitle').textContent=MKS.id?'EDIT FIGHTER':'CREATE A FIGHTER'}
+function mkClose(){hideOv('mkOv');G.B[0].f=null;showOv('selOv');renderSelect();placePreview()}
+function mkSave(){const S=MKS.sp;S.name=mkClean($('mkName').value,10)||'ROOKIE';S.nick=mkClean($('mkNick').value,18);
+  const id=MKS.id||('mk'+Date.now().toString(36));REC.made=MADE().slice();const i=REC.made.findIndex(m=>m.id===id),entry={id,spec:Object.assign({},S)};if(i>=0)REC.made[i]=entry;else REC.made.push(entry);saveRec();
+  const f=mkFighter(S,id);try{makePortraits([f])}catch(e){}SEL.f=id;SFX.ui&&SFX.ui();mkClose();sub(f.name+' IS READY TO FIGHT',2)}
+function mkDelete(){if(!MKS.id)return;REC.made=MADE().filter(m=>m.id!==MKS.id);saveRec();delete FBY[MKS.id];SEL.f='blaze';mkClose()}
 function showLadder(){rpStop();vsHide();clearConfetti();
   const L=G.ladder;G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;hideAllOv();showOv('ladOv');showHUD(false);REF.b.root.visible=false;
   const done=L.i>=L.opps.length;if(done){setTimeout(()=>{confetti();SFX.fanfare(true)},300)}
@@ -5135,11 +5193,12 @@ function init(){
   PA=new Particles(4200,THREE.AdditiveBlending);PN=new Particles(1600,THREE.NormalBlending);
   buildArena();buildFxTex();G.B=[new Boxer(0),new Boxer(1)];buildRef();prewarmFX();
   setupUI();setupTouch();$('rotIco').innerHTML=ICO('phone');
+  try{registerMade();const s0=JSON.parse(localStorage.getItem('haymaker.sel')||'{}');if(FBY[s0.f]&&FBY[s0.f].made)SEL.f=s0.f}catch(e){console.warn(e)}
   setTimeout(()=>{try{makePortraits()}catch(e){console.warn(e)}},60);
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,get SEL(){return SEL},renderSelect,THREE,posterCanvas,posterLoad,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,openMaker,mkFighter,get SEL(){return SEL},renderSelect,THREE,posterCanvas,posterLoad,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();document.body.classList.remove('booting');
   // build the other venues while the player is on the title screen, so picking one never hitches
@@ -5161,6 +5220,8 @@ function runSmoke(){
   const abil=(f0,f1,key,d=1)=>{solo(f0,f1);place(d);G.B[0].meter=100;return castAbility(G.B[0],key)};
   try{
     ok(FIGHTERS.length===12,'twelve fighters');
+    {const sp=Object.assign(mkDefault(),{name:'test<b>',base:'pops',hair:'mohawk',body:'heavy'}),f=mkFighter(sp,'mk_smoke');ok(f.made&&f.kit==='pops'&&f.name==='TESTB'&&FBY.mk_smoke===f&&STYLE.mk_smoke.hair==='mohawk','FIGHTER CREATOR: a made fighter borrows a moveset, names are sanitised');
+      solo('mk_smoke','titan');ok(G.B[0].f.id==='mk_smoke'&&G.B[0].hpMax===FBY.pops.hp,'…builds and fights on that fighter\'s stats');castAbility(G.B[0],'q');ok(G.B[0].st.rope>0,'…with that fighter\'s abilities (Rope-a-Dope)');delete FBY.mk_smoke;delete STYLE.mk_smoke}
     ok([...FIGHTERS,BOSS].every(f=>{const t=tape(f);return /^\d'\d+"$/.test(t.h)&&/^\d+ LB$/.test(t.w)&&/^\d+-\d$/.test(t.rec)&&/^\d+ KO$/.test(t.ko)}),'TALE OF THE TAPE is well-formed for everyone');
     for(const f of FIGHTERS){ok(ABIL[f.id]&&ABIL[f.id].q&&ABIL[f.id].e&&ABIL[f.id].r,f.id+' has three abilities');ok(!!AIAB[f.id],f.id+' has CPU ability rules');ok(f.q.cd>0&&f.e.cd>0,f.id+' has cooldowns')}
     // ── rig ──
