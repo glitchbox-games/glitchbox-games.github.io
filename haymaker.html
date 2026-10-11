@@ -1765,12 +1765,6 @@ const BLOCK_L=new THREE.Vector3(-.115,1.57,.27),BLOCK_R=new THREE.Vector3(.115,1
 let TOONGRAD=null;
 function toonGrad(){if(TOONGRAD)return TOONGRAD;const t=new THREE.DataTexture(new Uint8Array([95,175,255]),3,1,THREE.RedFormat);t.minFilter=t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return TOONGRAD=t}
 function M(color,o={}){const p=Object.assign({color,gradientMap:toonGrad()},o);for(const k of ['roughness','metalness','envMap','envMapIntensity','clearcoat','clearcoatRoughness'])delete p[k];return new THREE.MeshToonMaterial(p)}
-// a crisp cel rim light in the fighter's colour (backlit from above), plus a white-out used as the hit flash
-function addRim(m,U){m.onBeforeCompile=sh=>{sh.uniforms.uRimC=U.uRimC;sh.uniforms.uRimK=U.uRimK;sh.uniforms.uFlash=U.uFlash;
-  sh.fragmentShader='uniform vec3 uRimC;uniform float uRimK;uniform float uFlash;\n'+sh.fragmentShader.replace('#include <opaque_fragment>',
-  `{vec3 vd=vViewPosition/max(length(vViewPosition),.0001);float fr=1.-clamp(dot(normal,vd),0.,1.);float rim=smoothstep(.56,.7,fr)*clamp(normal.y*.7+.5,0.,1.);
-    outgoingLight+=uRimC*rim*uRimK;outgoingLight=mix(outgoingLight,vec3(1.),clamp(uFlash,0.,1.));}
-  #include <opaque_fragment>`)};m.customProgramCacheKey=()=>'hmRim1';return m}
 const OUTLINE_U={uW:{value:2.6},uRes:{value:new THREE.Vector2(1600,900)}};
 function outlineMat(k=1,crowd=false){
   return new THREE.ShaderMaterial({side:THREE.BackSide,defines:crowd?{CROWD:1}:{},
