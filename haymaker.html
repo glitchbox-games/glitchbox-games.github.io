@@ -3858,7 +3858,11 @@ function netConnect(room,role){
 function netSend(o){if(NET.sink){NET.sink.push(o);return}if(NET.ws&&NET.ws.readyState===1)NET.ws.send(JSON.stringify(o))}
 function netClose(){const w=NET.ws;NET.ws=null;if(w){w.onclose=null;try{w.close()}catch(e){}}}
 function netLeave(){if(NET.mode!=='off'){netSend({t:'bye'})}netClose();NET.mode='off';G.online=false}
-function netLost(msg){netClose();NET.mode='off';G.online=false;G.paused=false;showTitle();showOv('mpOv');mpErr(msg)}
+function netLost(msg){netClose();NET.mode='off';G.online=false;G.paused=false;
+  // mid-fight: the bout ends properly — you win by forfeit — instead of dumping you on the title screen
+  if(G.mode==='fight'&&G.phase!=='end'&&G.phase!=='none'&&/left/.test(msg)){G.forfeit=true;rpStop();hideAllOv();clearCombat();for(const b of G.B){b.down=false;if(b.act&&/down|ko/.test(b.act.k))b.act=null}
+    setPhase('end',{result:{w:G.ME,how:'FORFEIT',rnd:G.rnd,cards:judgeCards(),rd:G.rdmg}});return}
+  showTitle();showOv('mpOv');mpErr(msg)}
 function onNet(m){
   if(m.t==='created'){openSelect('online');return}
   if(m.t==='joined'){openSelect('online');return}
@@ -3888,6 +3892,7 @@ function checkStart(){if(NET.mode==='host'&&NET.myReady&&NET.peerReady&&NET.peer
 function checkRematch(){if(NET.mode==='host'&&NET.rm&&NET.peerRm)hostGo()}
 function hostGo(){const m={t:'go',v:pickVenue(SEL.venue),f:[SEL.f,NET.peerPick],n:[myName()||FBY[SEL.f].name,NET.peer||FBY[NET.peerPick].name],a:[SEL.alt|0,NET.peerAlt|0]};netSend(m);startOnlineMatch(m)}
 function startOnlineMatch(m){
+  G.forfeit=false;
   G.surv=null;
   DAILY.on=false;
   G.local=false;
@@ -4067,6 +4072,7 @@ function updateHUD(dt){
 
 // ── title / select ──
 function showTitle(){
+  G.forfeit=false;
   rpStop();vsHide();$('cutin').className='';clearConfetti();
   G.mode='title';G.paused=false;G.ladder=null;hideAllOv();showOv('titleOv');showHUD(false);renderRec();
   $('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND';
@@ -4191,7 +4197,7 @@ function saveName(){NAME=$('nameIn').value.trim().toUpperCase().slice(0,12);try{
 // ── fights ──
 function rpStop(){if(RP.play){RP.play.done=null;rpEnd()}}
 function renderToggles(){document.querySelectorAll('.tgl').forEach(b=>{const on=!!SET[b.dataset.s]&&!(SET.mute&&b.dataset.s!=='flash'&&b.dataset.s!=='walk');b.textContent=on?'ON':'OFF';b.classList.toggle('off',!on)})}
-function startSolo(myF,oppF,diff,watch){rpStop();G.surv=null;G.tour=null;G.local=diff==='p2'&&!watch;if(G.local)diff='contender';PAD2.press.length=0;for(const k of ['big','dmg','ult'])MUT[k]=!!(SEL.mut[k]&&diff!=='bag'&&!SMOKE);G.watch=!!watch;document.body.classList.toggle('watching',G.watch);
+function startSolo(myF,oppF,diff,watch){rpStop();G.forfeit=false;G.surv=null;G.tour=null;G.local=diff==='p2'&&!watch;if(G.local)diff='contender';PAD2.press.length=0;for(const k of ['big','dmg','ult'])MUT[k]=!!(SEL.mut[k]&&diff!=='bag'&&!SMOKE);G.watch=!!watch;document.body.classList.toggle('watching',G.watch);
   G.online=false;G.attract=false;G.ME=0;G.bag=diff==='bag';G.paused=false;
   const oa=G.ladder?(G.ladder.i===G.ladder.opps.length-1?3:Math.floor(Math.random()*3)):myF===oppF?(SEL.alt+1)%3:0;setupMatch([myF,oppF],[FBY[myF].name,FBY[oppF].name],[SEL.alt,oa]);G.bots=[null,new Bot(1,diff)];G.diff=diff;
   applyVenue(diff==='bag'?'gym':pickVenue(SEL.venue));G.mode='fight';hideAllOv();showHUD(true);REF.b.root.visible=true;setPhase(G.bag||SMOKE||!SET.walk?'intro':'walk');
@@ -4237,6 +4243,7 @@ function onEnd(r){
   const ko=r.how==='KO'||r.how==='TKO';
   if(ko){CAM.slow=.22;CAM.slowT=1.1;announce(r.how==='TKO'?'T.K.O.!':'K.O.!','red big',2.2);say(r.how==='TKO'?'Technical knockout!':'Knockout!');SFX.ko();SFX.cheer(1.3);SFX.bell(3);screenFlash('white',.5);
     pyro(2.8,[0,1,2,3],1.2);flameJets();ARENA.excite=1;if(w>=0)setTimeout(()=>crowdThrow(26,G.B[w].look.glow||0xffc83a),900);impactFrame(0xff3b3f)}
+  else if(r.how==='FORFEIT'){SFX.bell(3);announce('FORFEIT','gold',1.8);SFX.cheer(.8)}
   else{SFX.bell(3);announce(w<0?'DRAW!':'DECISION','gold',1.8);say(w<0?'This one is a draw!':'We go to the judges\' scorecards.');SFX.cheer(.8)}
   if(w>=0)setTimeout(()=>{if(G.phase!=='end'||G.mode!=='fight')return;confetti();SFX.fanfare(w===G.ME);if(!ko)pyro(2,[0,1,2,3])},ko?1300:900);
   if(w===G.ME&&!G.attract){const me=G.B[G.ME],o=G.B[1-G.ME];achGet('first');if(ko)achGet('ko');if(me.stats.took===0||me.hp>=me.hpMax-.01&&!me.kd)achGet('flawless');if(me.minHp!=null&&me.minHp<me.hpMax*.1)achGet('comeback');
@@ -4244,7 +4251,7 @@ function onEnd(r){
     REC.vwins=REC.vwins||{};REC.vwins[ARENA.venue]=1;if(ARENA.rain&&ARENA.rain.on)achGet('storm');if(REC.vwins.arena&&REC.vwins.roof&&REC.vwins.pit)achGet('venues');
     if(!G.online&&!G.watch&&!G.local){REC.fwins=REC.fwins||{};REC.fwins[me.f.id]=1;if(FIGHTERS.every(f=>REC.fwins[f.id]))achGet('all')}}
   G.xpRes=null;if(!SMOKE&&!G.watch&&!G.local&&!G.bag&&!G.online){const before=xpInfo(),gain=xpGain(r);REC.xp=(REC.xp||0)+gain;{const fid=G.B[G.ME].f.id,m0=mastery(fid).tier,P=recOf(fid);P.xp=(P.xp||0)+gain;const m1=mastery(fid).tier;if(m1&&m1!==m0)setTimeout(()=>sub(G.B[G.ME].f.name+' — '+m1[1]+' MASTERY',3),1400)}G.xpRes={before,gain,af:xpInfo()}}
-  if(!SMOKE&&!G.watch&&!G.local){const P=recOf(G.B[G.ME].f.id);if(w===G.ME){REC.w++;P.w++;if(ko){REC.ko++;P.ko++}}else if(w>=0){REC.l++;P.l++}saveRec()}
+  if(!SMOKE&&!G.watch&&!G.local&&!G.forfeit){const P=recOf(G.B[G.ME].f.id);if(w===G.ME){REC.w++;P.w++;if(ko){REC.ko++;P.ko++}}else if(w>=0){REC.l++;P.l++}saveRec()}
   if(G.ladder&&G.ladder.bossFight){if(w===G.ME&&!SMOKE){const fresh=!REC.boss;REC.boss=1;saveRec();achGet('boss');if(fresh)setTimeout(()=>sub('THE CHAMP IS NOW PLAYABLE',3),2500)}}
   else if(G.ladder&&w===G.ME){G.ladder.i++;if(G.ladder.i>=G.ladder.opps.length){REC.ladders++;REC.champ[G.ladder.f]=1;achGet('champ');if(Object.keys(REC.champ).length>=3)achGet('legend3');if(!SMOKE)recOf(G.ladder.f).titles++;saveRec()}}
   const fin=()=>{if(G.phase==='end'&&G.mode==='fight')showEnd(r)};
@@ -4324,7 +4331,8 @@ function drawFlow(){const c=$('flowC'),F=G.flow||[];if(!c||F.length<2)return c&&
 function renderEndButtons(){
   const el=$('endBtns');if(!el||!$('endOv').classList.contains('on'))return;const r=G.result||{};
   let h='';
-  if(G.online){h=`<button class="primary" id="eRm">${NET.rm?'WAITING FOR RIVAL…':'REMATCH'}${NET.peerRm&&!NET.rm?' · THEY\'RE IN':''}</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">LEAVE</button>`}
+  if(G.forfeit){h=`<div class="dimt" style="text-align:center;margin-bottom:6px">Your rival disconnected.</div><button class="primary" id="eOnline">PLAY ONLINE AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`}
+  else if(G.online){h=`<button class="primary" id="eRm">${NET.rm?'WAITING FOR RIVAL…':'REMATCH'}${NET.peerRm&&!NET.rm?' · THEY\'RE IN':''}</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">LEAVE</button>`}
   else if(G.ladder&&G.ladder.bossFight){h=r.w===G.ME?`<button class="primary" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eBoss">TRY AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`}
   else if(G.ladder){const done=G.ladder.i>=G.ladder.opps.length;h=r.w===G.ME?`<button class="primary" id="eNext">${done?'CLAIM THE BELT':'NEXT FIGHT'}</button>`:`<button class="primary" id="eRetry">TRY AGAIN</button>`;h+=`<button class="ghost" id="eMenu">MAIN MENU</button>`}
   else if(G.tour)h=`<button class="primary" id="eTour">${G.tour.won?'LIFT THE TROPHY':G.tour.out?'SEE THE BRACKET':'NEXT ROUND'}</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
@@ -4336,7 +4344,7 @@ function renderEndButtons(){
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
@@ -4877,6 +4885,7 @@ function runSmoke(){
     {const K=kitOf('volt'),k0=Object.assign({},K);K.shorts=0x7dff4a;solo('volt','frost');G.B[0].build(FBY.volt,CUSTOM);ok(G.B[0].look.shorts===0x7dff4a&&altOK('volt',CUSTOM),'a custom kit builds with your colours');Object.assign(K,k0)}
     {solo('grizz','frost');togglePause(true);$('pMoves').click();ok($('movesOv').classList.contains('on')&&$('movesBody').textContent.includes('Hibernate'),'pause → MOVE LIST shows your own fighter\'s moves');$('movesBack').click();ok($('pauseOv').classList.contains('on'),'…and goes back to the pause menu');togglePause(false)}
     {solo('blaze','frost');G.B[0].meter=100;ok(/ultimate/i.test(cornerAdvice()),'the corner tells you to use a ready ultimate');G.B[0].meter=0;Object.assign(G.B[0].stats,{thrown:20,landed:3});ok(/air/.test(cornerAdvice()),'…and to stop swinging at air')}
+    {solo('blaze','frost');NET.mode='host';G.online=true;const w0=REC.w;netLost('Your opponent left the arena.');ok(G.phase==='end'&&G.result&&G.result.how==='FORFEIT'&&G.result.w===G.ME&&REC.w===w0,'a rival leaving mid-fight ends it as your win by forfeit (records untouched)');G.forfeit=false}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
