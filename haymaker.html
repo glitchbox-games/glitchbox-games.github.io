@@ -549,7 +549,7 @@ body.touch #abil,body.touch #keys{display:none}
       <kbd>DAILY</kbd><span>One set fight a day for everyone, scored on how well you win.</span>
       <kbd>TRAINING</kbd><span>A dummy you control, a step-by-step TUTORIAL and six COMBO TRIALS.</span>
       <kbd>ONLINE</kbd><span>1v1 with a friend by room code. Keys 1–4 send quick chat.</span>
-      <kbd>PROGRESS</kbd><span>Fights earn XP for your level and your fighter's MASTERY (bronze → silver → gold). 24 achievements, career RECORDS, a LEGEND kit per fighter for winning the ladder, and a custom kit (✎) you design.</span>
+      <kbd>PROGRESS</kbd><span>Fights earn XP for your level and your fighter's MASTERY (bronze → silver → gold). 28 achievements, career RECORDS, a LEGEND kit per fighter for winning the ladder, and a custom kit (✎) you design.</span>
       <kbd>PAUSE</kbd><span>MOVE LIST, INSTANT REPLAY, PHOTO MODE and SETTINGS live in the pause menu.</span>
     </div>
     <button class="btn primary" id="helpBack">GOT IT</button>
@@ -744,7 +744,7 @@ const saveSet=()=>{try{localStorage.setItem('haymaker.set',JSON.stringify(SET))}
 const REC={w:0,l:0,ko:0,champ:{},ladders:0,per:{}};   // per[fighterId] = {w,l,ko,big,combo,titles}
 try{Object.assign(REC,JSON.parse(localStorage.getItem('haymaker.rec')||'{}'))}catch(e){}
 // ════ ACHIEVEMENTS ════
-const ACH=[['first','FIRST BLOOD','Win a fight'],['ko','LIGHTS OUT','Win by knockout'],['parry','READ YOU','Land a PERFECT block'],['hayko','HAYMAKER!','Knock someone out with a full haymaker'],
+const ACH=[['first','FIRST BLOOD','Win a fight'],['beach','BEACH BODY','Win a fight at The Beach'],['rope','ROPE-A-DOPE','Soak 3 punches in one Rope-a-Dope'],['finisher','SHOWSTOPPER','Win by KO with a Locker finisher'],['reel','HIGHLIGHT REEL','Watch your fight highlights'],['ko','LIGHTS OUT','Win by knockout'],['parry','READ YOU','Land a PERFECT block'],['hayko','HAYMAKER!','Knock someone out with a full haymaker'],
   ['clash','CLASH OF TITANS','Clash two haymakers'],['combo10','COMBO KING','Land a 10-hit combo'],['flawless','FLAWLESS','Win without taking a hit'],['comeback','COMEBACK','Win from under 10% health'],
   ['champ','CHAMPION','Win the arcade ladder'],['legend3','HALL OF FAME','Win the ladder with three different fighters'],['surv5','SURVIVOR','Win 5 in a row in survival'],['surv10','IRON WILL','Win 10 in a row in survival'],
   ['venues','WORLD TOUR','Win in the arena, on the rooftop and in the Pit'],['storm','STORM CHASER','Win on a stormy rooftop'],['all','COMPLETE ROSTER','Win with every fighter'],
@@ -3161,7 +3161,7 @@ function applyResult(res){
     if(res.r==='parry'&&v.idx===G.ME)achGet('parry');if(res.r==='clash')achGet('clash');
     if(res.r==='parry'){v.counterT=.9;v.meter=Math.min(100,v.meter+10);v.sta=Math.min(100,v.sta+8);v.stats.parried=(v.stats.parried||0)+1;
       if(v.f.id==='pops'){v.hp=Math.min(v.hpMax,v.hp+5);v.sta=Math.min(100,v.sta+10);floatAt('+5',v.headW,'heal')}}   // Old School
-    if(res.rope)v.meter=Math.min(100,v.meter+6);
+    if(res.rope){v.meter=Math.min(100,v.meter+6);v.ropeN=(v.ropeN||0)+1;if(v.ropeN>=3&&v.idx===G.ME)achGet('rope')}
     v.fxBits=fxBitsOf(v);
     if(v.hp<=0&&!v.down&&fighting())knockdown(v);
   }else{
@@ -3261,7 +3261,7 @@ const ABIL={
     r(b){b.act={k:'cast',anim:'flurry',t:0,d:1.5,lock:1};for(let i=0;i<8;i++)launch({id:nid(b),a:b.idx,k:'melee',cue:'tornado',dmg:(i===7?8:3)*b.f.pow,range:1.5,guard:.5,hs:i===7?.55:.12,kb:i===7?3:.1,meter:1,fx:[],delay:.15+i*.16});netAb(b,'r')},
   },
   pops:{
-    q(b){b.st.rope=2.2;b.act=null;b.blocking=true;netAb(b,'q')},
+    q(b){b.st.rope=2.2;b.ropeN=0;b.act=null;b.blocking=true;netAb(b,'q')},
     e(b){for(const k of ['burn','poison','pstk','slow','stun','freeze','sealed','charm','fear'])b.st[k]=0;b.sta=100;b.hp=Math.min(b.hpMax,b.hp+6);b.act={k:'cast',anim:'charge',t:0,d:.35};netAb(b,'e')},
     r(b){b.st.prime=6;b.act={k:'cast',anim:'roar',t:0,d:.6,lock:1};netAb(b,'r')},
   },
@@ -4572,7 +4572,7 @@ function onEnd(r){
   else if(r.how==='FORFEIT'){SFX.bell(3);announce('FORFEIT','gold',1.8);SFX.cheer(.8)}
   else{SFX.bell(3);announce(w<0?'DRAW!':'DECISION','gold',1.8);say(w<0?'This one is a draw!':'We go to the judges\' scorecards.');SFX.cheer(.8)}
   if(w>=0)setTimeout(()=>{if(G.phase!=='end'||G.mode!=='fight')return;confetti();SFX.fanfare(w===G.ME);if(!ko)pyro(2,[0,1,2,3])},ko?1300:900);
-  if(w===G.ME&&!G.attract){const me=G.B[G.ME],o=G.B[1-G.ME];achGet('first');if(ko)achGet('ko');if(me.stats.took===0||me.hp>=me.hpMax-.01&&!me.kd)achGet('flawless');if(me.minHp!=null&&me.minHp<me.hpMax*.1)achGet('comeback');
+  if(w===G.ME&&!G.attract){const me=G.B[G.ME],o=G.B[1-G.ME];achGet('first');if(ARENA.venue==='beach')achGet('beach');if(ko)achGet('ko');if(me.stats.took===0||me.hp>=me.hpMax-.01&&!me.kd)achGet('flawless');if(me.minHp!=null&&me.minHp<me.hpMax*.1)achGet('comeback');
     if(G.online)achGet('online');if(G.bots[1-G.ME]&&G.bots[1-G.ME].diff==='champion')achGet('champcpu');
     REC.vwins=REC.vwins||{};REC.vwins[ARENA.venue]=1;if(ARENA.rain&&ARENA.rain.on)achGet('storm');if(REC.vwins.arena&&REC.vwins.roof&&REC.vwins.pit)achGet('venues');
     if(!G.online&&!G.watch&&!G.local){REC.fwins=REC.fwins||{};REC.fwins[me.f.id]=1;if(FIGHTERS.every(f=>REC.fwins[f.id]))achGet('all')}}
@@ -4586,7 +4586,7 @@ function onEnd(r){
   clearTimeout(onEnd.t);
   // a knockout gets the slow-motion replay first
   // …then your KO finisher from the LOCKER, before the results card
-  const finKey=w<0?'classic':G.online?(seatCos(w,'fin')||COS.fin[0])[0]:w===G.ME?cosGet('fin')[0]:'classic',hasFin=ko&&!G.watch&&!SMOKE&&finKey!=='classic',after=()=>{clearTimeout(onEnd.t);if(hasFin&&G.phase==='end'&&G.mode==='fight'){finisher(G.B[1-w],G.B[w],finKey);onEnd.t=setTimeout(fin,2700)}else onEnd.t=setTimeout(fin,500)};
+  const finKey=w<0?'classic':G.online?(seatCos(w,'fin')||COS.fin[0])[0]:w===G.ME?cosGet('fin')[0]:'classic',hasFin=ko&&!G.watch&&!SMOKE&&finKey!=='classic',after=()=>{clearTimeout(onEnd.t);if(hasFin&&G.phase==='end'&&G.mode==='fight'){finisher(G.B[1-w],G.B[w],finKey);if(w===G.ME)achGet('finisher');onEnd.t=setTimeout(fin,2700)}else onEnd.t=setTimeout(fin,500)};
   if(ko)onEnd.t=setTimeout(()=>{if(G.phase!=='end'||G.mode!=='fight')return;if(!rpStart(after))after()},2000);
   else onEnd.t=setTimeout(fin,2400);
 }
@@ -4684,7 +4684,7 @@ function renderEndButtons(){
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eShare',shareResult);on('eHl',()=>{hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eShare',shareResult);on('eHl',()=>{achGet('reel');hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
