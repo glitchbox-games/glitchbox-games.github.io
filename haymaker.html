@@ -2393,12 +2393,17 @@ class Boxer{
       st:{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0,quick:0,dtick:0},
       stats:{thrown:0,landed:0,dmg:0,blocked:0,dodged:0,kd:0}});
   }
+  capeCloth(t,sp){const [NU,NV]=this.capeN,p=this.capeGeo.attributes.position.array,fl=.45+Math.min(1.4,sp)*.75;let k=0;
+    for(let j=0;j<=NV;j++){const v=j/NV,w=v*v;for(let i=0;i<=NU;i++){const u=i/NU,c=u-.5;
+      const fold=Math.sin(u*Math.PI*5+Math.sin(t*1.3+v)*.7)*.024*(.25+v),billow=(Math.sin(t*3.1+v*4.2+u*2.3)*.045+.055)*w*fl;
+      p[k++]=c*(.4+.3*v)+Math.sin(t*2.1+v*3)*.035*w*fl;p[k++]=-v*.97+Math.cos(u*Math.PI*6+t*2)*.012*w;p[k++]=-.02-.1*v-.05*Math.sin(u*Math.PI)+fold-billow-c*c*.12*v}}
+    this.capeGeo.attributes.position.needsUpdate=true;this.capeGeo.computeVertexNormals()}
   build(f,alt=0){
     if(alt===CUSTOM&&G.online)alt=0;this.f=f;this.alt=alt;const L=Object.assign({},f.look,alt===CUSTOM?Object.assign({glow:kitOf(f.id).trim},kitOf(f.id)):(f.alts&&f.alts[alt])||{});this.look=L;this.rpN=null;this._tcol=undefined;
     while(this.body.children.length)this.body.remove(this.body.children[0]);
     // status props hang off the root, not the body — drop the previous fighter's (shield/ice) too
     for(const o of [this.ice,this.shieldM])if(o){this.root.remove(o);o.geometry.dispose();o.material.dispose()}
-    this._phase=false;this._ph2=false;this.pony=null;this.tails=null;this.foxTails=null;this.belt=null;this.capeG=null;
+    this._phase=false;this._ph2=false;this.pony=null;this.tails=null;this.foxTails=null;this.belt=null;this.capeG=null;if(this.capeGeo){this.capeGeo.dispose();this.capeGeo=null}
     this.mats.flat().forEach(m=>m&&m.dispose&&m.dispose());this.mats=[];(this.ownTex||[]).forEach(t=>t.dispose());
     const ST=STYLE[f.id]||STYLE.blaze,A=ARCH[L.ref?'ref':ST.body]||ARCH.std,ref=!!L.ref,key=f.id+'|'+alt+(alt===CUSTOM?'|'+L.shorts+'.'+L.trim+'.'+L.glove:'');
     this.rimU={uRimC:{value:new THREE.Color(ref?0xbfc8ff:(L.glow||0xffffff))},uRimK:{value:ref?.1:.4},uFlash:{value:0}};
@@ -2537,8 +2542,18 @@ class Boxer{
         x.globalCompositeOperation='destination-out';x.fillStyle='#000';for(const cx of [w*.25-17,w*.25+17]){x.beginPath();x.ellipse(cx,h*.49,11,8,0,0,6.3);x.fill()}x.beginPath();x.ellipse(w*.25,h*.745,15,8,0,0,6.3);x.fill();x.globalCompositeOperation='source-over';
         x.fillStyle=t;x.beginPath();x.moveTo(w*.25,h*.08);x.lineTo(w*.25-14,h*.34);x.lineTo(w*.25+14,h*.34);x.fill();x.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<w;i+=32)x.fillRect(i,h*.95,16,h*.05)}),alphaTest:.5,side:THREE.DoubleSide},{shade:SHADE.cloth,spec:.45,gloss:.9});
       head.add(bare(mesh(geo('lmask',()=>surface((u,v,o)=>{hf(u,v*.88,o);const r=Math.hypot(o.x,o.z-H.cz)||1;o.x+=o.x/r*.007;o.z+=(o.z-H.cz)/r*.007;o.y+=.004},40,26)),mk)));
-      if(ST.cape){const cm=tm({color:new THREE.Color(L.trim),side:THREE.DoubleSide},{shade:SHADE.cloth,spec:.4,gloss:.88});const cp=g(0,.32,-.1);chest.add(cp);this.capeG=cp;
-        cp.add(bare(mesh(geo('lcape',()=>{const s2=surface((u,v,o)=>{const x2=(u-.5)*(.42+.18*v),y2=-v*.95,z2=-.02-.12*v-.04*Math.sin(u*Math.PI);o.set(x2,y2,z2)},10,10,{closed:false});return s2}),cm)))}}
+      if(ST.cape){// real cloth: its own grid, re-shaped every frame (folds, a flaring hem, flutter from footwork) with a darker lining inside
+        const hx=c=>'#'+new THREE.Color(c).getHexString(),capeT=canvasTex(256,512,(x,w,h)=>{x.fillStyle=hx(L.trim);x.fillRect(0,0,w,h);
+          const fg=x.createLinearGradient(0,0,w,0);for(let i=0;i<=10;i++)fg.addColorStop(i/10,i%2?'rgba(0,0,0,.2)':'rgba(255,255,255,.1)');x.fillStyle=fg;x.fillRect(0,0,w,h);
+          const tg=x.createLinearGradient(0,0,0,h);tg.addColorStop(0,'rgba(0,0,0,.3)');tg.addColorStop(.12,'rgba(0,0,0,0)');x.fillStyle=tg;x.fillRect(0,0,w,h);
+          x.fillStyle=hx(L.shorts||0x222222);x.fillRect(0,0,16,h);x.fillRect(w-16,0,16,h);x.fillRect(0,h-46,w,46);x.fillStyle='#ffd23a';x.fillRect(0,h-52,w,6);x.fillRect(16,0,4,h-46);x.fillRect(w-20,0,4,h-46);
+          x.save();x.translate(w/2,h*.42);x.beginPath();for(let i=0;i<10;i++){const r=i%2?34:80,an=-Math.PI/2+i*Math.PI/5;x.lineTo(Math.cos(an)*r,Math.sin(an)*r)}x.closePath();
+          x.lineWidth=12;x.strokeStyle='#ffffff';x.stroke();x.fillStyle=hx(L.shorts||0x222222);x.fill();x.restore()});(this.ownTex=this.ownTex||[]).push(capeT);
+        const cm=tm({color:0xffffff,map:capeT},{shade:SHADE.cloth,spec:.4,gloss:.88}),lm=tm({color:new THREE.Color(L.shorts||0x222222).multiplyScalar(.55),side:THREE.BackSide},{shade:SHADE.cloth,spec:.15,gloss:.6});
+        const cp=g(0,.32,-.1);chest.add(cp);this.capeG=cp;const NU=12,NV=14,gg=new THREE.BufferGeometry(),uv=[],idx=[];
+        for(let j=0;j<=NV;j++)for(let i=0;i<=NU;i++)uv.push(i/NU,1-j/NV);for(let j=0;j<NV;j++)for(let i=0;i<NU;i++){const a=j*(NU+1)+i;idx.push(a,a+1,a+NU+1,a+1,a+NU+2,a+NU+1)}
+        gg.setIndex(idx);gg.setAttribute('position',new THREE.BufferAttribute(new Float32Array((NU+1)*(NV+1)*3),3).setUsage(THREE.DynamicDrawUsage));gg.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+        this.capeGeo=gg;this.capeN=[NU,NV];this.capeCloth(0,0);cp.add(bare(mesh(gg,cm)));cp.add(bare(mesh(gg,lm)))}}
     if(hs==='bear'){const fur=tm({color:new THREE.Color(hairC)},hairS),muz=tm({color:new THREE.Color(hairC).lerp(new THREE.Color(0xf2dcc0),.55)},skinS),nose=tm({color:0x1a1210},{shade:SHADE.dark,spec:.8,gloss:.94});
       head.add(mesh(geo('capbear'+hk,()=>capG('capbr',.3,.62,.012)),fur));
       for(const sd of [-1,1]){const p=new THREE.Vector3();hf(.25-sd*.13,.1,p);const e=mesh(new THREE.SphereGeometry(.05,14,10),fur,p.x+sd*.012,p.y+.03,p.z-.01);e.scale.set(1,1,.6);head.add(e);
@@ -2738,7 +2753,7 @@ class Boxer{
     {const d=Math.min(rdt0,.033);this.sqV=(this.sqV||0)+(-300*(this.sqX||0)-16*(this.sqV||0))*d;this.sqX=(this.sqX||0)+this.sqV*d;const q=this.sqX;const bh=mutOn('big')&&this.idx<2&&G.mode==='fight'?1.75:1;this.head.scale.set(bh*(1+q*.7),bh*(1-q),bh*(1+q*.5));
       if(!this.gsq)this.gsq=[[0,0],[0,0]];this.arm.forEach((A,i)=>{const g=this.gsq[i];g[1]+=(-420*g[0]-18*g[1])*d;g[0]+=g[1]*d;A.gl.scale.set(1+g[0]*.6,1-g[0],1+g[0]*.6)})}
     if(this.pony){this.pony.rotation.x=Math.sin(this.anT*5)*.12-h.x*1.4+P.lean*.6;this.pony.rotation.z=Math.sin(this.anT*3.1)*.08-h.z}
-    if(this.capeG){this.capeG.rotation.x=.12+Math.sin(this.anT*2.2)*.06+P.lean*.6+(this.leap>0?.9:0)-h.x*.4;this.capeG.rotation.z=Math.sin(this.anT*1.7)*.05}
+    if(this.capeG){this.capeCloth(this.anT,Math.hypot(this.vx||0,this.vz||0)/2.3+(this.leap>0?1.2:0)+(a&&a.k==='punch'?.4:0));this.capeG.rotation.x=.12+Math.sin(this.anT*2.2)*.06+P.lean*.6+(this.leap>0?.9:0)-h.x*.4;this.capeG.rotation.z=Math.sin(this.anT*1.7)*.05}
     if(this.foxTails){this.foxTails.rotation.x=Math.sin(this.anT*2.6)*.1-P.lean*.5+h.x*.6;this.foxTails.rotation.y=Math.sin(this.anT*1.9)*.28+P.twist*.2;this.foxTails.rotation.z=Math.sin(this.anT*3.3)*.08}
     if(this.tails){this.tails.rotation.x=Math.sin(this.anT*6.3)*.18-h.x*1.6+P.lean*.5;this.tails.rotation.y=Math.sin(this.anT*4.1)*.15+P.twist*.3}
     this.root.updateMatrixWorld(true);
