@@ -352,6 +352,11 @@ input.txt:focus{border-color:var(--gold)}
 /* character select */
 #selOv{justify-content:space-between;flex-direction:row;align-items:stretch;gap:16px;background:linear-gradient(90deg,rgba(0,0,0,.85),rgba(0,0,0,0) 38%,rgba(0,0,0,0) 62%,rgba(0,0,0,.85))}
 .selL,.selR{width:min(380px,40vw);display:flex;flex-direction:column;justify-content:safe center;gap:10px}
+.selL{width:min(484px,46vw);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#ffd23a33 transparent;padding-right:4px}
+/* when the panel doesn't fit, a pill at its foot says there's more (venue, mutators) and scrolls there */
+#selMore{position:sticky;bottom:0;align-self:center;display:none;margin-top:auto;padding:6px 14px;border-radius:999px;border:1px solid var(--gold);background:rgba(20,16,6,.94);color:var(--gold);font:900 10px Rubik;letter-spacing:.25em;cursor:pointer;box-shadow:0 -8px 22px 8px rgba(0,0,0,.75);z-index:2;animation:nbump 1.6s ease-in-out infinite}
+#selMore.on{display:block}
+@media (max-height:780px) and (min-height:521px){.card{padding:6px 6px 5px}.card .em{height:46px;margin:-3px 0 0}.card .cn{font-size:16px}.selL{gap:7px}}
 #grid.many .card .em{height:48px}#grid.many .card{padding-top:8px;padding-bottom:5px}#grid.many .card.mkc .em{font-size:34px;height:48px}
 .selH{font:400 34px Anton;letter-spacing:.04em}
 .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
@@ -520,6 +525,7 @@ body.touch #abil,body.touch #keys{display:none}
     </div>
     <div id="venueBox"><div class="lbl">VENUE</div><div class="seg" id="venueSeg"></div></div>
     <div id="mutBox"><div class="lbl">MUTATORS</div><div class="seg" id="mutSeg"></div></div>
+    <button id="selMore">▾ VENUE &amp; MUTATORS BELOW</button>
   </div>
   <div class="selR">
     <div class="finfo" id="finfo"></div>
@@ -540,6 +546,16 @@ body.touch #abil,body.touch #keys{display:none}
     <div class="row"><input class="txt" id="codeIn" maxlength="6" placeholder="ABCD"><button class="btn" id="joinRoom" style="width:auto;margin:0">JOIN</button></div>
     <div class="err" id="mpErr"></div>
     <button class="btn ghost" id="mpBack">BACK</button>
+  </div>
+</div>
+
+<div class="ov dark" id="firstOv">
+  <div class="panel" style="max-width:460px">
+    <h2>FIRST FIGHT?</h2>
+    <p class="dimt">A short walkthrough on the gym dummy, one move at a time: jab, cross, block first, the fancy stuff after. Stop whenever you like. Or skip it and fight a ROOKIE CPU: moving, jab, cross and block are all you need to start.</p>
+    <button class="btn primary" id="ftTut">LEARN THE BASICS</button>
+    <button class="btn" id="ftFight">JUST FIGHT (ROOKIE)</button>
+    <button class="btn ghost" id="ftBack">BACK</button>
   </div>
 </div>
 
@@ -642,7 +658,7 @@ const angWrap=a=>{while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;ret
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 
 // ── tunables ──
-const ROUNDS=3, ROUND_T=60, REST_T=6, COUNT_STEP=.9, RING=3.3, MIN_GAP=.66, BODY=1.08;
+const ROUNDS=3, ROUND_T=60, REST_T=6, COUNT_STEP=.75, RING=3.3, MIN_GAP=.66, BODY=1.08;
 const PUNCH={
   jab:  {hand:'L',w:.07,a:.09,r:.17,dmg:4, st:4, range:1.25,hs:.16,kb:.6, guard:.9, meter:5},
   cross:{hand:'R',w:.13,a:.1, r:.25,dmg:8, st:8, range:1.28,hs:.3, kb:1.2,guard:.88,meter:7},
@@ -653,6 +669,9 @@ const PUNCH={
 };
 const TAUNT_FACE={wave:['half','grin'],cool:['half','set'],shimmy:['happy','grin'],kiss:['blink','grin'],horns:['angry','grit'],scan:['open','set'],roar:['angry','shout'],crowd:['happy','shout'],shrug:['half','grin'],wag:['half','grin']};
 const HAY_T=1, HAY_HOLD=.45, PARRY_W=.16, RAGE_AT=.25, RAGE_DMG=1.15, TAUNT_T=1.25;
+// health scale: every fighter's listed hp is multiplied by this, so a fight lasts into the later rounds instead of ending inside the first twenty seconds.
+// Punches, heals and burn/poison all stay as they were, so the kits keep their balance against each other: only the bars are deeper.
+let HP_K=3;
 const FIGHTERS=[
  {id:'blaze',name:'BLAZE',nick:'KID INFERNO',col:'#ff6a1f',
   look:{skin:0xb9794f,shorts:0xe0461a,trim:0xffcc33,glove:0xd11f1a,hair:'spikes',hairCol:0xff4a12,glow:0xff5a10},
@@ -673,7 +692,7 @@ const FIGHTERS=[
  {id:'titan',name:'TITAN',nick:'THE MOUNTAIN',col:'#9be05a',
   look:{skin:0x5c3a26,shorts:0x3d5a2a,trim:0xd9c27b,glove:0x70757c,hair:'bald',beard:1,hairCol:0x1a1008,glow:0x9be05a},
   taunt:'beat',alts:[{},{shorts:0x7a1d1d,trim:0xffc83a,glove:0xc8a032},{shorts:0x1a1a1e,trim:0x9be05a,glove:0x2a2a30}],
-  size:1.12,hp:148,pow:1.19,spd:.88,pspd:.94,reach:1.06,stats:[5,1,5],
+  size:1.12,hp:160,pow:1.3,spd:.93,pspd:.94,reach:1.06,stats:[5,1,5],
   passive:{name:'Granite Chin',desc:'148 health, and jabs never stagger him.'},
   q:{name:'Iron Skin',cd:11,desc:'For 4 seconds take half damage and shrug off stagger.'},
   e:{name:'Ground Pound',cd:11,desc:'Slam the canvas: a shockwave hits anyone close and throws them back. Dodge it!'},
@@ -697,7 +716,7 @@ const FIGHTERS=[
  {id:'viper',name:'VIPER',nick:'VENOM',col:'#7dff4a',
   look:{skin:0x9a7a55,shorts:0x1d3a14,trim:0x7dff4a,glove:0x46b318,hair:'mohawk',hairCol:0x2f9d17,glow:0x7dff4a},
   taunt:'shimmy',alts:[{},{shorts:0x3a1458,trim:0x7dff4a,glove:0x7a2bd9,hairCol:0x7dff4a},{shorts:0x141414,trim:0xffe14a,glove:0xffd21f,hairCol:0xffe14a}],
-  size:1,hp:100,pow:1.09,spd:1.05,reach:1.02,stats:[3,4,3],
+  size:1,hp:100,pow:1.04,spd:1.05,reach:1.02,stats:[3,4,3],
   passive:{name:'Toxic',desc:'Hits poison. Every stack burns half a point of health a second.'},
   q:{name:'Venom Spit',cd:6,desc:'Spit poison: 6 damage and 3 poison stacks. Blockable.'},
   e:{name:'Coil Strike',cd:9,desc:'Lunge three metres into a rising uppercut.'},
@@ -745,7 +764,7 @@ const FIGHTERS=[
  {id:'pops',name:'POPS',nick:'THE OLD MASTER',col:'#e0a84a',
   look:{skin:0x8a5636,shorts:0x7a1424,trim:0xf2ead8,glove:0x6e3a1c,hair:'pops',hairCol:0xd6d2ca,glow:0xffd27a},
   taunt:'wag',alts:[{},{shorts:0x16161a,trim:0xffd23a,glove:0x16161a,hairCol:0xf2f2f2},{shorts:0xf2ead8,trim:0x1f4a8a,glove:0xf2ead8,hairCol:0xbab4aa}],
-  size:.99,hp:104,pow:1.15,spd:.95,pspd:.98,reach:1.03,stats:[3,3,4],
+  size:.99,hp:104,pow:1.11,spd:.95,pspd:.98,reach:1.03,stats:[3,3,4],
   passive:{name:'Old School',desc:'A perfect block heals him 5 and gives back 10 stamina.'},
   q:{name:'Rope-a-Dope',cd:11,desc:'Covers up on the ropes for 2 seconds: every punch is fully blocked and drains the attacker\'s stamina. Then his counter is ready.'},
   e:{name:'Second Wind',cd:15,desc:'Shakes off every status effect, refills his stamina and heals 6.'},
@@ -794,7 +813,8 @@ const XP_TITLES=['ROOKIE','PROSPECT','CONTENDER','PRO','HEADLINER','CHAMPION','L
 const xpNeed=l=>400+l*150;
 function xpInfo(){let x=REC.xp||0,l=1;while(x>=xpNeed(l)){x-=xpNeed(l);l++}return {l,x,need:xpNeed(l),title:XP_TITLES[Math.min(XP_TITLES.length-1,Math.floor((l-1)/4))]}}
 function xpGain(r){const me=G.B[G.ME],win=r.w===G.ME,ko=/KO/.test(r.how),D=(G.bots[1-G.ME]&&G.bots[1-G.ME].diff)||'contender';
-  let x=100+(win?150:0)+(win&&ko?100:0)+G.B[1-G.ME].kd*40+Math.round(Math.max(0,me.hp/me.hpMax)*60);x=Math.round(x*({rookie:.7,contender:1,champion:1.5})[D]||1);return x}
+  let x=100+(win?150:0)+(win&&ko?100:0)+G.B[1-G.ME].kd*40+Math.round(Math.max(0,me.hp/me.hpMax)*60);x=Math.round(x*(XP_DIFF[D]??1));return x}
+const XP_DIFF={bag:.25,rookie:.7,contender:1,champion:1.5};   // training pays a quarter: it's practice, and it says so on the results card
 // ════ LOCKER: cosmetics you unlock by levelling up ════
 const COS={trail:[['classic','CLASSIC',1,0xffffff],['gold','GOLD',2,0xffc83a],['ice','GLACIER',3,0x8fe8ff],['toxic','TOXIC',5,0x6dff5a],['void','VOID',6,0x9a5cff],['crimson','CRIMSON',8,0xff2a3a],['rainbow','RAINBOW',10,'rainbow'],['plasma','PLASMA',13,'plasma']],
   fin:[['classic','CLASSIC',1,'Pyro and flame jets'],['thunder','THUNDERSTRUCK',4,'Lightning strikes the fallen'],['fireworks','FIREWORKS',7,'Shells burst over the ring'],['goldrain','GOLD RAIN',11,'The roof rains gold'],['nova','SUPERNOVA',15,'A shockwave rolls through the arena']]};
@@ -847,7 +867,8 @@ try{
   const pm=new THREE.PMREMGenerator(renderer);ENV=pm.fromScene(new RoomEnvironment(),.04).texture;pm.dispose();
 }catch(e){GL=false;renderer=null;if(!SMOKE)setTimeout(()=>{throw new Error('WebGL context could not be created: '+e.message)})}
 // keep the drawing buffer to a sane size on big high-DPI screens
-function pixelRatio(){const hi=SET.q==='high',cap=hi?2.4e6:1.3e6;return Math.max(.6,Math.min(devicePixelRatio||1,hi?2:1.25,Math.sqrt(cap/(innerWidth*innerHeight))))}
+let PSCALE=1;   // dynamic resolution: drops when a fight can't hold its frame rate, recovers when it can
+function pixelRatio(){const hi=SET.q==='high',cap=hi?2.4e6:1.3e6;return Math.max(.5,PSCALE*Math.max(.6,Math.min(devicePixelRatio||1,hi?2:1.25,Math.sqrt(cap/(innerWidth*innerHeight)))))}
 function setupPost(){
   if(!renderer)return;
   const hi=SET.q==='high';
@@ -1034,6 +1055,7 @@ function buildArena(){
     const pc=padCols[sx+','+sz]||0xf0f0f0;
     const padM=new THREE.MeshStandardMaterial({color:pc,roughness:.45,envMap:ENV,envMapIntensity:.3});
     const pad=new THREE.Mesh(new THREE.BoxGeometry(.24,1.12,.24),padM);pad.position.set(sx*(P-.12),.9,sz*(P-.12));pad.rotation.y=Math.PI/4;pad.castShadow=true;scene.add(pad);
+    post.userData.noMerge=cap.userData.noMerge=1;(ARENA.posts=ARENA.posts||[]).push({x:sx*(P-.06),z:sz*(P-.06),objs:[post,cap,pad],hid:false});   // kept separate so postOcclusion can hide one
   }
   // ropes: per side 3 ropes, each with its own wobble uniforms (shared by the side)
   const ropeCols=[0xd8202a,0xf2f2f2,0x1f5fd8];
@@ -1168,7 +1190,7 @@ function signTex(){const t=canvasTex(1024,512,(x,w,h)=>{const A=SIGN.a,B=SIGN.b;
 // Anything static with a plain material gets baked into one merged mesh per material.
 function mergeStatic(){
   const plain=THREE.Material.prototype.onBeforeCompile,skip=new Set((ARENA.banners||[]).map(b=>b.m)),by=new Map();
-  for(const o of scene.children){if(!o.isMesh||o.isInstancedMesh||Array.isArray(o.material)||o.material.isShaderMaterial||o.material.onBeforeCompile!==plain||skip.has(o)||o.children.length||!o.geometry.index||!o.geometry.attributes.uv)continue;
+  for(const o of scene.children){if(!o.isMesh||o.isInstancedMesh||Array.isArray(o.material)||o.material.isShaderMaterial||o.material.onBeforeCompile!==plain||skip.has(o)||o.userData.noMerge||o.children.length||!o.geometry.index||!o.geometry.attributes.uv)continue;
     const k=o.material.uuid+(o.castShadow?'c':'')+(o.receiveShadow?'r':'')+(o.userData.venue||'');if(!by.has(k))by.set(k,[]);by.get(k).push(o)}
   let saved=0;
   for(const list of by.values()){if(list.length<2)continue;
@@ -1334,7 +1356,7 @@ function staffMesh(list,legs){
     c.setHex(shirt);a.aShirt.set([c.r,c.g,c.b],i*3);c.setHex(pick([0xf1c9a5,0xd9a37c,0xb47b54,0x8a5a3c,0x5c3a26]));a.aSkin.set([c.r,c.g,c.b],i*3);
     c.setHex(pick([0x1a1410,0x2a1c12,0x4a3020,0x8a8a8a]));a.aHair.set([c.r,c.g,c.b],i*3);a.aInfo.set([Math.random()*100,.5,-1,0],i*4)});
   for(const k in a)geo.setAttribute(k,new THREE.InstancedBufferAttribute(a[k],k==='aInfo'?4:3));
-  im.frustumCulled=false;scene.add(im);const ol=new THREE.InstancedMesh(geo,ARENA.crowdLine,n);ol.instanceMatrix=im.instanceMatrix;ol.frustumCulled=false;scene.add(ol);return im}
+  im.frustumCulled=false;scene.add(im);const ol=new THREE.InstancedMesh(geo,ARENA.crowdLine,n);ol.instanceMatrix=im.instanceMatrix;ol.frustumCulled=false;im.add(ol);return im}   // the outline rides on the figures, so hiding them (the cornermen between rounds) hides it too — it used to stay up as black silhouettes
 function buildRingside(){
   const F=-1.15,E=4.35;
   const dark=new THREE.MeshStandardMaterial({color:0x16161c,roughness:.7,metalness:.2}),metal=new THREE.MeshStandardMaterial({color:0x9aa0aa,metalness:.85,roughness:.3,envMap:ENV,envMapIntensity:.8});
@@ -2515,9 +2537,9 @@ class Boxer{
     this.anT=Math.random()*10;this.x=0;this.z=0;this.yaw=0;this.reset();
   }
   reset(){
-    const f=this.f||{hp:100};
-    Object.assign(this,{hp:f.hp,hpMax:f.hp,sta:100,meter:0,act:null,blocking:false,vx:0,vz:0,kx:0,kz:0,cd:{q:0,e:0},dodgeCd:0,
-      combo:0,comboT:0,counterT:0,taken:0,takenT:0,dash:null,upAt:99,down:false,kd:0,ko:false,getup:0,buf:null,trail:f.hp,trailT:0,net:null,fxBits:0,
+    const f=this.f||{hp:100},H=f.hp*HP_K;
+    Object.assign(this,{hp:H,hpMax:H,sta:100,meter:0,act:null,blocking:false,vx:0,vz:0,kx:0,kz:0,cd:{q:0,e:0},dodgeCd:0,
+      combo:0,comboT:0,counterT:0,taken:0,takenT:0,dash:null,upAt:99,down:false,kd:0,ko:false,getup:0,buf:null,trail:H,trailT:0,net:null,fxBits:0,
       tauntCd:0,minHp:null,sweat:0,hayLatch:false,blockT0:-9,blkRelT:-9,_wasBlk:false,parryOK:false,flashT:0,dbuf:null,abuf:null,
       st:{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0,quick:0,rope:0,prime:0,dtick:0},
       stats:{thrown:0,landed:0,dmg:0,blocked:0,dodged:0,kd:0}});
@@ -3045,10 +3067,14 @@ function updateRef(dt){
     tx=sp[0];tz=sp[1];face=Math.atan2(mx-r.x,mz-r.z)}
   tx=clamp(tx,-RING,RING);tz=clamp(tz,-RING,RING);
   const dx=tx-r.x,dz=tz-r.z,d=Math.hypot(dx,dz);const sp=Math.min(d*3,3.4);
-  if(d>.05){r.x+=dx/d*sp*dt;r.z+=dz/d*sp*dt}
-  r.mvx=dx/(d||1)*sp;r.mvz=dz/(d||1)*sp;
-  for(const b of G.B){const ex=r.x-b.x,ez=r.z-b.z,ed=Math.hypot(ex,ez);if(ed<.7&&ed>0){r.x=b.x+ex/ed*.7;r.z=b.z+ez/ed*.7}}
-  r.x=clamp(r.x,-RING,RING);r.z=clamp(r.z,-RING,RING);
+  // walk round anyone in the way instead of through them
+  let ux=dx/(d||1),uz=dz/(d||1);for(const b of G.B){if(!b.root.visible)continue;const c=b.down?kdCentre(b):[b.x,b.z],t=(c[0]-r.x)*ux+(c[1]-r.z)*uz;
+    if(t>0&&t<Math.min(d,1.8)){const px=r.x+ux*t-c[0],pz=r.z+uz*t-c[1],pd=Math.hypot(px,pz),R=b.down?1.05:.95;
+      if(pd<R){const k=(R-pd)/R*1.6,sx=pd>1e-3?px/pd:-uz,sz=pd>1e-3?pz/pd:ux;ux+=sx*k;uz+=sz*k;const l=Math.hypot(ux,uz)||1;ux/=l;uz/=l}}}
+  if(d>.05){r.x+=ux*sp*dt;r.z+=uz*sp*dt}
+  r.mvx=ux*sp;r.mvz=uz*sp;
+  for(let it=0;it<3;it++){for(const b of G.B){if(!b.root.visible)continue;const q=bodyPush(r.x,r.z,b,b.down?.6:.82*(b.worldScale||1));r.x=q[0];r.z=q[1]}
+    r.x=clamp(r.x,-RING,RING);r.z=clamp(r.z,-RING,RING)}
   r.yaw+=angWrap(face-r.yaw)*damp(6,dt);
   const c=Math.cos(r.yaw),s=Math.sin(r.yaw);r.mvF=(r.mvx*s+r.mvz*c)/2.6;r.mvS=(r.mvx*c-r.mvz*s)/2.6;
   // arms: hands on hips, counting, or raising the winner
@@ -3090,7 +3116,7 @@ function logicBoxer(b,it,dt){
     if(d>0&&fighting()&&!b.down){b.hp=Math.max(Math.min(b.hp,1),b.hp-d);if(isHost())G.rdmg[1-b.idx][G.rnd-1]=(G.rdmg[1-b.idx][G.rnd-1]||0)+d;if(b.hp<=0)knockdown(b)}}
   b.cd.q=Math.max(0,b.cd.q-dt);b.cd.e=Math.max(0,b.cd.e-dt);b.dodgeCd-=dt;b.counterT-=dt;b.comboT-=dt;if(b.comboT<=0)b.combo=0;
   b.takenT-=dt;if(b.takenT<=0)b.taken=0;
-  if(!b.act||b.act.k!=='punch')b.sta=Math.min(100,b.sta+dt*(b.blocking?6:17));
+  if(!b.act||b.act.k!=='punch')b.sta=Math.min(100,b.sta+dt*(b.blocking?6:12));   // was 17: nobody ever gassed; at 12 a punch-happy pace runs you dry
   b.tauntCd-=dt;
   if(b.act){b.act.t+=dt;if(b.act.d!=null&&b.act.t>=b.act.d&&!['down','ko','win','lose'].includes(b.act.k)){if(b.act.k==='taunt')tauntDone(b);b.act=null}}
   const lk=locked(b),fight=fighting();
@@ -3121,6 +3147,7 @@ function logicBoxer(b,it,dt){
   // keep a gap between the two bodies
   const gap=MIN_GAP*Math.max(b.worldScale,o.worldScale);dx=o.x-b.x;dz=o.z-b.z;const d2=Math.hypot(dx,dz)||1e-3;
   if(d2<gap&&!o.down&&!b.down){const push=(gap-d2)*(owned(o)?.5:1);b.x-=dx/d2*push;b.z-=dz/d2*push;if(owned(o)){o.x+=dx/d2*push;o.z+=dz/d2*push}}
+  if(o.down&&!b.down){const q=bodyPush(b.x,b.z,o,.55*b.worldScale);b.x=q[0];b.z=q[1]}   // step around a fallen fighter, never over him
   if(!b.down){const ty=Math.atan2(o.x-b.x,o.z-b.z);b.yaw+=clamp(angWrap(ty-b.yaw),-14*dt,14*dt)}
   b.mvx=b.vx;b.mvz=b.vz;const c=Math.cos(b.yaw),s=Math.sin(b.yaw);b.mvF=(b.vx*s+b.vz*c)/2.4;b.mvS=(b.vx*c-b.vz*s)/2.4;
   // ── guard ──
@@ -3447,12 +3474,12 @@ function startKD(i){
       for(let i=0;i<46;i++){const a=Math.random()*6.283,sp=1.5+Math.random()*2.5;PN&&PN.emit(c[0]+Math.cos(a)*.3,.05,c[1]+Math.sin(a)*.3,Math.cos(a)*sp,.4+Math.random()*.9,Math.sin(a)*sp,1,.3,.62,.6,.58,.5,1.6,2.4)}});
   }
 }
-function botUpAt(v){const d=G.bots[v.idx].D||DIFF.contender;const p=d.getup-(v.kd-1)*.28+(v.f.kit==='toro'?.2:0);return Math.random()<p?3+Math.floor(Math.random()*5):99}
+function botUpAt(v){const d=G.bots[v.idx].D||DIFF.contender;const p=d.getup-(v.kd-1)*.28+(v.f.kit==='toro'?.2:0);return Math.random()<p?2+Math.floor(Math.random()*4):99}   // up at 2–5: long counts were most of a fight's real time
 function stepKD(dt){
   const K=G.kdInfo;if(!K)return;const v=G.B[K.b];K.t+=dt;
   const n=Math.floor(K.t/COUNT_STEP);
   if(!K.up&&n>K.count&&n<=10){K.count=n;if(!G.attract){announce(String(n),n>=8?'red':'',COUNT_STEP*.8);say(['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'][n]);SFX.count()}}
-  if(K.up){K.upT+=dt;if(K.upT>1.5&&G.phase==='kd'){G.phase='fight';G.kdInfo=null;RP.hold=-1;if(!G.attract){announce('BOX!','gold',.7);SFX.bell(1)}}return}
+  if(K.up){K.upT+=dt;if(K.upT>1.35&&G.phase==='kd'){G.phase='fight';G.kdInfo=null;RP.hold=-1;if(!G.attract){announce('BOX!','gold',.7);SFX.bell(1)}}return}
   if(!owned(v))return;
   if(v.kd>=3){if(K.t>1.6&&!K.sent){K.sent=1;countedOut(v,true)}return}
   if(G.bots[K.b]){if(K.count>=v.upAt)standUp(v)}
@@ -3463,7 +3490,9 @@ const getupNeed=v=>8+v.kd*5;
 function mashGetup(){const K=G.kdInfo;if(!K||K.up)return;const v=G.B[K.b];if(!owned(v)||G.bots[K.b])return;v.getup+=v.f.kit==='toro'?2:1;SFX.tick()}
 function standUp(v){if(G.kdInfo.up)return;v.hp=Math.round(v.hpMax*(v.kd===1?.5:.34));v.sta=70;v.st=Object.assign(v.st,{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0});
   if(G.online)netSend({t:'up',b:v.idx,hp:v.hp});onUp(v.idx)}
-function onUp(i){const v=G.B[i];v.down=false;v.act={k:'getup',t:0,d:1.1};if(G.kdInfo){G.kdInfo.up=true;G.kdInfo.upT=0}if(!G.attract){SFX.cheer(.6);if(i===G.ME)callout('STILL STANDING!','#7dff4a')}}
+function onUp(i){const v=G.B[i];v.down=false;v.act={k:'getup',t:0,d:1.1};if(G.kdInfo){G.kdInfo.up=true;G.kdInfo.upT=0}
+  if(!G.attract){SFX.cheer(.6);if($('ann').classList.contains('show')){clearTimeout(annT);$('ann').className='out'}   // the count stops: take its number down at once
+    if(i===G.ME)after(1,()=>{if(G.mode==='fight'&&!v.down&&(G.phase==='kd'||G.phase==='fight'))callout('STILL STANDING!','#7dff4a')})}}   // once he's actually on his feet (the get-up takes 1.1s)
 function countedOut(v,tko){if(G.online)netSend({t:'out',b:v.idx,tko:tko?1:0});onOut(v.idx,tko)}
 function onOut(i,tko){
   const v=G.B[i];v.act={k:'ko',t:2};
@@ -3499,7 +3528,9 @@ function setPhase(ph,x={}){
   }
   if(ph==='fight'){clearTimeout(sub.t);$('sub').style.opacity=0}
   if(ph==='fight'&&!G.attract&&!G.watch&&!G.bag&&G.rnd===1&&!SMOKE){let seen=0;try{seen=+localStorage.getItem('haymaker.tip')||0}catch(e){}
-    if(seen<1)setTimeout(()=>{if(G.phase==='fight')sub(TOUCH?'TIP: HOLD HAYMAKER TO CHARGE · TAP BLOCK AS A PUNCH LANDS = PERFECT':'TIP: HOLD '+keyName(BIND.hay)+' TO CHARGE A HAYMAKER · TAP '+keyName(BIND.block)+' AS A PUNCH LANDS = PERFECT BLOCK',4.5)},1100)}
+    const nk=newKeysCard();
+    if(nk);else if(seen<1&&keyTier()===0&&!TOUCH)setTimeout(()=>{if(G.phase==='fight')sub('TIP: '+keyName(BIND.jab)+' JAB · '+keyName(BIND.cross)+' CROSS · HOLD '+keyName(BIND.block)+' TO BLOCK · THAT\'S ALL YOU NEED',4.5)},1100);
+    else if(seen<1&&keyTier()>=2)setTimeout(()=>{if(G.phase==='fight')sub(TOUCH?'TIP: HOLD HAYMAKER TO CHARGE · TAP BLOCK AS A PUNCH LANDS = PERFECT':'TIP: HOLD '+keyName(BIND.hay)+' TO CHARGE A HAYMAKER · TAP '+keyName(BIND.block)+' AS A PUNCH LANDS = PERFECT BLOCK',4.5)},1100)}
   if(ph==='fight'&&!G.attract){announce('FIGHT!','',.8);SFX.bell(G.rnd===1&&G.phT===0?3:1);pyro(.9,G.rnd%2?[0,2]:[1,3],.8);ARENA.excite=Math.max(ARENA.excite||0,.7)}
   if(ph==='rest'){clearCombat();G.call=[null,null];G.B.forEach((b,i)=>{if(G.bots[i]&&owned(b))G.call[i]=botCall(b)});if(!G.attract){SFX.bell(1);G.cards=x.cards||G.cards;setTimeout(()=>{if(G.phase==='rest')showRoundCard(x)},900)}}
   if(ph==='end'){clearCombat();G.result=x.result;onEnd(x.result)}
@@ -4218,7 +4249,7 @@ function padPoll(){const ps=navigator.getGamepads?navigator.getGamepads():[];con
     if(PHOTO.on){PHOTO.a-=x*.04;PHOTO.e=clamp(PHOTO.e-y*.03,-.2,1.35);if(b[4])PHOTO.r=Math.max(1,PHOTO.r-.05);if(b[5])PHOTO.r=Math.min(10,PHOTO.r+.05);if(down(3))PHOTO.film=(PHOTO.film+1)%FILMS.length;if(down(0))photoSave();if(down(1)||down(9))photoOff();return}
     if(down(9)&&G.mode==='fight'){togglePause();return}
     if(G.mode==='select'&&(down(14)||down(15))){const i=FIGHTERS.findIndex(f=>f.id===SEL.f),n=(i+(down(15)?1:-1)+FIGHTERS.length)%FIGHTERS.length;const c=document.querySelector(`#grid [data-f=${FIGHTERS[n].id}]`);if(c)c.click()}
-    if(down(1)){const bk=document.querySelector('.ov.on #selBack, .ov.on #helpBack, .ov.on #recBack, .ov.on #lockBack, .ov.on #resume');if(bk)bk.click()}
+    if(down(1)){const bk=document.querySelector('.ov.on #selBack, .ov.on #ftBack, .ov.on #helpBack, .ov.on #recBack, .ov.on #lockBack, .ov.on #resume');if(bk)bk.click()}
     if(down(0)){const go=document.querySelector('.ov.on .primary, .ov.on #selGo');if(go)go.click()}}}
 function padP2(gp){const P=PAD2;if(!gp){P.pad=false;if(!p2Keys()){P.on=false;P.x=P.y=0;P.block=P.hay=false}return}P.pad=true;
   const b=gp.buttons.map(x=>x.pressed||x.value>.5),pr=P.prev,down=i=>b[i]&&!pr[i];P.prev=b;P.on=true;
@@ -4375,11 +4406,16 @@ function netTick(dt){
 addEventListener('pagehide',()=>{if(NET.mode!=='off')netSend({t:'bye'})});
 
 // ════════════════════ UI ════════════════════
-const SEL={mode:'quick',f:'blaze',opp:'random',diff:'contender',alt:0,venue:'arena',mut:{}};
+const SEL={mode:'quick',f:'blaze',opp:'random',diff:REC.w>0?'contender':'rookie',alt:0,venue:'arena',mut:{}};
 const MUT={};   // the mutators live for this match: big (heads), dmg (double damage), ult (meter ×3)
 const mutOn=k=>!!MUT[k]&&!G.online;
-try{const s=JSON.parse(localStorage.getItem('haymaker.sel')||'{}');if(FBY[s.f])SEL.f=s.f;if(s.opp==='random'||FBY[s.opp])SEL.opp=s.opp;if(DIFF[s.diff]||s.diff==='p2')SEL.diff=s.diff;if(['arena','roof','pit','gym','beach','orbit','random'].includes(s.venue))SEL.venue=s.venue;if(s.mut&&typeof s.mut==='object')SEL.mut={big:!!s.mut.big,dmg:!!s.mut.dmg,ult:!!s.mut.ult};SEL.alt=(s.alt|0)%(NALT+1);if(!altOK(SEL.f,SEL.alt))SEL.alt=0}catch(e){}
-const saveSel=()=>{try{localStorage.setItem('haymaker.sel',JSON.stringify({f:SEL.f,opp:SEL.opp,diff:SEL.diff,alt:SEL.alt,venue:SEL.venue,mut:SEL.mut}))}catch(e){}};
+try{const s=JSON.parse(localStorage.getItem('haymaker.sel')||'{}');if(FBY[s.f])SEL.f=s.f;if(s.opp==='random'||FBY[s.opp])SEL.opp=s.opp;if((DIFF[s.diff]||s.diff==='p2')&&s.diffSet)SEL.diff=s.diff;SEL.diffSet=!!s.diffSet;if(['arena','roof','pit','gym','beach','orbit','random'].includes(s.venue))SEL.venue=s.venue;if(s.mut&&typeof s.mut==='object')SEL.mut={big:!!s.mut.big,dmg:!!s.mut.dmg,ult:!!s.mut.ult};SEL.alt=(s.alt|0)%(NALT+1);if(!altOK(SEL.f,SEL.alt))SEL.alt=0}catch(e){}
+// a brand-new player gets asked once: learn the basics on the dummy, or just fight a rookie
+const firstTimer=()=>{if(REC.w||REC.l||(REC.ach&&REC.ach.tut))return false;try{return !localStorage.getItem('haymaker.ftue')}catch(e){return false}};
+const ftueSeen=()=>{try{localStorage.setItem('haymaker.ftue','1')}catch(e){}};
+function showFirst(){showOv('firstOv')}
+const defDiff=()=>REC.w>0?'contender':'rookie';   // a new player starts on ROOKIE; their first win moves the default up
+const saveSel=()=>{try{localStorage.setItem('haymaker.sel',JSON.stringify({f:SEL.f,opp:SEL.opp,diff:SEL.diff,diffSet:SEL.diffSet,alt:SEL.alt,venue:SEL.venue,mut:SEL.mut}))}catch(e){}};
 function showOv(id){$(id).classList.add('on')}
 function hideOv(id){$(id).classList.remove('on')}
 function hideAllOv(){document.querySelectorAll('.ov').forEach(o=>o.classList.remove('on'))}
@@ -4464,7 +4500,19 @@ function updateFloats(dt){updEmos(dt);for(let i=FLOATS.length-1;i>=0;i--){const 
 function togglePause(force){if(G.mode!=='fight')return;const on=force!=null?force:!$('pauseOv').classList.contains('on');if(on){showOv('pauseOv');$('pPhoto').style.display=G.online?'none':'';$('pReplay').style.display=G.online||RP.n<30?'none':'';if(!G.online)G.paused=true}else{hideOv('pauseOv');hideOv('helpOv');G.paused=false}}
 function applyAccess(){document.body.classList.toggle('hc',!!SET.hc)}
 let REBIND=null;const keyName=c=>c.replace(/^Key/,'').replace(/^Digit/,'').replace('ShiftLeft','L-SHIFT').replace('ShiftRight','R-SHIFT').replace('Space','SPACE').replace(/^Arrow/,'').toUpperCase();
-function keysLine(){const k=a=>keyName(BIND[a]);return `${k('up')}${k('left')}${k('down')}${k('right')} move · ${k('jab')} jab · ${k('cross')} cross · ${k('hook')} hook · ${k('upper')} upper · ${k('body')}+punch body · HOLD ${k('hay')} haymaker · ${k('block')} block (tap = perfect) · ${k('dodge')} dodge · ${k('q')} ${k('e')} abilities · ${k('r')} ultimate · ${k('taunt')} taunt · V camera · M mute`}
+// the controls strip grows with you: four things to learn in your first fight, the full set by your fifth (or once you finish the tutorial)
+const KEY_TIERS=[[0,'move jab cross block'],[1,'hook upper dodge'],[2,'hay q e r'],[4,'body taunt cam mute']];
+function keyTier(){const n=(REC.w||0)+(REC.l||0);return REC.ach&&REC.ach.tut?KEY_TIERS.length-1:KEY_TIERS.reduce((t,[at],i)=>n>=at?i:t,0)}
+function keyParts(){const k=a=>keyName(BIND[a]);return {move:`${k('up')}${k('left')}${k('down')}${k('right')} move`,jab:`${k('jab')} jab`,cross:`${k('cross')} cross`,hook:`${k('hook')} hook`,upper:`${k('upper')} upper`,
+  body:`${k('body')}+punch body`,hay:`HOLD ${k('hay')} haymaker`,block:`${k('block')} block`+(keyTier()>=2?' (tap = perfect)':''),dodge:`${k('dodge')} dodge`,q:`${k('q')} ${k('e')} abilities`,e:'',r:`${k('r')} ultimate`,taunt:`${k('taunt')} taunt`,cam:'V camera',mute:'M mute'}}
+const KEY_ORDER='move jab cross hook upper body hay block dodge q e r taunt cam mute'.split(' ');
+function keysLine(){const P=keyParts(),T=keyTier(),on=new Set(KEY_TIERS.slice(0,T+1).flatMap(t=>t[1].split(' ')));
+  return KEY_ORDER.filter(x=>on.has(x)&&P[x]).map(x=>P[x]).join(' · ')+(T<KEY_TIERS.length-1?' · ESC: all moves':'')}
+// the first fight at a new tier introduces the moves it adds
+function newKeysCard(){if(TOUCH||G.attract||G.watch||G.local||G.online||G.bag||SMOKE)return;const T=keyTier();let seen=0;try{seen=+localStorage.getItem('haymaker.ktier')||0}catch(e){}
+  if(T<=seen)return;try{localStorage.setItem('haymaker.ktier',String(T))}catch(e){}if(T===0||(!seen&&T===KEY_TIERS.length-1))return;   // veterans from before the tiers skip the card
+  const P=keyParts(),add=KEY_TIERS.slice(seen+1,T+1).flatMap(t=>t[1].split(' ')).map(x=>P[x]).filter(Boolean);
+  setTimeout(()=>{if(G.phase==='fight'||G.phase==='ready')sub('NEW MOVES · '+add.join(' · ').toUpperCase(),5)},1100);return true}
 function bindRows(){if(TOUCH)return'';const N={up:'MOVE UP',down:'MOVE DOWN',left:'MOVE LEFT',right:'MOVE RIGHT',jab:'JAB',cross:'CROSS',hook:'HOOK',upper:'UPPERCUT',block:'BLOCK',hay:'HAYMAKER',body:'BODY (hold)',dodge:'DODGE',duck:'DUCK',q:'ABILITY 1',e:'ABILITY 2',r:'ULTIMATE',taunt:'TAUNT'};
   return `<div class="lbl" style="margin-top:12px">CONTROLS — click, then press a key (ESC cancels)</div><div class="binds">${Object.keys(BIND0).map(a=>`<button data-bind="${a}" class="${REBIND===a?'on':''}"><span>${N[a]}</span><b>${REBIND===a?'PRESS A KEY…':keyName(BIND[a])}</b></button>`).join('')}</div><button class="btn ghost" id="bindReset" style="margin-top:6px;padding:8px">RESET KEYS</button>`}
 function showSettings(){
@@ -4544,6 +4592,7 @@ function startAttract(){
 }
 function openSelect(mode){
   rpStop();vsHide();clearConfetti();clearDecals();
+  if(!SEL.diffSet&&SEL.diff!=='bag'&&SEL.diff!=='p2')SEL.diff=defDiff();
   SEL.mode=mode;if(mode==='online'&&FBY[SEL.f]&&FBY[SEL.f].secret)SEL.f='blaze';G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;
   hideAllOv();showOv('selOv');showHUD(false);REF.b.root.visible=false;G.B.forEach(b=>{b.down=false;b.act=null;b.fxBits=0;b.P.fall=0});
   renderSelect();placePreview();
@@ -4556,7 +4605,8 @@ function fighterInfo(f){
   return `<div style="--c:${f.col}"><div class="fn" style="color:${f.col}">${f.name}</div><div class="nick">“${f.nick}”</div>${BIOS[f.id]?`<div class="bio">${BIOS[f.id]}</div>`:''}${bars}
     ${ab('PASSIVE',{html:portrait(f.id,44),name:f.passive.name,desc:f.passive.desc})}${ab('Q',Object.assign({html:abIcon(f,'q')},f.q))}${ab('E',Object.assign({html:abIcon(f,'e')},f.e))}${ab('R',{html:abIcon(f,'r'),name:f.r.name+' — ULTIMATE',desc:f.r.desc})}</div>`;
 }
-function renderSelect(){
+function selMoreUpd(){const L=document.querySelector('.selL'),m=$('selMore');if(!L||!m)return;const more=L.scrollHeight>L.clientHeight+6&&L.scrollTop+L.clientHeight<L.scrollHeight-4;m.classList.toggle('on',more)}
+function renderSelect(){setTimeout(selMoreUpd,0);
   const on=SEL.mode==='online';
   $('selTitle').textContent=on?(/^HMQ/.test(NET.code)?'QUICK MATCH':'ROOM '+NET.code):SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='career'?'NEW CAREER':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
   const GL_=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).concat(madeF()),many=GL_.length+(on?0:1)>12;$('grid').classList.toggle('many',many);
@@ -4579,11 +4629,19 @@ function renderSelect(){
   $('mkSmall').style.visibility=on?'hidden':'';$('selGo').textContent=on?(NET.myReady?'NOT READY':'READY'):SEL.mode==='ladder'?'START THE LADDER':SEL.mode==='career'?'START CAREER':'FIGHT!';
 }
 const PREV=[[-.72,-.55],[.78,-.75]];
+// stand the preview fighter(s) in the open space between the two panels, so no glove or head sits behind the portrait grid
+function prevX(i,pair){const L=document.querySelector('.selL'),R=document.querySelector('.selR');let mid=null;
+  if(L&&R&&innerWidth>820){const a=L.getBoundingClientRect().right,b=R.getBoundingClientRect().left;if(b-a>140){
+    const c=camera.clone();c.position.set(0,1.6,3.05);c.lookAt(0,1.22,-.6);c.aspect=innerWidth/innerHeight;c.updateProjectionMatrix();c.updateMatrixWorld(true);
+    const z=PREV[i][1],p0=new THREE.Vector3(0,1.1,z).project(c).x,p1=new THREE.Vector3(1,1.1,z).project(c).x,want=(a+b)/innerWidth-1;mid=(want-p0)/(p1-p0)}}
+  if(mid==null)return PREV[i][0];return pair?mid+(i?.75:-.75):mid}
+function prevRelayout(){if(G.mode!=='select')return;const two=G.B.every(b=>b.root.visible);G.B.forEach((b,i)=>{if(!b.root.visible)return;b.x=prevX(i,two);b.baseYaw=Math.atan2(0-b.x,2.75-b.z)+(i?-.25:.25);b.yaw=b.baseYaw+(i===0?SEL.spin||0:0)})}
+addEventListener('resize',()=>setTimeout(prevRelayout,50));
 function placePreview(ids){
   const show=ids||[SEL.f,SEL.mode==='quick'&&SEL.opp!=='random'?SEL.opp:SEL.mode==='online'?NET.peerPick:null];
   const alts=[SEL.alt,SEL.mode==='online'?NET.peerAlt|0:0];if(show[0]===show[1]&&alts[0]===alts[1])alts[1]=(alts[0]+1)%NALT;
   G.B.forEach((b,i)=>{const id=show[i];if(!id){b.root.visible=false;return}const fresh=!b.f||b.f.id!==id;if(fresh||b.alt!==alts[i])b.build(FBY[id],alts[i]);b.reset();b.root.visible=true;
-    b.x=PREV[i][0];b.z=PREV[i][1];b.yaw=b.baseYaw=Math.atan2(0-b.x,2.75-b.z)+(i?-.25:.25);b.act=null;if(i===0&&fresh)SEL.spin=0;
+    b.x=prevX(i,!!show[1-i]);b.z=PREV[i][1];b.yaw=b.baseYaw=Math.atan2(0-b.x,2.75-b.z)+(i?-.25:.25);b.act=null;if(i===0&&fresh)SEL.spin=0;
     // a freshly picked fighter shows off with their taunt
     if(fresh&&i===0&&G.mode==='select'){b.act={k:'taunt',t:0,d:TAUNT_T,style:b.f.taunt};b.root.updateMatrixWorld(true);setTimeout(()=>{if(G.mode==='select'&&b.f&&b.f.id===id)abilityVisual(0,'taunt',{s:b.f.taunt})},120)}});
 }
@@ -4597,10 +4655,13 @@ function selectStep(dt){
 }
 function setupUI(){
   document.querySelectorAll('#titleOv [data-go]').forEach(b=>b.addEventListener('click',()=>{if(NEWMODES.includes(b.dataset.go)&&!SMOKE){REC.tried=REC.tried||{};if(!REC.tried[b.dataset.go]){REC.tried[b.dataset.go]=1;saveRec();renderNewTags()}}auInit();if(AU.ctx&&AU.ctx.state!=='running')AU.ctx.resume();SFX.ui();const g=b.dataset.go;
-    if(g==='career'){if(REC.career)showCareer();else openSelect('career')}else if(g==='surv')openSelect('surv');else if(g==='tour')openSelect('tour');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
-  $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
+    if(g==='career'){if(REC.career)showCareer();else openSelect('career')}else if(g==='surv')openSelect('surv');else if(g==='tour')openSelect('tour');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff=SEL.diffSet?'contender':defDiff();if(firstTimer())showFirst();else openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
+  $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';PERF.lockQ=SET.q==='high';PSCALE=1;onResize();saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
   $('cBtn').onclick=()=>{SET.cam=SET.cam==='tv'?'back':'tv';saveSet();$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND'};
   $('helpBack').onclick=()=>hideOv('helpOv');
+  $('ftTut').onclick=()=>{ftueSeen();SFX.ui();SEL.diff='bag';startSolo(SEL.f,SEL.f==='frost'?'blaze':'frost','bag');tutStart()};
+  $('ftFight').onclick=()=>{ftueSeen();SFX.ui();hideOv('firstOv');openSelect('quick')};
+  $('ftBack').onclick=()=>hideOv('firstOv');
   $('netBox').addEventListener('click',e=>{if(e.target.id==='invBtn'){SFX.ui();invite()}});
   $('emoMenu').innerHTML=EMOS.map((t,k)=>`<button data-e="${k}">${t}</button>`).join('');
   $('emoBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();$('emoMenu').classList.toggle('on')});
@@ -4636,7 +4697,8 @@ function setupUI(){
   $('oppSeg').addEventListener('click',e=>{const c=e.target.closest('[data-o]');if(!c)return;SEL.opp=c.dataset.o;saveSel();renderSelect();placePreview()});
   $('mutSeg').addEventListener('click',e=>{const c=e.target.closest('[data-m]');if(!c)return;SFX.ui();SEL.mut[c.dataset.m]=!SEL.mut[c.dataset.m];saveSel();renderSelect()});
   $('venueSeg').addEventListener('click',e=>{const c=e.target.closest('[data-v]');if(!c)return;SFX.ui();SEL.venue=c.dataset.v;saveSel();renderSelect();if(SEL.venue!=='random')setVenue(SEL.venue)});
-  $('diffSeg').addEventListener('click',e=>{const c=e.target.closest('[data-d]');if(!c)return;SEL.diff=c.dataset.d;saveSel();renderSelect()});
+  $('diffSeg').addEventListener('click',e=>{const c=e.target.closest('[data-d]');if(!c)return;SEL.diff=c.dataset.d;SEL.diffSet=true;saveSel();renderSelect()});
+  {const L=document.querySelector('.selL');L.addEventListener('scroll',selMoreUpd,{passive:true});addEventListener('resize',selMoreUpd);$('selMore').onclick=()=>{L.scrollTo({top:L.scrollHeight,behavior:'smooth'});SFX.ui()}}
   $('selBack').onclick=()=>{if(SEL.mode==='online')netLeave();showTitle()};
   $('selWatch').onclick=()=>{SFX.ui();DAILY.on=false;let o=SEL.opp;if(o==='random'||!FBY[o]){const others=FIGHTERS.filter(f=>f.id!==SEL.f);o=pick(others).id}startSolo(SEL.f,o,SEL.diff,true)};
   $('selGo').onclick=()=>{SFX.ui();DAILY.on=false;
@@ -4766,7 +4828,7 @@ function onEnd(r){
     if(G.online)achGet('online');if(G.bots[1-G.ME]&&G.bots[1-G.ME].diff==='champion')achGet('champcpu');
     REC.vwins=REC.vwins||{};REC.vwins[ARENA.venue]=1;if(ARENA.rain&&ARENA.rain.on)achGet('storm');if(REC.vwins.arena&&REC.vwins.roof&&REC.vwins.pit)achGet('venues');
     if(!G.online&&!G.watch&&!G.local){REC.fwins=REC.fwins||{};REC.fwins[me.f.id]=1;if(FIGHTERS.every(f=>REC.fwins[f.id]))achGet('all')}}
-  G.xpRes=null;if(!SMOKE&&!G.watch&&!G.local&&!G.bag&&!G.online){const before=xpInfo(),gain=xpGain(r);REC.xp=(REC.xp||0)+gain;{const fid=G.B[G.ME].f.id,m0=mastery(fid).tier,P=recOf(fid);P.xp=(P.xp||0)+gain;const m1=mastery(fid).tier;if(m1&&m1!==m0)setTimeout(()=>sub(G.B[G.ME].f.name+' — '+m1[1]+' MASTERY',3),1400)}G.xpRes={before,gain,af:xpInfo()}}
+  G.xpRes=null;if(!SMOKE&&!G.watch&&!G.local&&!G.online){const before=xpInfo(),gain=xpGain(r);REC.xp=(REC.xp||0)+gain;{const fid=G.B[G.ME].f.id,m0=mastery(fid).tier,P=recOf(fid);P.xp=(P.xp||0)+gain;const m1=mastery(fid).tier;if(m1&&m1!==m0)setTimeout(()=>sub(G.B[G.ME].f.name+' — '+m1[1]+' MASTERY',3),1400)}G.xpRes={before,gain,af:xpInfo(),D:(G.bots[1-G.ME]&&G.bots[1-G.ME].diff)||'contender'}}
   if(G.online&&NET.series&&w>=0){NET.series[w===G.ME?0:1]++}
   if(!SMOKE&&!G.watch&&!G.local&&!G.forfeit&&!G.online&&w>=0){REC.h2h=REC.h2h||{};const k=G.B[G.ME].f.id+'>'+G.B[1-G.ME].f.id,H=REC.h2h[k]||(REC.h2h[k]=[0,0]);H[w===G.ME?0:1]++}
   if(!SMOKE&&!G.watch&&!G.local&&!G.forfeit){const P=recOf(G.B[G.ME].f.id);if(w===G.ME){REC.w++;P.w++;if(ko){REC.ko++;P.ko++}}else if(w>=0){REC.l++;P.l++}saveRec()}
@@ -4838,8 +4900,8 @@ function showEnd(r){
     <canvas id="flowC" width="400" height="90" style="width:100%;height:90px;margin-top:10px"></canvas>
     <div class="menu" id="endBtns" style="margin-top:10px"></div>`;
   const W=w>=0?G.B[w]:null;$('endHero').innerHTML=W?`${WINQ[W.f.kit||W.f.id]?`<div class="wq" style="--c:${W.f.col}">“${pick(W.f.winq||WINQ[W.f.kit||W.f.id])}”</div>`:''}<div class="k">${G.ladder&&G.ladder.i>=G.ladder.opps.length&&w===me?'NEW GLITCHBOX CHAMPION':'AND THE WINNER'}</div><div class="n" style="--c:${W.f.col}">${W.f.name}</div><div class="s">${how}</div>`:`<div class="k">THE JUDGES CAN'T SPLIT THEM</div><div class="n">DRAW</div>`;
-  if(G.xpRes){const {before,gain,af}=G.xpRes;G.xpRes=null;
-    $('endBody').insertAdjacentHTML('beforeend',`<div class="xpb"><div class="xpl"><b>LEVEL ${af.l}</b> ${af.title}<span>+${gain} XP</span></div><div class="xpbar"><i style="width:${(before.l<af.l?0:before.x/before.need*100).toFixed(1)}%"></i></div></div>`);
+  if(G.xpRes){const {before,gain,af,D}=G.xpRes;G.xpRes=null;const xm=XP_DIFF[D]??1;
+    $('endBody').insertAdjacentHTML('beforeend',`<div class="xpb"><div class="xpl"><b>LEVEL ${af.l}</b> ${af.title}<span>+${gain} XP${xm!==1&&DIFF[D]?` <small style="opacity:.7">(${DIFF[D].name} ×${xm})</small>`:''}</span></div><div class="xpbar"><i style="width:${(before.l<af.l?0:before.x/before.need*100).toFixed(1)}%"></i></div></div>`);
     setTimeout(()=>{const i=document.querySelector('.xpbar i');if(i)i.style.width=(af.x/af.need*100).toFixed(1)+'%'},120);
     if(af.l>before.l)setTimeout(()=>{const el=document.createElement('div');el.className='achT';el.innerHTML=`<span>${ICO('trophy')}</span><div><small>LEVEL UP</small><b>LEVEL ${af.l}</b><i>${af.title}${cosUnlocks(before.l,af.l).map(u=>' · UNLOCKED '+u).join('')}</i></div>`;document.body.appendChild(el);setTimeout(()=>el.classList.add('out'),3000);setTimeout(()=>el.remove(),3600)},700)}
   if(G.tour&&!G.online&&!G.tour.done){G.tour.done=1;tourAdvance(r.w===G.ME)}
@@ -5075,22 +5137,49 @@ function updateCamera(dt){
       _cp.set(mx+Math.sin(CAM.tvA)*CAM.tvR,(1.95+l*.18)*Math.sqrt(ws),mz+Math.cos(CAM.tvA)*CAM.tvR);_cl.set(mx+fx*sh,1.12,mz+fz*sh);k=9}
     else{const ws=me.worldScale/BODY,back=(2.8+Math.max(0,l-1.2)*.5)*ws,side=1.3*ws;_cp.set(me.x-fx*back+rx*side,(2.2+Math.max(0,l-1.2)*.2)*Math.sqrt(ws),me.z-fz*back+rz*side);_cl.set(lerp(me.x,o.x,.85)+rx*.15,1.15,lerp(me.z,o.z,.85)+rz*.15);k=6}
   }
+  if(G.mode==='fight'&&G.phase!=='walk'&&G.phase!=='intro')camSafe(_cp);
   if(CAM.fin){CAM.fin.t-=dt;if(CAM.fin.t>0&&!RP.play){_cp.copy(CAM.fin.c);_cl.copy(CAM.fin.l);k=1e5;if(CAM.fin.cut){camera.position.copy(_cp);camLook.copy(_cl);CAM.fin.cut=0}}
     else{CAM.fin=null;CAM.snap=1;if(!RP.play){PFX.letter=0;document.body.classList.remove('cine')}}}
   else if(CAM.snap){CAM.snap=0;k=1e5}
   if(CAM.lock){_cp.fromArray(CAM.lock[0]);_cl.fromArray(CAM.lock[1]);k=CAM.cutL?1e5:50;CAM.cutL=0}
-  camera.position.lerp(_cp,damp(k,dt));camLook.lerp(_cl,damp(k*1.4,dt));camera.lookAt(camLook);
+  camera.position.lerp(_cp,damp(k,dt));camLook.lerp(_cl,damp(k*1.4,dt));if(G.mode==='fight'&&!CAM.lock)camOutOfBodies(camera.position);camera.lookAt(camLook);
   CAM.trauma=Math.max(0,CAM.trauma-dt*1.7);const s=CAM.trauma*CAM.trauma;
   camOff.set((Math.random()-.5)*s*.16,(Math.random()-.5)*s*.12,(Math.random()-.5)*s*.1);camera.position.add(camOff);
   if(s>0)camera.rotateZ((Math.random()-.5)*s*.06);
-  CAM.fovKick=Math.max(0,(CAM.fovKick||0)-dt*14);const fov=54-(CAM.fovKick||0);if(Math.abs(camera.fov-fov)>.01){camera.fov=lerp(camera.fov,fov,damp(14,dt));camera.updateProjectionMatrix()}
+  CAM.fovKick=Math.max(0,(CAM.fovKick||0)-dt*14);const fov=54+(G.mode==='fight'?CAM.wide||0:0)-(CAM.fovKick||0);if(Math.abs(camera.fov-fov)>.01){camera.fov=lerp(camera.fov,fov,damp(14,dt));camera.updateProjectionMatrix()}
 }
 
+// the fight camera stays inside the photographers' line (crowd, press row and ringside never come between it and the ring),
+// rises to look over the ropes when it's outside them, and never sits inside anyone
+function camSafe(p){const LIM=4.7,ox=p.x,oz=p.z;p.x=clamp(p.x,-LIM,LIM);p.z=clamp(p.z,-LIM,LIM);
+  const lost=Math.hypot(ox-p.x,oz-p.z),out=Math.max(Math.abs(p.x),Math.abs(p.z))-(RING+.45);
+  // pulled in closer than it wanted: a little higher and a little wider, so both fighters still fit
+  CAM.wide=lerp(CAM.wide||0,Math.min(10,lost*5),.08);if(lost>0)p.y+=Math.min(.8,lost*.3);if(out>0)p.y=Math.max(p.y,1.8+out*.5);camOutOfBodies(p)}
+function camOutOfBodies(p){for(const b of [G.B[0],G.B[1],REF.b]){if(!b||!b.root||!b.root.visible||b.down||p.y>2.6)continue;const R=.8*(b.worldScale||1),dx=p.x-b.x,dz=p.z-b.z,d=Math.hypot(dx,dz);
+  if(d<R){const ux=d>1e-3?dx/d:1,uz=d>1e-3?dz/d:0;p.x=b.x+ux*R;p.z=b.z+uz*R}}}
+// a ring post (with its cap and pad) that stands between the camera and a fighter is hidden for as long as it's in the way
+function postOcclusion(){if(!ARENA.posts)return;const c=camera.position,fight=G.mode==='fight'&&!PHOTO.on;
+  for(const P of ARENA.posts){let hide=false;if(fight)for(const b of G.B){if(!b.root.visible)continue;const dc=Math.hypot(P.x-c.x,P.z-c.z),db=Math.hypot(b.x-c.x,b.z-c.z);
+      if(dc<db&&segDist(P.x,P.z,c.x,c.z,b.x,b.z)<.5){hide=true;break}}
+    if(P.hid!==hide){P.hid=hide;for(const o of P.objs)o.visible=!hide}}}
 // direction from a downed fighter toward open canvas (the ring centre side), for the knockdown shot
 // side-on to the fallen body, on whichever side faces open canvas
-function kdView(d){const c=kdCentre(d);let tx=-c[0],tz=-c[1];const tl=Math.hypot(tx,tz)||1;tx/=tl;tz/=tl;
+function kdView(d){const K=G.kdInfo;if(K&&K.cv&&K.b===d.idx)return K.cv;
+  const c=kdCentre(d);let tx=-c[0],tz=-c[1];const tl=Math.hypot(tx,tz)||1;tx/=tl;tz/=tl;
   let px=Math.cos(d.yaw),pz=-Math.sin(d.yaw);if(px*tx+pz*tz<0){px=-px;pz=-pz}
-  let vx=px*.85+tx*.45,vz=pz*.85+tz*.45;const l=Math.hypot(vx,vz)||1;return [vx/l,vz/l]}
+  // the standing fighter is walking off to a neutral corner: keep the camera off his path (it used to end up inside him)
+  const o=G.B[1-d.idx],ol=Math.hypot(o.x-d.x,o.z-d.z)||1,ox1=clamp(d.x+(o.x-d.x)/ol*2.7,-RING+.3,RING-.3),oz1=clamp(d.z+(o.z-d.z)/ol*2.7,-RING+.3,RING-.3);
+  let best=null,bs=-1e9;
+  for(const [a,b] of [[.85,.45],[-.85,.45],[.6,.8],[-.6,.8],[1,0],[-1,0],[.3,.95],[-.3,.95]]){let vx=px*a+tx*b,vz=pz*a+tz*b;const l=Math.hypot(vx,vz)||1;vx/=l;vz/=l;
+    const cx=c[0]+vx*2.6,cz=c[1]+vz*2.6,clr=Math.min(segDist(cx,cz,o.x,o.z,ox1,oz1),segDist(o.x,o.z,cx,cz,c[0],c[1]),segDist(ox1,oz1,cx,cz,c[0],c[1]));
+    const sc=Math.min(clr,1.6)*3-Math.max(0,Math.max(Math.abs(cx),Math.abs(cz))-(RING+.9))*4+(a===.85&&b===.45?.3:0);if(sc>bs){bs=sc;best=[vx,vz]}}
+  if(K&&K.b===d.idx)K.cv=best;return best}
+// distance from point (px,pz) to the segment (ax,az)-(bx,bz)
+// push a point out of a boxer: a circle while he stands, a capsule from feet to head while he's down
+function bodyPush(x,z,b,R){if(!b.down){const dx=x-b.x,dz=z-b.z,d=Math.hypot(dx,dz);return d<R?(d>1e-3?[b.x+dx/d*R,b.z+dz/d*R]:[b.x+R,b.z]):[x,z]}
+  const L=1.5*(b.worldScale||1),ax=b.x,az=b.z,bx=b.x-Math.sin(b.yaw)*L,bz=b.z-Math.cos(b.yaw)*L,ex=bx-ax,ez=bz-az,t=clamp(((x-ax)*ex+(z-az)*ez)/(L*L),0,1),cx=ax+ex*t,cz=az+ez*t,dx=x-cx,dz=z-cz,d=Math.hypot(dx,dz);
+  return d<R?(d>1e-3?[cx+dx/d*R,cz+dz/d*R]:[cx-ez/L*R,cz+ex/L*R]):[x,z]}
+function segDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz||1e-6,t=clamp(((px-ax)*dx+(pz-az)*dz)/l2,0,1);return Math.hypot(px-ax-dx*t,pz-az-dz*t)}
 // a fallen boxer lies behind his feet: the torso is ~0.7m back along his facing
 function kdCentre(d){return [d.x-Math.sin(d.yaw)*.7*d.worldScale,d.z-Math.cos(d.yaw)*.7*d.worldScale]}
 // ════════════════════ MAIN LOOP ════════════════════
@@ -5359,7 +5448,7 @@ function visuals(rdt,adt){
     const J=G.mode==='fight'&&!G.attract?{top:RP.play?'REPLAY':G.phase==='kd'?'KNOCKDOWN!':G.phase==='end'?'FINAL':'ROUND '+G.rnd,mid:G.bag?'∞':Math.floor(t/60)+':'+String(t%60).padStart(2,'0'),bot:G.title?'★ TITLE FIGHT ★':'GLITCHBOX WORLD TITLE'}:{top:'HAYMAKER',mid:'VS',bot:'GLITCHBOX ARCADE'};
     const key=J.top+J.mid+G.B.map(b=>b.f?b.f.id+Math.round(b.hp/b.hpMax*40):'').join();
     if(G.B[0].f&&key!==ARENA.jumboKey){ARENA.jumboKey=key;ARENA.jumboData=J;redrawTex(ARENA.jumbo)}}
-  photoTick();updateCamera(rdt);updateHUD(rdt);updateFloats(rdt);
+  photoTick();updateCamera(rdt);postOcclusion();updateHUD(rdt);updateFloats(rdt);
 }
 // Safety net: if the lit ring in the middle of the screen comes out pure black on HIGH
 // (a GPU that chokes on the HDR/bloom path), fall back to LOW instead of a dead screen.
@@ -5373,11 +5462,17 @@ function blackWatch(rdt){
   for(const [u,v] of [[.5,.33],[0,0],[.99,0],[.25,.99],[.75,.99]]){const i=((v*(rh-1)|0)*rw+(u*(rw-1)|0))*4,P=WATCH.buf;if(P[i]+P[i+1]+P[i+2]<6)dark++}
   if(dark>=4){if(++WATCH.bad>=2){SET.q='low';saveSet();setupPost();prewarmFX();$('qBtn').textContent='LOW';sub('GRAPHICS SWITCHED TO LOW FOR YOUR GPU',3)}}else WATCH.bad=0;
 }
-let last=performance.now();const PERF={t:0,n:0,checked:false};
+let last=performance.now();const PERF={t:0,n:0,lockQ:false,log:[]};
+// the frame rate is watched for the whole fight, not just its first seconds: HIGH drops to LOW below 45 fps (unless you picked HIGH yourself
+// this session), and on LOW the render resolution steps down until the fight holds ~60 — a timing game can't be played at 24 fps
+function perfAdapt(fps){PERF.log.push(Math.round(fps));if(PERF.log.length>20)PERF.log.shift();
+  PERF.bad=fps<45?(PERF.bad||0)+1:0;   // two slow windows in a row (6s), so one shader-compile hitch can't do it
+  if(SET.q==='high'&&PERF.bad>=2&&!PERF.lockQ){SET.q='low';saveSet();setupPost();prewarmFX();$('qBtn').textContent='LOW';sub('GRAPHICS SET TO LOW FOR A SMOOTHER FIGHT',2.5);return}
+  if(fps<50&&PSCALE>.62){PSCALE=Math.max(.6,PSCALE-.13);onResize()}else if(fps>57.5&&PSCALE<1){PSCALE=Math.min(1,PSCALE+.07);onResize()}}
 function frame(now){
   requestAnimationFrame(frame);
   const raw=Math.max(0,(now-last)/1000),rdt=Math.min(.05,raw);last=now;padPoll();p2KeyPoll();
-  if(!PERF.checked&&G.mode==='fight'&&!document.hidden&&raw<.5){PERF.t+=raw;PERF.n++;if(PERF.t>4){PERF.checked=true;if(PERF.n/PERF.t<32&&SET.q==='high'){SET.q='low';saveSet();setupPost();prewarmFX();sub('GRAPHICS SET TO LOW FOR A SMOOTHER FIGHT',2.5)}}}
+  if(G.mode==='fight'&&!G.attract&&!G.paused&&!RP.play&&!document.hidden&&raw<.5&&/fight|kd|ready/.test(G.phase)){PERF.t+=raw;PERF.n++;if(PERF.t>=3){const fps=PERF.n/PERF.t;PERF.t=PERF.n=0;if(!SMOKE)perfAdapt(fps)}}else{PERF.t=PERF.n=0}
   let sdt=rdt;if(CAM.slowT>0){CAM.slowT-=rdt;if(!SET.calm)sdt*=CAM.slow}
   let adt=sdt;if(CAM.hitstop>0){CAM.hitstop-=rdt;if(!G.online)sdt*=.07;adt*=.07}
   if(CAM.freeze>0){CAM.freeze-=rdt;if(!G.online)sdt=0;adt*=.1}
@@ -5423,7 +5518,10 @@ function runSmoke(){
   const place=d=>{const[A,B]=G.B;A.x=0;A.z=-d/2;B.x=0;B.z=d/2;A.yaw=0;B.yaw=Math.PI;for(const b of G.B){b.vx=b.vz=b.kx=b.kz=0;b.act=null}};
   const near=(a,b,e=.01)=>Math.abs(a-b)<=e;
   const abil=(f0,f1,key,d=1)=>{solo(f0,f1);place(d);G.B[0].meter=100;return castAbility(G.B[0],key)};
+  const HPK0=HP_K;HP_K=1;   // the mechanics tests below are written against the fighters' listed hp; the health scale gets its own checks
   try{
+    {HP_K=HPK0;const b=G.B[0];b.build(FBY.blaze);b.reset();ok(b.hpMax===FBY.blaze.hp*HP_K&&b.hp===b.hpMax,'HEALTH SCALE: fighters start on '+HP_K+'× their listed hp ('+b.hpMax+')');
+      solo('frost','pops');place(1.2);G.B[1].hp=50;startPunch(G.B[0],'cross');sim(.12);G.forced[1]={...EMPTY,block:true};sim(.3);ok(G.B[1].stats.parried===1&&near(G.B[1].hp,55,.01),'…while heals stay the same size as punches (Pops parry heal '+(G.B[1].hp-50)+')');HP_K=1}
     ok(FIGHTERS.length===12,'twelve fighters');
     {const sp=Object.assign(mkDefault(),{name:'test<b>',base:'pops',hair:'mohawk',body:'heavy'}),f=mkFighter(sp,'mk_smoke');ok(f.made&&f.kit==='pops'&&f.name==='TESTB'&&FBY.mk_smoke===f&&STYLE.mk_smoke.hair==='mohawk','FIGHTER CREATOR: a made fighter borrows a moveset, names are sanitised');ok(STORY.mk_smoke&&STORY.mk_smoke.length===3&&STORY.mk_smoke.every(t=>t.includes('Testb')&&!/Pops/.test(t)),'…and gets a ladder story with its own name');
       solo('mk_smoke','titan');ok(G.B[0].f.id==='mk_smoke'&&G.B[0].hpMax===FBY.pops.hp,'…builds and fights on that fighter\'s stats');castAbility(G.B[0],'q');ok(G.B[0].st.rope>0,'…with that fighter\'s abilities (Rope-a-Dope)');delete FBY.mk_smoke;delete STYLE.mk_smoke}
@@ -5645,17 +5743,18 @@ function runSmoke(){
     onNet({t:'up',b:0,hp:34});ok(!G.B[0].down&&G.B[0].hp===34,'remote get-up');
     onNet({t:'ph',ph:'rest',rnd:1,tl:0,cards:[[[10],[9]],[[10],[9]],[[10],[10]]],rd:[20,5]});ok(G.phase==='rest','host drives the phases');
     NET.sink=null;NET.mode='off';G.online=false;G.ME=0;
+    HP_K=HPK0;   // the CPU fights run at the real health scale
     // ── CPU vs CPU, every pairing ──
     const wins={};FIGHTERS.forEach(f=>wins[f.id]=[0,0]);let ended=0,bad=0,kos=0;
     const REPS=+((HASH.match(/balance(\d+)/)||[])[1]||1);   // #smoke-balance5 = every pairing five times, for tuning
     for(let rep=0;rep<REPS;rep++)for(const a of FIGHTERS)for(const b of FIGHTERS){if(a===b)continue;
       solo(a.id,b.id);G.forced=null;{const BD=/champ/.test(HASH)?'champion':'contender';G.bots=[new Bot(0,BD),new Bot(1,BD)]}G.phase='ready';
-      let n=0;while(G.phase!=='end'&&n<60*300){step(SIM);n++;if(!isFinite(G.B[0].x+G.B[1].x+G.B[0].hp+G.B[1].hp)){bad++;break}}
+      let n=0;while(G.phase!=='end'&&n<60*400){step(SIM);n++;if(n%600===0)fxUpdate(99);if(!isFinite(G.B[0].x+G.B[1].x+G.B[0].hp+G.B[1].hp)){bad++;break}}fxUpdate(99);   // flush hit effects: no frames run here to retire them
       if(G.phase==='end'){ended++;const w=G.result.w;if(/KO/.test(G.result.how))kos++;if(w>=0){wins[[a.id,b.id][w]][0]++;wins[[a.id,b.id][1-w]][1]++}}}
     const NP=REPS*FIGHTERS.length*(FIGHTERS.length-1);ok(ended===NP,NP+' CPU-vs-CPU fights finish ('+ended+')');ok(bad===0,'no NaN anywhere');
     out.push('balance ('+(/champ/.test(HASH)?'champion':'contender')+' CPUs, W-L): '+FIGHTERS.map(f=>f.id+' '+wins[f.id][0]+'-'+wins[f.id][1]).join(' · ')+' · KOs '+kos+'/'+NP);
   }catch(e){fail++;out.push('EXCEPTION '+e.message+'\n'+e.stack)}
-  G.forced=null;
+  HP_K=HPK0;G.forced=null;
   out.unshift(`SMOKE ${fail?'FAIL':'PASS'} ${pass}/${pass+fail}`);document.title=out[0];
   const pre=document.createElement('pre');pre.id='smokeout';pre.textContent=out.join('\n');pre.style.cssText='position:fixed;inset:0;z-index:99;background:#000;color:#0f0;padding:20px;overflow:auto;font:12px monospace;white-space:pre-wrap';document.body.appendChild(pre);
 }
