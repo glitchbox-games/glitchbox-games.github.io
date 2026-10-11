@@ -4920,7 +4920,8 @@ function hlTick(){for(let i=HL.pend.length-1;i>=0;i--){const p=HL.pend[i];if(RP.
     const clash=HL.clips.find(o=>Math.abs(o.t-c.t)<2.6);if(clash){if(clash.s>=c.s)continue;HL.clips.splice(HL.clips.indexOf(clash),1)}
     HL.clips.push(c);HL.clips.sort((a,b)=>b.s-a.s);HL.clips.length=Math.min(HL.clips.length,4)}}
 function hlPlay(done){const L=HL.clips.slice().sort((a,b)=>a.t-b.t);let i=0;
-  const next=nat=>{if(!nat&&i>0||i>=L.length){done&&done();return}const c=L[i++];RP.play={fr:c.fr,t:c.t0,t0:c.t0,t1:c.t1,k:c.t,done:next,ev:c.ev,a0:null,vic:c.vic,hl:1};
+  for(const b of G.B)if(b.belt)b.belt.visible=false;   // the belt wasn't won yet in these moments
+  const next=nat=>{if(!nat&&i>0||i>=L.length){for(const b of G.B)if(b.belt)b.belt.visible=true;done&&done();return}const c=L[i++];RP.play={fr:c.fr,t:c.t0,t0:c.t0,t1:c.t1,k:c.t,done:next,ev:c.ev,a0:null,vic:c.vic,hl:1};
     document.body.classList.add('cine','replay');PFX.letter=1;PFX.desat=.2;FLOATS.forEach(f=>f.el.remove());FLOATS.length=0;for(const b of G.B)if(b.ribs)b.ribs.forEach(r=>r.clear());$('rpLbl').textContent=`HIGHLIGHT ${i}/${L.length} · ${c.label}`};
   if(!L.length)return false;next(true);return true}
 function rpEvent(res){if(RP.play||G.mode!=='fight'||(RP.hold>=0&&RP.clock>RP.hold))return;RP.ev.push({t:RP.clock,res:JSON.parse(JSON.stringify(res))});
