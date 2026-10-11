@@ -412,7 +412,7 @@ body.touch #abil,body.touch #keys{display:none}
 
 <div class="ov on" id="titleOv">
   <div class="logo">HAYMAKER</div>
-  <div class="tag">3D BOXING · TEN FIGHTERS · SUPER ABILITIES</div>
+  <div class="tag">3D BOXING · ELEVEN FIGHTERS · SUPER ABILITIES</div>
   <div class="menu">
     <button class="primary" data-go="quick">QUICK FIGHT</button>
     <button data-go="ladder">ARCADE LADDER</button>
@@ -489,7 +489,7 @@ body.touch #abil,body.touch #keys{display:none}
     <h3>THE FIGHT</h3>
     <p>Three rounds of a minute. Drop to zero health and you're down — mash punch to beat the ten-count. Three knockdowns is a TKO. Still standing at the end? The judges score each round on damage and knockdowns.</p>
     <p>Punches cost stamina. Throw too many and you gas out: slower, weaker, and your guard crumbles. Chain punches together for a combo bonus. Under a quarter health you go into RAGE: punches hit 15% harder.</p>
-    <p>Ten fighters, each with a passive, two abilities and an ultimate — pick one on the select screen to read them. Before the first bell both fighters walk out to the ring: press any key (or tap) to skip, or switch ENTRANCES off on the title screen. Win the arcade ladder to take the belt home.</p>
+    <p>Eleven fighters, each with a passive, two abilities and an ultimate — pick one on the select screen to read them. Before the first bell both fighters walk out to the ring: press any key (or tap) to skip, or switch ENTRANCES off on the title screen. Win the arcade ladder to take the belt home.</p>
     <button class="btn primary" id="helpBack">GOT IT</button>
   </div>
 </div>
@@ -595,7 +595,7 @@ const FIGHTERS=[
  {id:'viper',name:'VIPER',nick:'VENOM',col:'#7dff4a',
   look:{skin:0x9a7a55,shorts:0x1d3a14,trim:0x7dff4a,glove:0x46b318,hair:'mohawk',hairCol:0x2f9d17,glow:0x7dff4a},
   taunt:'beckon',alts:[{},{shorts:0x3a1458,trim:0x7dff4a,glove:0x7a2bd9,hairCol:0x7dff4a},{shorts:0x141414,trim:0xffe14a,glove:0xffd21f,hairCol:0xffe14a}],
-  size:1,hp:100,pow:1.09,spd:1.05,reach:1.02,stats:[3,4,3],
+  size:1,hp:100,pow:1.06,spd:1.05,reach:1.02,stats:[3,4,3],
   passive:{name:'Toxic',desc:'Hits poison. Every stack burns half a point of health a second.'},
   q:{name:'Venom Spit',cd:6,desc:'Spit poison: 6 damage and 3 poison stacks. Blockable.'},
   e:{name:'Coil Strike',cd:9,desc:'Lunge three metres into a rising uppercut.'},
@@ -632,6 +632,14 @@ const FIGHTERS=[
   q:{name:'Maul',cd:8,desc:'Two big swiping paws, left then right. Blockable.'},
   e:{name:'Hibernate',cd:14,desc:'For 4 seconds, holding your guard heals you.'},
   r:{name:'Roar',desc:'A roar that shakes the ring: anyone close is too scared to attack for 2 seconds.'}},
+ {id:'lucha',name:'EL TORNADO',nick:'THE PEOPLE\'S CHAMPION',col:'#1fd6a4',
+  look:{skin:0xc68a5a,shorts:0x1fd6a4,trim:0xffd23a,glove:0xe8246a,hair:'lucha',hairCol:0x1fd6a4,glow:0x1fd6a4},
+  taunt:'flex',alts:[{},{shorts:0xe8246a,trim:0xffffff,glove:0x1a1a1a,hairCol:0xe8246a,glow:0xe8246a},{shorts:0x1a1a1a,trim:0xc0c0c8,glove:0xc0c0c8,hairCol:0x1a1a1a,glow:0xc0c0c8}],
+  size:1,hp:104,pow:1.09,spd:1.06,pspd:1.02,reach:1,stats:[3,4,3],
+  passive:{name:'Crowd Favourite',desc:'The ultimate meter fills 25% faster.'},
+  q:{name:'Plancha',cd:9,desc:'A flying dive across the ring that crashes through a guard.'},
+  e:{name:'Showboat',cd:12,desc:'Play to the crowd: +25 meter and 5 health back.'},
+  r:{name:'Tornado',desc:'A spinning whirlwind of seven blows, then a big finish.'}},
 ];
 // LEGEND colourway: black satin and gold, unlocked by winning the arcade ladder with that fighter
 FIGHTERS.forEach(f=>f.alts.push({shorts:0x14110a,trim:0xffd23a,glove:0xe8b42a,shoe:0x14110a,glow:0xffd23a,legend:1}));
@@ -1884,6 +1892,8 @@ const STYLE={
     face:{iris:'#5fd4ff',eye:'almond',ew:20,eh:12,bt:5,bin:3,bout:-4,lid:5,lash:1,mark:'flake',lips:'#c87a92'}},
   kitsune:{body:'fem',hair:'fox',top:1,emblem:'fox',
     face:{iris:'#ff4fd8',eye:'almond',ew:21,eh:12,bt:5,bin:3,bout:-6,lid:5,lash:1,mark:'whisk',lips:'#e05a9a'}},
+  lucha:{body:'std',hair:'lucha',emblem:'star',cape:1,
+    face:{iris:'#2a1408',eye:'round',ew:19,eh:12,bt:7,bin:6,bout:-5,lid:5}},
   grizz:{body:'heavy',hair:'bear',emblem:'paw',
     face:{iris:'#2a1408',eye:'small',ew:15,eh:10,bt:11,bin:8,bout:-4,lid:6}},
   unit:{body:'std',hair:'robot',emblem:'gear',mask:1,maskCol:0x2a303c,metal:1,
@@ -1903,6 +1913,7 @@ function emblem(x,kind,col,s){x.save();x.scale(s,s);x.lineJoin='round';x.lineWid
   else if(kind==='mountain'){x.moveTo(-1,.75);x.lineTo(-.35,-.55);x.lineTo(-.1,-.15);x.lineTo(.25,-.85);x.lineTo(1,.75)}
   else if(kind==='ghost'){x.moveTo(-.7,.9);x.lineTo(-.7,-.2);x.bezierCurveTo(-.7,-1.05,.7,-1.05,.7,-.2);x.lineTo(.7,.9);x.lineTo(.45,.65);x.lineTo(.22,.9);x.lineTo(0,.65);x.lineTo(-.22,.9);x.lineTo(-.45,.65)}
   else if(kind==='flake'){for(let i=0;i<6;i++){const a=i*Math.PI/3;x.moveTo(0,0);x.lineTo(Math.cos(a),Math.sin(a))}x.lineWidth=.34;x.lineCap='round';x.stroke();x.strokeStyle=col;x.lineWidth=.16;x.stroke();x.restore();return}
+  else if(kind==='star'){for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?.42:1;x.lineTo(Math.cos(a)*r,Math.sin(a)*r)}}
   else if(kind==='paw'){x.ellipse(0,.35,.55,.45,0,0,6.3);for(const [px,py] of [[-.62,-.25],[-.22,-.62],[.22,-.62],[.62,-.25]]){x.moveTo(px+.2,py);x.ellipse(px,py,.2,.24,0,0,6.3)}}
   else if(kind==='gear'){for(let i=0;i<8;i++){const a=i/8*6.283;x.lineTo(Math.cos(a-.18)*.95,Math.sin(a-.18)*.95);x.lineTo(Math.cos(a+.18)*.95,Math.sin(a+.18)*.95);x.lineTo(Math.cos(a+.32)*.7,Math.sin(a+.32)*.7);x.lineTo(Math.cos(a+.62)*.7,Math.sin(a+.62)*.7)}}
   else if(kind==='fox'){x.moveTo(0,.95);x.lineTo(-.72,.1);x.lineTo(-.85,-.95);x.lineTo(-.3,-.42);x.lineTo(.3,-.42);x.lineTo(.85,-.95);x.lineTo(.72,.1)}
@@ -2137,7 +2148,7 @@ class Boxer{
     while(this.body.children.length)this.body.remove(this.body.children[0]);
     // status props hang off the root, not the body — drop the previous fighter's (shield/ice) too
     for(const o of [this.ice,this.shieldM])if(o){this.root.remove(o);o.geometry.dispose();o.material.dispose()}
-    this._phase=false;this._ph2=false;this.pony=null;this.tails=null;this.foxTails=null;this.belt=null;
+    this._phase=false;this._ph2=false;this.pony=null;this.tails=null;this.foxTails=null;this.belt=null;this.capeG=null;
     this.mats.flat().forEach(m=>m&&m.dispose&&m.dispose());this.mats=[];(this.ownTex||[]).forEach(t=>t.dispose());
     const ST=STYLE[f.id]||STYLE.blaze,A=ARCH[L.ref?'ref':ST.body]||ARCH.std,ref=!!L.ref,key=f.id+'|'+alt;
     this.rimU={uRimC:{value:new THREE.Color(ref?0xbfc8ff:(L.glow||0xffffff))},uRimK:{value:ref?.1:.4},uFlash:{value:0}};
@@ -2271,6 +2282,13 @@ class Boxer{
         L2.push(tintG(lockG(p.clone().addScaledVector(n,-.01),p.clone().addScaledVector(n,.07).add(V3(sd*.02,.02,0)),p.clone().addScaledVector(n,.12).add(V3(sd*.05,.08,-.03)),.06,{flat:.35,pw:.95,up:V3(0,0,1)}),hc(1),0xff8ad8,1.4))}return mergeG(L2)}),mHair));
       const ft=this.foxTails=g(0,-.04,-.16);pelvis.add(ft);
       ft.add(mesh(geo('foxtails'+hk,()=>{const L2=[];for(const [sd,h] of [[-1,.9],[0,1.05],[1,.9]]){L2.push(tintG(lockG(V3(sd*.03,0,0),V3(sd*.2,-.08,-.32),V3(sd*.36,.42*h,-.5),.105,{flat:.85,pw:.45,tip:.05}),hc(.92),0xffffff,2))}return mergeG(L2)}),mHair))}
+    if(hs==='lucha'){const mk=tm({map:paint('lmask'+key,256,256,(x,w,h)=>{const c=hex(hairC),t=trimC;x.fillStyle=c;x.fillRect(0,0,w,h);
+        x.strokeStyle=t;x.lineWidth=7;for(const cx of [w*.25-17,w*.25+17]){x.beginPath();x.ellipse(cx,h*.49,15,11,0,0,6.3);x.stroke()}
+        x.globalCompositeOperation='destination-out';x.fillStyle='#000';for(const cx of [w*.25-17,w*.25+17]){x.beginPath();x.ellipse(cx,h*.49,11,8,0,0,6.3);x.fill()}x.beginPath();x.ellipse(w*.25,h*.745,15,8,0,0,6.3);x.fill();x.globalCompositeOperation='source-over';
+        x.fillStyle=t;x.beginPath();x.moveTo(w*.25,h*.08);x.lineTo(w*.25-14,h*.34);x.lineTo(w*.25+14,h*.34);x.fill();x.fillStyle='rgba(255,255,255,.3)';for(let i=0;i<w;i+=32)x.fillRect(i,h*.95,16,h*.05)}),alphaTest:.5,side:THREE.DoubleSide},{shade:SHADE.cloth,spec:.45,gloss:.9});
+      head.add(bare(mesh(geo('lmask',()=>surface((u,v,o)=>{hf(u,v*.88,o);const r=Math.hypot(o.x,o.z-H.cz)||1;o.x+=o.x/r*.007;o.z+=(o.z-H.cz)/r*.007;o.y+=.004},40,26)),mk)));
+      if(ST.cape){const cm=tm({color:new THREE.Color(L.trim),side:THREE.DoubleSide},{shade:SHADE.cloth,spec:.4,gloss:.88});const cp=g(0,.32,-.1);chest.add(cp);this.capeG=cp;
+        cp.add(bare(mesh(geo('lcape',()=>{const s2=surface((u,v,o)=>{const x2=(u-.5)*(.42+.18*v),y2=-v*.95,z2=-.02-.12*v-.04*Math.sin(u*Math.PI);o.set(x2,y2,z2)},10,10,{closed:false});return s2}),cm)))}}
     if(hs==='bear'){const fur=tm({color:new THREE.Color(hairC)},hairS),muz=tm({color:new THREE.Color(hairC).lerp(new THREE.Color(0xf2dcc0),.55)},skinS),nose=tm({color:0x1a1210},{shade:SHADE.dark,spec:.8,gloss:.94});
       head.add(mesh(geo('capbear'+hk,()=>capG('capbr',.3,.62,.012)),fur));
       for(const sd of [-1,1]){const p=new THREE.Vector3();hf(.25-sd*.13,.1,p);const e=mesh(new THREE.SphereGeometry(.05,14,10),fur,p.x+sd*.012,p.y+.03,p.z-.01);e.scale.set(1,1,.6);head.add(e);
@@ -2417,6 +2435,7 @@ class Boxer{
         else if(id==='frost'){gR.set(.2,2.18,.3);gL.set(-.3,1.02,-.02);headP=-.2;roll=.12;if(pe){const g=this.gW[1];PA.emit(g.x,g.y,g.z,(R()-.5)*.8,(R()-.5)*.8,(R()-.5)*.8,.7,.06,.75,.95,1,1,0,1)}}
         else if(id==='viper'){gL.set(-.3,1.02,-.02);gR.set(.3,1.02,-.02);lean=-.22-.06*Math.abs(Math.sin(T*9));headP=-.4;if(pe)PA.emit(this.headW.x,this.headW.y,this.headW.z,(R()-.5)*.5,.8,(R()-.5)*.5,.6,.07,.45,1,.25,.9,0,1)}
         else if(id==='kitsune'){gR.set(.1,1.66,.32);gL.set(-.3,1.04,-.02);headR=.22+Math.sin(T*3)*.05;roll=-.1;crouch=.03+Math.max(0,Math.sin(T*4))*.03;if(pe)PA.emit(this.headW.x+(R()-.5)*.4,this.headW.y+.2,this.headW.z+(R()-.5)*.4,0,.7,0,.9,.09,1,.35,.85,1,0,1)}
+        else if(id==='lucha'){const ph=Math.floor(T*1.5)%2;gL.set(-.36,ph?2.05:1.75,.05);gR.set(.36,ph?1.75:2.05,.05);headP=-.3;crouch=.05;roll=ph?.08:-.08;if(pe)PA.emit(this.headW.x,this.headW.y+.4,this.headW.z,(R()-.5)*2,1+R(),(R()-.5)*2,.8,.07,R()<.5?.12:1,R()<.5?.84:.82,R()<.5?.64:.23,1,4,1)}
         else if(id==='grizz'){gL.set(-.48,1.78,.05);gR.set(.48,1.78,.05);this.flexIO=.6;headP=-.42;lean=-.12;crouch=.08+Math.max(0,Math.sin(T*3))*.05;if(pe)PA.emit(this.headW.x,this.headW.y,this.headW.z+.15,(R()-.5)*1.5,.6,1+R(),.4,.06,.9,.8,.6,.6,0,1)}
         else if(id==='unit'){const st2=Math.floor(T*3)%4;gL.set(-.32,st2<2?1.62:1.2,st2%2?.35:.05);gR.set(.32,st2<2?1.2:1.62,st2%2?.05:.35);twist=st2%2?.25:-.25;headY=st2<2?.2:-.2;k=40;if(pe){const g=this.gW[st2%2];PA.emit(g.x,g.y,g.z,(R()-.5),(R()-.2),(R()-.5),.3,.05,1,.85,.3,1,3,1)}}
         else if(id==='toro'){gL.set(-.17,1.82,.12);gR.set(.17,1.82,.12);headP=.15;lean=.12;crouch=.06+Math.max(0,Math.sin(T*6))*.07;if(pe)PA.emit(this.x+(R()-.5)*.8,.05,this.z+(R()-.5)*.8,(R()-.5),.7,(R()-.5),.6,.13,.78,.66,.5,.7,0,1)}
@@ -2441,6 +2460,7 @@ class Boxer{
     const spd=Math.hypot(this.mvx||0,this.mvz||0);P.walk+=dt*(4+spd*4.5)*(spd>.15?1:0);
     // ── apply to the rig ──
     const S=(this.f.size||1)*(this.f.id==='ref'?1.04:BODY);this.body.scale.setScalar(S*P.scale);
+    if(this.leap>0){this.leap=Math.max(0,this.leap-dt);const q=1-this.leap/.42;this.y=Math.sin(q*Math.PI)*.8}else if(this.leapWas){this.y=0}this.leapWas=this.leap>0;
     this.root.position.set(this.x,this.y||0,this.z);this.root.rotation.y=this.yaw;
     P.lunge=lerp(P.lunge||0,lunge,damp(pk!=null?40:12,dt));this.body.rotation.set(-P.fall*1.5,0,0);this.body.position.set(0,P.fall*.13*S,P.lunge*S);
     this.pelvis.position.set(P.side,1.0-P.crouch,0);this.pelvis.rotation.set(0,P.twist*.35,P.roll*.3);
@@ -2450,6 +2470,7 @@ class Boxer{
     {const d=Math.min(rdt0,.033);this.sqV=(this.sqV||0)+(-300*(this.sqX||0)-16*(this.sqV||0))*d;this.sqX=(this.sqX||0)+this.sqV*d;const q=this.sqX;const bh=mutOn('big')&&this.idx<2&&G.mode==='fight'?1.75:1;this.head.scale.set(bh*(1+q*.7),bh*(1-q),bh*(1+q*.5));
       if(!this.gsq)this.gsq=[[0,0],[0,0]];this.arm.forEach((A,i)=>{const g=this.gsq[i];g[1]+=(-420*g[0]-18*g[1])*d;g[0]+=g[1]*d;A.gl.scale.set(1+g[0]*.6,1-g[0],1+g[0]*.6)})}
     if(this.pony){this.pony.rotation.x=Math.sin(this.anT*5)*.12-h.x*1.4+P.lean*.6;this.pony.rotation.z=Math.sin(this.anT*3.1)*.08-h.z}
+    if(this.capeG){this.capeG.rotation.x=.12+Math.sin(this.anT*2.2)*.06+P.lean*.6+(this.leap>0?.9:0)-h.x*.4;this.capeG.rotation.z=Math.sin(this.anT*1.7)*.05}
     if(this.foxTails){this.foxTails.rotation.x=Math.sin(this.anT*2.6)*.1-P.lean*.5+h.x*.6;this.foxTails.rotation.y=Math.sin(this.anT*1.9)*.28+P.twist*.2;this.foxTails.rotation.z=Math.sin(this.anT*3.3)*.08}
     if(this.tails){this.tails.rotation.x=Math.sin(this.anT*6.3)*.18-h.x*1.6+P.lean*.5;this.tails.rotation.y=Math.sin(this.anT*4.1)*.15+P.twist*.3}
     this.root.updateMatrixWorld(true);
@@ -2814,7 +2835,7 @@ function applyResult(res){
     if(hitLike&&a.idx===G.ME&&!G.online&&!G.watch&&!G.bag&&!G.attract&&!SMOKE){const P=recOf(a.f.id);if(res.dmg>P.big)P.big=res.dmg;if(a.combo+1>P.combo)P.combo=a.combo+1;}
     if(hitLike&&a.idx===G.ME){if(a.combo+1>=10)achGet('combo10');if(res.ko&&res.cue==='hay'&&res.hay>=.97)achGet('hayko')}
     if(hitLike&&v.idx===G.ME){v.stats.took=(v.stats.took||0)+1;v.minHp=Math.min(v.minHp??v.hpMax,v.hp)}
-    if(hitLike){a.combo++;a.comboT=1.1;a.meter=Math.min(100,a.meter+res.meter*(mutOn('ult')?3:1));a.stats.landed++;a.stats.dmg+=res.dmg;
+    if(hitLike){a.combo++;a.comboT=1.1;a.meter=Math.min(100,a.meter+res.meter*(mutOn('ult')?3:1)*(a.f.id==='lucha'?1.25:1));a.stats.landed++;a.stats.dmg+=res.dmg;
       if(a.st.drain>0&&res.dmg>0){const h=res.dmg*.6;a.hp=Math.min(a.hpMax,a.hp+h);floatAt('+'+Math.round(h),a.headW,'heal')}}
     else if(res.r==='block'){a.meter=Math.min(100,a.meter+2);a.combo=0}else if(res.r!=='phase'&&res.r!=='parry')a.combo=0;
   }
@@ -2891,6 +2912,12 @@ const ABIL={
     e(b){b.st.overclock=4;b.act={k:'cast',anim:'charge',t:0,d:.3};netAb(b,'e')},
     r(b,o){b.yaw=Math.atan2(o.x-b.x,o.z-b.z);b.act={k:'cast',anim:'charge',t:0,d:.8,lock:1};
       launch({id:nid(b),a:b.idx,k:'zone',shape:'cone',cue:'beam',x:b.x,z:b.z,yaw:b.yaw,ang:.15,r:5.6,delay:.55,dmg:20*b.f.pow,unblock:1,hs:.55,kb:2.4,meter:0,fx:[]})},
+  },
+  lucha:{
+    q(b,o){const t=toward(b,o),D=Math.min(3.8,Math.max(0,t.l-.7));b.dash={t:0,d:.42,vx:t.x*D/.42,vz:t.z*D/.42};b.act={k:'cast',anim:'pound',t:0,d:.75,lock:1};b.leap=.42;
+      launch({id:nid(b),a:b.idx,k:'melee',cue:'plancha',dmg:12*b.f.pow,range:1.4,guard:.5,gbreak:1,hs:.6,kb:2.6,meter:6,fx:[],delay:.42});netAb(b,'q')},
+    e(b){b.act={k:'taunt',t:0,d:.9,style:'flex'};b.meter=Math.min(100,b.meter+25);b.hp=Math.min(b.hpMax,b.hp+5);netAb(b,'e')},
+    r(b){b.act={k:'cast',anim:'flurry',t:0,d:1.5,lock:1};for(let i=0;i<8;i++)launch({id:nid(b),a:b.idx,k:'melee',cue:'tornado',dmg:(i===7?8:3)*b.f.pow,range:1.5,guard:.5,hs:i===7?.55:.12,kb:i===7?3:.1,meter:1,fx:[],delay:.15+i*.16});netAb(b,'r')},
   },
   grizz:{
     q(b){b.act={k:'cast',anim:'flurry',t:0,d:.62,lock:1};for(const [i,dl] of [[0,.2],[1,.42]])launch({id:nid(b),a:b.idx,k:'melee',cue:'maul',dmg:7*b.f.pow,range:1.45*(b.f.size||1),guard:.6,hs:.3,kb:1.2,meter:4,fx:[],delay:dl});netAb(b,'q')},
@@ -3092,6 +3119,9 @@ const ICONS={
   hib:()=>SVG(`<path d="M30 8a14 14 0 1 0 10 24A12 12 0 0 1 30 8z" fill="#9fe6ff" stroke="${K}" stroke-width="2.6"/><g>${AO('0;1;0',1.4)}<text x="10" y="16" font-size="10" font-weight="900" fill="#fff" stroke="${K}" stroke-width=".8">z</text></g>`),
   roarI:()=>SVG(`<circle cx="24" cy="24" r="10" fill="#c98a4a" stroke="${K}" stroke-width="2.6"/><path d="M19 27q5 5 10 0" fill="#2a090d" stroke="${K}" stroke-width="2"/><g>${AT('scale','.8;1.2;.8',.6)}<circle cx="24" cy="24" r="18" fill="none" stroke="#ffb05a" stroke-width="2.5" transform-origin="24 24"/></g>`),
   fear:()=>SVG(`<g>${AT('translate','-1 0;1 0;-1 0',.12)}<circle cx="24" cy="24" r="14" fill="#cfe2ff" stroke="${K}" stroke-width="2.6"/><circle cx="19" cy="21" r="3" fill="${K}"/><circle cx="29" cy="21" r="3" fill="${K}"/><ellipse cx="24" cy="31" rx="4" ry="5" fill="${K}"/></g>`),
+  plancha:()=>SVG(`<g>${AT('translate','0 6;0 -6;0 6',.8)}<path d="M6 30q18-22 36-6" fill="none" stroke="#1fd6a4" stroke-width="4" stroke-dasharray="5 4"/>${GLOVE('#e8246a',14,-2,.6)}</g>`),
+  showboat:()=>SVG(`<path d="M24 6l5 11 12 1-9 8 3 12-11-7-11 7 3-12-9-8 12-1z" fill="#ffd23a" stroke="${K}" stroke-width="2.6"><animateTransform attributeName="transform" type="scale" values="1;1.1;1" dur=".8s" repeatCount="indefinite" additive="sum"/></path>`),
+  tornado:()=>SVG(`<g>${AT('rotate','0 24 24;360 24 24',.7)}<path d="M8 14h32M12 22h24M16 30h16M20 38h8" stroke="#1fd6a4" stroke-width="4"/></g>`),
   // status chips
   burn:()=>SVG(FLAME(24,44,.95)), poison:()=>SVG(`<g>${AT('translate','0 -2;0 2;0 -2',.9)}${DROP('#7dff4a',24,26,1.15)}</g>`),
   slow:()=>SVG(FLAKE('#bff0ff',24,24,1,7)), stun:()=>SVG(STARS()), freeze:()=>SVG(`<rect x="8" y="8" width="32" height="32" rx="5" fill="#9fe6ff" stroke="${K}" stroke-width="2.6"/><path d="M14 14l8 3M14 22l5 1" stroke="#fff" stroke-width="3">${'<animate attributeName="stroke-opacity" values=".2;1;.2" dur="1.2s" repeatCount="indefinite"/>'}</path>`),
@@ -3107,7 +3137,7 @@ const ICONS={
 };
 const ABICON={blaze:{q:'firefist',e:'comet',r:'inferno'},volt:{q:'blink',e:'shock',r:'sandy'},titan:{q:'iron',e:'pound',r:'colossus'},
   shade:{q:'phase',e:'seal',r:'fists'},frost:{q:'icefist',e:'frostshield',r:'zero'},viper:{q:'spit',e:'coil',r:'kiss'},
-  kitsune:{q:'foxfire',e:'charm',r:'tails'},toro:{q:'rush',e:'cape',r:'stampede'},unit:{q:'rocket',e:'overclock',r:'beam'},grizz:{q:'maul',e:'hib',r:'roarI'}};
+  kitsune:{q:'foxfire',e:'charm',r:'tails'},toro:{q:'rush',e:'cape',r:'stampede'},unit:{q:'rocket',e:'overclock',r:'beam'},grizz:{q:'maul',e:'hib',r:'roarI'},lucha:{q:'plancha',e:'showboat',r:'tornado'}};
 const ICO=(k)=>(ICONS[k]||ICONS.random)();
 const abIcon=(f,k)=>ICO(ABICON[f.id][k]);
 
@@ -3150,7 +3180,7 @@ function makePortraits(){
 }
 
 // ════════════════════ COMBAT VISUALS ════════════════════
-const CUECOL={jab:0xfff1c8,cross:0xfff1c8,hook:0xffe0a0,upper:0xffe0a0,hay:0xffd27a,flamedash:0xff6a1f,inferno:0xff5a10,shock:0x5fdcff,bolt:0x9fe8ff,pound:0xd9c27b,seal:0xc26bff,flurry:0xc78bff,zero:0x9fe6ff,spit:0x7dff4a,coil:0x7dff4a,foxfire:0xff4fd8,charm:0xff7ad8,tails:0xff4fd8,rush:0xff3b3f,rocket:0xffd23a,beam:0xffd23a,maul:0xffb05a,roar:0xffb05a};
+const CUECOL={jab:0xfff1c8,cross:0xfff1c8,hook:0xffe0a0,upper:0xffe0a0,hay:0xffd27a,flamedash:0xff6a1f,inferno:0xff5a10,shock:0x5fdcff,bolt:0x9fe8ff,pound:0xd9c27b,seal:0xc26bff,flurry:0xc78bff,zero:0x9fe6ff,spit:0x7dff4a,coil:0x7dff4a,foxfire:0xff4fd8,charm:0xff7ad8,tails:0xff4fd8,rush:0xff3b3f,rocket:0xffd23a,beam:0xffd23a,maul:0xffb05a,roar:0xffb05a,plancha:0x1fd6a4,tornado:0x1fd6a4};
 const _hp=new THREE.Vector3(),_hd=new THREE.Vector3();
 function hitVisual(res,a,v,rp){
   if(!v.f)return;const quiet=G.attract;
@@ -3363,6 +3393,7 @@ function abilityVisual(i,k,x){
     if(k==='e'){burst(b.headW,16,0xffb8ec,1.6,.5,.07,{});if(!q)SFX.whoosh(.5,P,'dodge')}
     if(k==='r'){if(!q)SFX.whoosh(1,P,'dodge');for(let n=0;n<9;n++)after(.15+n*.11,()=>foxTail(b,n))}
     if(k==='taunt'){}}
+  if(id==='lucha'){if(k==='q'){b.trail={c:0x1fd6a4,t:.5};b.ghostT=.5;b.ghostC=0x1fd6a4;if(!q){SFX.whoosh(1.2,P,'hay');SFX.ooh(.9)}}if(k==='e'){burst(b.headW,40,0xffd23a,3,.7,.08,{up:1});ARENA.excite=1;if(ARENA.cheer)ARENA.cheer[b.idx]=1.2;if(!q)SFX.cheer(1)}if(k==='r'){groundRing(b.x,b.z,1.8,0x1fd6a4,.5,.2);if(!q)SFX.whoosh(1,P,'dodge')}}
   if(id==='grizz'){if(k==='q'){if(!q)SFX.roar(P)}if(k==='e'){burst(b.chestW,24,0x9fe6ff,2,.6,.07,{});if(!q)SFX.shield(P)}if(k==='r'&&!q){SFX.roar(P);SFX.rumble();shake(.5)}}
   if(id==='unit'){if(k==='q'){burst(b.gW[1],24,0xffd23a,3,.4,.08,{});if(!q)SFX.whoosh(1,P,'cross')}if(k==='e'){b.gW.forEach(g=>burst(g,18,0xffd23a,2,.4,.07,{}));if(!q)SFX.zap(.5,P)}if(k==='r'&&!q)SFX.zap(.8,P)}
   if(id==='toro'){if(k==='rush'){b.trail={c:0xff3b3f,t:.45};b.ghostT=.45;b.ghostC=0xff3b3f;burst(_hp.set(b.x,.1,b.z),26,0xc9a27a,2.6,.6,.1,{up:1});if(!q)SFX.roar(P)}
@@ -3492,7 +3523,7 @@ const SFX={
   splat(p){if(!sOK())return;const pan=panOf(p);noise({dur:.12,vol:.3,lp:900,pan});tone({type:'sine',f:300,f2:80,dur:.1,vol:.25,pan})},
   heal(p){if(!sOK())return;const pan=panOf(p);[72,76,79,84].forEach((m,i)=>tone({at:i*.06,type:'sine',f:440*Math.pow(2,(m-69)/12),dur:.4,vol:.06,pan,rev:.5}))},
   pyro(d=1.5){if(!sOK())return;for(let i=0;i<Math.round(16*d);i++)noise({at:rr(0,d),dur:.01,vol:rr(.03,.07),hp:rr(2500,6000),pan:rr(-.8,.8)});tone({type:'sine',f:90,f2:45,dur:.4,vol:.3,rev:.4})},
-  taunt(id,p){if(!sOK())return;({blaze:()=>SFX.fire(.8,p),volt:()=>SFX.zap(.7,p),titan:()=>SFX.roar(p),shade:()=>SFX.shadow(p),frost:()=>SFX.ice(.7,p),viper:()=>SFX.hiss(p),kitsune:()=>SFX.fire(.45,p),toro:()=>SFX.roar(p),unit:()=>SFX.clang(p),grizz:()=>SFX.roar(p)}[id]||(()=>{}))()},
+  taunt(id,p){if(!sOK())return;({blaze:()=>SFX.fire(.8,p),volt:()=>SFX.zap(.7,p),titan:()=>SFX.roar(p),shade:()=>SFX.shadow(p),frost:()=>SFX.ice(.7,p),viper:()=>SFX.hiss(p),kitsune:()=>SFX.fire(.45,p),toro:()=>SFX.roar(p),unit:()=>SFX.clang(p),grizz:()=>SFX.roar(p),lucha:()=>SFX.cheer(.6)}[id]||(()=>{}))()},
   rage(){if(!sOK())return;tone({type:'sine',f:60,f2:40,dur:.5,vol:.55,rev:.3});SFX.roar()},
   heart(){if(!sOK())return;tone({type:'sine',f:62,f2:40,dur:.14,vol:.27});tone({at:.19,type:'sine',f:56,f2:38,dur:.12,vol:.19})},
   clapper(){if(!sOK())return;for(let k=0;k<3;k++){noise({at:k*.16,dur:.035,vol:.4,bp:2300,q:3,rev:.3});tone({at:k*.16,type:'triangle',f:1300,f2:800,dur:.03,vol:.1})}},
@@ -3535,7 +3566,7 @@ function say(){}
 const CPU_STYLE={volt:{aggr:1.05,block:.8,dodge:1.4,range:.35,label:'hit and run'},kitsune:{aggr:1,block:.85,dodge:1.12,range:.25},
   titan:{aggr:1.02,block:1.15,dodge:.75,range:-.12},grizz:{aggr:.95,block:1.3,dodge:.6,range:-.15},shade:{aggr:.9,block:.9,dodge:1.15,range:.1},
   toro:{aggr:1.25,block:.85,dodge:.8,range:-.25},blaze:{aggr:1.08,block:1,dodge:1,range:-.08},viper:{aggr:1,block:1,dodge:1.15,range:.15},
-  frost:{aggr:1,block:1.1,dodge:1,range:0},unit:{aggr:1.05,block:1.05,dodge:.9,range:.05}};
+  frost:{aggr:1,block:1.1,dodge:1,range:0},lucha:{aggr:1.1,block:.9,dodge:1.1,range:.05},unit:{aggr:1.05,block:1.05,dodge:.9,range:.05}};
 function styled(D,id){const S=CPU_STYLE[id];if(!S||D.aggr===0)return D;return Object.assign({},D,{aggr:clamp(D.aggr*S.aggr,0,.97),block:clamp(D.block*S.block,0,.95),dodge:clamp(D.dodge*S.dodge,0,.7),range:S.range})}
 class Bot{
   constructor(idx,diff){this.idx=idx;this.diff=diff;this.D=DIFF[diff]||DIFF.contender;this.plan=[];this.think=1;this.react=null;this.strafe=Math.random()<.5?1:-1;this.strafeT=0;this.blockT=0;this.seen=null;this.abilT=1.5;this.planT=0;this.guardT=0}
@@ -3620,6 +3651,7 @@ const AIAB={
   viper:(b,o,d)=>b.meter>=100&&d<2.2?'r':b.cd.q<=0&&d>1.7&&d<5?'q':b.cd.e<=0&&d>1.7&&d<3.7?'e':null,
   kitsune:(b,o,d)=>b.meter>=100&&d<2.1?'r':b.cd.e<=0&&d>1.5&&d<4.5&&!o.st.charm?'e':b.cd.q<=0&&d>1.6&&d<5?'q':null,
   unit:(b,o,d)=>b.meter>=100&&d<4.5&&!o.act?'r':b.cd.q<=0&&d>2&&d<5.5?'q':b.cd.e<=0&&d<2?'e':null,
+  lucha:(b,o,d)=>b.meter>=100&&d<1.6?'r':b.cd.q<=0&&d>1.6&&d<4?'q':b.cd.e<=0&&d>2.2?'e':null,
   grizz:(b,o,d)=>b.meter>=100&&d<2.6?'r':b.cd.q<=0&&d<1.6?'q':b.cd.e<=0&&b.hp<b.hpMax*.7?'e':null,
   toro:(b,o,d)=>b.meter>=100&&d>1.5&&d<4.2?'r':b.cd.q<=0&&d>1.7&&d<3.8?'q':b.cd.e<=0&&o.act&&o.act.k==='punch'&&d<1.9?'e':null,
 };
@@ -3851,6 +3883,7 @@ const QUOTES={blaze:['Hope you brought a fire extinguisher.','I\'m already warme
   viper:['One bite is all it takes.','Sssseems you\'re nervous.','I can taste your fear.'],
   kitsune:['Catch me if you can~','Which one of me is real?','Nine tails. Zero mercy.'],
   toro:['Olé.','I see red.','You\'ll get the horns.'],
+  lucha:['¡Vámonos!','The people want a show. I give them one.','Nobody has seen my face. Nobody will.'],
   grizz:['GRRRRR.','I eat fighters like you for breakfast.','Hibernation\'s over.'],
   unit:['TARGET ACQUIRED.','14,000,605 SIMULATIONS. YOU LOSE IN ALL OF THEM.','RESISTANCE IS INEFFICIENT.']};
 const BIOS={blaze:'A street kid from the boiler district who learned to box in a foundry. Hits hard, burns hotter, never backs off.',
@@ -3862,6 +3895,7 @@ const BIOS={blaze:'A street kid from the boiler district who learned to box in a
   kitsune:'Shrine-keeper by day, trickster by night. Which of her is real? Usually the one hitting you.',
   toro:'Former bullfighter who switched sides. Charges first, asks questions never.',
   unit:'A sparring robot that won its first real fight by accident. It has not lost interest since.',
+  lucha:'Fourth-generation luchador from the Arena Ciudad. Flies off the top rope in a sport that doesn\'t have a top rope.',
   grizz:'Wandered out of the forest, into a gym, and has refused to leave. Eats salmon between rounds.'};
 const RIVALS={'blaze|frost':['Fire and ice. Again.','You\'re going to melt, Blaze.'],'unit|volt':['Faster than a machine? Let\'s find out.','ELECTRICITY IS MY FOOD.'],
   'grizz|titan':['Two mountains. One ring.','GRRR.'],'kitsune|shade':['I see right through you.','There\'s nothing to see.'],
@@ -4087,6 +4121,7 @@ const STORY={
   kitsune:['A shrine spirit is bored. Very bored. A tournament looks like fun.','Nine tails, eight wins to go… wait, that\'s not how counting works. Kitsune doesn\'t care.','The belt vanishes from the trophy case the next morning. Kitsune insists it was "a trick".'],
   toro:['He spent ten years dodging capes. Now he wants to be the one holding the red.','The title fight is on a Sunday. Toro always charged hardest on Sundays.','Toro waves the belt like a cape at the crowd. Olé.'],
   unit:['PROGRAM: SPARRING PARTNER. NEW PROGRAM: CHAMPION. REASON: UNKNOWN.','ONE OPPONENT REMAINS. PROBABILITY OF VICTORY: IRRELEVANT.','UNIT-7 POLISHES THE BELT 1,438 TIMES. IT DOES NOT KNOW WHY THIS FEELS GOOD.'],
+  lucha:['Abuela\'s gym needs a new roof. El Tornado promises the whole barrio he\'ll bring it home.','The barrio paints a mural of him on the gym wall the night before the title. Unfinished — on purpose.','They finish the mural with the belt in it. The new roof is mask-green.'],
   grizz:['The gym has a fridge full of salmon. The champion gets the key to the fridge.','The night before the title, Grizz eats twelve fish and sleeps like a log.','Grizz gets the fridge key. He also gets the belt, which he uses to hold the fridge shut.']};
 function showLadder(){rpStop();vsHide();clearConfetti();
   const L=G.ladder;G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;hideAllOv();showOv('ladOv');showHUD(false);REF.b.root.visible=false;
@@ -4573,7 +4608,7 @@ function runSmoke(){
   const near=(a,b,e=.01)=>Math.abs(a-b)<=e;
   const abil=(f0,f1,key,d=1)=>{solo(f0,f1);place(d);G.B[0].meter=100;return castAbility(G.B[0],key)};
   try{
-    ok(FIGHTERS.length===10,'ten fighters');
+    ok(FIGHTERS.length===11,'eleven fighters');
     for(const f of FIGHTERS){ok(ABIL[f.id]&&ABIL[f.id].q&&ABIL[f.id].e&&ABIL[f.id].r,f.id+' has three abilities');ok(!!AIAB[f.id],f.id+' has CPU ability rules');ok(f.q.cd>0&&f.e.cd>0,f.id+' has cooldowns')}
     // ── rig ──
     for(const f of FIGHTERS){const b=G.B[0];b.build(f);b.reset();b.x=0;b.z=0;b.yaw=0;b.act=null;b.override=null;for(let i=0;i<40;i++)b.animate(1/60,null);
@@ -4671,6 +4706,8 @@ function runSmoke(){
     {solo('blaze','frost');emote(1,0,true);ok(EMOB.length===1&&EMOB[0].el.textContent==='GG!','a rival\'s emote shows over their fighter');updEmos(3);ok(EMOB.length===0,'…and fades away')}
     ok(FIGHTERS.every(f=>STORY[f.id]&&STORY[f.id].length===3),'every fighter has a three-beat ladder story');
     {const x0=REC.xp;REC.xp=0;ok(xpInfo().l===1&&xpInfo().title==='ROOKIE','a new player is a level 1 ROOKIE');REC.xp=xpNeed(1)+xpNeed(2)+5;ok(xpInfo().l===3&&xpInfo().x===5,'XP carries across levels');REC.xp=x0}
+    abil('lucha','frost','q',3);G.forced[1]={...EMPTY,block:true};sim(.8);G.forced[1]=EMPTY;ok(G.B[1].hp<100&&G.B[1].st.stun>0,'Plancha flies in and breaks a guard ('+G.B[1].hp.toFixed(1)+')');
+    abil('lucha','frost','e');ok(G.B[0].meter>=25,'Showboat fills 25 meter');abil('lucha','frost','r',1.1);sim(1.8);ok(G.B[1].hp<100-15,'Tornado spins through ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
