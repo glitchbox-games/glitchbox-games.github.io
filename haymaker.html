@@ -700,7 +700,7 @@ const DIFF={
   contender:{name:'CONTENDER',react:.25,block:.48,dodge:.2, aggr:.62,abil:.6, think:.42,getup:.8, parry:.07,hay:.35},
   champion: {name:'CHAMPION', react:.14,block:.66,dodge:.36,aggr:.82,abil:.95,think:.22,getup:.9, parry:.18,hay:.55},
 };
-const SET={q:TOUCH?'low':'high',snd:true,cam:'tv',mus:false,flash:true,mute:false,walk:true,vS:100,vM:60,shk:100,nums:true,words:true,calm:false,hc:false};
+const SET={q:TOUCH?'low':'high',snd:true,cam:'tv',mus:false,flash:true,mute:false,walk:true,vS:100,vM:60,shk:100,nums:true,words:true,calm:false,hc:false,rumble:true};
 try{Object.assign(SET,JSON.parse(localStorage.getItem('haymaker.set')||'{}'))}catch(e){}
 const saveSet=()=>{try{localStorage.setItem('haymaker.set',JSON.stringify(SET))}catch(e){}};
 const REC={w:0,l:0,ko:0,champ:{},ladders:0,per:{}};   // per[fighterId] = {w,l,ko,big,combo,titles}
@@ -3296,6 +3296,7 @@ function hitVisual(res,a,v,rp){
     if(res.dmg>0||res.cue==='seal'){impactFlash(p,col,heavy?1.6:.95);burst(p,heavy?30+pw*10:14,col,heavy?5.5+pw:3.6,.32,.06,{drag:3});hitSpark(p,col,pw)}
     if(res.dmg>0&&!res.body)burst(p,heavy?14+pw*14:5,0xdcefff,2.6+pw,.8,.04+.01*pw,{normal:true,grav:9.8,dir:_hd,drag:.6,a:.85});   // sweat off the head
     v.flashT=heavy?.09:.05;
+    if(!rp&&!quiet&&(a.idx===G.ME||v.idx===G.ME)){const mine=v.idx===G.ME;rumble(Math.min(1,(mine?.45:.25)*pw+(res.ko?.4:0)),Math.min(1,(mine?.6:.35)*pw),pw>=2?260:heavy?140:70)}
     // cartoon squash: the head that takes it and the glove that lands it both squish, then wobble back
     v.sqX=Math.max(v.sqX||0,.07+.06*pw);{const hd=PUNCH[res.cue]&&PUNCH[res.cue].hand==='L'?0:1;if(a.gsq)a.gsq[hd][0]=Math.max(a.gsq[hd][0],.12+.08*pw)}
     const h=v.hs,side=PUNCH[res.cue]&&PUNCH[res.cue].hand==='L'?1:-1,big=pw>=2?1.6:1;
@@ -3344,6 +3345,7 @@ function hitVisual(res,a,v,rp){
     burst(g,8,0xa8d8ff,2.5,.22,.05,{drag:4});impactFlash(g,0x8fc8ff,.5);hitSpark(g,0x9fd8ff,.22);v.hs.vx+=3;
     if(!quiet){SFX.block(.6,g);if(meInvolved)shake(.08);if(!rp&&(v.idx===G.ME||res.dmg>1))floatAt('BLOCK',g,'blk')}
   }else if(res.r==='clash'){
+    if(!rp)rumble(1,1,320);
     const g=_hd.addVectors(a.gW[1],v.gW[1]).multiplyScalar(.5);
     hitSpark(g,0xffffff,2);impactFlash(g,0xffe9a8,2.6);burst(g,70,0xffd27a,7,.5,.07,{drag:2});burst(g,40,0xffffff,4,.35,.05,{normal:true,grav:4});groundRing(g.x,g.z,3,0xffd27a,.6,.2);
     a.flashT=v.flashT=.1;a.hs.vx+=10;v.hs.vx+=10;
@@ -3805,6 +3807,8 @@ $('cv').addEventListener('contextmenu',e=>e.preventDefault());
 //    d-pad abilities/ultimate/taunt, START pauses; in menus A confirms and the d-pad picks a fighter ──
 const PAD={on:false,prev:[],x:0,y:0,block:false,hay:false};
 const PAD2={on:false,prev:[],x:0,y:0,block:false,hay:false,press:[]};   // player 2's controller in local versus
+// controller rumble: hits you land or take, scaled by how heavy they are
+function rumble(strong,weak,ms){if(SET.rumble===false||!PAD.on||SMOKE)return;try{const ps=navigator.getGamepads?navigator.getGamepads():[];for(const p of ps){const v=p&&p.connected&&p.vibrationActuator;if(v&&v.playEffect){v.playEffect('dual-rumble',{duration:ms,strongMagnitude:strong,weakMagnitude:weak});break}}}catch(e){}}
 function padPoll(){const ps=navigator.getGamepads?navigator.getGamepads():[];const all=[];for(const p of ps)if(p&&p.connected&&p.mapping==='standard')all.push(p);
   let gp=all[0]||null;
   // local versus: the last controller belongs to player 2 (with a single pad, player 1 keeps the keyboard)
@@ -4062,7 +4066,7 @@ function showSettings(){
   const ch=(k,n,opts)=>`<div class="sr">${n}<div class="sb">${opts.map(([v,t])=>`<button data-c="${k}" data-v="${v}" class="${String(SET[k])===String(v)?'on':''}">${t}</button>`).join('')}</div></div>`;
   $('setBody').innerHTML=sl('vS','SOUND VOLUME')+sl('vM','MUSIC VOLUME')+sl('shk','SCREEN SHAKE')+
     ch('snd','SOUND',[[true,'ON'],[false,'OFF']])+ch('mus','MUSIC',[[true,'ON'],[false,'OFF']])+ch('q','GRAPHICS',[['high','HIGH'],['low','LOW']])+ch('cam','CAMERA',[['tv','BROADCAST'],['back','BEHIND YOU']])+
-    ch('flash','FLASHES',[[true,'ON'],[false,'OFF']])+ch('walk','ENTRANCES',[[true,'ON'],[false,'OFF']])+ch('nums','DAMAGE NUMBERS',[[true,'ON'],[false,'OFF']])+ch('words','COMIC WORDS',[[true,'ON'],[false,'OFF']])+ch('calm','REDUCED EFFECTS',[[false,'OFF'],[true,'ON']])+ch('hc','HIGH-CONTRAST HUD',[[false,'OFF'],[true,'ON']])+bindRows();
+    ch('flash','FLASHES',[[true,'ON'],[false,'OFF']])+ch('walk','ENTRANCES',[[true,'ON'],[false,'OFF']])+ch('nums','DAMAGE NUMBERS',[[true,'ON'],[false,'OFF']])+ch('words','COMIC WORDS',[[true,'ON'],[false,'OFF']])+ch('rumble','CONTROLLER RUMBLE',[[true,'ON'],[false,'OFF']])+ch('calm','REDUCED EFFECTS',[[false,'OFF'],[true,'ON']])+ch('hc','HIGH-CONTRAST HUD',[[false,'OFF'],[true,'ON']])+bindRows();
   showOv('setOv')}
 function showRecords(){
   const tot=REC.w+REC.l;$('recBody').innerHTML=`<div class="rt"><span><b>${REC.w}–${REC.l}</b>RECORD</span><span><b>${tot?Math.round(REC.w/tot*100):0}%</b>WINS</span><span><b>${REC.ko}</b>KOs</span><span><b>${REC.ladders}</b>BELTS</span></div>
@@ -4905,7 +4909,7 @@ function runSmoke(){
     {G.surv={f:'blaze',n:0,hp:null};survNext();const S=G.surv;ok(S&&G.B[0].f.id==='blaze'&&G.bots[1].diff==='rookie','SURVIVAL: bout one is against a rookie');G.B[0].hp=40;survEnd({w:G.ME});survNext();
      ok(G.surv.n===1&&near(G.B[0].hp,40+G.B[0].hpMax*.3,.5),'…health carries over with a 30% top-up');G.surv.n=5;survNext();ok(G.bots[1].diff==='champion','…and the CPU sharpens');G.surv=null}
     {const n0=Object.keys(REC.ach||{}).length;achGet('first');ok(Object.keys(REC.ach||{}).length===n0,'achievements never unlock during self-tests');showRecords();ok($('recBody').querySelectorAll('.ai').length===ACH.length,'RECORDS lists all '+ACH.length+' achievements');hideOv('recOv')}
-    {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===13,'SETTINGS lists every option');hideOv('setOv')}
+    {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===14,'SETTINGS lists every option');hideOv('setOv')}
     {solo('blaze','frost');G.flow=[];G.flowT=0;sim(2);ok(G.flow.length>=3&&G.flow.every(p=>p[0]>0&&p[1]>0),'the fight-flow graph samples both health bars ('+G.flow.length+')')}
     ok(rivalry('frost','blaze')&&rivalry('frost','blaze')[0]===RIVALS['blaze|frost'][1]&&!rivalry('blaze','volt')&&FIGHTERS.every(f=>BIOS[f.id]),'rivalries pair up the right lines, and every fighter has a bio');
     {solo('blaze','frost');rpReset();G.B[1].hp=100;for(let i=0;i<80;i++){step(1/60);rpRecord(1/60)}let back=0;ok(rpInstant(()=>back=1)&&RP.play&&RP.play.inst,'instant replay rolls the last seconds of tape');rpEnd();ok(back===1&&!RP.play,'…and hands back to the pause menu')}
@@ -4935,6 +4939,8 @@ function runSmoke(){
     {solo('blaze','frost');NET.mode='host';G.online=true;const w0=REC.w;netLost('Your opponent left the arena.');ok(G.phase==='end'&&G.result&&G.result.how==='FORFEIT'&&G.result.w===G.ME&&REC.w===w0,'a rival leaving mid-fight ends it as your win by forfeit (records untouched)');G.forfeit=false}
     {const B0=Object.assign({},BIND);REBIND='jab';dispatchEvent(new KeyboardEvent('keydown',{code:'KeyY'}));ok(BIND.jab==='KeyY'&&KMAP.KeyY==='jab'&&!KMAP.KeyJ,'rebinding JAB to Y moves it');
      REBIND='cross';dispatchEvent(new KeyboardEvent('keydown',{code:'KeyY'}));ok(BIND.cross==='KeyY'&&BIND.jab==='KeyK','…and taking a used key swaps the two');Object.assign(BIND,B0);SET.bind=null;rebuildKMAP();hideOv('setOv')}
+    {const real=navigator.getGamepads;let fx=null;const pad={connected:true,mapping:'standard',axes:[0,0],buttons:[],vibrationActuator:{playEffect:(t,o)=>{fx=o}}};try{Object.defineProperty(navigator,'getGamepads',{value:()=>[pad],configurable:true})}catch(e){}
+     const sm=window.SMOKE;PAD.on=true;const keep=SET.rumble;SET.rumble=true;rumble(.5,.6,100);ok(fx===null,'rumble stays off during self-tests');PAD.on=false;try{Object.defineProperty(navigator,'getGamepads',{value:real,configurable:true})}catch(e){}SET.rumble=keep}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
