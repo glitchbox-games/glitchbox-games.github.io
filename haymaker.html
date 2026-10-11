@@ -32,7 +32,7 @@ body.cine #lbT,body.cine #lbB{height:10.5vh}
 #replayTag i{width:14px;height:14px;border-radius:50%;background:#ff2a2a;box-shadow:0 0 12px #ff2a2a;animation:blink 1s steps(2) infinite}
 #replayTag small{font:800 11px Rubik;letter-spacing:.2em;color:rgba(255,255,255,.6);margin-left:10px}
 @keyframes blink{50%{opacity:0}}
-body.replay #replayTag{display:flex}
+body.replay #replayTag{display:flex}#clipTag{display:none;position:fixed;top:14px;right:18px;z-index:30;font:900 13px Rubik;letter-spacing:.2em;color:#ff3b3f;background:rgba(0,0,0,.6);padding:6px 10px;border-radius:8px;animation:nbump 1s ease-in-out infinite}body.clipping #clipTag{display:block}
 body.replay #hud,body.replay #floats,body.replay #touch{opacity:0;transition:opacity .3s}
 /* ultimate cut-in */
 #cutin{position:fixed;inset:0;pointer-events:none;z-index:8;display:none;overflow:hidden;--bh:clamp(110px,24vh,200px)}
@@ -451,7 +451,7 @@ body.touch #abil,body.touch #keys{display:none}
 <div id="photoBar"><b>PHOTO MODE</b><span>DRAG orbit · WHEEL / Q E zoom · F filter: <i id="phF">NONE</i> · S save · ESC back</span><button id="phSave">SAVE PNG</button><button id="phFilt">FILTER</button><button id="phExit">DONE</button></div>
 <div id="walk"><div class="bar"></div><div class="skip">PRESS ANY KEY TO SKIP</div></div>
 <div id="vs"><div class="side l"></div><div class="side r"></div><div class="mid">VS</div></div>
-<div id="replayTag"><i></i><span id="rpLbl">REPLAY</span><small>ANY KEY TO SKIP</small></div>
+<div id="clipTag">● REC</div><div id="replayTag"><i></i><span id="rpLbl">REPLAY</span><small>ANY KEY TO SKIP</small></div>
 <div id="rotate"><span style="display:inline-block;width:40px;height:40px;vertical-align:middle" id="rotIco"></span> TURN YOUR PHONE SIDEWAYS</div>
 <div id="emoT"><button id="emoBtn">💬</button><div id="emoMenu"></div></div>
 <div id="touch" class="hide">
@@ -4839,6 +4839,20 @@ async function posterLoad(){posterCanvas.img=posterCanvas.img||{};await Promise.
 async function savePoster(){try{await posterLoad();const c=posterCanvas(),blob=await new Promise(r=>c.toBlob(r,'image/png')),name='haymaker-'+G.B[0].f.id+'-vs-'+G.B[1].f.id+'.png';
     const file=new File([blob],name,{type:'image/png'});if(TOUCH&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:shareText()});return}
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);sub('POSTER SAVED',1.8)}catch(e){sub('COULDN\'T MAKE THE POSTER',1.6)}}
+// SAVE CLIP: record the highlights reel straight off the canvas (with the game's sound) into a video file
+const CLIP={rec:null};
+function clipMime(){if(!window.MediaRecorder)return null;for(const m of ['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'])if(MediaRecorder.isTypeSupported(m))return m;return null}
+function saveClip(){const mime=clipMime(),cv=renderer&&renderer.domElement;if(!mime||!cv||!cv.captureStream||!HL.clips.length||CLIP.rec){sub('THIS BROWSER CAN\'T RECORD VIDEO',2);return}
+  let st;try{st=cv.captureStream(30)}catch(e){sub('THIS BROWSER CAN\'T RECORD VIDEO',2);return}
+  let dest=null;try{auInit();if(AU.ctx&&AU.out){dest=AU.ctx.createMediaStreamDestination();AU.out.connect(dest);for(const t of dest.stream.getAudioTracks())st.addTrack(t)}}catch(e){dest=null}
+  const chunks=[],rec=new MediaRecorder(st,{mimeType:mime,videoBitsPerSecond:5e6});CLIP.rec=rec;rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  rec.onstop=async()=>{CLIP.rec=null;document.body.classList.remove('clipping');try{if(dest)AU.out.disconnect(dest)}catch(e){}st.getTracks().forEach(t=>t.stop());
+    const ext=mime.includes('mp4')?'mp4':'webm',blob=new Blob(chunks,{type:mime.split(';')[0]}),name='haymaker-highlights-'+G.B[0].f.id+'-vs-'+G.B[1].f.id+'.'+ext;
+    try{const file=new File([blob],name,{type:blob.type});if(TOUCH&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:shareText()})}
+      else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);sub('CLIP SAVED',1.8)}}catch(e){}
+    if(G.phase==='end')showOv('endOv')};
+  achGet('reel');hideOv('endOv');document.body.classList.add('clipping');rec.start(250);
+  setTimeout(()=>{if(!hlPlay(()=>setTimeout(()=>{if(rec.state!=='inactive')rec.stop()},400)))rec.stop()},250)}
 async function shareResult(){const t=shareText();try{if(navigator.share&&TOUCH){await navigator.share({text:t});return}await navigator.clipboard.writeText(t);sub('RESULT COPIED — PASTE IT ANYWHERE',2.2)}catch(e){sub('COULDN\'T COPY — TRY AGAIN',1.6)}}
 function renderEndButtons(){
   const el=$('endBtns');if(!el||!$('endOv').classList.contains('on'))return;const r=G.result||{};
@@ -4852,6 +4866,7 @@ function renderEndButtons(){
   else h=`<button class="primary" id="eRetry">REMATCH</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   if(!G.attract&&HL.clips.length)h+=`<button class="ghost" id="eHl">▶ HIGHLIGHTS</button>`;
   if(!G.attract)h+=`<button class="ghost" id="ePoster">SAVE POSTER</button>`;
+  if(!G.attract&&HL.clips.length&&clipMime())h+=`<button class="ghost" id="eClip">SAVE CLIP</button>`;
   if(!G.attract)h+=`<button class="ghost" id="eShare">${navigator.share&&TOUCH?'SHARE':'COPY RESULT'}</button>`;
   el.innerHTML=h;
   const on=(id,f)=>{const b=$(id);if(b)b.onclick=()=>{SFX.ui();f()}};
@@ -4859,7 +4874,7 @@ function renderEndButtons(){
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eShare',shareResult);on('ePoster',savePoster);on('eHl',()=>{achGet('reel');hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eShare',shareResult);on('ePoster',savePoster);on('eClip',saveClip);on('eHl',()=>{achGet('reel');hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
