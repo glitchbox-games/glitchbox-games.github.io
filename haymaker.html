@@ -96,6 +96,8 @@ body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{backg
 .xpb{margin-top:10px}.xpl{display:flex;align-items:baseline;gap:8px;font:900 11px Rubik;letter-spacing:.2em;color:var(--dim)}.xpl b{font:400 18px Anton;color:#fff;letter-spacing:.04em}.xpl span{margin-left:auto;color:#7dff4a}
 .xpbar{height:8px;background:#1a1a22;border-radius:6px;overflow:hidden;margin-top:4px}.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#ffc83a,#ff8a1a);transition:width 1.2s cubic-bezier(.2,.8,.3,1)}
 .chal{margin:10px 0;text-align:center;font:400 22px Anton;color:#ff3b3f;letter-spacing:.1em}.chal>span{animation:blink 1s infinite}.chal>div{display:flex;flex-direction:column;align-items:center;margin-top:6px;animation:none}.chal b{font:400 26px Anton;color:#ffd23a}.chal small{font:900 10px Rubik;letter-spacing:.3em;color:var(--dim)}.chal i{display:block;font:italic 600 13px Rubik;color:#ddd;letter-spacing:0;margin-top:4px;animation:none}
+.brk{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;align-items:center}.bc{display:flex;flex-direction:column;gap:4px;justify-content:space-around;min-height:250px}.bc small{font:900 9px Rubik;letter-spacing:.3em;color:var(--dim);text-align:center}
+.brk .bk{display:flex;align-items:center;gap:6px;background:#14141c;border:1px solid var(--line);border-radius:8px;padding:2px 6px;font:400 13px Anton;color:#ddd;position:static}.brk .bk.me{border-color:var(--gold);color:var(--gold)}.brk .bk.lost{opacity:.35}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -418,6 +420,7 @@ body.touch #abil,body.touch #keys{display:none}
     <button class="primary" data-go="quick">QUICK FIGHT</button>
     <button data-go="ladder">ARCADE LADDER</button>
     <button data-go="surv">SURVIVAL</button>
+    <button data-go="tour">TOURNAMENT</button>
     <button data-go="online">PLAY ONLINE · 1v1</button>
     <button data-go="train">TRAINING</button>
     <button data-go="daily">DAILY CHALLENGE</button>
@@ -496,6 +499,7 @@ body.touch #abil,body.touch #keys{display:none}
 </div>
 
 <div class="ov dark" id="setOv"><div class="panel" style="max-width:520px;width:94vw"><h2>SETTINGS</h2><div id="setBody"></div><button class="btn primary" id="setBack" style="margin-top:12px">DONE</button></div></div>
+<div class="ov dark" id="tourOv"><div class="card2" id="tourBody" style="width:min(720px,96vw)"></div></div>
 <div class="ov dark" id="dayOv"><div class="card2" id="dayBody"></div></div>
 <div class="ov dark" id="recOv"><div class="panel" style="max-width:760px;width:94vw"><h2>RECORDS</h2><div id="recBody"></div><button class="btn primary" id="recBack" style="margin-top:12px">BACK</button></div></div>
 <div class="ov dark" id="pauseOv">
@@ -673,7 +677,7 @@ const ACH=[['first','FIRST BLOOD','Win a fight'],['ko','LIGHTS OUT','Win by knoc
   ['champ','CHAMPION','Win the arcade ladder'],['legend3','HALL OF FAME','Win the ladder with three different fighters'],['surv5','SURVIVOR','Win 5 in a row in survival'],['surv10','IRON WILL','Win 10 in a row in survival'],
   ['venues','WORLD TOUR','Win in the arena, on the rooftop and in the Pit'],['storm','STORM CHASER','Win on a stormy rooftop'],['all','COMPLETE ROSTER','Win with every fighter'],
   ['tut','STUDENT','Finish the tutorial'],['champcpu','GIANT SLAYER','Beat a CHAMPION CPU'],['daily','DAILY GRIND','Score in the daily challenge'],['ult5','SHOWTIME','Land 5 ultimates'],
-  ['photo','PAPARAZZI','Save a photo'],['boss','GIANT KILLER','Beat THE CHAMP'],['online','WORLDWIDE','Win an online match']];
+  ['photo','PAPARAZZI','Save a photo'],['boss','GIANT KILLER','Beat THE CHAMP'],['tour','BRACKET BUSTER','Win a tournament'],['online','WORLDWIDE','Win an online match']];
 function achGet(k){if(SMOKE||G.watch||G.local&&k!=='tut')return;REC.ach=REC.ach||{};if(REC.ach[k])return;REC.ach[k]=Date.now();saveRec();const a=ACH.find(x=>x[0]===k);if(!a)return;
   const el=document.createElement('div');el.className='achT';el.innerHTML=`<span>${ICO('trophy')}</span><div><small>ACHIEVEMENT UNLOCKED</small><b>${a[1]}</b><i>${a[2]}</i></div>`;document.body.appendChild(el);
   SFX.ui&&SFX.ui();setTimeout(()=>el.classList.add('out'),3200);setTimeout(()=>el.remove(),3800)}
@@ -4031,7 +4035,7 @@ function fighterInfo(f){
 }
 function renderSelect(){
   const on=SEL.mode==='online';
-  $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':'CHOOSE YOUR FIGHTER';
+  $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
   $('grid').innerHTML=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
     return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
   $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);
@@ -4068,7 +4072,7 @@ function selectStep(dt){
 }
 function setupUI(){
   document.querySelectorAll('#titleOv [data-go]').forEach(b=>b.addEventListener('click',()=>{auInit();if(AU.ctx&&AU.ctx.state!=='running')AU.ctx.resume();SFX.ui();const g=b.dataset.go;
-    if(g==='surv')openSelect('surv');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
+    if(g==='surv')openSelect('surv');else if(g==='tour')openSelect('tour');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
   $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
   $('cBtn').onclick=()=>{SET.cam=SET.cam==='tv'?'back':'tv';saveSet();$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND'};
   $('helpBack').onclick=()=>hideOv('helpOv');
@@ -4100,6 +4104,7 @@ function setupUI(){
   $('selWatch').onclick=()=>{SFX.ui();DAILY.on=false;let o=SEL.opp;if(o==='random'||!FBY[o]){const others=FIGHTERS.filter(f=>f.id!==SEL.f);o=pick(others).id}startSolo(SEL.f,o,SEL.diff,true)};
   $('selGo').onclick=()=>{SFX.ui();DAILY.on=false;
     if(SEL.mode==='quick'){let o=SEL.opp;if(o==='random'){const others=FIGHTERS.filter(f=>f.id!==SEL.f);o=pick(others).id}startSolo(SEL.f,o,SEL.diff)}
+    else if(SEL.mode==='tour'){DAILY.on=false;tourStart(SEL.f)}
     else if(SEL.mode==='surv'){DAILY.on=false;G.surv={f:SEL.f,n:0,hp:null};survNext()}
     else if(SEL.mode==='ladder'){const opps=FIGHTERS.map(f=>f.id).filter(id=>id!==SEL.f).sort(()=>Math.random()-.5).slice(0,LAD_DIFF.length);G.ladder={f:SEL.f,opps,i:0};showLadder()}
     else{NET.myReady=!NET.myReady;netSend({t:'pick',f:SEL.f,a:SEL.alt,ready:NET.myReady});renderSelect();checkStart()}};
@@ -4120,7 +4125,7 @@ function saveName(){NAME=$('nameIn').value.trim().toUpperCase().slice(0,12);try{
 // ── fights ──
 function rpStop(){if(RP.play){RP.play.done=null;rpEnd()}}
 function renderToggles(){document.querySelectorAll('.tgl').forEach(b=>{const on=!!SET[b.dataset.s]&&!(SET.mute&&b.dataset.s!=='flash'&&b.dataset.s!=='walk');b.textContent=on?'ON':'OFF';b.classList.toggle('off',!on)})}
-function startSolo(myF,oppF,diff,watch){rpStop();G.surv=null;G.local=diff==='p2'&&!watch;if(G.local)diff='contender';PAD2.press.length=0;for(const k of ['big','dmg','ult'])MUT[k]=!!(SEL.mut[k]&&diff!=='bag'&&!SMOKE);G.watch=!!watch;document.body.classList.toggle('watching',G.watch);
+function startSolo(myF,oppF,diff,watch){rpStop();G.surv=null;G.tour=null;G.local=diff==='p2'&&!watch;if(G.local)diff='contender';PAD2.press.length=0;for(const k of ['big','dmg','ult'])MUT[k]=!!(SEL.mut[k]&&diff!=='bag'&&!SMOKE);G.watch=!!watch;document.body.classList.toggle('watching',G.watch);
   G.online=false;G.attract=false;G.ME=0;G.bag=diff==='bag';G.paused=false;
   const oa=G.ladder?(G.ladder.i===G.ladder.opps.length-1?3:Math.floor(Math.random()*3)):myF===oppF?(SEL.alt+1)%3:0;setupMatch([myF,oppF],[FBY[myF].name,FBY[oppF].name],[SEL.alt,oa]);G.bots=[null,new Bot(1,diff)];G.diff=diff;
   applyVenue(diff==='bag'?'gym':pickVenue(SEL.venue));G.mode='fight';hideAllOv();showHUD(true);REF.b.root.visible=true;setPhase(G.bag||SMOKE||!SET.walk?'intro':'walk');
@@ -4237,6 +4242,7 @@ function showEnd(r){
     $('endBody').insertAdjacentHTML('beforeend',`<div class="xpb"><div class="xpl"><b>LEVEL ${af.l}</b> ${af.title}<span>+${gain} XP</span></div><div class="xpbar"><i style="width:${(before.l<af.l?0:before.x/before.need*100).toFixed(1)}%"></i></div></div>`);
     setTimeout(()=>{const i=document.querySelector('.xpbar i');if(i)i.style.width=(af.x/af.need*100).toFixed(1)+'%'},120);
     if(af.l>before.l)setTimeout(()=>{const el=document.createElement('div');el.className='achT';el.innerHTML=`<span>${ICO('trophy')}</span><div><small>LEVEL UP</small><b>LEVEL ${af.l}</b><i>${af.title}</i></div>`;document.body.appendChild(el);setTimeout(()=>el.classList.add('out'),3000);setTimeout(()=>el.remove(),3600)},700)}
+  if(G.tour&&!G.online&&!G.tour.done){G.tour.done=1;tourAdvance(r.w===G.ME)}
   if(G.surv&&!G.online){survEnd(r);const S=G.surv,P=recOf(S.f);$('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">SURVIVAL <b>${S.n}</b> ${S.over?(S.best&&S.n?'<i>NEW BEST!</i>':'· BEST '+(P.surv||0)):'WINS SO FAR'}</div>`)}
   if(DAILY.on&&!G.online){const sc=dailyScore(r),c=DAILY.c;let best=REC.daily&&REC.daily.key===c.key?REC.daily.best:0;const nb=sc>best;if(sc>0)achGet('daily');if(nb){REC.daily={key:c.key,best:sc};saveRec();best=sc}
     $('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">DAILY SCORE <b>${sc.toLocaleString()}</b>${nb&&sc?' <i>NEW BEST!</i>':` · BEST ${best.toLocaleString()}`}</div>`)}
@@ -4255,6 +4261,7 @@ function renderEndButtons(){
   if(G.online){h=`<button class="primary" id="eRm">${NET.rm?'WAITING FOR RIVAL…':'REMATCH'}${NET.peerRm&&!NET.rm?' · THEY\'RE IN':''}</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">LEAVE</button>`}
   else if(G.ladder&&G.ladder.bossFight){h=r.w===G.ME?`<button class="primary" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eBoss">TRY AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`}
   else if(G.ladder){const done=G.ladder.i>=G.ladder.opps.length;h=r.w===G.ME?`<button class="primary" id="eNext">${done?'CLAIM THE BELT':'NEXT FIGHT'}</button>`:`<button class="primary" id="eRetry">TRY AGAIN</button>`;h+=`<button class="ghost" id="eMenu">MAIN MENU</button>`}
+  else if(G.tour)h=`<button class="primary" id="eTour">${G.tour.won?'LIFT THE TROPHY':G.tour.out?'SEE THE BRACKET':'NEXT ROUND'}</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   else if(G.surv)h=G.surv.over?`<button class="primary" id="eSurv">GO AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eSurvN">NEXT OPPONENT</button><button class="ghost" id="eMenu">CASH OUT</button>`;
   else h=`<button class="primary" id="eRetry">REMATCH</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   el.innerHTML=h;
@@ -4263,7 +4270,7 @@ function renderEndButtons(){
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
@@ -4284,6 +4291,28 @@ function showDaily(){const c=dailyToday(),F=FBY[c.me],O=FBY[c.op],best=REC.daily
 function dailyStart(c){DAILY.on=true;DAILY.c=c;const keep={mut:SEL.mut,venue:SEL.venue,alt:SEL.alt};SEL.mut=c.mut;SEL.venue=c.venue==='roof-rain'?'roof':c.venue;SEL.alt=0;
   startSolo(c.me,c.op,c.diff);applyVenue(c.venue);Object.assign(SEL,keep)}
 // ════ SURVIVAL: endless bouts, health carries over (+30%), the CPU sharpens every few wins ════
+// ════ TOURNAMENT: an 8-fighter knockout bracket; you fight yours, the rest are decided between rounds ════
+function tourStart(f){const others=FIGHTERS.map(x=>x.id).filter(id=>id!==f).sort(()=>Math.random()-.5).slice(0,7),seeds=[f,...others];
+  for(let i=seeds.length-1;i>1;i--){const j=1+Math.floor(Math.random()*i);[seeds[i],seeds[j]]=[seeds[j],seeds[i]]}
+  G.tour={f,rounds:[seeds],r:0,out:false,won:false};showTour()}
+function tourOdds(a,b){const s=id=>{const F=FBY[id];return F.hp*F.pow*(F.spd||1)};return s(a)/(s(a)+s(b))}
+function tourPairs(r){const L=G.tour.rounds[r],P=[];for(let i=0;i<L.length;i+=2)P.push([L[i],L[i+1]]);return P}
+function tourMyOpp(){const T=G.tour;for(const [a,b] of tourPairs(T.r))if(a===T.f)return b;else if(b===T.f)return a;return null}
+function tourAdvance(won){const T=G.tour,next=[];for(const [a,b] of tourPairs(T.r)){if(a===T.f||b===T.f)next.push(won?T.f:(a===T.f?b:a));else next.push(Math.random()<tourOdds(a,b)?a:b)}
+  T.rounds.push(next);T.r++;if(!won)T.out=true;if(won&&next.length===1){T.won=true;if(!SMOKE){REC.tours=(REC.tours||0)+1;saveRec();achGet('tour')}}}
+const TOUR_DIFF=['contender','contender','champion'],TOUR_NAME=['QUARTER-FINAL','SEMI-FINAL','FINAL'];
+function showTour(){const T=G.tour;G.mode='select';G.phase='none';clearCombat();hideAllOv();showHUD(false);REF.b.root.visible=false;
+  const col=r=>T.rounds[r]?T.rounds[r].map(id=>`<div class="bk ${id===T.f?'me':''} ${T.rounds[r+1]&&!T.rounds[r+1].includes(id)?'lost':''}">${portrait(id,30)}<span>${FBY[id].short||FBY[id].name}</span></div>`).join(''):'';
+  const opp=!T.out&&!T.won?tourMyOpp():null;
+  $('tourBody').innerHTML=`<div class="res" style="font-size:44px">${T.won?'<span class="ttl">'+ICO('trophy')+'</span> TOURNAMENT CHAMPION':T.out?'KNOCKED OUT':'TOURNAMENT'}</div>
+    <div class="how">${T.won?FBY[T.f].name+' WINS IT ALL':T.out?'OUT IN THE '+TOUR_NAME[T.r-1]:TOUR_NAME[T.r]+' · '+DIFF[TOUR_DIFF[T.r]].name}</div>
+    <div class="brk">${[0,1,2,3].map(r=>`<div class="bc"><small>${['QUARTERS','SEMIS','FINAL','CHAMPION'][r]}</small>${col(r)}</div>`).join('')}</div>
+    ${opp?`<p class="dimt" style="text-align:center">Next up: <b style="color:${FBY[opp].col}">${FBY[opp].name}</b> — “${FBY[opp].nick}”</p>`:''}
+    <div class="menu">${opp?'<button class="primary" id="tourGo">FIGHT</button>':'<button class="primary" id="tourAgain">NEW TOURNAMENT</button>'}<button class="ghost" id="tourMenu">MAIN MENU</button></div>`;
+  showOv('tourOv');if(T.won)setTimeout(()=>{confetti();SFX.fanfare(true)},300);
+  if(opp)$('tourGo').onclick=()=>{const t=G.tour;startSolo(t.f,opp,TOUR_DIFF[t.r]);G.tour=t};
+  else $('tourAgain').onclick=()=>tourStart(T.f);
+  $('tourMenu').onclick=()=>{G.tour=null;showTitle()}}
 function survDiff(n){return n<2?'rookie':n<5?'contender':'champion'}
 function survNext(){const S=G.surv;let o;do o=pick(FIGHTERS).id;while(o===S.f||o===S.last);S.last=o;
   startSolo(S.f,o,survDiff(S.n));G.surv=S;if(S.hp!=null){const me=G.B[0];me.hp=Math.min(me.hpMax,S.hp+me.hpMax*.3)}
@@ -4612,7 +4641,7 @@ function init(){
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG)window.__HM={crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();
   // build the other venues while the player is on the title screen, so picking one never hitches
@@ -4735,6 +4764,8 @@ function runSmoke(){
     abil('lucha','frost','e');ok(G.B[0].meter>=25,'Showboat fills 25 meter');abil('lucha','frost','r',1.1);sim(1.8);ok(G.B[1].hp<100-15,'Tornado spins through ('+G.B[1].hp.toFixed(1)+')');
     {solo('blaze','champ');ok(G.B[1].f.id==='champ'&&G.B[1].hpMax===180&&G.B[1].worldScale>1.3,'THE CHAMP builds: 180 hp and towering');ok(!FIGHTERS.includes(BOSS),'…and stays out of the regular roster');
      abil('champ','frost','q',1.2);sim(.8);ok(G.B[1].hp<100,'his Ground Pound lands ('+G.B[1].hp.toFixed(1)+')')}
+    {tourStart('blaze');ok(G.tour.rounds[0].length===8&&G.tour.rounds[0].includes('blaze')&&tourMyOpp(),'TOURNAMENT: an 8-fighter bracket with you in it');tourAdvance(true);ok(G.tour.rounds[1].length===4&&G.tour.rounds[1].includes('blaze'),'…win and you reach the semis');
+     tourAdvance(true);tourAdvance(true);ok(G.tour.won&&G.tour.rounds[3][0]==='blaze','…three wins lifts the trophy');hideOv('tourOv');G.tour=null}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
