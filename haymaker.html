@@ -282,7 +282,7 @@ input.txt:focus{border-color:var(--gold)}
 #selOv{justify-content:space-between;flex-direction:row;align-items:stretch;gap:16px;background:linear-gradient(90deg,rgba(0,0,0,.85),rgba(0,0,0,0) 38%,rgba(0,0,0,0) 62%,rgba(0,0,0,.85))}
 .selL,.selR{width:min(380px,40vw);display:flex;flex-direction:column;justify-content:center;gap:10px}
 .selH{font:400 34px Anton;letter-spacing:.04em}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .card{position:relative;border-radius:12px;padding:10px 8px 8px;background:linear-gradient(160deg,#1e1e26,#0e0e13);border:2px solid rgba(255,255,255,.1);text-align:center;transition:transform .12s,border-color .12s}
 .card:hover{transform:translateY(-3px)}
 .card.sel{border-color:var(--c);box-shadow:0 0 18px var(--c),inset 0 0 18px rgba(255,255,255,.06)}
@@ -632,7 +632,7 @@ const FIGHTERS=[
   q:{name:'Maul',cd:8,desc:'Two big swiping paws, left then right. Blockable.'},
   e:{name:'Hibernate',cd:14,desc:'For 4 seconds, holding your guard heals you.'},
   r:{name:'Roar',desc:'A roar that shakes the ring: anyone close is too scared to attack for 2 seconds.'}},
- {id:'lucha',name:'EL TORNADO',nick:'THE PEOPLE\'S CHAMPION',col:'#1fd6a4',
+ {id:'lucha',name:'EL TORNADO',short:'TORNADO',nick:'THE PEOPLE\'S CHAMPION',col:'#1fd6a4',
   look:{skin:0xc68a5a,shorts:0x1fd6a4,trim:0xffd23a,glove:0xe8246a,hair:'lucha',hairCol:0x1fd6a4,glow:0x1fd6a4},
   taunt:'flex',alts:[{},{shorts:0xe8246a,trim:0xffffff,glove:0x1a1a1a,hairCol:0xe8246a,glow:0xe8246a},{shorts:0x1a1a1a,trim:0xc0c0c8,glove:0xc0c0c8,hairCol:0x1a1a1a,glow:0xc0c0c8}],
   size:1,hp:104,pow:1.09,spd:1.06,pspd:1.02,reach:1,stats:[3,4,3],
@@ -4012,7 +4012,7 @@ function renderSelect(){
   const on=SEL.mode==='online';
   $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':'CHOOSE YOUR FIGHTER';
   $('grid').innerHTML=FIGHTERS.map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
-    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.name}</div>${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
+    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
   $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);
   {const f=FBY[SEL.f],hx=c=>'#'+new THREE.Color(c).getHexString();if(!altOK(f.id,SEL.alt))SEL.alt=0;$('altSeg').innerHTML=[0,1,2,3].map(a=>{const L=Object.assign({},f.look,f.alts[a]),ok2=altOK(f.id,a);return `<button data-a="${a}" class="${SEL.alt===a?'on':''} ${a===3?'leg':''} ${ok2?'':'lock'}" style="--a:${hx(L.shorts)};--b:${hx(L.glove)}" title="${a===3?(ok2?'LEGEND colours':'LEGEND — win the arcade ladder with '+f.name+' to unlock'):'Colour '+(a+1)}">${ok2?'':'🔒'}</button>`}).join('')}
   $('oppBox').classList.toggle('hide',SEL.mode!=='quick');
