@@ -1242,7 +1242,24 @@ function buildCorners(){
     st.scale.setScalar(.001);st.visible=false;ARENA.corner.push({st,k:0});
     men.push([sx*4.12,.62,sx*4.12,Math.atan2(-sx,-sx),0xf2f2f2]);men.push([sx*4.12+sx*.15,.62,sx*3.55,Math.atan2(-sx,-sx)+.5*sx,col])}
   ARENA.cornerMen=staffMesh(men,'stand');ARENA.cornerMen.visible=false}
-function cornerTick(dt){if(!ARENA.corner)return;const on=G.mode==='fight'&&G.phase==='rest'&&!RP.play;
+// the round drone: a little hover-bot crosses the ring carrying the round board
+const DRONE={g:null,t:-1,tex:null};
+function buildDrone(){if(DRONE.g)return;const g=new THREE.Group(),dark=new THREE.MeshStandardMaterial({color:0x1c1c24,metalness:.6,roughness:.35}),led=new THREE.MeshBasicMaterial({color:0xff3b3f});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(.5,.12,.5),dark);g.add(body);DRONE.props=[];
+  for(const [x,z] of [[-.34,-.34],[.34,-.34],[-.34,.34],[.34,.34]]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.04,.03,.04),dark);arm.position.set(x,.04,z);g.add(arm);
+    const pr=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.01,16),new THREE.MeshBasicMaterial({color:0xcfd6e0,transparent:true,opacity:.35,depthWrite:false}));pr.position.set(x,.08,z);g.add(pr);DRONE.props.push(pr)}
+  DRONE.led=new THREE.Mesh(new THREE.SphereGeometry(.03,8,6),led);DRONE.led.position.set(0,-.05,.26);g.add(DRONE.led);
+  DRONE.tex=canvasTex(512,256,()=>{});const board=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.65),new THREE.MeshBasicMaterial({map:DRONE.tex,side:THREE.DoubleSide,toneMapped:false}));board.position.y=-.55;g.add(board);
+  for(const sx of [-1,1]){const c=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.25,4),dark);c.position.set(sx*.5,-.14,0);g.add(c)}
+  g.visible=false;scene.add(g);DRONE.g=g}
+function droneShow(r){if(G.attract||SMOKE)return;buildDrone();const fin=r>=ROUNDS,col=fin?'#ff3b3f':'#ffc83a';
+  DRONE.tex.userData.draw=(x,w,h)=>{x.fillStyle='#07070c';x.fillRect(0,0,w,h);x.strokeStyle=col;x.lineWidth=10;x.strokeRect(8,8,w-16,h-16);x.textAlign='center';x.textBaseline='middle';
+    x.shadowColor=col;x.shadowBlur=24;x.fillStyle=col;x.font=`${fin?h*.36:h*.5}px ${FONT}`;x.fillText(fin?'FINAL ROUND':'ROUND '+r,w/2,h*.54)};redrawTex(DRONE.tex);DRONE.t=0;DRONE.g.visible=true;const a=camera.position,l=Math.hypot(a.x,a.z)||1;DRONE.dir=[-a.z/l,a.x/l];DRONE.face=[a.x,a.z]}
+function droneTick(dt){if(DRONE.t<0||!DRONE.g)return;DRONE.t+=dt;const T=3.2,q=DRONE.t/T;if(q>=1||G.mode!=='fight'){DRONE.g.visible=false;DRONE.t=-1;return}
+  const u=(q-.5)*2,x=DRONE.dir[0]*u*7,z=DRONE.dir[1]*u*7,ease2=1-Math.abs(u)**3;
+  DRONE.g.position.set(x,3.1+Math.sin(DRONE.t*5)*.06,z);DRONE.g.lookAt(DRONE.face[0],3.1,DRONE.face[1]);DRONE.g.rotation.z=-u*.25*(1-ease2*.6);
+  for(const p of DRONE.props)p.rotation.y+=dt*60;DRONE.led.visible=Math.sin(DRONE.t*12)>0}
+function cornerTick(dt){droneTick(dt);if(!ARENA.corner)return;const on=G.mode==='fight'&&G.phase==='rest'&&!RP.play;
   for(const c of ARENA.corner){c.k=lerp(c.k,on?1:0,damp(on?7:12,dt));c.st.visible=c.k>.01;c.st.scale.setScalar(Math.max(.001,c.k))}
   ARENA.cornerMen.visible=on&&ARENA.corner[0].k>.5}
 // a photographer's flash on a big shot
@@ -3055,7 +3072,7 @@ function setPhase(ph,x={}){
       b.sta=100;b.act=null;b.combo=0;b.counterT=0;b.cd.q=b.cd.e=0;b.dash=null;b.kx=b.kz=0;
       Object.assign(b.st,{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0,overclock:0,fear:0,hib:0,cape:0,phase:0,iron:0,colossus:0,firefist:0,icefist:0,shield:0,shieldT:0,drain:0});
       b.x=b.home[0];b.z=b.home[1];b.yaw=Math.atan2(-b.x,-b.z)}
-    hideOv('cardOv');if(!G.attract){announce(G.title&&G.rnd===1?'TITLE FIGHT':'ROUND '+G.rnd,'gold',1.4);say(G.rnd===ROUNDS?'Final round!':'Round '+['','one','two','three','four','five'][G.rnd])}
+    hideOv('cardOv');if(!G.attract){if(G.rnd>1)droneShow(G.rnd);announce(G.title&&G.rnd===1?'TITLE FIGHT':'ROUND '+G.rnd,'gold',1.4);say(G.rnd===ROUNDS?'Final round!':'Round '+['','one','two','three','four','five'][G.rnd])}
   }
   if(ph==='fight'){clearTimeout(sub.t);$('sub').style.opacity=0}
   if(ph==='fight'&&!G.attract&&!G.watch&&!G.bag&&G.rnd===1&&!SMOKE){let seen=0;try{seen=+localStorage.getItem('haymaker.tip')||0}catch(e){}
@@ -4654,7 +4671,7 @@ function init(){
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();
   // build the other venues while the player is on the title screen, so picking one never hitches
