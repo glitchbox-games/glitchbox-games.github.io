@@ -3074,7 +3074,7 @@ function startPunch(b,kind,body,c=0){
 }
 function tauntDone(b){if(!owned(b))return;b.meter=Math.min(100,b.meter+15);b.sta=Math.min(100,b.sta+10);if(!G.attract){floatAt('+15 METER',b.headW,'heal',-20);SFX.ooh(.7)}}
 function launch(spec){
-  const v=G.B[1-spec.a];
+  const v=G.B[1-spec.a],at=G.B[spec.a];if(!spec.anim&&at&&owned(at)&&at.stats)at.stats.thrown++;   // ability blows count as thrown, so accuracy stays ≤100%
   if(spec.k!=='proj'&&slowK(spec.a)<1)spec.delay/=slowK(spec.a); // a Sandevistan'd attacker's blows land on their own slowed clock
   if(owned(v)&&spec.k!=='proj')G.pending.push({spec,at:G.time+spec.delay});
   if(G.online)netSend({t:'atk',s:spec});
@@ -4665,6 +4665,33 @@ function shareText(){const r=G.result||{},me=G.B[G.ME],o=G.B[1-G.ME],S=me.stats,
   if(DAILY.on&&DAILY.c){const b=REC.daily&&REC.daily.key===DAILY.c.key?REC.daily.best:0;lines.push('DAILY CHALLENGE '+(b||0).toLocaleString())}
   if(G.surv&&G.surv.over)lines.push('SURVIVAL STREAK '+G.surv.n);
   lines.push(/^https?:/.test(location.href)?location.origin+location.pathname:'https://glitchbox-games.github.io/haymaker.html');return lines.join('\n')}
+// FIGHT POSTER: a 1200×675 image of the result — both fighters, the verdict, the numbers, the momentum line
+function posterCanvas(){const W=1200,H=675,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d'),r=G.result||{},[A,B]=G.B,w=r.w,MB='"Rubik",Arial,sans-serif';
+  const ga=x.createLinearGradient(0,0,W*.6,H);ga.addColorStop(0,A.f.col);ga.addColorStop(1,'#0a0a10');x.fillStyle=ga;x.fillRect(0,0,W,H);
+  x.save();x.beginPath();x.moveTo(W*.58,0);x.lineTo(W,0);x.lineTo(W,H);x.lineTo(W*.42,H);x.closePath();x.clip();const gb=x.createLinearGradient(W,0,W*.4,H);gb.addColorStop(0,B.f.col);gb.addColorStop(1,'#0a0a10');x.fillStyle=gb;x.fillRect(0,0,W,H);x.restore();
+  x.fillStyle='rgba(0,0,0,.35)';x.fillRect(0,0,W,H);x.strokeStyle='rgba(255,255,255,.06)';x.lineWidth=2;for(let i=-H;i<W;i+=26){x.beginPath();x.moveTo(i,H);x.lineTo(i+H*.35,0);x.stroke()}
+  const port=(b,cx,flip)=>{const u=PORT[b.f.id];if(!u||!port.img[b.f.id])return;const im=port.img[b.f.id],s=430;x.save();x.translate(cx,70);if(flip){x.scale(-1,1);x.translate(-s,0)}else x.translate(0,0);
+    const t=document.createElement('canvas');t.width=t.height=s;const tx=t.getContext('2d');if(w>=0&&b!==G.B[w])tx.filter='grayscale(.85) brightness(.7)';tx.drawImage(im,0,0,PS,PS,0,0,s,s);tx.filter='none';
+    tx.globalCompositeOperation='destination-in';const gv=tx.createLinearGradient(0,0,0,s);gv.addColorStop(0,'#000');gv.addColorStop(.62,'#000');gv.addColorStop(1,'rgba(0,0,0,0)');tx.fillStyle=gv;tx.fillRect(0,0,s,s);
+    const gh=tx.createLinearGradient(0,0,s,0);gh.addColorStop(0,'rgba(0,0,0,0)');gh.addColorStop(.12,'#000');gh.addColorStop(.88,'#000');gh.addColorStop(1,'rgba(0,0,0,0)');tx.fillStyle=gh;tx.fillRect(0,0,s,s);x.drawImage(t,0,0);x.restore()};port.img=posterCanvas.img||{};
+  port(A,40,false);port(B,W-470,true);
+  const big=(t,X,Y,sz,col,al='center')=>{x.font=`${sz}px ${FONT}`;x.textAlign=al;x.textBaseline='alphabetic';x.lineWidth=sz*.12;x.strokeStyle='#000';x.lineJoin='round';x.strokeText(t,X,Y);x.fillStyle=col;x.fillText(t,X,Y)};
+  const small=(t,X,Y,sz,col,al='center')=>{x.font=`900 ${sz}px ${MB}`;x.textAlign=al;x.fillStyle=col;x.fillText(t,X,Y)};
+  small('HAYMAKER · '+({arena:'THE ARENA',roof:'THE ROOFTOP',pit:'THE PIT',gym:'THE GYM',beach:'THE BEACH'}[ARENA.venue]||'THE ARENA'),W/2,46,20,'#ffc83a');
+  const ko=/KO/.test(r.how||'');big(w<0?'DRAW':(G.B[w].name||G.B[w].f.name).toUpperCase()+' WINS',W/2,H*.62,92,w<0?'#fff':G.B[w].f.col);
+  small(w<0?'THE JUDGES COULDN\'T SPLIT THEM':ko?(r.how==='TKO'?'TECHNICAL KNOCKOUT':'KNOCKOUT')+' · ROUND '+(r.rnd||G.rnd):r.how==='FORFEIT'?'BY FORFEIT':'ON POINTS',W/2,H*.62+42,26,'#fff');
+  big((A.name||A.f.name).toUpperCase(),255,H*.86,46,'#fff');big((B.name||B.f.name).toUpperCase(),W-255,H*.86,46,'#fff');
+  const st=b=>`${b.stats.landed}/${b.stats.thrown} LANDED · ${Math.round(b.stats.dmg||0)} DMG`;small(st(A),255,H*.86+30,16,'rgba(255,255,255,.75)');small(st(B),W-255,H*.86+30,16,'rgba(255,255,255,.75)');
+  big('VS',W/2,H*.3,70,'#ffc83a');
+  const F=G.flow||[];if(F.length>2){const gx=W/2-170,gy=H*.8,gw=340,gh=56;x.fillStyle='rgba(0,0,0,.45)';x.fillRect(gx-10,gy-10,gw+20,gh+20);
+    for(const [i,col] of [[0,A.f.col],[1,B.f.col]]){x.strokeStyle=col;x.lineWidth=3;x.beginPath();F.forEach((p,k)=>{const X=gx+k/(F.length-1)*gw,Y=gy+gh-clamp(p[i],0,1)*gh;k?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke()}
+    small('HOW THE FIGHT WENT',W/2,gy-16,12,'rgba(255,255,255,.6)')}
+  small(new Date().toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}).toUpperCase()+' · GLITCHBOX',W/2,H-18,14,'rgba(255,255,255,.55)');
+  return c}
+async function posterLoad(){posterCanvas.img=posterCanvas.img||{};await Promise.all(G.B.map(b=>new Promise(res=>{const u=PORT[b.f.id];if(!u||posterCanvas.img[b.f.id])return res();const im=new Image();im.onload=()=>{posterCanvas.img[b.f.id]=im;res()};im.onerror=res;im.src=u})))}
+async function savePoster(){try{await posterLoad();const c=posterCanvas(),blob=await new Promise(r=>c.toBlob(r,'image/png')),name='haymaker-'+G.B[0].f.id+'-vs-'+G.B[1].f.id+'.png';
+    const file=new File([blob],name,{type:'image/png'});if(TOUCH&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:shareText()});return}
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);sub('POSTER SAVED',1.8)}catch(e){sub('COULDN\'T MAKE THE POSTER',1.6)}}
 async function shareResult(){const t=shareText();try{if(navigator.share&&TOUCH){await navigator.share({text:t});return}await navigator.clipboard.writeText(t);sub('RESULT COPIED — PASTE IT ANYWHERE',2.2)}catch(e){sub('COULDN\'T COPY — TRY AGAIN',1.6)}}
 function renderEndButtons(){
   const el=$('endBtns');if(!el||!$('endOv').classList.contains('on'))return;const r=G.result||{};
@@ -4677,6 +4704,7 @@ function renderEndButtons(){
   else if(G.surv)h=G.surv.over?`<button class="primary" id="eSurv">GO AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eSurvN">NEXT OPPONENT</button><button class="ghost" id="eMenu">CASH OUT</button>`;
   else h=`<button class="primary" id="eRetry">REMATCH</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   if(!G.attract&&HL.clips.length)h+=`<button class="ghost" id="eHl">▶ HIGHLIGHTS</button>`;
+  if(!G.attract)h+=`<button class="ghost" id="ePoster">SAVE POSTER</button>`;
   if(!G.attract)h+=`<button class="ghost" id="eShare">${navigator.share&&TOUCH?'SHARE':'COPY RESULT'}</button>`;
   el.innerHTML=h;
   const on=(id,f)=>{const b=$(id);if(b)b.onclick=()=>{SFX.ui();f()}};
@@ -4684,7 +4712,7 @@ function renderEndButtons(){
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eShare',shareResult);on('eHl',()=>{achGet('reel');hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eShare',shareResult);on('ePoster',savePoster);on('eHl',()=>{achGet('reel');hideOv('endOv');if(!hlPlay(()=>{if(G.phase==='end')showOv('endOv')}))showOv('endOv')});on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
@@ -5110,7 +5138,7 @@ function init(){
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,get SEL(){return SEL},renderSelect,THREE,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG){window.__DR=()=>({t:+DRONE.t.toFixed(2),vis:DRONE.g&&DRONE.g.visible,x:DRONE.g?+DRONE.g.position.x.toFixed(2):0})}if(DEBUG)window.__HM={tourAdvance,showTour,crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,get SEL(){return SEL},renderSelect,THREE,posterCanvas,posterLoad,showLocker,finisher,cosGet,get REC(){return REC},showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();document.body.classList.remove('booting');
   // build the other venues while the player is on the title screen, so picking one never hitches
@@ -5254,7 +5282,7 @@ function runSmoke(){
       REC.xp=0;showLocker();ok($('lockBody').querySelectorAll('.lk.lock').length===COS.trail.length+COS.fin.length-2,'…with the locked ones greyed out');hideOv('lockOv');REC.xp=x0;REC.cos=c0}
     {const x0=REC.xp;REC.xp=0;ok(xpInfo().l===1&&xpInfo().title==='ROOKIE','a new player is a level 1 ROOKIE');REC.xp=xpNeed(1)+xpNeed(2)+5;ok(xpInfo().l===3&&xpInfo().x===5,'XP carries across levels');REC.xp=x0}
     abil('lucha','frost','q',3);G.forced[1]={...EMPTY,block:true};sim(.8);G.forced[1]=EMPTY;ok(G.B[1].hp<100&&G.B[1].st.stun>0,'Plancha flies in and breaks a guard ('+G.B[1].hp.toFixed(1)+')');
-    abil('lucha','frost','e');ok(G.B[0].meter>=25,'Showboat fills 25 meter');abil('lucha','frost','r',1.1);sim(1.8);ok(G.B[1].hp<100-15,'Tornado spins through ('+G.B[1].hp.toFixed(1)+')');
+    abil('lucha','frost','e');ok(G.B[0].meter>=25,'Showboat fills 25 meter');abil('lucha','frost','r',1.1);sim(1.8);ok(G.B[0].stats.landed>0&&G.B[0].stats.landed<=G.B[0].stats.thrown,'ability blows count as thrown, so accuracy can\'t pass 100% ('+G.B[0].stats.landed+'/'+G.B[0].stats.thrown+')');ok(G.B[1].hp<100-15,'Tornado spins through ('+G.B[1].hp.toFixed(1)+')');
     {solo('blaze','champ');ok(G.B[1].f.id==='champ'&&G.B[1].hpMax===180&&G.B[1].worldScale>1.3,'THE CHAMP builds: 180 hp and towering');ok(!FIGHTERS.includes(BOSS),'…and stays out of the regular roster');
      abil('champ','frost','q',1.2);sim(.8);ok(G.B[1].hp<100,'his Ground Pound lands ('+G.B[1].hp.toFixed(1)+')')}
     {tourStart('blaze');ok(G.tour.rounds[0].length===8&&G.tour.rounds[0].includes('blaze')&&tourMyOpp(),'TOURNAMENT: an 8-fighter bracket with you in it');tourAdvance(true);ok(G.tour.rounds[1].length===4&&G.tour.rounds[1].includes('blaze'),'…win and you reach the semis');
