@@ -1571,11 +1571,21 @@ function drawJumbo(x,w,h){
   x.fillStyle='rgba(0,0,0,.3)';for(let y=0;y<h;y+=3)x.fillRect(0,y,w,1);
 }
 const JFACE={};function jumboFace(id){if(!PORT[id])return null;let im=JFACE[id];if(!im||im._src!==PORT[id]){im=new Image();im._src=PORT[id];im.onload=()=>{ARENA.jumboKey=''};im.src=PORT[id];JFACE[id]=im}return im}
+// the jumbotron's live feed: a second TV camera renders a close-up into a small target every other frame
+const LIVE={rt:null,cam:null,f:0,t:0,on:false};
+function liveFeed(){const A=ARENA;if(!A.jscr)return;const want=SET.q==='high'&&G.mode==='fight'&&!G.attract&&A.venue==='arena'&&!RP.play&&!PHOTO.on&&(G.phase==='fight'||G.phase==='kd'||G.phase==='end');
+  LIVE.t+=1/60;const scoreboard=(LIVE.t%11)>8;   // every 11s, three seconds of the scoreboard
+  const use=want&&!scoreboard;if(use!==LIVE.on){LIVE.on=use;A.jscr.emissiveMap=use?(LIVE.rt||(LIVE.rt=new THREE.WebGLRenderTarget(384,192))).texture:A.jumbo;A.jscr.emissiveIntensity=use?1.05:1.1;A.jscr.needsUpdate=true}
+  if(!use||(LIVE.f++&1))return;
+  const cam=LIVE.cam||(LIVE.cam=new THREE.PerspectiveCamera(30,2,.1,40));const[a,b]=G.B,mx=(a.x+b.x)/2,mz=(a.z+b.z)/2,t=performance.now()/1000*.15;
+  cam.position.set(mx+Math.cos(t)*3.2,1.5,mz+Math.sin(t)*3.2);cam.lookAt(mx,1.25,mz);
+  const hide=[A.jbox,A.fans,A.fanLine,PA&&PA.pts,PN&&PN.pts].filter(Boolean),vis=hide.map(o=>o.visible);hide.forEach(o=>o.visible=false);
+  const prev=renderer.getRenderTarget();renderer.setRenderTarget(LIVE.rt);renderer.render(scene,cam);renderer.setRenderTarget(prev);hide.forEach((o,i)=>o.visible=vis[i])}
 function buildJumbo(){
   const tex=canvasTex(512,256,drawJumbo,true);ARENA.jumbo=tex;
   const scr=new THREE.MeshStandardMaterial({color:0x000000,emissive:0xffffff,emissiveMap:tex,emissiveIntensity:1.1});
   const dark=new THREE.MeshStandardMaterial({color:0x15151a,metalness:.6,roughness:.5});
-  const box=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.8,3.6),[scr,scr,dark,dark,scr,scr]);box.position.y=9.6;scene.add(box);
+  const box=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.8,3.6),[scr,scr,dark,dark,scr,scr]);box.position.y=9.6;scene.add(box);ARENA.jbox=box;ARENA.jscr=scr;
   const rim=new THREE.Mesh(new THREE.BoxGeometry(3.8,.12,3.8),dark);rim.position.y=10.55;scene.add(rim);
   for(const sx of [-1,1])for(const sz of [-1,1]){const c=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,6),dark);c.position.set(sx*1.6,13.5,sz*1.6);scene.add(c)}
 }
@@ -4752,6 +4762,7 @@ function frame(now){
   if(sdt>0){const n=Math.ceil(sdt/(1/60));for(let i=0;i<n;i++)step(sdt/n)}
   visuals(rdt,adt);
   if(renderer&&!NORENDER){renderer.getDrawingBufferSize(OUTLINE_U.uRes.value);OUTLINE_U.uW.value=Math.max(2.2,OUTLINE_U.uRes.value.y/900*6.5);const px=renderer.getPixelRatio()*innerHeight*.5/Math.tan(THREE.MathUtils.degToRad(camera.fov/2));PA.mat.uniforms.uPx.value=px;PN.mat.uniforms.uPx.value=px;ARENA.flashU.uPx.value=px*.35;
+    liveFeed();
     if(composer)composer.render();else renderer.render(scene,camera);
     blackWatch(rdt)}
 }
