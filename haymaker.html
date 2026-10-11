@@ -88,6 +88,10 @@ body.watching #keys::after{content:'EXHIBITION · PRESS A PUNCH KEY TO TAKE OVER
 body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{background:#ffffff!important}body.hc .bar.hp .tr{background:#6a6a72!important}body.hc .bar.hp.low .fl{background:#ff2a2a!important}body.hc #timer{text-shadow:0 0 0 #000,2px 2px 0 #000;color:#fff}body.hc .bar.met .fl{background:#ffd23a!important}
 .emo{position:fixed;left:0;top:0;z-index:7;pointer-events:none;background:#fff;color:#111;font:400 18px Anton;letter-spacing:.04em;padding:5px 12px;border-radius:12px;border:3px solid var(--c);box-shadow:4px 4px 0 rgba(0,0,0,.5);white-space:nowrap}
 .emo::after{content:'';position:absolute;left:50%;bottom:-10px;margin-left:-7px;border:7px solid transparent;border-top-color:var(--c)}
+#emoT{position:fixed;left:12px;top:92px;z-index:8;display:none}body.touch.online-fight #emoT{display:block}
+#emoBtn{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(10,10,16,.75);font-size:20px}
+#emoMenu{position:absolute;left:52px;top:0;display:none;flex-direction:row;flex-wrap:wrap;gap:6px;width:260px}#emoMenu.on{display:flex}
+#emoMenu button{background:#fff;color:#111;border:0;border-radius:10px;padding:7px 12px;font:400 15px Anton;white-space:nowrap}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -386,6 +390,7 @@ body.touch #abil,body.touch #keys{display:none}
 <div id="vs"><div class="side l"></div><div class="side r"></div><div class="mid">VS</div></div>
 <div id="replayTag"><i></i>REPLAY<small>ANY KEY TO SKIP</small></div>
 <div id="rotate"><span style="display:inline-block;width:40px;height:40px;vertical-align:middle" id="rotIco"></span> TURN YOUR PHONE SIDEWAYS</div>
+<div id="emoT"><button id="emoBtn">💬</button><div id="emoMenu"></div></div>
 <div id="touch" class="hide">
   <div id="stick"><div id="stickBase"></div><div id="stickKnob"></div></div>
   <button class="tb p" data-k="cross" style="right:96px;bottom:150px">CROSS</button>
@@ -3832,7 +3837,7 @@ const EMOS=['GG!','NICE ONE','OOPS','COME ON!'],EMOB=[];let emoT=0;
 function emote(i,k,remote){if(!EMOS[k]||!G.B[i]||!G.B[i].f)return;if(!remote){if(!G.online||performance.now()-emoT<1500)return;emoT=performance.now();netSend({t:'emo',b:i,k})}
   for(const e of EMOB.filter(e=>e.i===i)){e.el.remove();EMOB.splice(EMOB.indexOf(e),1)}
   const el=document.createElement('div');el.className='emo';el.textContent=EMOS[k];el.style.setProperty('--c',G.B[i].f.col);$('floats').appendChild(el);EMOB.push({el,i,t:0});SFX.ui&&SFX.ui()}
-function updEmos(dt){for(let j=EMOB.length-1;j>=0;j--){const e=EMOB[j];e.t+=dt;if(e.t>2.2||G.mode!=='fight'){e.el.remove();EMOB.splice(j,1);continue}
+function updEmos(dt){document.body.classList.toggle('online-fight',G.online&&G.mode==='fight');for(let j=EMOB.length-1;j>=0;j--){const e=EMOB[j];e.t+=dt;if(e.t>2.2||G.mode!=='fight'){e.el.remove();EMOB.splice(j,1);continue}
   _fp.copy(G.B[e.i].headW);_fp.y+=.45;_fp.project(camera);if(_fp.z>1){e.el.style.opacity=0;continue}
   e.el.style.transform=`translate(${((_fp.x*.5+.5)*innerWidth).toFixed(0)}px,${((-_fp.y*.5+.5)*innerHeight).toFixed(0)}px) translate(-50%,-100%) scale(${e.t<.12?.6+e.t*3.3:1})`;e.el.style.opacity=e.t>1.8?(2.2-e.t)/.4:1}}
 function updateFloats(dt){updEmos(dt);for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i];f.t+=dt;if(f.t>.95){f.el.remove();FLOATS.splice(i,1);continue}
@@ -3966,7 +3971,10 @@ function setupUI(){
     if(g==='surv')openSelect('surv');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
   $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
   $('cBtn').onclick=()=>{SET.cam=SET.cam==='tv'?'back':'tv';saveSet();$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND'};
-  $('helpBack').onclick=()=>hideOv('helpOv');$('setBack').onclick=()=>{hideOv('setOv');renderToggles()};$('pSet').onclick=()=>{SFX.ui();showSettings()};
+  $('helpBack').onclick=()=>hideOv('helpOv');
+  $('emoMenu').innerHTML=EMOS.map((t,k)=>`<button data-e="${k}">${t}</button>`).join('');
+  $('emoBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();$('emoMenu').classList.toggle('on')});
+  $('emoMenu').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-e]');if(!b)return;e.preventDefault();e.stopPropagation();emote(G.ME,+b.dataset.e);$('emoMenu').classList.remove('on')});$('setBack').onclick=()=>{hideOv('setOv');renderToggles()};$('pSet').onclick=()=>{SFX.ui();showSettings()};
   $('setBody').addEventListener('input',e=>{const r=e.target.closest('[data-r]');if(!r)return;SET[r.dataset.r]=+r.value;$('sv_'+r.dataset.r).textContent=r.value;saveSet();auApply()});
   $('setBody').addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(!c)return;const k=c.dataset.c,raw=c.dataset.v,v=raw==='true'?true:raw==='false'?false:raw;
     const prevQ=SET.q;SET[k]=v;if(k==='snd'||k==='mus')SET.mute=false;saveSet();auResume&&auResume();auApply();if(k==='q'&&v!==prevQ){$('qBtn').textContent=v==='high'?'HIGH':'LOW';setupPost();prewarmFX()}
