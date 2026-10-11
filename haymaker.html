@@ -107,6 +107,7 @@ body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 #altSeg{flex-wrap:wrap}.kitEd{flex-basis:100%;display:flex;flex-direction:column;gap:3px;margin-top:4px}.kitEd>div{display:flex;align-items:center;gap:3px}.kitEd small{width:52px;font:900 9px Rubik;letter-spacing:.15em;color:var(--dim)}
 .kitEd i{width:16px;height:16px;border-radius:4px;cursor:pointer;border:2px solid rgba(0,0,0,.6)}.kitEd i.on{border-color:#fff;transform:scale(1.15)}
 .mvk{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;font:600 11.5px Rubik;color:#ccc}.mvk div{display:flex;gap:8px;align-items:center}.mvk kbd{min-width:72px;text-align:center}
+.cadv{margin-top:12px;padding:8px 12px;border-left:3px solid var(--gold);background:rgba(255,200,58,.07);font:italic 700 13.5px Rubik;color:#fff;border-radius:0 8px 8px 0}.cadv small{display:block;font:900 9px Rubik;font-style:normal;letter-spacing:.3em;color:var(--gold);margin-bottom:3px}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -2786,7 +2787,7 @@ function startPunch(b,kind,body,c=0){
   const p=PUNCH[kind],hay=kind==='hay',sp=(b.f.pspd||b.f.spd)*(b.sta<20?(hay?.88:.78):1)*(b.st.overclock>0&&!hay?1.3:1);
   if(hay){c=clamp(c,.15,1);body=false;if(b.idx===G.ME&&!G.attract&&!SMOKE&&owned(b)&&!G.bots[b.idx]){try{localStorage.setItem('haymaker.tip','1')}catch(e){}}}
   b.act={k:'punch',p:kind,t:0,sp,d:(p.w+p.a+p.r)/sp,id:nid(b),body,c};
-  b.sta=Math.max(0,b.sta-p.st);b.stats.thrown++;b.blocking=false;
+  b.sta=Math.max(0,b.sta-p.st);b.stats.thrown++;if(body)b.stats.bodyT=(b.stats.bodyT||0)+1;if(hay)b.stats.hayT=(b.stats.hayT||0)+1;b.blocking=false;
   if(!G.attract)SFX.whoosh(kind==='jab'?.45:hay?1.2:.8,b.chestW,kind);
   let m=b.f.pow*(b.sta<20?.72:1)*(1+Math.min(b.combo,5)*.07)*(rage(b)?RAGE_DMG:1);
   const fx=[];const counter=b.counterT>0;if(counter){m*=1.6;b.counterT=0}
@@ -4384,6 +4385,18 @@ function survNext(){const S=G.surv;let o;do o=pick(FIGHTERS).id;while(o===S.f||o
   sub('SURVIVAL · BOUT '+(S.n+1)+(S.n?' · '+S.n+' DOWN':''),2.2)}
 function survReport(n){try{if(!SMOKE&&n>0&&window.GLITCHBOX&&GLITCHBOX.score)GLITCHBOX.score(n)}catch(e){}}   // 🏆 arcade leaderboard: survival streak
 function survEnd(r){const S=G.surv;if(!S)return;if(r.w===G.ME){S.n++;S.hp=G.B[0].hp;if(S.n>=5)achGet('surv5');if(S.n>=10)achGet('surv10')}else{const P=recOf(S.f);if(!SMOKE&&S.n>(P.surv||0)){P.surv=S.n;S.best=true;saveRec()}S.over=true;survReport(S.n)}}
+// what your corner tells you between rounds, from how the round actually went
+function cornerAdvice(){const me=G.B[G.ME],o=G.B[1-G.ME],S=me.stats,O=o.stats;
+  const acc=S.thrown?S.landed/S.thrown:0,tips=[];
+  if(me.meter>=100)tips.push('Your ultimate is READY. Use it! (R)');
+  if(S.thrown>=8&&acc<.35)tips.push('You\'re swinging at air. Step in before you throw.');
+  if(O.landed>Math.max(6,S.landed*1.5))tips.push('You\'re eating too many. Keep that guard up — and slip with SHIFT.');
+  if((S.blocked||0)>=4&&!(S.parried||0))tips.push('You\'re reading them. Tap block just as it lands for a PERFECT block.');
+  if(!(S.bodyT||0)&&S.thrown>=10)tips.push(TOUCH?'Go to the body — tap BODY, then punch. It drains their gas.':'Go to the body — hold F and punch. It drains their gas.');
+  if(o.sta<35)tips.push('They\'re gassed! Push the pace now.');
+  if(!(S.hayT||0)&&S.thrown>=10)tips.push(TOUCH?'Hold HAYMAKER when they\'re stunned — a full one breaks any guard.':'Hold H when they\'re stunned — a full haymaker breaks any guard.');
+  if(o.hp<o.hpMax*.35)tips.push('They\'re hurt. Finish it!');
+  return tips[0]||pick(['Good round, champ. Keep the pressure on.','That\'s the plan. Same again.','Breathe. You\'ve got this.'])}
 function showRoundCard(x){
   if(G.mode!=='fight')return;const A=G.B[0],B=G.B[1],r=G.rnd,rd=x.rd||[0,0];
   const cards=x.cards||[];const tot=cards.map(c=>[c[0].reduce((a,b)=>a+b,0),c[1].reduce((a,b)=>a+b,0)]);
@@ -4392,6 +4405,7 @@ function showRoundCard(x){
     <table class="stt"><tr><td style="color:${A.f.col};font:400 20px Anton">${A.name}</td><td></td><td style="color:${B.f.col};font:400 20px Anton">${B.name}</td></tr>
     ${row('DAMAGE THIS ROUND',Math.round(rd[0]),Math.round(rd[1]))}${row('HEALTH',Math.round(A.hp),Math.round(B.hp))}${row('LANDED',A.stats.landed+' / '+A.stats.thrown,B.stats.landed+' / '+B.stats.thrown)}${row('KNOCKDOWNS',B.kd,A.kd)}</table>
     ${tot.length?`<div class="lbl" style="text-align:center;margin-top:10px">THE JUDGES SO FAR</div><div class="judges">${tot.map((c,i)=>`<div><small>JUDGE ${i+1}</small>${c[0]}–${c[1]}</div>`).join('')}</div>`:''}`;
+  if(!G.online&&!G.watch){const t=cornerAdvice();$('cardBody').insertAdjacentHTML('beforeend',`<div class="cadv"><small>YOUR CORNER</small>“${t}”</div>`)}
   showOv('cardOv');
 }
 
@@ -4862,6 +4876,7 @@ function runSmoke(){
     {const P=recOf('volt'),x0=P.xp;P.xp=3500;ok(mastery('volt').tier[1]==='SILVER'&&mastery('volt').next[1]==='GOLD','fighter mastery climbs bronze → silver → gold');P.xp=x0}
     {const K=kitOf('volt'),k0=Object.assign({},K);K.shorts=0x7dff4a;solo('volt','frost');G.B[0].build(FBY.volt,CUSTOM);ok(G.B[0].look.shorts===0x7dff4a&&altOK('volt',CUSTOM),'a custom kit builds with your colours');Object.assign(K,k0)}
     {solo('grizz','frost');togglePause(true);$('pMoves').click();ok($('movesOv').classList.contains('on')&&$('movesBody').textContent.includes('Hibernate'),'pause → MOVE LIST shows your own fighter\'s moves');$('movesBack').click();ok($('pauseOv').classList.contains('on'),'…and goes back to the pause menu');togglePause(false)}
+    {solo('blaze','frost');G.B[0].meter=100;ok(/ultimate/i.test(cornerAdvice()),'the corner tells you to use a ready ultimate');G.B[0].meter=0;Object.assign(G.B[0].stats,{thrown:20,landed:3});ok(/air/.test(cornerAdvice()),'…and to stop swinging at air')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
