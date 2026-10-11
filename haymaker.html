@@ -57,6 +57,7 @@ body.training #train{display:block}
 #train .th{font:400 22px Anton;letter-spacing:.06em;color:var(--gold)}#train .tl{font:900 10px Rubik;letter-spacing:.3em;color:var(--dim);margin:8px 0 4px}
 #train .tst{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:4px}#train .tst b{color:#fff;font:400 16px Anton;text-align:right}
 #tut button{display:block;width:100%;margin-top:4px}
+#trDummy .recing{background:#ff3b3f!important;color:#fff!important;animation:nbump 1s ease-in-out infinite}#trDummy .off{opacity:.4}
 #tut{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}#tut .ts{font:700 11px Rubik;color:#888;padding:2px 0}#tut .ts.done{color:#7dff4a}#tut .ts.cur{color:#fff;font-size:12.5px}#tut .ts small{display:block;color:var(--gold);font-size:10.5px;margin:2px 0 3px 12px}
 #train .tseg{display:flex;flex-wrap:wrap;gap:4px}#train button{flex:1;min-width:46%;border:1px solid var(--line);background:#16161e;color:#bbb;border-radius:8px;padding:6px 4px;font:800 10px Rubik;letter-spacing:.08em;cursor:pointer}
 #train button.on{background:var(--gold);color:#000}#train .tk{margin-top:8px;font:700 9.5px Rubik;color:var(--dim);letter-spacing:.06em}
@@ -443,7 +444,7 @@ body.touch #abil,body.touch #keys{display:none}
 </div>
 <div id="floats"></div>
 <div id="cutin"><div class="band"></div><div class="cport"></div><div class="ctxt"></div></div>
-<div id="train"><div class="th">TRAINING</div><div class="tst" id="trStats"></div><div class="tl">DUMMY</div><div class="tseg" id="trDummy"></div><div class="tseg" id="trOpts"></div><div class="tk">1–4 dummy · 5 meter · 6 cooldowns · ESC pause</div><div id="tut"></div></div>
+<div id="train"><div class="th">TRAINING</div><div class="tst" id="trStats"></div><div class="tl">DUMMY</div><div class="tseg" id="trDummy"></div><div class="tseg" id="trOpts"></div><div class="tk">1–4 dummy · 5 meter · 6 cooldowns · 7 record · 8 playback · ESC pause</div><div id="tut"></div></div>
 <div id="photoBar"><b>PHOTO MODE</b><span>DRAG orbit · WHEEL / Q E zoom · F filter: <i id="phF">NONE</i> · S save · ESC back</span><button id="phSave">SAVE PNG</button><button id="phFilt">FILTER</button><button id="phExit">DONE</button></div>
 <div id="walk"><div class="bar"></div><div class="skip">PRESS ANY KEY TO SKIP</div></div>
 <div id="vs"><div class="side l"></div><div class="side r"></div><div class="mid">VS</div></div>
@@ -560,7 +561,7 @@ body.touch #abil,body.touch #keys{display:none}
       <kbd>TOURNAMENT</kbd><span>An 8-fighter knockout bracket. Win three in a row to lift the trophy.</span>
       <kbd>SURVIVAL</kbd><span>Endless bouts, health carries over. How long can you last? Your best streak goes on the GLITCHBOX leaderboard.</span>
       <kbd>DAILY</kbd><span>One set fight a day for everyone, scored on how well you win.</span>
-      <kbd>TRAINING</kbd><span>A dummy you control, a step-by-step TUTORIAL and six COMBO TRIALS.</span>
+      <kbd>TRAINING</kbd><span>A dummy you control, a step-by-step TUTORIAL and six COMBO TRIALS. RECORD a few seconds of your own moves and the dummy plays them back on loop — practise blocking exactly what gives you trouble.</span>
       <kbd>ONLINE</kbd><span>1v1 with a friend by room code. Keys 1–4 send quick chat.</span>
       <kbd>PROGRESS</kbd><span>Fights earn XP for your level and your fighter's MASTERY (bronze → silver → gold). 28 achievements, career RECORDS, a LEGEND kit per fighter for winning the ladder, and a custom kit (✎) you design.</span>
       <kbd>PAUSE</kbd><span>MOVE LIST, INSTANT REPLAY, PHOTO MODE and SETTINGS live in the pause menu.</span>
@@ -4065,7 +4066,7 @@ addEventListener('keydown',e=>{
   if(G.mode==='fight'&&G.phase==='rest'&&!G.local&&/^Digit[1-3]$/.test(e.code)&&!e.repeat){cornerCall(CALLS[+e.code[5]-1][0]);return}
   if(G.online&&G.mode==='fight'&&/^Digit[1-4]$/.test(e.code)&&!e.repeat){emote(G.ME,+e.code[5]-1);return}
   if(G.watch&&G.mode==='fight'&&G.phase==='fight'&&!e.repeat&&KMAP[e.code]){G.watch=false;G.bots[0]=null;document.body.classList.remove('watching');showHUD(true);sub('YOU HAVE CONTROL',1.4)}
-  if(G.bag&&G.mode==='fight'&&/^Digit[1-6]$/.test(e.code)){const n=+e.code[5];if(n<=4)trainSet(['stand','block','dodge','fight'][n-1]);else if(n===5){TR.meter=!TR.meter;trainUI()}else{TR.cds=!TR.cds;trainUI()}SFX.ui();return}
+  if(G.bag&&G.mode==='fight'&&/^Digit[1-8]$/.test(e.code)){const n=+e.code[5];if(n<=4)trainSet(['stand','block','dodge','fight'][n-1]);else if(n===5){TR.meter=!TR.meter;trainUI()}else if(n===6){TR.cds=!TR.cds;trainUI()}else trainSet(n===7?'rec':'replay');SFX.ui();return}
   if(PHOTO.on){const c=e.code;if(c==='Escape'||c==='KeyP')photoOff();else if(c==='KeyF')PHOTO.film=(PHOTO.film+1)%FILMS.length;else if(c==='KeyS')photoSave();
     else if(c==='KeyQ')PHOTO.r=Math.max(1,PHOTO.r-.3);else if(c==='KeyE')PHOTO.r=Math.min(10,PHOTO.r+.3);else if(c==='KeyA'||c==='ArrowLeft')PHOTO.a-=.1;else if(c==='KeyD'||c==='ArrowRight')PHOTO.a+=.1;
     else if(c==='KeyW'||c==='ArrowUp')PHOTO.e=Math.min(1.35,PHOTO.e+.06);else if(c==='ArrowDown')PHOTO.e=Math.max(-.2,PHOTO.e-.06);e.preventDefault();return}
@@ -4909,8 +4910,9 @@ function kdCentre(d){return [d.x-Math.sin(d.yaw)*.7*d.worldScale,d.z-Math.cos(d.
 // ════════════════════ MAIN LOOP ════════════════════
 function getIntent(i,dt){
   if(G.forced&&G.forced[i])return typeof G.forced[i]==='function'?G.forced[i]():G.forced[i];
+  if(G.bag&&i!==G.ME&&TR.dummy==='replay'&&TREC.buf.length&&G.phase==='fight')return trPlayIntent(dt);
   if(G.bots[i])return G.bots[i].intent(dt);
-  if(i===G.ME&&!G.attract)return playerIntent();
+  if(i===G.ME&&!G.attract){const it=playerIntent();if(G.bag&&TREC.on&&G.phase==='fight')trRecord(it,dt);return it}
   if(G.local&&i===1)return padIntent(1,PAD2);
   return EMPTY;
 }
@@ -4940,11 +4942,18 @@ function photoSave(){if(!renderer)return;if(composer)composer.render();else rend
 // ════════════════════ TRAINING ════════════════════
 // The BAG difficulty becomes a training room: pick how the dummy behaves, refill meter/cooldowns, and read your damage.
 const TR={dummy:'stand',meter:true,cds:true,last:0,combo:0,comboT:0,log:[],perfect:0,hpT:0};
-const TR_D={stand:DIFF.bag,block:Object.assign({},DIFF.bag,{name:'BLOCK',react:.05,block:1,think:9}),dodge:Object.assign({},DIFF.bag,{name:'DODGE',react:.08,dodge:.85,think:9}),fight:DIFF.contender};
+// RECORD / PLAYBACK: record up to 6s of your own inputs, then the dummy throws them back at you on loop
+const TREC={on:false,buf:[],t:0,max:6,pi:0,pt:0};
+function trRecord(it,dt){TREC.t+=dt;TREC.buf.push({t:TREC.t,mx:it.mx,mz:it.mz,block:!!it.block,punch:it.punch||null,dodge:!!it.dodge,hay:!!it.hay,body:!!it.body});if(TREC.t>=TREC.max)trRecStop()}
+function trRecStop(){TREC.on=false;if(TREC.buf.length>10){trainSet('replay');sub('RECORDED '+TREC.t.toFixed(1)+'s — THE DUMMY PLAYS IT BACK',2.2)}else trainSet('stand')}
+function trPlayIntent(dt){const B=TREC.buf,it={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null,hay:false,body:false};if(!B.length)return it;
+  TREC.pt+=dt;if(TREC.pt>B[B.length-1].t+.6){TREC.pt=0;TREC.pi=0}let last=null;while(TREC.pi<B.length&&B[TREC.pi].t<=TREC.pt){const f=B[TREC.pi++];if(f.punch&&!it.punch){it.punch=f.punch;it.body=f.body}if(f.dodge)it.dodge=true;last=f}
+  const c=last||B[Math.max(0,TREC.pi-1)];if(TREC.pi>0&&c){it.mx=c.mx;it.mz=c.mz;it.block=c.block;it.hay=c.hay;if(!it.punch)it.body=c.body}return it}
+const TR_D={replay:DIFF.bag,rec:DIFF.bag,stand:DIFF.bag,block:Object.assign({},DIFF.bag,{name:'BLOCK',react:.05,block:1,think:9}),dodge:Object.assign({},DIFF.bag,{name:'DODGE',react:.08,dodge:.85,think:9}),fight:DIFF.contender};
 function trainUI(){const dm=$('trDummy');if(!dm)return;
-  dm.innerHTML=[['stand','STAND'],['block','BLOCK'],['dodge','DODGE'],['fight','FIGHT BACK']].map(([k,n])=>`<button data-k="${k}" class="${TR.dummy===k?'on':''}">${n}</button>`).join('');
+  dm.innerHTML=[['stand','STAND'],['block','BLOCK'],['dodge','DODGE'],['fight','FIGHT BACK'],['rec',TREC.on?'■ STOP':'● RECORD'],['replay','▶ PLAYBACK']].map(([k,n])=>`<button data-k="${k}" class="${TR.dummy===k?'on':''} ${k==='rec'&&TREC.on?'recing':''} ${k==='replay'&&!TREC.buf.length?'off':''}">${n}</button>`).join('');
   $('trOpts').innerHTML=`<button data-o="meter" class="${TR.meter?'on':''}">∞ METER</button><button data-o="cds" class="${TR.cds?'on':''}">NO COOLDOWNS</button>`}
-function trainSet(k){TR.dummy=k;const bt=G.bots[1];if(bt){bt.D=TR_D[k];bt.react=null}trainUI()}
+function trainSet(k){if(k==='rec'){if(TREC.on){trRecStop();return}Object.assign(TREC,{on:true,buf:[],t:0});sub('RECORDING — FIGHT, THEN PRESS RECORD AGAIN (6s MAX)',2.5)}else if(TREC.on)TREC.on=false;if(k==='replay'){if(!TREC.buf.length){sub('RECORD SOMETHING FIRST',1.6);return}TREC.pi=0;TREC.pt=0}TR.dummy=k;const bt=G.bots[1];if(bt){bt.D=TR_D[k];bt.react=null}trainUI()}
 function trainTick(dt){const on=G.mode==='fight'&&G.bag&&!G.attract;document.body.classList.toggle('training',on);if(!on)return;
   const me=G.B[G.ME],d=G.B[1-G.ME];if(TR.meter)me.meter=100;if(TR.cds){me.cd.q=Math.min(me.cd.q,.25);me.cd.e=Math.min(me.cd.e,.25)}
   TR.comboT-=dt;if(TR.comboT<=0)TR.combo=0;TR.hpT-=dt;
@@ -5301,6 +5310,9 @@ function runSmoke(){
     abil('viper','frost','q',2.5);sim(.6);ok(G.B[1].st.pstk>=3&&G.B[1].hp<100,'Venom Spit poisons');sim(2);ok(G.B[1].hp<100-6-1,'poison ticks');
     abil('viper','frost','r');G.B[0].hp=50;startPunch(G.B[0],'cross');sim(.5);ok(G.B[0].hp>50,'Serpent\'s Kiss heals on hit');
     abil('viper','frost','e',3);sim(.7);ok(G.B[1].hp<100,'Coil Strike lunges in');
+    {solo('blaze','frost');place(1);G.bag=true;trainSet('rec');ok(TREC.on,'RECORD starts recording');for(let i=0;i<40;i++)trRecord(i===12?{...EMPTY,punch:'hook'}:{...EMPTY,mz:.4},1/60);trainSet('rec');
+      ok(!TREC.on&&TR.dummy==='replay'&&TREC.buf.length===40,'…pressing it again stops and switches the dummy to PLAYBACK');G.forced=null;const t0=G.B[1].stats.thrown;sim(.7);ok(G.B[1].stats.thrown>t0,'…and the dummy throws your recorded hook back at you');
+      sim(1);ok(G.B[1].stats.thrown>t0+1,'…on a loop');G.forced=[EMPTY,EMPTY];trainSet('stand');G.bag=false}
     solo('blaze','frost');place(1);G.bag=true;TR.dummy='stand';G.B[1].hp=3;startPunch(G.B[0],'hook');sim(.8);ok(G.B[1].hp>=1&&!G.B[1].down&&TR.last>0,'training: the standing dummy takes the hit but never goes down');G.bag=false;
     setVenue('beach');ok(ARENA.beach&&ARENA.beach.g.visible&&ARENA.dress.every(o=>!o.visible)&&Math.abs(ARENA.tunnel.x+12.6)<.01&&ARENA.beach.palms.length>4,'THE BEACH swaps in (palms, and the beach hut is the walk-out door)');ok(VENUES.every(v=>pickVenue(v)),'every venue can be picked');
     setVenue('roof');ok(ARENA.roof&&!ARENA.beach.g.visible&&ARENA.roof.g.visible&&ARENA.dress.every(o=>!o.visible)&&Math.abs(ARENA.tunnel.x+13.2)<.01,'the rooftop venue swaps in (and its stairwell becomes the walk-out door)');applyVenue('roof-rain');ok(ARENA.rain.L.visible,'rain falls on a wet rooftop night');applyVenue('roof-snow');ok(ARENA.snow.visible&&!ARENA.rain.L.visible,'…or snow on a cold one');applyVenue('pit');ok(ARENA.pit.g.visible&&!ARENA.roof.g.visible&&!ARENA.rain.L.visible&&Math.abs(ARENA.tunnel.x+11.2)<.01,'THE PIT swaps in, dry, with its roller door');applyVenue('gym');ok(ARENA.gym.g.visible&&!ARENA.pit.g.visible,'THE GYM swaps in');applyVenue('arena');ok(!ARENA.roof.g.visible&&!ARENA.pit.g.visible&&!ARENA.gym.g.visible&&!ARENA.rain.L.visible&&!ARENA.snow.visible&&ARENA.dress.every(o=>o.visible),'…and swaps back to a dry arena');
