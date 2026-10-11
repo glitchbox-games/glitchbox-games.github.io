@@ -1,5 +1,5 @@
 /* ==========================================================================
-   GLITCHBOX — OWNER CONSOLE
+   GLITCHBOX - OWNER CONSOLE
    --------------------------------------------------------------------------
    Admin tools for the one account that owns the arcade. Lives in its own file
    so index.html only needs a single <script> tag, and so the console can be
@@ -7,7 +7,7 @@
 
    Opens with Ctrl+Shift+A, or the ⚙ OWNER item that appears in the sidebar once
    the server confirms you're the owner. Server-backed tabs (Players, Reports)
-   call /api/admin/*, which re-checks ownership on every request — the button
+   call /api/admin/*, which re-checks ownership on every request - the button
    showing up is a convenience, never the permission itself. God mode is purely
    local: it rewrites this device's localStorage and nobody else's.
    ========================================================================== */
@@ -23,13 +23,13 @@
   function hasTokens() { return typeof tokens === 'function' && typeof setTokens === 'function'; }
 
   // null means "not fetched yet"; an empty array means "fetched, nothing there".
-  // isMod: a moderator — the people tools only, with limits the server enforces anyway.
+  // isMod: a moderator - the people tools only, with limits the server enforces anyway.
   let built = false, isOwner = false, isMod = false, tab = 'overview';
   let appeals = null, stats = null;
   let players = null, reports = null, overview = null, filter = '', logRows = null, guests = null;
   let giftTo = null;   // { sub, name } while the gift form is open; sub '*' = everyone
   // Questions are asked in the panel, never with prompt()/confirm(): Chrome can
-  // suppress those, and a suppressed prompt reads as "cancel" — a ban that silently
+  // suppress those, and a suppressed prompt reads as "cancel" - a ban that silently
   // never happens. `ask` is { text, yes, input?, run(value) }; `notice` shows the
   // last result or error at the top of the panel.
   let ask = null, notice = null, gameFilter = '';
@@ -58,7 +58,7 @@
   }
   function when(ts) { return new Date(ts).toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); }
   function ago(ts) {
-    if (!ts) return '—';
+    if (!ts) return '-';
     const s = Math.max(0, (Date.now() - ts) / 1000);
     if (s < 90) return 'just now';
     if (s < 3600) return Math.round(s / 60) + 'm ago';
@@ -234,7 +234,7 @@
     const live = overview.live || [], liveG = overview.liveGuests || [];
     const status = (isMod ? '<div class="adm-note">You\'re a <b>moderator</b>: you can view, message, kick and ban players and guests for up to a day, and answer appeals. ' +
         'Emails and IP addresses stay hidden from you.</div>' : '') + (overview.maintenance ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">' +
-        '🛠 Maintenance mode is ON — the arcade is closed to everyone but you. <a href="#" data-act="goarcade" style="color:inherit">Arcade tab →</a></div>' : '') +
+        '🛠 Maintenance mode is ON - the arcade is closed to everyone but you. <a href="#" data-act="goarcade" style="color:inherit">Arcade tab →</a></div>' : '') +
       (overview.announce ? '<div class="adm-note" style="color:#00f5ff;border:1px solid currentColor;padding:9px 12px">📣 Live announcement: “' +
         esc(overview.announce.text) + '”</div>' : '');
     return status + '<div class="adm-grid">' +
@@ -306,7 +306,7 @@
           (p.isOwner ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">owner</span>' : '') +
           (p.playing != null ? ' <span style="color:#00ff88" title="online">●</span> <span class="adm-meta">' +
             (p.playing ? '▶ ' + esc(gameName(p.playing)) : 'in the hub') + '</span>' : '') + '</div>' +
-        '<div class="adm-meta">' + (p.real_name ? '👤 ' + esc(p.real_name) + ' · ' : '') + (p.email ? esc(p.email) + ' · ' : '') + 'code ' + esc(p.code || '—') +
+        '<div class="adm-meta">' + (p.real_name ? '👤 ' + esc(p.real_name) + ' · ' : '') + (p.email ? esc(p.email) + ' · ' : '') + 'code ' + esc(p.code || '-') +
           (p.tag_set ? '' : ' · <span style="color:#ffb400">🏷️ hasn\'t picked a nametag</span>') + '</div>' +
         '<div class="adm-meta">' + p.friends + ' friends · ' + p.saves + ' saves · ' + p.reports +
           ' reports · seen ' + ago(p.last_seen) + (p.gifts ? ' · ' + p.gifts + ' gift' + (p.gifts > 1 ? 's' : '') + ' waiting' : '') +
@@ -330,7 +330,7 @@
   }
 
   // Gifts are queued on the server and banked by the player's hub on its next
-  // poll — the wallet itself only exists in their browser.
+  // poll - the wallet itself only exists in their browser.
   function viewGift() {
     const all = giftTo.sub === '*';
     const paid = (typeof GAMES !== 'undefined' ? GAMES : []).filter(g => g.price);
@@ -344,7 +344,7 @@
       '<div class="adm-actions"><input class="adm-in" id="adm-gtok" type="number" placeholder="0" style="max-width:160px">' +
         [100, 500, 1000, 10000].map(n => '<button class="adm-btn warn" data-act="gtok" data-n="' + n + '">' + n + '</button>').join('') +
       '</div>' +
-      '<div class="adm-note">⚡ Idle Universe energy' + (all ? ' (goes to guests too)' : '') + ' — 5000, 2.5m, 1b, 3t, 1e15…:</div>' +
+      '<div class="adm-note">⚡ Idle Universe energy' + (all ? ' (goes to guests too)' : '') + ' - 5000, 2.5m, 1b, 3t, 1e15…:</div>' +
       '<div class="adm-actions"><input class="adm-in" id="adm-genergy" placeholder="0" style="max-width:160px">' +
         ['1m', '1b', '1t', '1e15'].map(n => '<button class="adm-btn" data-act="genergy" data-n="' + n + '">' + n + '</button>').join('') +
       '</div>' +
@@ -389,12 +389,12 @@
           '<option value="' + esc(g.file) + '"' + (g.file === feat ? ' selected' : '') + '>' + esc(g.name) + '</option>').join('') +
       '</select><button class="adm-btn" data-act="feature">Feature it</button></div>' +
       '<div class="adm-h">// PUSH AN UPDATE</div>' +
-      '<div class="adm-note">Every open hub and game page reloads itself within a few seconds — so players get your latest ' +
+      '<div class="adm-note">Every open hub and game page reloads itself within a few seconds - so players get your latest ' +
         'changes without refreshing. Anyone mid-game loses unsaved progress.</div>' +
       '<div class="adm-actions"><button class="adm-btn warn" data-act="reloadall">↻ Reload everyone</button></div>' +
       '<div class="adm-h">// GUEST PLAY</div>' +
-      '<div class="adm-note">' + (overview.guestsLocked ? '<b style="color:#ffc800">OFF</b> — everyone has to sign in to play.'
-        : '<b>ON</b> — people can play free games without signing in.') + ' More on the Guests tab.</div>' +
+      '<div class="adm-note">' + (overview.guestsLocked ? '<b style="color:#ffc800">OFF</b> - everyone has to sign in to play.'
+        : '<b>ON</b> - people can play free games without signing in.') + ' More on the Guests tab.</div>' +
       '<div class="adm-actions"><button class="adm-btn ' + (overview.guestsLocked ? '' : 'danger') + '" data-act="guestlock" data-on="' +
         (overview.guestsLocked ? '0' : '1') + '">' + (overview.guestsLocked ? '✅ Let guests play again' : '🚫 Turn guest play off') + '</button></div>' +
       '<div class="adm-h">// GAMES · ' + offList.length + ' switched off</div>' +
@@ -464,10 +464,10 @@
     const row = (k, v) => v === '' || v == null || v === '?' ? '' : '<div class="adm-meta"><b style="color:#e8eefc;display:inline-block;min-width:88px">' + k + '</b> ' + v + '</div>';
     const details = row('Device', esc(device(w.ua))) + row('IP', esc(w.ip || '?')) +
       (guest ? row('First seen', ago(w.created)) :
-        row('Email', esc(w.email)) + row('Friend code', esc(w.code || '—')) + row('Joined', ago(w.created)) +
+        row('Email', esc(w.email)) + row('Friend code', esc(w.code || '-')) + row('Joined', ago(w.created)) +
         row('Friends', w.friends + ' · ' + w.saves + ' cloud saves · ' + w.reports + ' reports about them')) +
       row('Terms', w.tos_version ? 'agreed (' + esc(w.tos_version) + ')' + (w.tos_at ? ' ' + ago(w.tos_at) : '') : '<span style="color:#ffb400">not agreed yet</span>') +
-      (w.banned ? row('Banned', (w.ban_until ? 'until ' + when(w.ban_until) : 'permanently') + (w.ban_reason ? ' — “' + esc(w.ban_reason) + '”' : '')) : '');
+      (w.banned ? row('Banned', (w.ban_until ? 'until ' + when(w.ban_until) : 'permanently') + (w.ban_reason ? ' - “' + esc(w.ban_reason) + '”' : '')) : '');
     // Time in each game this week: each entry lasts until the next one, and the newest
     // until now (or until they were last seen). "~" rows mark when they went offline.
     const spent = {};
@@ -494,7 +494,7 @@
         return '<span class="t">' + when(a.at) + '</span><span>' + esc(place(a.game)) + '</span>' +
           '<span class="d">' + (a.game === '~' ? '' : i === 0 && w.online ? 'now' : dur(len)) + '</span>';
       }).join('') + '</div>'
-        : '<div class="adm-empty">Nothing recorded yet — activity shows up here from now on.</div>');
+        : '<div class="adm-empty">Nothing recorded yet - activity shows up here from now on.</div>');
   }
   async function loadWatch() {
     if (!viewing) return;
@@ -519,8 +519,8 @@
       : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : '';
     return os + (br ? ' · ' + br : '');
   }
-  const BAN_CHOICES = [['0','This device — permanently'],['24','This device — 1 day'],['168','This device — 1 week'],
-    ['0ip','Device + their network — permanently'],['24ip','Device + their network — 1 day'],['168ip','Device + their network — 1 week']];
+  const BAN_CHOICES = [['0','This device - permanently'],['24','This device - 1 day'],['168','This device - 1 week'],
+    ['0ip','Device + their network - permanently'],['24ip','Device + their network - 1 day'],['168ip','Device + their network - 1 week']];
 
   function viewGuests() {
     if (!staff()) return claimPanel();
@@ -529,14 +529,14 @@
     const locked = !!guests.guestsLocked;
     const online = list.filter(g => g.online && !g.banned).length;
     return '<div class="adm-note">Guests are people playing without signing in. Each browser gets its own id, so a guest who ' +
-        'clears their browser comes back as a new one — that\'s what a <b>network</b> ban is for. Network bans hit everyone on ' +
+        'clears their browser comes back as a new one - that\'s what a <b>network</b> ban is for. Network bans hit everyone on ' +
         'that internet connection (a whole house or school), so use them on troublemakers only.</div>' +
       '<div class="adm-actions"><button class="adm-btn" data-act="reload">↻ Refresh</button>' +
         (isOwner ? '<button class="adm-btn ' + (locked ? '' : 'danger') + '" data-act="guestlock" data-on="' + (locked ? '0' : '1') + '">' +
           (locked ? '✅ Let guests play again' : '🚫 Turn guest play off') + '</button>' : '') +
         (online ? '<button class="adm-btn danger" data-act="kickguests">👢 Kick all ' + online + ' online guest' + (online > 1 ? 's' : '') + '</button>' : '') +
       '</div>' +
-      (locked ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">🚫 Guest play is OFF — ' +
+      (locked ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">🚫 Guest play is OFF - ' +
         'everyone has to sign in to play.</div>' : '') +
       '<div class="adm-h">// GUESTS · ' + list.length + ' in the last 30 days · ' + online + ' online</div>' +
       (list.length ? list.map(g =>
@@ -570,7 +570,7 @@
         : '<div class="adm-empty">No networks banned.</div>') +
       '<div class="adm-actions" style="margin-top:10px"><input class="adm-in" id="adm-ip" placeholder="Ban an IP by hand, e.g. 203.0.113.7" style="flex:1;min-width:200px">' +
         '<button class="adm-btn danger" data-act="ipban">Ban IP</button></div>' +
-      (guests.myIp ? '<div class="adm-note">Your own network is ' + esc(guests.myIp) + ' — it can\'t be banned.</div>' : ''));
+      (guests.myIp ? '<div class="adm-note">Your own network is ' + esc(guests.myIp) + ' - it can\'t be banned.</div>' : ''));
   }
 
   function viewAppeals() {
@@ -598,7 +598,7 @@
       }).join('') : '<div class="adm-empty">No appeals yet.</div>');
   }
 
-  // Bar charts as inline SVG — no chart library needed for four small graphs.
+  // Bar charts as inline SVG - no chart library needed for four small graphs.
   function bars(vals, opts) {
     opts = opts || {};
     const W = 600, H = opts.h || 120, n = vals.length, max = Math.max(1, ...vals.map(v => (v.a || 0) + (v.b || 0)));
@@ -620,7 +620,7 @@
     const days = d.days.map((x, i) => ({ a: x.players, b: x.guests, tip: x.day + ': ' + x.players + ' players, ' + x.guests + ' guests, ' + x.minutes + ' min played',
       label: i % 5 === 4 || i === 29 ? x.day.slice(5) : '' }));
     const ups = d.days.map((x, i) => ({ a: x.signups, tip: x.day + ': ' + x.signups + ' new accounts', label: i % 5 === 4 || i === 29 ? x.day.slice(5) : '' }));
-    const hours = d.hours.map((m, h) => ({ a: m, tip: h + ':00 — ' + m + ' min played', label: h % 3 === 0 ? String(h) : '' }));
+    const hours = d.hours.map((m, h) => ({ a: m, tip: h + ':00 - ' + m + ' min played', label: h % 3 === 0 ? String(h) : '' }));
     const top = d.games[0] ? d.games[0].minutes : 1;
     return '<div class="adm-grid">' + tile(T.players, 'Players · 30d') + tile(T.guests, 'Guests · 30d') + tile(T.hours, 'Hours played') +
         tile(d.days[29].players + d.days[29].guests, 'Active today') + '</div>' +
@@ -633,7 +633,7 @@
         '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + esc(gameName(g.game)) + '</div>' +
         '<div style="height:5px;background:rgba(255,255,255,.06);margin-top:5px"><div style="height:100%;width:' + Math.max(2, Math.round(g.minutes / top * 100)) + '%;background:#00f5ff"></div></div></div>' +
         '<span class="adm-meta">' + (g.minutes < 60 ? g.minutes + ' min' : Math.round(g.minutes / 6) / 10 + ' h') + '</span></div>').join('')
-        : '<div class="adm-empty">No play recorded yet — this fills up as people play.</div>') +
+        : '<div class="adm-empty">No play recorded yet - this fills up as people play.</div>') +
       '<div class="adm-actions" style="margin-top:14px"><button class="adm-btn" data-act="reload">↻ Refresh</button></div>';
   }
 
@@ -650,7 +650,7 @@
         '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + (icon[r.action] || '•') + ' ' + esc(r.action) +
           (r.target ? ' <span class="adm-meta">→ ' + esc(r.target) + '</span>' : '') + '</div>' +
         '<div class="adm-meta">' + when(r.at) + (r.detail ? ' · ' + esc(r.detail) : '') + '</div></div></div>').join('')
-        : '<div class="adm-empty">Nothing logged yet — bans, gifts, announcements and so on show up here.</div>');
+        : '<div class="adm-empty">Nothing logged yet - bans, gifts, announcements and so on show up here.</div>');
   }
 
   function viewReports() {
@@ -672,7 +672,7 @@
   function viewGod() {
     const on = hasTokens();
     const icons = (typeof ICON_BY_ID !== 'undefined') ? Object.keys(ICON_BY_ID).length : 0;
-    return '<div class="adm-note">God mode rewrites <b>this device only</b> — it never touches the server or ' +
+    return '<div class="adm-note">God mode rewrites <b>this device only</b> - it never touches the server or ' +
         'anyone else\'s progress.</div>' +
       (on
         ? '<div class="adm-h">// WALLET</div>' +
@@ -682,7 +682,7 @@
             '<button class="adm-btn warn" data-act="tokset">Set exact…</button>' +
             '<button class="adm-btn danger" data-act="tokzero">Zero it</button>' +
           '</div><div class="adm-note">Balance now: <b>' + tokens() + '</b></div>'
-        : '<div class="adm-note">This build has no token economy — games and icons are already unlocked for everyone.</div>') +
+        : '<div class="adm-note">This build has no token economy - games and icons are already unlocked for everyone.</div>') +
       '<div class="adm-h">// UNLOCKS</div>' +
       '<div class="adm-actions">' +
         '<button class="adm-btn" data-act="unlockgames">Unlock every game</button>' +
@@ -716,18 +716,18 @@
 
   function claimPanel() {
     if (typeof currentUser === 'undefined' || !currentUser)
-      return '<div class="adm-empty">Sign in first — the console follows the account, not the browser.</div>';
+      return '<div class="adm-empty">Sign in first - the console follows the account, not the browser.</div>';
     // OWNER_EMAIL is set on the Worker: one account owns this arcade and the claim
     // code is dead, so offering an input here would just be a box that always fails.
     if (typeof lastState !== 'undefined' && lastState && lastState.ownerPinned)
       return '<div class="adm-h">// OWNER ONLY</div>' +
         '<div class="adm-note">This arcade is pinned to a single owner account. You are signed in as ' +
           '<b>' + esc(currentUser.email || currentUser.name) + '</b>, which is not it.</div>' +
-        '<div class="adm-note">Sign out and sign back in with the owner\'s Google account — the server ' +
+        '<div class="adm-note">Sign out and sign back in with the owner\'s Google account - the server ' +
           're-checks the address on every request, so there is nothing to unlock from this side.</div>';
     return '<div class="adm-h">// CLAIM OWNERSHIP</div>' +
       '<div class="adm-note">This account isn\'t the owner yet. Enter the claim code (a Worker secret) once and ' +
-        'this account becomes the permanent owner — the claim can\'t be repeated afterwards.</div>' +
+        'this account becomes the permanent owner - the claim can\'t be repeated afterwards.</div>' +
       '<div class="adm-actions"><input class="adm-in" id="adm-code" placeholder="CLAIM CODE" style="flex:1;min-width:180px">' +
       '<button class="adm-btn" data-act="claim">Claim</button></div>' +
       '<div class="adm-note" id="adm-claim-msg"></div>';
@@ -772,12 +772,12 @@
       else if (act === 'goappeals') { e.preventDefault(); tab = 'appeals'; render(); }
       else if (act === 'alerts') {
         const r = window.GBSocial ? await GBSocial.enableAlerts() : 'unsupported';
-        notice = { text: r === 'granted' ? '🔔 Desktop alerts are on.' : r === 'denied' ? 'Your browser blocked notifications — allow them for this site in its settings.' : 'This browser can\'t show desktop alerts.', bad: r !== 'granted' };
+        notice = { text: r === 'granted' ? '🔔 Desktop alerts are on.' : r === 'denied' ? 'Your browser blocked notifications - allow them for this site in its settings.' : 'This browser can\'t show desktop alerts.', bad: r !== 'granted' };
         render();
       }
       else if (act === 'appeal') {
         const ok = el.dataset.ok === '1', name = el.dataset.name || 'them';
-        askFor({ text: (ok ? 'Unban ' : 'Keep the ban on ') + name + '? Your reply shows on their ban screen.', input: ok ? 'Reply (optional), e.g. OK — be nice' : 'Reply (optional), e.g. Sorry, the ban stays',
+        askFor({ text: (ok ? 'Unban ' : 'Keep the ban on ') + name + '? Your reply shows on their ban screen.', input: ok ? 'Reply (optional), e.g. OK - be nice' : 'Reply (optional), e.g. Sorry, the ban stays',
                  yes: ok ? 'Unban ' + name : 'Keep the ban', run: async reply => {
           const r = await call('/api/admin/appeal-decide', { method:'POST', body:{ id: +el.dataset.id, accept: ok, reply } });
           appeals = null; players = null; guests = null; overview = null; logRows = null;
@@ -812,7 +812,7 @@
       else if (act === 'unview') { viewing = null; watch = null; notice = null; render(); }
       else if (act === 'kick' || act === 'kickall' || act === 'kickguests') {
         const all = act !== 'kick', name = all ? (act === 'kickguests' ? 'every online guest' : 'everyone online') : (el.dataset.name || 'them');
-        askFor({ text:'Kick ' + name + '? They\'re sent back to the hub with your message. It isn\'t a ban — they can come straight back.',
+        askFor({ text:'Kick ' + name + '? They\'re sent back to the hub with your message. It isn\'t a ban - they can come straight back.',
                  input:'Reason (optional)', yes:'Kick', run: async reason => {
           if (act === 'kickguests') {
             const ids = ((guests && guests.guests) || []).filter(g => g.online && !g.banned).map(g => 'g:' + g.gid);
@@ -820,7 +820,7 @@
             notice = { text:'👢 Kicked ' + ids.length + ' guest' + (ids.length === 1 ? '' : 's') + '.' };
           } else {
             const r = await call('/api/admin/kick', { method:'POST', body:{ target: all ? '*' : el.dataset.target, reason } });
-            notice = { text:'👢 Kicked ' + (all ? r.kicked + ' player' + (r.kicked === 1 ? '' : 's') : name) + ' — it lands within a few seconds.' };
+            notice = { text:'👢 Kicked ' + (all ? r.kicked + ' player' + (r.kicked === 1 ? '' : 's') : name) + ' - it lands within a few seconds.' };
           }
           logRows = null; overview = null; guests = null;
         }});
@@ -828,7 +828,7 @@
       else if (act === 'energy' || act === 'energyall') {
         const all = act === 'energyall', name = all ? 'every player and guest' : (el.dataset.name || 'them');
         askFor({ text:'Gift Idle Universe energy to ' + name + '. It lands within a few seconds if they\'re playing it, or the next time they open it.' +
-                      '\nType an amount — 5000, 2.5m, 1b, 3t or 1e15 all work.',
+                      '\nType an amount - 5000, 2.5m, 1b, 3t or 1e15 all work.',
                  input:'Amount of energy', yes:'⚡ Send energy', run: async text => {
           const n = parseEnergy(text);
           if (!n) throw new Error('Type an amount, like 1m or 5e12.');
@@ -838,7 +838,7 @@
       }
       else if (act === 'pop' || act === 'popall') {
         const all = act === 'popall', name = all ? 'everyone online' : (el.dataset.name || 'them');
-        askFor({ text:'Message ' + name + ' — it pops up on their screen right away, even mid-game.', input:'Your message',
+        askFor({ text:'Message ' + name + ' - it pops up on their screen right away, even mid-game.', input:'Your message',
                  yes:'Send', run: async text => {
           if (!text) throw new Error('Type a message first.');
           const r = await call('/api/admin/popup', { method:'POST', body:{ target: all ? '*' : el.dataset.target, text } });
@@ -850,7 +850,7 @@
         const same = el.dataset.same === '1';
         askFor({ text:'Ban ' + name + '? They\'re kicked out within a few seconds, even mid-game.' +
                       (same ? '\nThey\'re on YOUR network, so only their device can be banned.' : ''),
-                 input:'Reason (optional)', choices: !isOwner ? [['24','This device — 1 day'],['1','This device — 1 hour'],['6','This device — 6 hours']]
+                 input:'Reason (optional)', choices: !isOwner ? [['24','This device - 1 day'],['1','This device - 1 hour'],['6','This device - 6 hours']]
                    : same ? BAN_CHOICES.filter(c => !/ip$/.test(c[0])) : BAN_CHOICES,
                  yes:'Ban ' + name, run: async (reason, pick) => {
           const ip = /ip$/.test(pick), hours = parseInt(pick, 10) || 0;
@@ -867,13 +867,13 @@
         askFor({ text:'Name this guest (only you see it):', input:'e.g. Sam\'s iPad', value: /^Guest /.test(el.dataset.name) ? '' : el.dataset.name,
                  yes:'Save', run: async label => {
           await call('/api/admin/guest-label', { method:'POST', body:{ gid: el.dataset.gid, label } });
-          guests = null; notice = { text: label ? 'Saved — they show as ' + label + '.' : 'Name cleared.' };
+          guests = null; notice = { text: label ? 'Saved - they show as ' + label + '.' : 'Name cleared.' };
         }});
       }
       else if (act === 'ipban') {
         const ip = ($('adm-ip').value || '').trim();
         if (!ip) { notice = { text:'Type an IP address first.', bad:true }; render(); return; }
-        askFor({ text:'Ban the network ' + ip + '? Everyone on it is locked out — guests and signed-in players alike (except you).',
+        askFor({ text:'Ban the network ' + ip + '? Everyone on it is locked out - guests and signed-in players alike (except you).',
                  input:'Reason (optional)', choices:[['0','Permanently'],['24','for 1 day'],['168','for 1 week']], yes:'Ban network',
                  run: async (reason, hours) => {
           await call('/api/admin/ip-ban', { method:'POST', body:{ ip, banned:true, reason, hours:+hours || 0 } });
@@ -889,7 +889,7 @@
         const go = async () => {
           await call('/api/admin/guests-lock', { method:'POST', body:{ on } });
           guests = null; overview = null; logRows = null;
-          notice = { text: on ? '🚫 Guest play is off — guests are asked to sign in.' : '✅ Guests can play again.' };
+          notice = { text: on ? '🚫 Guest play is off - guests are asked to sign in.' : '✅ Guests can play again.' };
         };
         if (on) askFor({ text:'Turn guest play off? Everyone not signed in is sent to the sign-in screen.', yes:'Turn it off', run: go });
         else { await go(); render(); }
@@ -913,7 +913,7 @@
       else if (act === 'goarcade') { e.preventDefault(); tab = 'arcade'; render(); }
       else if (act === 'msg') {
         const name = el.dataset.name || 'this player';
-        askFor({ text:'Message ' + name + ' — it pops up on their screen next time their hub checks in.', input:'Your message',
+        askFor({ text:'Message ' + name + ' - it pops up on their screen next time their hub checks in.', input:'Your message',
                  yes:'Send', run: async text => {
           if (!text) throw new Error('Type a message first.');
           await call('/api/admin/gift', { method:'POST', body:{ sub, note:text } });
@@ -1007,9 +1007,9 @@
         const body = { sub: giftTo.sub, tokens: parseInt($('adm-gtok').value, 10) || 0,
                        games: checked('g'), icons, note: ($('adm-gnote').value || '').trim() };
         const etext = ($('adm-genergy').value || '').trim(), energy = parseEnergy(etext);
-        if (etext && !energy) { $('adm-gmsg').textContent = 'That energy amount doesn\'t read right — try 1m, 5b or 1e15.'; return; }
+        if (etext && !energy) { $('adm-gmsg').textContent = 'That energy amount doesn\'t read right - try 1m, 5b or 1e15.'; return; }
         const stuff = body.tokens || body.games.length || body.icons.length;
-        if (!stuff && !energy) { $('adm-gmsg').textContent = 'Nothing to give — add tokens, energy or tick something.'; return; }
+        if (!stuff && !energy) { $('adm-gmsg').textContent = 'Nothing to give - add tokens, energy or tick something.'; return; }
         const who = giftTo.name;
         const send = async () => {
           const r = stuff ? await call('/api/admin/gift', { method:'POST', body }) : null;
@@ -1017,7 +1017,7 @@
             game:'idle-universe.html', amount: energy, note: body.note } }) : null;
           giftTo = null; players = null; logRows = null;
           notice = { text: '🎁 Gift queued for ' + (body.sub === '*' ? (r ? r.players : e.sent) + ' players' : who) +
-            (energy ? ' — ⚡ ' + etext + ' energy lands next time they\'re in Idle Universe' : '') + '.' };
+            (energy ? ' - ⚡ ' + etext + ' energy lands next time they\'re in Idle Universe' : '') + '.' };
         };
         if (body.sub === '*') askFor({ text:'Send this gift to every player?', yes:'Send to everyone', run: send });
         else { await send(); render(); }
@@ -1046,7 +1046,7 @@
         askFor({ text:'Reset tokens, unlocks and play history on this device?', yes:'Reset economy', run: async () => {
           if (typeof resetEconomy === 'function') resetEconomy();
           else Object.keys(K).forEach(k => localStorage.removeItem(K[k]));
-          notice = { text:'Economy reset — balance 0.' };
+          notice = { text:'Economy reset - balance 0.' };
           repaint();
         }});
       }
@@ -1131,7 +1131,7 @@
     if (e.key === 'Enter' && e.target && e.target.id === 'adm-ask-in') { const y = document.querySelector('[data-act="askyes"]'); if (y) y.click(); return; }
     if (e.key === 'Escape' && ask && built && $('adm-wrap').classList.contains('show')) { ask = null; render(); return; }
     if (e.key === 'Escape' && built && $('adm-wrap').classList.contains('show')) { close(); return; }
-    // Ctrl+Shift+A only — Cmd+Shift+A is Chrome's own tab search on a Mac.
+    // Ctrl+Shift+A only - Cmd+Shift+A is Chrome's own tab search on a Mac.
     if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) { e.preventDefault(); toggle(); }
   });
 
@@ -1169,7 +1169,7 @@
       sent.push({ path, body: opts && opts.body });
       if (path === '/api/admin/announce') { arcade.announce = opts.body.text ? { id:1, text:opts.body.text, tone:opts.body.tone, until:0 } : null; return { ok:true }; }
       if (path === '/api/admin/maintenance') { arcade.maintenance = opts.body.on ? { on:true, text:opts.body.text, since:now } : null; return { ok:true }; }
-      if (path === '/api/admin/log') return { log:[{ id:1, at:now, action:'ban', target:'Dave <d@x.com>', detail:'for 24h — spam' }] };
+      if (path === '/api/admin/log') return { log:[{ id:1, at:now, action:'ban', target:'Dave <d@x.com>', detail:'for 24h - spam' }] };
       if (path.indexOf('/api/admin/players') === 0) return { players: db.players };
       if (path === '/api/admin/overview') return { counts:{ players:3, online:1, newToday:1, friendships:0, invites:0,
         saves:2, reports:1, banned:1 }, recent:[{ name:'Dave', created:now }], topGames:[{ game:'gridlock', players:2 }],
@@ -1203,7 +1203,7 @@
       if (path === '/api/admin/guests-lock') { arcade.guestsLocked = opts.body.on; return { ok:true }; }
       return { ok:true };
     };
-    // Native dialogs must never be used — a suppressed prompt() silently cancels.
+    // Native dialogs must never be used - a suppressed prompt() silently cancels.
     window.prompt = window.confirm = window.alert = m => { dialogs.push('NATIVE ' + m); return null; };
     const answer = async (text) => {
       const i = $('adm-ask-in'); if (i && text != null) i.value = text;
@@ -1496,7 +1496,7 @@
 
     // ── Log tab ──
     tab = 'log'; logRows = null; render(); await wait(); await wait();
-    t('the log lists owner actions', bodyHas(/for 24h — spam/) && bodyHas(/Dave/));
+    t('the log lists owner actions', bodyHas(/for 24h - spam/) && bodyHas(/Dave/));
 
     tab = 'god'; render(); await wait();
     if (hasTokens()) {

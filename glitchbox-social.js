@@ -1,5 +1,5 @@
 /* ==========================================================================
-   GLITCHBOX — SOCIAL + PLAYER TOOLS
+   GLITCHBOX - SOCIAL + PLAYER TOOLS
    --------------------------------------------------------------------------
    Everything the hub shows players beyond the game grid, kept out of
    index.html so it stays readable:
@@ -31,7 +31,7 @@
   const session = () => { try { return localStorage.getItem('glitchbox_session') || ''; } catch (e) { return ''; } };
   const base = () => (typeof API_BASE !== 'undefined' ? API_BASE : (window.GLITCHBOX_API || ''));
   function ago(ts) {
-    if (!ts) return '—';
+    if (!ts) return '-';
     const s = Math.max(0, (Date.now() - ts) / 1000);
     if (s < 90) return 'just now';
     if (s < 3600) return Math.round(s / 60) + 'm ago';
@@ -173,7 +173,7 @@
     styles();
     const box = $('recent-row');
     if (!box) return;
-    // only games you can open right now — not locked specials, not switched-off ones
+    // only games you can open right now - not locked specials, not switched-off ones
     const list = J('glitchbox.recent', []).filter(x => { const g = x && gameOf(x.file);
       return g && !(typeof isLocked === 'function' && isLocked(g)) && !(typeof isOff === 'function' && isOff(g.file)); }).slice(0, 6);
     if (!list.length) { box.innerHTML = ''; return; }
@@ -213,7 +213,7 @@
     styles();
     const box = $('shop-challenges');
     if (!box) return;
-    if (!signedIn()) { box.innerHTML = '<div class="gbs-muted" style="padding:6px 2px">Sign in to do daily challenges — three new ones every day, ' + CH_REWARD + ' 🪙 each.</div>'; return; }
+    if (!signedIn()) { box.innerHTML = '<div class="gbs-muted" style="padding:6px 2px">Sign in to do daily challenges - three new ones every day, ' + CH_REWARD + ' 🪙 each.</div>'; return; }
     const day = dayKey(), t = J('glitchbox.today', null), plays = t && t.day === day ? t.plays : [];
     const c = J('glitchbox.chal', null), claimed = c && c.day === day ? c.claimed : [];
     box.innerHTML = challenges(day).map(ch => {
@@ -222,7 +222,7 @@
         : done ? '<button class="shop-btn buy" onclick="GBSocial.claim(\'' + E(ch.id) + '\')">🪙 Claim ' + CH_REWARD + '</button>'
         : (ch.file ? '<a class="shop-btn play" style="text-decoration:none" href="' + E(gameURL(ch.file)) + '">▶ Go</a>' : '<span class="gbs-muted">' + have + '/' + ch.need + '</span>');
       return '<div class="ch-row' + (done ? ' done' : '') + '"><span class="e">' + E(ch.e) + '</span><div class="t">' + E(ch.text) +
-        '<small>' + (got ? 'Claimed' : done ? 'Done — claim it!' : have + ' / ' + ch.need) + '</small>' +
+        '<small>' + (got ? 'Claimed' : done ? 'Done - claim it!' : have + ' / ' + ch.need) + '</small>' +
         '<div class="ch-bar"><i style="width:' + Math.round(have / ch.need * 100) + '%"></i></div></div>' + btn + '</div>';
     }).join('') + '<div class="gbs-muted" style="margin-top:6px">New challenges every day at midnight.</div>';
   }
@@ -261,7 +261,7 @@
       : '<div class="gbs-now" style="border-color:rgba(255,255,255,.12);background:none;color:var(--muted,#8b95a8)">💤 Offline</div>';
     const got = (p.badges || []).filter(b => b.got).length;
     modal('<div class="gbs-head">' + av(p) + '<div><div class="gbs-name">' + E(p.name) + (p.self ? ' <span class="gbs-muted">(you)</span>' : '') + '</div>' +
-        '<div class="gbs-muted">Member since ' + (p.created ? new Date(p.created).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '—') +
+        '<div class="gbs-muted">Member since ' + (p.created ? new Date(p.created).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '-') +
         ' · ' + p.friends + ' friend' + (p.friends === 1 ? '' : 's') + (p.totalMinutes != null ? ' · ' + mins(p.totalMinutes) + ' played this month' : '') + '</div></div></div>' +
       now +
       '<div class="gbs-h">// BADGES · ' + got + ' / ' + (p.badges || []).length + '</div>' + badgesHTML(p.badges) +
@@ -316,7 +316,7 @@
       '<span class="grow">' + E(x.name) + (x.sub === mine ? ' (you)' : '') + '</span><span class="num">' + val(x) + '</span></div>').join('');
     modal(head +
       '<div class="gbs-h">// MOST PLAYED THIS WEEK</div>' +
-      (d.time.length ? rows(d.time, x => mins(x.minutes)) : '<div class="gbs-muted">Nobody yet — play a while and you\'re on it.</div>') +
+      (d.time.length ? rows(d.time, x => mins(x.minutes)) : '<div class="gbs-muted">Nobody yet - play a while and you\'re on it.</div>') +
       (game !== '*' ? '<div class="gbs-h">// HIGH SCORES' + (d.low ? ' · lowest wins' : '') + '</div>' +
         (d.scores.length ? rows(d.scores, x => E(x.score)) : '<div class="gbs-muted">No scores posted for this game yet.</div>') : '') +
       '<div class="gbs-muted" style="margin-top:14px">Only signed-in players show up, as first name + initial. Hide yourself from your profile.</div>');
@@ -340,7 +340,7 @@
         const gid = typeof guestId === 'function' ? guestId() : '';
         d = await call('/api/guest-data?gid=' + encodeURIComponent(gid), { token: '' });
       } else {
-        if (!session()) throw new Error('You\'re signed in on this device but not connected to the server yet — try again in a moment.');
+        if (!session()) throw new Error('You\'re signed in on this device but not connected to the server yet - try again in a moment.');
         d = await call('/api/my-data');
       }
     } catch (e) { modal('<div class="gbs-title">🔐 MY DATA</div><div class="gbs-muted">' + E(e.message) + '</div>'); return; }
@@ -352,7 +352,7 @@
       E(a.game === '~' ? '💤 went offline' : a.game ? gname(a.game) : '🏠 the hub') + '</span></div>').join('');
     const deviceOf = ua => { ua = String(ua || ''); return /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /CrOS/.test(ua) ? 'Chromebook' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'Mac' : ua ? 'Other' : ''; };
     let html = '<div class="gbs-title">🔐 MY DATA</div>' +
-      '<div class="gbs-muted">This is everything GLITCHBOX keeps about you — the same things the owner can see. ' +
+      '<div class="gbs-muted">This is everything GLITCHBOX keeps about you - the same things the owner can see. ' +
         '<a href="#" onclick="viewTos();return false;" style="color:var(--cyan,#00f5ff)">Read the terms</a>.</div>';
     if (guest) {
       const g = d.guest;
@@ -441,7 +441,7 @@
       '<textarea class="gbs-in" id="gbs-appeal" maxlength="500" placeholder="Why should you be unbanned?"></textarea>' +
       '<div class="gbs-actions"><button class="gbs-btn solid" onclick="GBSocial.sendAppeal()">Send appeal</button></div><div class="gbs-muted" id="gbs-appeal-msg"></div>';
     if (st && st.status === 'open') box.innerHTML = '<div class="gbs-now" style="border-color:rgba(255,200,0,.45);background:rgba(255,200,0,.06)">⏳ Your appeal was sent ' + ago(st.created) + '. The answer shows up here.</div>';
-    else if (st && st.status === 'accepted') box.innerHTML = '<div class="gbs-now">✅ Your appeal was accepted' + (st.reply ? ': “' + E(st.reply) + '”' : '') + ' — press Check again.</div>';
+    else if (st && st.status === 'accepted') box.innerHTML = '<div class="gbs-now">✅ Your appeal was accepted' + (st.reply ? ': “' + E(st.reply) + '”' : '') + ' - press Check again.</div>';
     else if (st && st.status === 'rejected') box.innerHTML = '<div class="gbs-now" style="border-color:rgba(255,0,80,.45);background:rgba(255,0,80,.06)">❌ Your appeal was turned down' +
       (st.reply ? ': “' + E(st.reply) + '”' : '') + '</div>' + (Date.now() - (st.decided_at || 0) > 86400000 ? form : '<div class="gbs-muted">You can appeal again a day after the answer.</div>');
     else box.innerHTML = form;
@@ -462,7 +462,7 @@
     toast('🔔 ' + title, body, 9000);
     try {
       if ('Notification' in window && Notification.permission === 'granted' && document.hidden)
-        new Notification('GLITCHBOX — ' + title, { body });
+        new Notification('GLITCHBOX - ' + title, { body });
     } catch (e) {}
   }
   function checkAlerts(a) {

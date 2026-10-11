@@ -1,7 +1,7 @@
 /* ==========================================================================
-   GLITCHBOX — shared save/continue system  (signed-in players only)
+   GLITCHBOX - shared save/continue system  (signed-in players only)
    --------------------------------------------------------------------------
-   Load this in a game's <head> — NOT deferred, and NOT at the bottom:
+   Load this in a game's <head> - NOT deferred, and NOT at the bottom:
        <script src="glitchbox-save.js"></script>
    It must execute before the game's own inline script so that `GBSave` already
    exists when that script registers. (Nothing here touches the DOM until
@@ -27,7 +27,7 @@
    - Saves are keyed by account `sub` AND game id, so two people sharing a
      laptop never overwrite each other's colony.
    - Writes go to localStorage first (instant, always works) and are then
-     mirrored to the Worker when one is deployed — so this whole file keeps
+     mirrored to the Worker when one is deployed - so this whole file keeps
      working today and turns into cross-device sync later with no game edits.
    - Same shadow-root + fixed-position approach as glitchbox-menu.js, and it
      self-positions just outboard of that button using the same `data-pos`.
@@ -69,7 +69,7 @@
     localStorage.setItem(key(sub), raw);
   }
 
-  // Cloud mirror — only attempted once the Worker URL is real. Every call is
+  // Cloud mirror - only attempted once the Worker URL is real. Every call is
   // best-effort: a dead backend must never cost someone their local save.
   function cloudOn() { return !!(window.GLITCHBOX_BACKEND_READY && session()); }
   function cloudPush(box) {
@@ -113,7 +113,7 @@
   function build() {
     var host = document.createElement('div');
     host.id = 'glitchbox-save-host';
-    // No transform/filter/contain here — any of them would make this a
+    // No transform/filter/contain here - any of them would make this a
     // containing block and the fixed-position child would anchor to it.
     host.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;' +
       'z-index:2147483646;pointer-events:none;';
@@ -272,7 +272,7 @@
         return false;
       }
       // A game returns null while there is genuinely nothing to keep (title
-      // screen, run not begun) — don't clobber a good save with an empty one.
+      // screen, run not begun) - don't clobber a good save with an empty one.
       if (data === null || data === undefined) {
         if (fromClick) { flash('NOTHING YET'); }
         return false;
@@ -315,7 +315,7 @@
       setOpen(false);
     }, true);
     // Swallow pointer input so a click here never also reaches the game canvas.
-    // Key events are deliberately left alone — the button holds focus after a
+    // Key events are deliberately left alone - the button holds focus after a
     // click and stopping keys would deafen the game's controls.
     ['pointerdown', 'mousedown', 'touchstart', 'wheel'].forEach(function (t) {
       wrap.addEventListener(t, function (e) { e.stopPropagation(); });
@@ -333,7 +333,7 @@
     });
 
     // Last-ditch save when the tab goes away. Only for games that opted into
-    // autosave — otherwise an explicit SAVE is the only thing that writes.
+    // autosave - otherwise an explicit SAVE is the only thing that writes.
     window.addEventListener('pagehide', function () {
       if (adapter && adapter.autosave) doSave(false);
     });
@@ -375,7 +375,7 @@
       return cloudPull().then(function (box) {
         if (!box) return false;
         var mine = readLocal(u.sub);
-        if (mine && mine.at >= box.at) return false;   // local is newer — keep it
+        if (mine && mine.at >= box.at) return false;   // local is newer - keep it
         try { writeLocal(u.sub, box); } catch (_) { return false; }
         if (ui) ui.render();
         return true;
@@ -388,7 +388,7 @@
     build();
     API.sync();                                  // no-op while the Worker is a placeholder
 
-    // #savecheck — verify the button is present, topmost and clickable here.
+    // #savecheck - verify the button is present, topmost and clickable here.
     if (location.hash === '#savecheck') {
       setTimeout(function () {
         var host = document.getElementById('glitchbox-save-host');
@@ -404,7 +404,7 @@
       }, 700);
     }
 
-    // #saveroundtrip — save, mutate nothing, reload the save back in and report.
+    // #saveroundtrip - save, mutate nothing, reload the save back in and report.
     if (location.hash === '#saveroundtrip') {
       setTimeout(function () {
         var wrote = API.save();

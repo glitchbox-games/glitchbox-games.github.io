@@ -3,19 +3,19 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
-  {name:'Haymaker',           file:'haymaker.html',               emoji:'🥊',color:['#160805','#2e1206'],category:'multiplayer',tags:['new','hot','mp'],blurb:'3D boxing with superpowers. Hold to charge a HAYMAKER, time perfect blocks, unleash cinematic ultimates — twelve fighters, a secret boss and a fighter creator, six venues from a sunset beach to a space station in orbit, career, tournament, survival and daily modes, a roaring crowd, title belts and slow-mo KO replays. CPU, a friend on the same keyboard, or online 1v1'},
-  {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil — race up to 7 friends on the same cars'},
+  {name:'Haymaker',           file:'haymaker.html',               emoji:'🥊',color:['#160805','#2e1206'],category:'multiplayer',tags:['new','hot','mp'],blurb:'3D boxing with superpowers. Charge up a HAYMAKER, block at the last second and knock your friends out. 12 fighters, a secret boss, make your own fighter, fight on a beach or in space. Play the CPU, a friend on one keyboard, or online 1v1'},
+  {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil - race up to 7 friends on the same cars'},
   {name:'Heist Crew',         file:'heist-crew.html',             emoji:'💰',color:['#05070c','#162036'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hacker, locksmith, muscle, lookout. Sneak past guards and cameras, crack the vault, make the van. 1 to 4 players'},
   {name:'Bomb Squad',         file:'bomb-squad.html',             emoji:'💣',color:['#141617','#2a1410'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One of you has the bomb, everyone else has the manual. Talk it through before it blows. 2 to 8 players'},
-  {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hungry monsters want snacks! Count, match and serve — race up to 5 friends. Made for younger players'},
+  {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hungry monsters want snacks! Count, match and serve - race up to 5 friends. Made for younger players'},
   {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
   {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
   {name:'Most Likely To',     file:'most-likely-to.html',         emoji:'🫵',color:['#120c06','#22101c'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Who\'s most likely to…? Everyone votes, the winner gets crowned. 3 to 16 players'},
-  {name:'Rhyme Bomb',         file:'rhyme-bomb.html',             emoji:'💣',color:['#0c0614','#24100a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Rhyme with the word or the bomb blows up in your hands — 2 to 8 players'},
+  {name:'Rhyme Bomb',         file:'rhyme-bomb.html',             emoji:'💣',color:['#0c0614','#24100a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Rhyme with the word or the bomb blows up in your hands - 2 to 8 players'},
   {name:'Be the Dungeon',     file:'be-the-dungeon.html',         emoji:'🕳️',color:['#0a0508','#1e0a12'],category:'strategy',   tags:['new','hot'],price:150,blurb:'You are the dungeon. The adventurers learn from every raid'},
   {name:'Idle Universe',      file:'idle-universe.html',          emoji:'🌌',color:['#04030c','#140b2c'],category:'simulation', tags:['new','hot'],blurb:'One tap, one particle. Grow it into stars, life and minds, then crunch it all'},
   {name:'Shape Conquest',     file:'shape-conquest.html',         emoji:'🌍',color:['#0d1624','#152238'],category:'strategy',   tags:['new','hot'],blurb:'Pick any country, build an army of shapes, invade the world'},
-  {name:'Scrawl',             file:'scrawl.html',                 emoji:'🖍️',color:['#0a0614','#1c1030'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One player draws, everyone races to guess the word — 2 to 8 players'},
+  {name:'Scrawl',             file:'scrawl.html',                 emoji:'🖍️',color:['#0a0614','#1c1030'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One player draws, everyone races to guess the word - 2 to 8 players'},
   {name:'Gridlock',           file:'gridlock.html',               emoji:'\u26a1',color:['#04060e','#0a1a34'],category:'multiplayer',tags:['new','hot','mp'],price:100,blurb:'Three to eight light cycles, one grid, nobody stops'},
   {name:'Patch Notes',        file:'patch-notes.html',            emoji:'🩹',color:['#07090c','#121922'],category:'strategy',   tags:['new','hot']},
   {name:'Seven Liars',         file:'seven-liars.html',            emoji:'🕶️',color:['#06080b','#101a24'],category:'puzzle',     tags:['new','hot']},
@@ -28,18 +28,18 @@ const GAMES=[
   {name:'Barrier',             file:'barrier.html',                emoji:'🚧',color:['#02140f','#04241b'],category:'action',     tags:['new','hot']},
   {name:'Quoridor',            file:'quoridor.html',               emoji:'🧱',color:['#0a1428','#12233f'],category:'strategy',   tags:['new','mp']},
   {name:'Pixel War',           file:'pixel-war.html',              emoji:'🪖',color:['#0a1800','#1a3008'],category:'action',     tags:['hot']},
-  {name:'War Combined',        file:'war-combined.html',           emoji:'🛡️',color:['#180000','#300808'],category:'action',     tags:['hot'],blurb:'Two arsenals in one battlefield — subs, carriers, jets and armor'},
+  {name:'War Combined',        file:'war-combined.html',           emoji:'🛡️',color:['#180000','#300808'],category:'action',     tags:['hot'],blurb:'Two arsenals in one battlefield - subs, carriers, jets and armor'},
   {name:'Nuclear DEFCON',      file:'nuclear.html',                emoji:'☢️',color:['#141000','#242000'],category:'strategy',   tags:['hot']},
   {name:'Spaceship',           file:'spaceship-solo.html',         emoji:'🚀',color:['#020510','#060f28'],category:'action',     tags:['hot']},
   {name:'Spaceship MP',        file:'spaceship-mp.html',           emoji:'🛸',color:['#040610','#080f26'],category:'multiplayer',tags:['mp']},
   {name:'Build a Bridge',      file:'build-a-bridge.html',         emoji:'🌉',color:['#060c18','#0c1830'],category:'puzzle',     tags:['hot']},
-  {name:'Red Horizon',         file:'mars-colony.html',            emoji:'🔴',color:['#180400','#301000'],category:'simulation', tags:['new'],blurb:'Red Horizon — build a colony that survives the Martian night'},
+  {name:'Red Horizon',         file:'mars-colony.html',            emoji:'🔴',color:['#180400','#301000'],category:'simulation', tags:['new'],blurb:'Red Horizon - build a colony that survives the Martian night'},
   {name:'Untamed',             file:'national-park-tycoon.html',   emoji:'🏞️',color:['#041200','#082400'],category:'simulation', tags:['new']},
   {name:'Park Simulator',      file:'national-park-simulator.html',emoji:'⛺',color:['#060e00','#0e1c00'],category:'simulation', tags:[]},
   {name:'Virus',               file:'virus.html',                  emoji:'🦠',color:['#0a0414','#180828'],category:'strategy',   tags:['hot']},
   {name:'Last Transmission',   file:'last-transmission.html',      emoji:'📡',color:['#040a14','#081424'],category:'adventure',  tags:['new']},
   {name:'Last Transmission 3D',file:'last-transmission-3d.html',   emoji:'🌌',color:['#02040e','#060c1e'],category:'adventure',  tags:['new'],blurb:'The deep-space story, rebuilt in 3D'},
-  {name:'Cheese Heist 3D',     file:'cheese-heist-3d.html',        emoji:'🧀',color:['#1a1500','#2a2200'],category:'action',     tags:[],blurb:'Full 3D stealth heist — grab the cheese, stay out of sight'},
+  {name:'Cheese Heist 3D',     file:'cheese-heist-3d.html',        emoji:'🧀',color:['#1a1500','#2a2200'],category:'action',     tags:[],blurb:'Full 3D stealth heist - grab the cheese, stay out of sight'},
   {name:'Fib Factory',         file:'fib-factory.html',            emoji:'🎭',color:['#1a001a','#2a002a'],category:'multiplayer',tags:['mp']},
   {name:'Yellowstone Carnage', file:'yellowstone-carnage.html',    emoji:'🌋',color:['#1a0a00','#2a1500'],category:'action',     tags:['new'],blurb:'Supervolcano chaos, no survivors guaranteed'},
   {name:'Speed Stars',         file:'speed-stars.html',            emoji:'🏎️',color:['#000a1a','#001030'],category:'action',     tags:[]},
@@ -306,7 +306,7 @@ const DRAW={
   c.strokeStyle='#bff4ff';c.shadowColor='#5fdcff';c.shadowBlur=14;c.lineWidth=3;c.beginPath();c.moveTo(250,0);c.lineTo(236,40);c.lineTo(250,52);c.lineTo(232,96);c.lineTo(246,104);c.lineTo(226,150);c.stroke();c.shadowBlur=0;
   const limb=(x1,y1,x2,y2,w,col)=>{c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()};
   const glove=(x,y,r,col)=>{const g=c.createRadialGradient(x-r*.35,y-r*.35,1,x,y,r);g.addColorStop(0,'#fff');g.addColorStop(.25,col);g.addColorStop(1,'#000');c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,6.3);c.fill()};
-  // left boxer — Blaze, throwing
+  // left boxer - Blaze, throwing
   const sk='#b9794f';limb(103,138,96,186,11,sk);limb(119,138,128,186,11,sk);
   c.fillStyle='#e0461a';c.fillRect(96,120,32,24);c.fillStyle='#ffcc33';c.fillRect(96,118,32,5);
   const torso=(x,y,lean,col)=>{c.fillStyle=col;c.beginPath();c.moveTo(x-19+lean,y-20);c.quadraticCurveTo(x+lean,y-26,x+19+lean,y-20);c.lineTo(x+12,y+20);c.lineTo(x-12,y+20);c.closePath();c.fill();c.beginPath();c.arc(x-16+lean,y-17,7,0,6.3);c.arc(x+16+lean,y-17,7,0,6.3);c.fill()};
@@ -318,7 +318,7 @@ const DRAW={
   // fire around the punching glove
   for(let i=0;i<26;i++){const a=i*2.4,r=4+(i*7)%16;c.fillStyle=`rgba(255,${120+(i*23)%120},20,${.7-(r/30)})`;c.beginPath();c.arc(170-Math.cos(a)*r*.9-r*.5,76+Math.sin(a)*r*.6,4+(i%4),0,6.3);c.fill()}
   glove(180,75,11,'#ff3a1a');
-  // right boxer — Volt, head snapping back
+  // right boxer - Volt, head snapping back
   const sk2='#f0c8a0';limb(209,140,200,186,11,sk2);limb(227,140,236,186,11,sk2);
   c.fillStyle='#ffd21f';c.fillRect(202,122,32,24);c.fillStyle='#15151a';c.fillRect(202,120,32,5);
   torso(217,104,4,sk2);
@@ -422,7 +422,7 @@ const DRAW={
   const cone=c.createLinearGradient(160,26,160,200);
   cone.addColorStop(0,'rgba(255,224,166,.16)');cone.addColorStop(1,'rgba(255,224,166,0)');
   c.fillStyle=cone;c.beginPath();c.moveTo(160,26);c.lineTo(292,200);c.lineTo(28,200);c.closePath();c.fill();
-  // seven statements, four hours each — green agrees, red is denied, one is proof
+  // seven statements, four hours each - green agrees, red is denied, one is proof
   const st=[[1,1,1,1],[1,0,1,1],[1,1,3,0],[0,1,1,1],[1,1,2,1],[1,0,1,0],[1,1,3,1]];
   const col=['#111a23','#0d2117','#08222b','#26101a'];
   const bd =['#26333f','#1f5236','#2a6d80','#5a2530'];
@@ -1035,20 +1035,20 @@ fallback:(c,g)=>{
 },
 };
 
-// ── AI-painted thumbnails ──
-// thumbs/<gid>.png (from gen-thumbs.js) overlays the canvas art the moment it
+// ── Image thumbnails ──
+// thumbs/<gid>.png (an in-game shot) overlays the canvas art the moment it
 // loads; missing files cost one 404 and the hand-drawn art simply stays.
 const THUMB_IMGS = {};
 // Which games actually have a painted thumbs/<gid>.png. Asking for every game's file
 // meant ~43 failed downloads (404s) on every hub and play-page visit. Add a gid here
-// when gen-thumbs.js makes a new one.
+// when a new shot goes into thumbs/.
 const THUMB_FILES = new Set(['gridlock','haymaker']);
 function drawThumb(ctx, g){
   const gid = g.file.replace('.html','');
   (DRAW[gid] || DRAW.fallback)(ctx, g);
   if (!THUMB_FILES.has(gid)) return;
   let img = THUMB_IMGS[gid];
-  if (img === null) return;                    // known missing — canvas art it is
+  if (img === null) return;                    // known missing - canvas art it is
   if (!img){
     img = THUMB_IMGS[gid] = new Image();
     img.onerror = () => { THUMB_IMGS[gid] = null; };

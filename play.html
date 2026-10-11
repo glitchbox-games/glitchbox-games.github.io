@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GLITCHBOX — Play</title>
+<title>GLITCHBOX - Play</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="glitchbox-config.js"></script>
@@ -85,7 +85,7 @@ body.expanded .wrap { max-width:none; padding:0; }
 body.expanded .stage { position:fixed; inset:0; z-index:60; clip-path:none; border:0; box-shadow:none; }
 body.expanded .frame-box { aspect-ratio:auto; width:100%; height:100%; min-height:0; }
 body.expanded .toolbar { display:none; }
-/* recommendations only exist in the small window — see the note in the JS */
+/* recommendations only exist in the small window - see the note in the JS */
 body.expanded .info-strip, body.expanded .blurb, body.expanded .section, body.expanded .foot { display:none; }
 
 .float-bar { display:none; }
@@ -225,7 +225,7 @@ body.expanded .float-bar:hover { opacity:1; }
     <span class="tb-name" id="tb-name">Loading…</span>
   </div>
   <div class="tb-right">
-    <a class="token-chip" href="index.html#shop" title="Arcade tokens — open the shop">
+    <a class="token-chip" href="index.html#shop" title="Arcade tokens - open the shop">
       <span>🪙</span><span id="token-balance">0</span>
     </a>
   </div>
@@ -238,7 +238,7 @@ body.expanded .float-bar:hover { opacity:1; }
       <div class="veil" id="veil">
         <div class="v-play">▶</div>
         <div class="v-text" id="veil-title">PLAY</div>
-        <div class="v-hint">Click to start — keyboard goes to the game</div>
+        <div class="v-hint">Click to start - keyboard goes to the game</div>
       </div>
     </div>
     <div class="toolbar">
@@ -259,11 +259,11 @@ body.expanded .float-bar:hover { opacity:1; }
     <button class="tool" onclick="goFullscreen()"><span class="t-i">▣</span>Fullscreen</button>
     <a class="tool quit" href="index.html"><span class="t-i">✕</span>Quit</a>
   </div>
-  <div class="expand-hint" id="expand-hint">◱ Minimize — top right — for more games</div>
+  <div class="expand-hint" id="expand-hint">◱ Minimize - top right - for more games</div>
 
   <div class="info-strip">
     <h1 id="game-title">GAME</h1>
-    <span class="game-tag cat" id="game-cat">—</span>
+    <span class="game-tag cat" id="game-cat">-</span>
     <span id="game-badges"></span>
   </div>
   <p class="blurb" id="game-blurb"></p>
@@ -289,7 +289,7 @@ body.expanded .float-bar:hover { opacity:1; }
 
 <script>
 // ══════════════════ WHICH GAME ══════════════════
-// ?g=neon-putt.html — everything after the query string (the #room=... deep links
+// ?g=neon-putt.html - everything after the query string (the #room=... deep links
 // the hub builds for multiplayer) is handed through to the iframe untouched.
 const params = new URLSearchParams(location.search);
 const wanted = (params.get('g')||'').split('/').pop();
@@ -306,13 +306,13 @@ function jsonGet(k,f){ try{ const v=JSON.parse(localStorage.getItem(k)); return 
 function jsonSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function tokens(){ const n=parseInt(localStorage.getItem(TOK.bal),10); return isNaN(n)?0:n; }
 function ownedList(){ const v=jsonGet(TOK.own,[]); return Array.isArray(v)?v:[]; }
-// Guests play the free games only — tokens, specials and favorites need a sign-in.
+// Guests play the free games only - tokens, specials and favorites need a sign-in.
 function isGuest(){ try{ const u=JSON.parse(localStorage.getItem('glitchbox_user')||'null'); return !(u&&u.email); }catch(e){ return true; } }
 function isLocked(g){ return !!g.price && (isGuest() || ownedList().indexOf(g.file)===-1); }
 function favList(){ const v=jsonGet(FAV_KEY,[]); return Array.isArray(v)?v:[]; }
 function isFav(file){ return !isGuest() && favList().indexOf(file)!==-1; }
 
-// Same terms gate as the hub and glitchbox-menu.js — keep TOS_VERSION in step.
+// Same terms gate as the hub and glitchbox-menu.js - keep TOS_VERSION in step.
 const TOS_VERSION='2026-10-11.1';
 function tosAgreed(){
   // newest version ever agreed on this device; anything at or past ours counts
@@ -334,11 +334,11 @@ const frame = document.getElementById('game-frame');
 const stage = document.getElementById('stage');
 const veil  = document.getElementById('veil');
 const src   = game ? game.file + location.hash : 'about:blank';
-// ?v= makes every open fetch the newest build — otherwise browsers keep serving a
+// ?v= makes every open fetch the newest build - otherwise browsers keep serving a
 // cached copy of the framed game and fresh updates don't show up on refresh.
 const fresh = () => game ? game.file + '?v=' + Date.now() + location.hash : 'about:blank';
 
-document.title = (game ? game.name : 'Play') + ' — GLITCHBOX';
+document.title = (game ? game.name : 'Play') + ' - GLITCHBOX';
 if(game){
   document.getElementById('tb-emoji').textContent = game.emoji;
   document.getElementById('tb-name').textContent  = game.name;
@@ -366,7 +366,7 @@ frame.addEventListener('load', () => {
   }
 });
 
-// First click hands the keyboard over — iframes don't get key events until focused.
+// First click hands the keyboard over - iframes don't get key events until focused.
 function startGame(){ veil.classList.add('gone'); try{ frame.contentWindow.focus(); }catch(e){} frame.focus(); }
 veil.addEventListener('click', startGame);
 document.getElementById('frame-box').addEventListener('click', () => { try{ frame.contentWindow.focus(); }catch(e){} });
@@ -395,7 +395,7 @@ document.addEventListener('fullscreenchange', () => {
 // ══════════════════ EXPAND / MINIMIZE ══════════════════
 // Expanded, the frame fills the browser window and the page underneath is hidden.
 // Minimized, the game sits in its window and the recommendation grids below it
-// come back — that's the whole point of this page.
+// come back - that's the whole point of this page.
 const EXPAND_KEY='glitchbox.expand';
 let hintTimer=0;
 function isExpanded(){ return document.body.classList.contains('expanded'); }
@@ -416,7 +416,7 @@ function setExpanded(on){
   try{ frame.contentWindow.focus(); }catch(e){}
 }
 function toggleExpand(){ setExpanded(!isExpanded()); }
-// Esc is the universal "get me out" — but the keystroke lands inside the game's
+// Esc is the universal "get me out" - but the keystroke lands inside the game's
 // own document, so listen there too once the frame is same-origin loaded.
 document.addEventListener('keydown', e => { if(e.key==='Escape' && isExpanded() && !document.fullscreenElement) setExpanded(false); });
 frame.addEventListener('load', () => {
@@ -430,7 +430,7 @@ frame.addEventListener('load', () => {
 try { if(localStorage.getItem(EXPAND_KEY)==='1') setExpanded(true); } catch(e){}
 
 // ══════════════════ "ALWAYS FULLSCREEN" PREFERENCE ══════════════════
-// Shared with the hub's FRAMED/FULL switch — tick it here and the arcade stops
+// Shared with the hub's FRAMED/FULL switch - tick it here and the arcade stops
 // routing through this page entirely.
 function playMode(){ return localStorage.getItem(PLAY_MODE_KEY)==='full'?'full':'framed'; }
 function paintPref(){
@@ -503,7 +503,7 @@ let offList = [];
 fetch((window.GLITCHBOX_API||'https://glitchbox-api.levtheduck.workers.dev')+'/api/health')
   .then(r=>r.json()).then(h=>{ if(Array.isArray(h.disabled) && h.disabled.length){ offList=h.disabled; renderGrids(); } }).catch(()=>{});
 // A tiny bit of ordering so the strip under the game isn't random: same category
-// first, then the hot ones, then everything else — favorites float up either way.
+// first, then the hot ones, then everything else - favorites float up either way.
 function score(g){
   let s=0;
   if(game && g.category===game.category) s+=100;

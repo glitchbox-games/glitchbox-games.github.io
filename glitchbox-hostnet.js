@@ -1,5 +1,5 @@
 /* ==========================================================================
-   GLITCHBOX — HOSTNET
+   GLITCHBOX - HOSTNET
    --------------------------------------------------------------------------
    Lets a game that was written for its own Node WebSocket server run on the
    GitHub Pages arcade, where there is no server: the HOST player's browser
@@ -67,7 +67,7 @@
       try { relay && relay.close(); } catch (e) {}
       emit('close', { reason: why || '' });
     }
-    // The thing a game server calls .send() on — one per player. Strings stay strings.
+    // The thing a game server calls .send() on - one per player. Strings stay strings.
     function serverWs(deliver) { return { readyState: 1, send: str => deliver(typeof str === 'string' ? str : JSON.stringify(str)), close() {} }; }
 
     // Host → guests. Everything sent in one turn of the event loop is batched, and a

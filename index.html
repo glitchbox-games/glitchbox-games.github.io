@@ -216,7 +216,7 @@ body.leaving .page-wipe { opacity:1; }
 .token-chip.bump { animation:tokBump 0.5s cubic-bezier(.3,1.6,.5,1); }
 @keyframes tokBump { 0%{transform:scale(1)} 35%{transform:scale(1.16)} 100%{transform:scale(1)} }
 
-/* locked cards — the art is there but dimmed out behind the price */
+/* locked cards - the art is there but dimmed out behind the price */
 .game-card.locked .thumb-canvas { filter:grayscale(0.9) brightness(0.36) blur(1.2px); }
 .game-card.locked { border-color:rgba(255,230,0,0.18); }
 .game-card.locked:hover { border-color:rgba(255,230,0,0.5); box-shadow:0 8px 30px rgba(0,0,0,0.5),0 0 22px rgba(255,230,0,0.12); }
@@ -322,7 +322,7 @@ body.leaving .page-wipe { opacity:1; }
 .set-row .sr-sub { font-size:11.5px; color:var(--muted); font-weight:600; }
 .set-row .sr-cost { font-family:'Press Start 2P',monospace; font-size:9px; color:var(--yellow); flex-shrink:0; }
 
-/* token toasts — stack under the topbar so gains are visible on any screen */
+/* token toasts - stack under the topbar so gains are visible on any screen */
 .token-toasts { position:fixed; top:74px; right:20px; z-index:420; display:flex; flex-direction:column; gap:8px;
   max-width:min(300px,calc(100vw - 40px)); pointer-events:none; }
 .token-toast { background:var(--bg2); border:1px solid rgba(255,230,0,0.45); border-left:3px solid var(--yellow);
@@ -340,7 +340,7 @@ body.leaving .page-wipe { opacity:1; }
 ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:rgba(0,245,255,0.2); }
 @media (max-width:900px) { .sidebar{display:none;} .featured{height:200px;} .featured h2{font-size:13px;} }
 @media (max-width:600px) { .content{padding:14px;} .topbar{padding:10px 14px;} .game-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;} .tag-filter{display:none;}
-  .token-chip{margin-left:auto;padding:8px 11px;}   /* the filters are gone — the chip takes the right edge */
+  .token-chip{margin-left:auto;padding:8px 11px;}   /* the filters are gone - the chip takes the right edge */
   .token-toasts{top:66px;right:10px;} }
 
 /* ── AUTH GATE ── */
@@ -378,7 +378,7 @@ body.leaving .page-wipe { opacity:1; }
 .announce .an-text { flex:1; min-width:0; }
 .announce .an-x { background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:2px 6px; }
 .announce .an-x:hover { color:var(--text); }
-/* Terms of service — must be agreed to before a signed-in player can use the arcade. */
+/* Terms of service - must be agreed to before a signed-in player can use the arcade. */
 .tos-screen { z-index:10001; background:radial-gradient(ellipse at 50% 30%,rgba(0,245,255,0.12),transparent 60%),#05030a; }
 .tos-screen .auth-card { max-width:560px; text-align:left; border-color:rgba(0,245,255,0.35); padding:30px 28px 26px; }
 .tos-screen .ban-title { color:var(--cyan); text-shadow:0 0 14px rgba(0,245,255,0.5); text-align:center; }
@@ -571,7 +571,7 @@ body.locked .main { filter:blur(6px); pointer-events:none; }
 .friend-av img { width:100%; height:100%; object-fit:cover; }
 .icon-grid {
   display:grid; grid-template-columns:repeat(auto-fill,minmax(50px,1fr)); gap:8px;
-  padding:0 26px 6px; max-height:360px; overflow-y:auto;   /* 120+ icons — give it room */
+  padding:0 26px 6px; max-height:360px; overflow-y:auto;   /* 120+ icons - give it room */
 }
 .icon-grid::-webkit-scrollbar { width:8px; }
 .icon-grid::-webkit-scrollbar-track { background:rgba(255,255,255,0.04); }
@@ -601,7 +601,7 @@ body.locked .main { filter:blur(6px); pointer-events:none; }
 .friend-sub.on { color:var(--green); }
 .friend-row.invite { border-left-color:var(--green); }
 
-/* Invite toast — slides in at the bottom-right whenever a friend invites you. */
+/* Invite toast - slides in at the bottom-right whenever a friend invites you. */
 .invite-toasts { position:fixed; right:20px; bottom:20px; z-index:400; display:flex; flex-direction:column; gap:10px;
   max-width:min(340px,calc(100vw - 40px)); }
 .invite-toast {
@@ -616,7 +616,7 @@ body.locked .main { filter:blur(6px); pointer-events:none; }
 .invite-toast .it-body b { color:var(--cyan); }
 .invite-toast .it-actions { display:flex; gap:7px; }
 
-/* Game picker — shown when you hit "Invite" on a friend. */
+/* Game picker - shown when you hit "Invite" on a friend. */
 .picker { position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:500; display:none;
   align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
 .picker.show { display:flex; }
@@ -673,7 +673,7 @@ body.locked .main { filter:blur(6px); pointer-events:none; }
    it. The nav is lifted out of flow so unfolding *overlays* the grid
    instead of reflowing it; body keeps a rail-wide gutter. Inner blocks
    stay pinned at the open width and get clipped by the rail, so nothing
-   re-wraps mid-animation — the labels just slide out and fade. */
+   re-wraps mid-animation - the labels just slide out and fade. */
 :root { --rail:64px; --rail-open:230px; }
 body { padding-left:var(--rail); transition:padding-left .22s cubic-bezier(.4,0,.2,1); }
 body.sb-pinned { padding-left:var(--rail-open); }
@@ -726,7 +726,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
 .gb-ask-row button { border:1px solid rgba(0,245,255,.35); background:transparent; color:var(--cyan); padding:8px 16px; font:inherit; font-weight:800; font-size:13px; letter-spacing:.5px; text-transform:uppercase; cursor:pointer; }
 .gb-ask-row .gb-ask-yes { background:var(--cyan); color:#001014; }
 .gb-ask-row .gb-ask-yes.danger { background:#ff2f5f; border-color:#ff2f5f; color:#fff; }
-/* topbar reflow — it gained ☰ and 🎲 and used to crush the search box to an empty
+/* topbar reflow - it gained ☰ and 🎲 and used to crush the search box to an empty
    sliver (and push the token chip off-screen) on tablets and small laptops */
 .topbar { flex-wrap:wrap; }
 .search-wrap { min-width:180px; }
@@ -739,7 +739,7 @@ body.sb-pinned { padding-left:var(--rail-open); }
   #mb-text { display:none; }
 }
 @media (max-width:600px) { .search-wrap { order:10; } .topbar { gap:8px; row-gap:10px; } }
-/* a slow neon glow drifting behind everything — the arcade breathes a little */
+/* a slow neon glow drifting behind everything - the arcade breathes a little */
 body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-events:none;
   background:radial-gradient(40% 35% at 20% 30%, rgba(0,245,255,.07), transparent 70%),
              radial-gradient(35% 30% at 80% 70%, rgba(255,0,128,.07), transparent 70%);
@@ -750,7 +750,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
 @keyframes diceShake { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-14deg) scale(1.08); } 75% { transform:rotate(12deg) scale(1.08); } }
 @media (max-width:600px) { .dice-txt { display:none; } }
 /* ── phones + small tablets ── the rail is gone, so the whole menu becomes a
-   drawer behind a ☰ button (it used to vanish — no categories, shop or sign-in). */
+   drawer behind a ☰ button (it used to vanish - no categories, shop or sign-in). */
 .nav-toggle { display:none; flex-shrink:0; width:40px; height:40px; background:var(--bg3); cursor:pointer;
   border:1px solid rgba(0,245,255,.3); color:var(--cyan); font-size:20px; line-height:1;
   clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%); }
@@ -775,7 +775,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
     <div class="auth-logo-icon">🕹</div>
     <div class="auth-title">GLITCHBOX</div>
     <div class="auth-sub" id="auth-sub">// ENTER THE GLITCH</div>
-    <div class="auth-desc">Sign in with Google to save your stats and add friends. You don't need an account to play — you can browse and play everything as a guest.</div>
+    <div class="auth-desc">Sign in with Google to save your stats and add friends. You don't need an account to play - you can browse and play everything as a guest.</div>
     <div class="auth-btn-wrap">
       <div id="g-signin-btn"></div>
     </div>
@@ -787,7 +787,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       3. Add authorized JavaScript origin: <code>https://glitchbox-games.github.io</code><br>
       4. Copy the Client ID and paste it into <code>GOOGLE_CLIENT_ID</code> in this file.
     </div>
-    <div class="auth-note">🔒 Google tells us your name, email &amp; photo — those stay private. Other players only see the nametag you pick.</div>
+    <div class="auth-note">🔒 Google tells us your name, email &amp; photo - those stay private. Other players only see the nametag you pick.</div>
     <div class="auth-note">Signing in means agreeing to the <a href="#" onclick="viewTos();return false;" style="color:var(--cyan)">Terms of Service</a>.</div>
   </div>
 </div>
@@ -817,7 +817,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <ul>
         <li>No bullying, hate, threats or harassing other players.</li>
         <li>No cheating, exploiting bugs on purpose, or spamming invites and reports.</li>
-        <li>Pick a nametag and icon that are OK for everyone — and don't use your real name.</li>
+        <li>Pick a nametag and icon that are OK for everyone - and don't use your real name.</li>
       </ul>
       <h4>2. The owner can see what you do on GLITCHBOX</h4>
       <div class="tos-key">
@@ -836,21 +836,21 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
         <li><b>Your friends</b> see whether you're online, which game you're playing (so they can join you),
           and your profile: icon, badges, favourite games and play time. You can hide your activity from friends
           in your profile.</li>
-        <li><b>Everyone else</b> only ever sees your <b>nametag</b> and your arcade icon — never your real name,
+        <li><b>Everyone else</b> only ever sees your <b>nametag</b> and your arcade icon - never your real name,
           your email or your Google photo.</li>
-        <li><b>Leaderboards</b> show your nametag, your icon, your play time this week and your best scores —
+        <li><b>Leaderboards</b> show your nametag, your icon, your play time this week and your best scores -
           unless you hide your activity.</li>
       </ul>
       <h4>4. Moderation</h4>
       <p>The owner can message you, kick you back to the hub, switch games off, or ban your account, your device
         or your internet connection, for a while or for good, if you break these rules.</p>
-      <p>The owner can pick <b>moderators</b> — trusted players who can see the same activity (but never your
+      <p>The owner can pick <b>moderators</b> - trusted players who can see the same activity (but never your
         email address or IP address), message you, kick you, and ban you for up to a day.</p>
       <p>If you're banned you can send an appeal, and the owner or a moderator will answer it.</p>
       <h4>5. Your account and your data</h4>
       <p>You sign in with Google. GLITCHBOX keeps your Google name, email and picture privately so friends and saves work; other players only see the nametag you choose.
         <b>My Data</b> in the menu shows everything GLITCHBOX keeps about you, lets you download it, and lets you
-        delete your account — that erases everything about you. Guests can see and erase their data there too.</p>
+        delete your account - that erases everything about you. Guests can see and erase their data there too.</p>
       <h4>6. Tokens and unlocks</h4>
       <p>Tokens, unlocked games and icons are just for fun. They aren't worth real money, can't be traded,
         and can be changed or reset.</p>
@@ -861,7 +861,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
     <label class="tos-check" id="tos-check-row"><input type="checkbox" id="tos-check" onchange="document.getElementById('tos-agree').disabled=!this.checked">
       I've read the terms and I agree to them, including that the owner can see what I do on GLITCHBOX for moderation.</label>
     <button class="ban-btn" id="tos-agree" disabled onclick="acceptTos()">I agree</button>
-    <button class="ban-btn" id="tos-decline" style="color:var(--muted);border-color:rgba(255,255,255,0.15)" onclick="declineTos()">I don't agree — sign me out</button>
+    <button class="ban-btn" id="tos-decline" style="color:var(--muted);border-color:rgba(255,255,255,0.15)" onclick="declineTos()">I don't agree - sign me out</button>
     <button class="ban-btn" id="tos-close" style="display:none" onclick="document.getElementById('tos-screen').classList.remove('show')">Close</button>
   </div>
 </div>
@@ -926,7 +926,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
     <div class="profile-banner"><button class="profile-close" id="tag-close" onclick="closeTag()" title="Close">✕</button></div>
     <div class="tag-body">
       <div class="tag-title">PICK YOUR NAMETAG</div>
-      <div class="tag-hint">This is the only name other players ever see — on leaderboards, friend lists and in games.
+      <div class="tag-hint">This is the only name other players ever see - on leaderboards, friend lists and in games.
         <b>Don't use your real name.</b> Your Google name stays private.</div>
       <div class="tag-row"><input id="tag-input" class="tag-input" maxlength="16" autocomplete="off" spellcheck="false" placeholder="e.g. NeonFox42"
         onkeydown="if(event.key==='Enter')saveTag()"><button class="tag-dice" onclick="tagIdeas()" title="Suggest some">🎲</button></div>
@@ -951,11 +951,11 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
     <div class="profile-stats">
       <div class="stat-tile"><div class="stat-num" id="stat-friends">0</div><div class="stat-label">Friends</div></div>
       <div class="stat-tile"><div class="stat-num" id="stat-played">0</div><div class="stat-label">Games Played</div></div>
-      <div class="stat-tile"><div class="stat-num" id="stat-since">—</div><div class="stat-label">Member Since</div></div>
+      <div class="stat-tile"><div class="stat-num" id="stat-since">-</div><div class="stat-label">Member Since</div></div>
     </div>
     <div id="social-own"></div>
     <div class="profile-section-title">// YOUR ICON <span id="icon-name"></span></div>
-    <div class="icon-hint">Pick who you are. Your friends see it too. Locked icons cost tokens — tap one to buy it.</div>
+    <div class="icon-hint">Pick who you are. Your friends see it too. Locked icons cost tokens - tap one to buy it.</div>
     <div class="icon-bal" id="icon-bal"></div>
     <div class="icon-grid" id="icon-grid"></div>
     <div class="profile-section-title">// YOUR FRIEND CODE</div>
@@ -963,7 +963,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <span id="my-code" style="font-family:'Press Start 2P',monospace;font-size:16px;letter-spacing:.12em;color:var(--cyan);flex:1;">------</span>
       <button id="copy-code-btn" onclick="copyCode()" style="flex-shrink:0;">Copy</button>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Share your code so friends can add you — no email or name search, so nobody can find you unless you give it out.</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Share your code so friends can add you - no email or name search, so nobody can find you unless you give it out.</div>
     <div class="profile-section-title">// ADD A FRIEND</div>
     <div class="add-friend">
       <input type="text" id="friend-code-in" maxlength="6" placeholder="ENTER FRIEND CODE" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" onkeydown="if(event.key==='Enter')addByCode()" />
@@ -1023,7 +1023,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
     <div class="inv-head">
       <button class="inv-close" onclick="closeInvite()" title="Close">✕</button>
       <div class="inv-title">🎁 INVITE FRIENDS</div>
-      <div class="inv-sub">Send your link. Every friend who joins you pays out tokens — and they land with a bonus too.</div>
+      <div class="inv-sub">Send your link. Every friend who joins you pays out tokens - and they land with a bonus too.</div>
     </div>
     <div class="inv-body">
       <div class="inv-sect">// YOUR INVITE LINK</div>
@@ -1045,7 +1045,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
 <div class="invite-toasts" id="invite-toasts"></div>
 <div class="main">
   <div class="announce hidden" id="owner-maint"><span class="an-icon">🛠</span>
-    <span class="an-text">Maintenance mode is ON — everyone else sees a closed sign. Turn it off in the Owner Console → Arcade.</span></div>
+    <span class="an-text">Maintenance mode is ON - everyone else sees a closed sign. Turn it off in the Owner Console → Arcade.</span></div>
   <div class="announce hidden" id="announce"><span class="an-icon" id="an-icon">📣</span>
     <span class="an-text" id="an-text"></span><button class="an-x" onclick="dismissAnnounce()" title="Hide">✕</button></div>
   <div class="topbar">
@@ -1064,7 +1064,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
     <button class="mode-btn" id="mode-btn" onclick="togglePlayMode()" title="How games open">
       <span class="mb-icon" id="mb-icon">▣</span><span id="mb-text">FRAMED</span>
     </button>
-    <div class="token-chip" id="token-chip" onclick="openShop()" title="Arcade tokens — click for the shop">
+    <div class="token-chip" id="token-chip" onclick="openShop()" title="Arcade tokens - click for the shop">
       <span class="tc-coin">🪙</span><span id="token-balance">0</span>
     </div>
   </div>
@@ -1077,7 +1077,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <div class="featured-info">
         <div class="featured-tag">// FEATURED GAME</div>
         <h2><span class="featured-emoji" id="featured-emoji">🪖</span><span id="featured-name">PIXEL WAR</span></h2>
-        <p id="featured-blurb">War Thunder-style vehicle combat — pilot tanks, planes, ships and AA guns against AI. Armor pen, module damage, B-2 bombers.</p>
+        <p id="featured-blurb">War Thunder-style vehicle combat - pilot tanks, planes, ships and AA guns against the CPU. Armor pen, module damage, B-2 bombers.</p>
       </div>
     </a>
     <div id="recent-row"></div>
@@ -1094,7 +1094,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
 <script>
 
 // ══════════════════ PLAY MODE ══════════════════
-// "framed" sends you to play.html — the game in a window with recommendations
+// "framed" sends you to play.html - the game in a window with recommendations
 // underneath, CrazyGames style. "full" jumps straight into the game file.
 // Either way the game itself is the same page; play.html just wraps it.
 const PLAY_MODE_KEY='glitchbox.playmode';
@@ -1123,8 +1123,8 @@ function paintPlayMode(){
     btn.classList.toggle('full',full);
     document.getElementById('mb-icon').textContent=full?'⛶':'▣';
     document.getElementById('mb-text').textContent=full?'FULL':'FRAMED';
-    btn.title=full?'Games open fullscreen — click for the framed page with recommendations'
-                  :'Games open in a window with recommendations — click for fullscreen';
+    btn.title=full?'Games open fullscreen - click for the framed page with recommendations'
+                  :'Games open in a window with recommendations - click for fullscreen';
   }
   const feat=document.getElementById('featured-link');
   if(feat) feat.href=gameURL(featuredFile||'pixel-war.html');
@@ -1132,7 +1132,7 @@ function paintPlayMode(){
 
 // The owner picks the featured game from the console (meta.featured); Pixel War otherwise.
 var featuredFile = 'pixel-war.html';
-const FEATURED_DEFAULT_BLURB = 'War Thunder-style vehicle combat — pilot tanks, planes, ships and AA guns against AI. Armor pen, module damage, B-2 bombers.';
+const FEATURED_DEFAULT_BLURB = 'War Thunder-style vehicle combat - pilot tanks, planes, ships and AA guns against the CPU. Armor pen, module damage, B-2 bombers.';
 // The banner shows the featured game's own logo art, drawn big on the right.
 function paintFeaturedArt(){
   const cv = document.getElementById('featured-art'), g = GAMES.find(x => x.file === featuredFile);
@@ -1149,14 +1149,14 @@ function applyFeatured(file){
   document.getElementById('featured-name').textContent = g.name.toUpperCase();
   document.getElementById('featured-emoji').textContent = g.emoji || '🎮';
   document.getElementById('featured-blurb').textContent = g.file === 'pixel-war.html' ? FEATURED_DEFAULT_BLURB
-    : (g.blurb || ('A ' + g.category + ' game — the owner\'s pick.'));
+    : (g.blurb || ('A ' + g.category + ' game - the owner\'s pick.'));
   paintFeaturedArt();
   paintPlayMode();
 }
 
 // ══════════════════ FAVORITES ══════════════════
 // Shared with the in-game menu (glitchbox-menu.js): same localStorage key, same
-// shape — a JSON array of game filenames, e.g. ["neon-putt.html"]. Keep the two
+// shape - a JSON array of game filenames, e.g. ["neon-putt.html"]. Keep the two
 // in step if this ever changes.
 const FAV_KEY='glitchbox.favs';
 function favList(){
@@ -1170,13 +1170,13 @@ function toggleFav(file){
   try{ localStorage.setItem(FAV_KEY,JSON.stringify(l)); }catch(e){}
   return i===-1;                       // true when it is now a favorite
 }
-// favorited from another tab (or from inside a game) — keep this view honest
+// favorited from another tab (or from inside a game) - keep this view honest
 addEventListener('storage',e=>{ if(e.key===FAV_KEY){ updateCounts(); renderGames(); } });
 
 // ══════════════════ ARCADE TOKENS ══════════════════
 // A local, per-device arcade wallet. Tokens are earned by playing and spent on
 // the games carrying a `price` (the "special" shelf). Everything lives in
-// localStorage — no backend needed, so it works on GitHub Pages and offline.
+// localStorage - no backend needed, so it works on GitHub Pages and offline.
 //
 //   glitchbox.tokens   number   current balance
 //   glitchbox.owned    string[] filenames of unlocked special games
@@ -1221,7 +1221,7 @@ function isOwned(file){ return ownedList().indexOf(file)!==-1; }
 function isLocked(g){ return !!g.price && (isGuest() || !isOwned(g.file)); }
 
 // ── guest limits ── Guests can browse and play every free game, but the account
-// perks — tokens, the daily reward, special games, favorites — need a sign-in.
+// perks - tokens, the daily reward, special games, favorites - need a sign-in.
 // guestWall() explains why, opens the sign-in box, and returns true when it blocked.
 function isGuest(){ return !currentUser; }
 function guestWall(what){
@@ -1231,7 +1231,7 @@ function guestWall(what){
   return true;
 }
 
-// Grant tokens. `defer` queues the toast instead of showing it — used when the
+// Grant tokens. `defer` queues the toast instead of showing it - used when the
 // browser is already navigating into a game and a toast would never be seen.
 function grant(amt,why,defer){
   if(amt<=0) return;
@@ -1281,7 +1281,7 @@ function noticeToast(title,text,ms){
 function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function dayKeyOffset(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
-// The daily reward is claimed by hand in the shop — logging in every day builds
+// The daily reward is claimed by hand in the shop - logging in every day builds
 // a streak, and each day in a row is worth more, up to DAILY_MAX_STREAK days.
 function dailyInfo(){
   const today=todayKey(), last=localStorage.getItem(TOK.daily);
@@ -1301,7 +1301,7 @@ function claimDaily(){
 function paintDaily(){
   const chip=document.getElementById('token-chip'); if(!chip) return;
   chip.classList.toggle('ready', !isGuest() && dailyInfo().ready);
-  chip.title = dailyInfo().ready ? 'Daily reward ready — click to claim' : 'Arcade tokens — click for the shop';
+  chip.title = dailyInfo().ready ? 'Daily reward ready - click to claim' : 'Arcade tokens - click for the shop';
 }
 
 // Friend bounty: every friend who joins you on GLITCHBOX pays out once. The
@@ -1317,12 +1317,12 @@ function rewardFriends(count){
 // ── invite links ──
 // There's no referral backend: the friend graph already knows who linked up with
 // whom, and rewardFriends() pays that side. A link only carries your friend code so
-// the newcomer arrives with it ready to add — plus a bonus for turning up at all.
+// the newcomer arrives with it ready to add - plus a bonus for turning up at all.
 // It's banked under its own key, so it never disturbs the friend high-water mark.
 function applyRef(code){
   if(!code || localStorage.getItem(TOK.ref)) return false;
   try { localStorage.setItem(TOK.ref, code); } catch(e){}
-  grant(REF_WELCOME, 'Invited by '+code+' — welcome bonus');
+  grant(REF_WELCOME, 'Invited by '+code+' - welcome bonus');
   return true;
 }
 function captureRef(){
@@ -1345,7 +1345,7 @@ function renderInvite(){
   const c = inviteCode(), n = (lastState.friends||[]).length;
   document.getElementById('invite-link').value = inviteLink();
   document.getElementById('invite-code-line').innerHTML = c
-    ? 'Your friend code: <b style="color:var(--cyan)">'+esc(c)+'</b> — whoever opens this link starts with '+REF_WELCOME+' 🪙 and your code ready to add.'
+    ? 'Your friend code: <b style="color:var(--cyan)">'+esc(c)+'</b> - whoever opens this link starts with '+REF_WELCOME+' 🪙 and your code ready to add.'
     : 'Sign in to get your own friend code. Until then this is just a plain link to the arcade.';
   document.getElementById('invite-share-btn').style.display = navigator.share ? '' : 'none';
   document.getElementById('invite-rules').innerHTML = [
@@ -1355,7 +1355,7 @@ function renderInvite(){
   document.getElementById('invite-count').textContent = n;
   document.getElementById('invite-next').textContent = n
     ? 'Worth '+(n*FRIEND_BOUNTY)+' 🪙 in bounties so far.'
-    : 'Nobody yet — send the link to someone.';
+    : 'Nobody yet - send the link to someone.';
 }
 function openInvite(){
   renderInvite();
@@ -1378,7 +1378,7 @@ function shareInvite(){
 function iconsOwned(){ const v=jsonGet(TOK.icons,[]); return Array.isArray(v)?v:[]; }
 function iconPrice(ic){ return (ic && ICON_PRICE[ic.cat]) || 0; }
 function iconOwned(ic){ return iconPrice(ic)===0 || iconsOwned().indexOf(ic.id)!==-1; }
-// Buy, then immediately wear it — nobody buys an icon they didn't want on.
+// Buy, then immediately wear it - nobody buys an icon they didn't want on.
 function buyIcon(id){
   const ic=ICON_BY_ID[id]; if(!ic) return;
   if(iconOwned(ic)) return pickIcon(id);
@@ -1396,13 +1396,13 @@ function buyIcon(id){
 function grantWelcome(){
   if(localStorage.getItem(TOK.bal)!==null) return;
   setTokens(WELCOME_GRANT);
-  tokenToast('+'+WELCOME_GRANT,'Welcome bonus — spend it well');
+  tokenToast('+'+WELCOME_GRANT,'Welcome bonus - spend it well');
 }
 function claimStartup(){
   const signedIn = !!jsonGet('glitchbox_user', null);
   if(signedIn) grantWelcome();
   paintDaily();
-  if(signedIn && dailyInfo().ready) setTimeout(()=>tokenToast('DAILY','Reward ready — open the token shop'),700);
+  if(signedIn && dailyInfo().ready) setTimeout(()=>tokenToast('DAILY','Reward ready - open the token shop'),700);
   // Anything earned while walking into a game last time.
   const q=jsonGet(TOK.queue,[]);
   if(Array.isArray(q)&&q.length){
@@ -1432,7 +1432,7 @@ function applyGifts(list){
     ids.push(g.id);
     if(done.indexOf(g.id)!==-1) return;
     done.push(g.id);
-    const why = g.note ? 'From the owner — '+g.note : 'Gift from the owner';
+    const why = g.note ? 'From the owner - '+g.note : 'Gift from the owner';
     const n = g.tokens|0;
     if(!n && !(g.games||[]).length && !(g.icons||[]).length){ if(g.note) ownerMessage(g.note); return; }
     if(n>0) grant(n, why);
@@ -1440,12 +1440,12 @@ function applyGifts(list){
     const games=(g.games||[]).filter(f=>GAMES.some(x=>x.file===f) && !isOwned(f));
     if(games.length){
       jsonSet(TOK.own, ownedList().concat(games));
-      tokenToast('🎁', 'Unlocked '+(games.length===1 ? GAMES.find(x=>x.file===games[0]).name : games.length+' games')+' — '+why);
+      tokenToast('🎁', 'Unlocked '+(games.length===1 ? GAMES.find(x=>x.file===games[0]).name : games.length+' games')+' - '+why);
     }
     const icons=(g.icons||[]).filter(id=>ICON_BY_ID[id] && iconsOwned().indexOf(id)===-1);
     if(icons.length){
       jsonSet(TOK.icons, iconsOwned().concat(icons));
-      tokenToast('🎁', 'Unlocked '+icons.length+' icon'+(icons.length>1?'s':'')+' — '+why);
+      tokenToast('🎁', 'Unlocked '+icons.length+' icon'+(icons.length>1?'s':'')+' - '+why);
     }
   });
   jsonSet(TOK.gifts, done.slice(-300));
@@ -1483,14 +1483,14 @@ function buyGame(file){
   }
   setTokens(tokens()-g.price);
   const own=ownedList(); own.push(file); jsonSet(TOK.own,own);
-  tokenToast('-'+g.price,'Unlocked '+g.name+' — go play it',true);
+  tokenToast('-'+g.price,'Unlocked '+g.name+' - go play it',true);
   renderGames(); updateCounts(); renderShop();
   return true;
 }
 
 // ── shop ──
 const EARN_RULES=[
-  ['📅','Daily reward — log in and claim it','+'+DAILY_BASE],
+  ['📅','Daily reward - log in and claim it','+'+DAILY_BASE],
   ['🔥','Streak bonus for each day in a row','+'+DAILY_STEP],
   ['🎮','Play a game for the first time','+'+FIRST_PLAY],
   ['🔁','Play any game again (10 min cooldown)','+'+REPLAY],
@@ -1512,7 +1512,7 @@ function renderDaily(){
     '<div class="daily-panel'+(d.ready?' ready':'')+'">'+
       '<div class="dp-left"><div class="dp-title">'+(d.ready?'DAY '+d.streak+' REWARD':'CLAIMED TODAY')+'</div>'+
         '<div class="dp-sub">'+(d.ready
-          ? 'Log in every day — the streak keeps paying more.'
+          ? 'Log in every day - the streak keeps paying more.'
           : 'Come back tomorrow for '+(DAILY_BASE+Math.min(d.streak,DAILY_MAX_STREAK-1)*DAILY_STEP)+' 🪙 · '+d.streak+'-day streak')+'</div>'+
         '<div class="dp-pips">'+pips+'</div></div>'+
       (d.ready
@@ -1521,7 +1521,7 @@ function renderDaily(){
     '</div>';
 }
 // The icons themselves are bought in the profile picker (that's where you can see
-// yourself wearing them) — the shop just shows what each set costs.
+// yourself wearing them) - the shop just shows what each set costs.
 function renderIcons(){
   const box=document.getElementById('shop-icons'); if(!box) return;
   const own=iconsOwned();
@@ -1567,7 +1567,7 @@ function renderShop(focusFile){
   if(vb){
     const fn=(lastState.friends||[]).length;
     vb.innerHTML='<div class="earn-row"><span class="er-i">🔗</span>'+
-      (fn ? fn+' friend'+(fn>1?'s':'')+' joined you — '+(fn*FRIEND_BOUNTY)+' 🪙 earned'
+      (fn ? fn+' friend'+(fn>1?'s':'')+' joined you - '+(fn*FRIEND_BOUNTY)+' 🪙 earned'
           : 'Send your link and get paid for every friend who joins')+
       '<b><a href="#" onclick="closeShop();openInvite();return false;" style="color:var(--cyan)">LINK</a></b></div>';
   }
@@ -1584,7 +1584,7 @@ function openShop(focusFile){
 }
 function closeShop(){ document.getElementById('shop-modal').classList.remove('show'); }
 addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeShop(); closeInvite(); } });
-// wallet changed in another tab (or in a game) — keep this view honest
+// wallet changed in another tab (or in a game) - keep this view honest
 addEventListener('storage',e=>{
   // Another tab (a game, or the hub) learned this account is banned.
   if(e.key==='glitchbox.banned' && e.newValue!==null){ showBan(e.newValue); return; }
@@ -1627,7 +1627,7 @@ function renderGames(){
   if(!games.length){
     const emptyFav=activeCategory==='favorites';
     noRes.querySelector('div').textContent=emptyFav?'★':'🕹';
-    noRes.querySelector('p').textContent=emptyFav?'NO FAVORITES YET — TAP ☆ ON ANY GAME':'NO GAMES FOUND';
+    noRes.querySelector('p').textContent=emptyFav?'NO FAVORITES YET - TAP ☆ ON ANY GAME':'NO GAMES FOUND';
     noRes.classList.add('show');return;
   }
   noRes.classList.remove('show');
@@ -1650,7 +1650,7 @@ function renderGames(){
     if(locked) a.addEventListener('click',ev=>{
       if(ev.target.closest('.fav-btn')) return;
       ev.preventDefault();
-      if(off) noticeToast('⏸ SWITCHED OFF', g.name+' is switched off for now — try again later.');
+      if(off) noticeToast('⏸ SWITCHED OFF', g.name+' is switched off for now - try again later.');
       else openShop(g.file);
     });
     grid.appendChild(a);
@@ -1706,10 +1706,10 @@ claimStartup();captureRef();paintPlayMode();updateCounts();renderGames();paintFe
     document.body.classList.add('leaving');
     setTimeout(()=>{ location.href=href; }, 190);
   });
-  // coming back with the browser's Back button restores the page from cache — undo the fade
+  // coming back with the browser's Back button restores the page from cache - undo the fade
   addEventListener('pageshow', ()=>document.body.classList.remove('leaving'));
 })();
-// Deep links. Queued behind a tick so the sign-in pass has already run — the icon
+// Deep links. Queued behind a tick so the sign-in pass has already run - the icon
 // picker needs to know whether you're signed in before it decides where to send you.
 if(location.hash==='#shop')  addEventListener('load',()=>setTimeout(openShop,0));
 if(location.hash==='#icons') addEventListener('load',()=>setTimeout(openIconPicker,0));
@@ -1765,7 +1765,7 @@ async function api(path, opts){
   opts = opts || {};
   // Fail loudly-but-kindly instead of throwing a raw network error when the Worker
   // hasn't been deployed yet (API_BASE still says PLACEHOLDER).
-  if(!BACKEND_READY) throw new Error('The GLITCHBOX server isn’t set up yet — friends and invites are offline.');
+  if(!BACKEND_READY) throw new Error('The GLITCHBOX server isn’t set up yet - friends and invites are offline.');
   const headers = {};
   if(getSession()) headers['Authorization'] = 'Bearer '+getSession();
   let body;
@@ -1778,9 +1778,9 @@ async function api(path, opts){
 
 function handleCredential(response){
   const data = decodeJwt(response.credential);
-  if(!data){ noticeToast('⚠️ SIGN-IN FAILED', 'Google’s answer couldn’t be read — try again.', 6000); return; }
+  if(!data){ noticeToast('⚠️ SIGN-IN FAILED', 'Google’s answer couldn’t be read - try again.', 6000); return; }
   // Remember the real Google photo separately, so "use my photo" stays available after
-  // you've picked an icon — and so signing in again doesn't silently undo your choice.
+  // you've picked an icon - and so signing in again doesn't silently undo your choice.
   if(data.picture) localStorage.setItem('glitchbox_gphoto', data.picture);
   let prev = null; try { prev = JSON.parse(localStorage.getItem('glitchbox_user')||'null'); } catch(e){}
   const keptIcon = (prev && prev.sub === data.sub && iconOf(prev.picture)) ? prev.picture : '';
@@ -1797,7 +1797,7 @@ function handleCredential(response){
 // sign-in or /api/me from a non-banned account clears it.
 const BAN_KEY = 'glitchbox.banned';
 function banReason(e){ const m = /^banned:([\s\S]*)$/.exec((e && e.message) || ''); return m ? m[1] : null; }
-// `raw` is everything after "banned:" — "<until>:<reason>", until empty when permanent.
+// `raw` is everything after "banned:" - "<until>:<reason>", until empty when permanent.
 // (Older servers sent just "<reason>".)
 function showBan(raw){
   raw = String(raw == null ? '' : raw);
@@ -1806,7 +1806,7 @@ function showBan(raw){
   if(until && until <= Date.now()){ clearBan(); return; }   // a timed ban that has run out
   try {
     // The session can't be used for anything else while banned, but it is what proves
-    // who's appealing — so it's parked under its own key instead of thrown away.
+    // who's appealing - so it's parked under its own key instead of thrown away.
     const sess = localStorage.getItem('glitchbox_session');
     if(sess) localStorage.setItem('glitchbox.appealSession', sess);
     localStorage.setItem(BAN_KEY, raw); localStorage.removeItem('glitchbox_session');
@@ -1817,7 +1817,7 @@ function showBan(raw){
   document.getElementById('ban-screen').classList.add('show');
   if(window.GBSocial) GBSocial.renderAppeal(); else addEventListener('load', () => window.GBSocial && GBSocial.renderAppeal());
   document.getElementById('ban-desc').textContent = until
-    ? 'This account can come back when the ban runs out — sign in again then.'
+    ? 'This account can come back when the ban runs out - sign in again then.'
     : 'This account can\'t use GLITCHBOX any more.';
   closeAuth();
 }
@@ -1878,7 +1878,7 @@ function applySwitches(h){
   if(gb) gb.style.display = guestsLockedNow ? 'none' : '';
   if(guestsLockedNow && isGuest()){
     document.body.classList.add('locked');
-    document.getElementById('auth-sub').textContent = '// GUEST PLAY IS OFF — SIGN IN';
+    document.getElementById('auth-sub').textContent = '// GUEST PLAY IS OFF - SIGN IN';
     document.getElementById('auth-overlay').classList.remove('hidden');
   } else if(document.body.classList.contains('locked') && !document.getElementById('maint-screen').classList.contains('show')){
     document.body.classList.remove('locked');
@@ -1951,11 +1951,11 @@ const TOS_VERSION = '2026-10-11.1';
 function tosId(){ return currentUser ? currentUser.sub : 'guest'; }
 function tosKey(){ return 'glitchbox.tos.' + tosId(); }
 let tosNext = null;   // where to go once a guest agrees (the game they tried to open)
-// Only same-site game pages — this comes from the URL hash, so never an open redirect.
+// Only same-site game pages - this comes from the URL hash, so never an open redirect.
 function safeGameHref(h){ return /^(play\.html\?g=[a-z0-9-]+\.html|[a-z0-9-]+\.html)([?#&][^\s]*)?$/i.test(h||'') && !/^index\.html/i.test(h) ? h : null; }
 // Agreement only ever moves forward: a page needing an older (or the same) version
 // counts it as agreed. GitHub Pages lets browsers cache each file for 10 minutes, so
-// right after an update an old hub and new game pages can run side by side — with
+// right after an update an old hub and new game pages can run side by side - with
 // strict equality they kept overwriting each other's version and asked on every
 // refresh. 'glitchbox.tosv.*' holds the newest version ever agreed (old cached pages
 // only know the 'glitchbox.tos.*' key, so they can't drag it backwards).
@@ -1986,7 +1986,7 @@ function showTos(readOnly){
   const chk = document.getElementById('tos-check');
   chk.checked = false; document.getElementById('tos-agree').disabled = true;
   ['tos-check-row','tos-agree','tos-decline'].forEach(id => document.getElementById(id).style.display = readOnly ? 'none' : '');
-  document.getElementById('tos-decline').textContent = isGuest() ? 'I don\'t agree' : 'I don\'t agree — sign me out';
+  document.getElementById('tos-decline').textContent = isGuest() ? 'I don\'t agree' : 'I don\'t agree - sign me out';
   document.getElementById('tos-close').style.display = readOnly ? '' : 'none';
   document.getElementById('tos-body').scrollTop = 0;
   document.getElementById('tos-screen').classList.add('show');
@@ -2005,7 +2005,7 @@ async function acceptTos(){
 }
 function declineTos(){
   document.getElementById('tos-screen').classList.remove('show');
-  if(isGuest()){ tosNext = null; noticeToast('📜 TERMS','No problem — you can look around, but you need to agree to the terms to play.', 6000); return; }
+  if(isGuest()){ tosNext = null; noticeToast('📜 TERMS','No problem - you can look around, but you need to agree to the terms to play.', 6000); return; }
   glitchLogout();
 }
 // A guest who hasn't agreed gets the terms instead of the game, then goes on to it.
@@ -2079,7 +2079,7 @@ async function saveTag(){
     const pn = document.getElementById('profile-name'); if(pn) pn.textContent = r.name;
     tagForced = false; document.getElementById('tag-modal').classList.remove('show');
     noticeToast('🏷️ NAMETAG SET', 'Other players now see you as ' + r.name + '.', 4000);
-  } catch(e){ err.textContent = e.message || 'Couldn\'t save that — try again.'; }
+  } catch(e){ err.textContent = e.message || 'Couldn\'t save that - try again.'; }
   btn.disabled = false;
 }
 function applyUser(user){
@@ -2298,7 +2298,7 @@ function renderIconPicker(){
       const owned = iconOwned(ic);
       // Locked icons buy themselves on click; owned ones just get worn.
       h += '<button class="icon-pick'+(curIcon === ic ? ' sel' : '')+(owned ? '' : ' locked')+
-           '" title="'+esc(ic.name)+(owned ? '' : ' — '+price+' tokens')+
+           '" title="'+esc(ic.name)+(owned ? '' : ' - '+price+' tokens')+
            '" onclick="'+(owned ? 'pickIcon' : 'buyIcon')+'(\''+ic.id+'\')">'+iconHTML(ic)+
            (owned ? '' : '<span class="ip-cost">'+price+'</span>')+'</button>';
     });
@@ -2309,7 +2309,7 @@ function renderIconPicker(){
 }
 
 // Paint the new pick everywhere at once, save it locally, then tell the server so
-// friends see it too. A failed sync is not fatal — the choice still sticks on this device.
+// friends see it too. A failed sync is not fatal - the choice still sticks on this device.
 async function pickIcon(id){
   if(!currentUser) return;
   currentUser.picture = id ? 'icon:'+id : googlePhoto();
@@ -2327,13 +2327,13 @@ function paintSidebarAvatar(){
 }
 
 function avInitial(u){ return '<div class="friend-av">'+(avatarHTML(u,true) || initialOf(u))+'</div>'; }
-// Privacy: never expose other players' email addresses in the UI — show display name only.
+// Privacy: never expose other players' email addresses in the UI - show display name only.
 function rowInfo(u){ return '<div class="friend-info"><div class="friend-name">'+esc(u.name)+'</div></div>'; }
 
 function renderFriends(){
   const box = document.getElementById('friends-list');
   const list = lastState.friends;
-  if(!list.length){ box.innerHTML = '<div class="friends-empty">No friends yet — share your friend code above, or add someone by theirs.</div>'; return; }
+  if(!list.length){ box.innerHTML = '<div class="friends-empty">No friends yet - share your friend code above, or add someone by theirs.</div>'; return; }
   box.innerHTML = list.map(f => {
     const on = !!f.online;
     const g = f.playing ? GAMES.find(x => x.file === f.playing) : null;
@@ -2401,7 +2401,7 @@ function openPicker(sub){
   if(!f) return;
   pickerTarget = sub;
   document.getElementById('picker-sub').textContent = 'Pick a game to play with ' + f.name +
-    (f.online ? '' : ' — they’re offline, so the invite will be waiting for them.');
+    (f.online ? '' : ' - they’re offline, so the invite will be waiting for them.');
   document.getElementById('picker-games').innerHTML = MP_GAMES.map(g =>
     '<button class="picker-game" onclick="sendInvite(\''+g.file+'\')">'+
     '<span class="pg-emoji">'+g.emoji+'</span>'+
@@ -2508,7 +2508,7 @@ async function addByCode(){
   if(code.length < 6){ statusMsg('Enter a 6-character friend code.', true); return; }
   try {
     lastState = await api('/api/add-by-code', { method:'POST', body:{ code } });
-    // Adding the code you were invited with closes the loop — stop pre-filling it.
+    // Adding the code you were invited with closes the loop - stop pre-filling it.
     if(code === localStorage.getItem(TOK.ref)){ try { localStorage.setItem(TOK.refadded,'1'); } catch(e){} }
     inp.value = ''; renderAll();
     statusMsg(lastState.message || 'Done.');
@@ -2523,7 +2523,7 @@ function copyCode(){
 }
 
 // ── in-page questions ── never the browser's confirm()/prompt(): Chrome can suppress
-// those, and a suppressed confirm reads as "Cancel" — Block and Report silently did nothing.
+// those, and a suppressed confirm reads as "Cancel" - Block and Report silently did nothing.
 // gbAsk({ title, text, input, yes, danger }) resolves to the typed text ('' when there's
 // no input box) or null when cancelled.
 function gbAsk(o){
@@ -2574,7 +2574,7 @@ async function report(sub){
   const n = nameOf(sub);
   const reason = await gbAsk({ title:'Report ' + n + '?', text:'The owner will see your report. They’ll also be blocked for you.', input:'What happened? (optional)', yes:'Report', danger:true });
   if(reason === null) return;
-  if(await act('/api/report', { sub, reason })) noticeToast('⚑ REPORTED', 'Thanks — the owner will look at it.');
+  if(await act('/api/report', { sub, reason })) noticeToast('⚑ REPORTED', 'Thanks - the owner will look at it.');
 }
 
 function updateProfileHeader(){
@@ -2586,7 +2586,7 @@ function updateProfileHeader(){
   if(mc) mc.textContent = (lastState.profile && lastState.profile.code) || '------';
   document.getElementById('stat-friends').textContent = lastState.friends.length;
   document.getElementById('stat-played').textContent = localStorage.getItem('glitchbox_played_'+currentUser.sub) || '0';
-  let since = '—';
+  let since = '-';
   const created = lastState.profile && lastState.profile.created;
   if(created){ since = new Date(created).toLocaleDateString(undefined,{month:'short',year:'numeric'}); }
   document.getElementById('stat-since').textContent = since;
@@ -2598,7 +2598,7 @@ async function openProfile(){
   // Arrived on someone's link? Put their code in the box so the invite actually lands.
   const pend = pendingRef();
   if(pend){ document.getElementById('friend-code-in').value = pend;
-            statusMsg('Your inviter’s code is filled in — hit Add to link up.'); }
+            statusMsg('Your inviter’s code is filled in - hit Add to link up.'); }
   updateProfileHeader(); renderIconPicker(); renderFriends(); renderRequests(); renderBlocked(); renderGameInvites();
   if(window.GBSocial) GBSocial.renderOwn();
   document.getElementById('profile-modal').classList.add('show');
@@ -2607,7 +2607,7 @@ async function openProfile(){
 function closeProfile(){ document.getElementById('profile-modal').classList.remove('show'); }
 
 // Count a "game played" whenever a game tile is launched (local, per device),
-// and pay out the play tokens. Locked tiles never get here — they open the shop.
+// and pay out the play tokens. Locked tiles never get here - they open the shop.
 document.getElementById('game-grid').addEventListener('click', e => {
   const card = e.target.closest('.game-card');
   if(!card || e.target.closest('.fav-btn') || card.classList.contains('locked')) return;
@@ -2632,8 +2632,8 @@ function glitchLogout(){
 // (not the PLACEHOLDER), the arcade runs guest-only: full catalog, no login wall.
 const BACKEND_READY = /^https?:\/\//.test(API_BASE) && !/PLACEHOLDER/i.test(API_BASE);
 
-// Game invites are time-sensitive — nobody wants to stare at a "waiting" screen for
-// half a minute — so poll faster than the old 25s friend-request cadence.
+// Game invites are time-sensitive - nobody wants to stare at a "waiting" screen for
+// half a minute - so poll faster than the old 25s friend-request cadence.
 const POLL_MS = 8000;
 
 function openAuth(mode){
@@ -2647,7 +2647,7 @@ function closeAuth(){
 }
 
 function initGoogleAuth(){
-  // Catalog is always open — never lock the body or force the overlay.
+  // Catalog is always open - never lock the body or force the overlay.
   document.body.classList.remove('locked');
   document.getElementById('auth-overlay').classList.add('hidden');
   try { const b = localStorage.getItem(BAN_KEY); if(b !== null) showBan(b); } catch(e){}

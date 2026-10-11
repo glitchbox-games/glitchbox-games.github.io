@@ -1,11 +1,11 @@
 /* ==========================================================================
-   GLITCHBOX — CONTESTS
+   GLITCHBOX - CONTESTS
    --------------------------------------------------------------------------
    The owner runs contests from the hub; winners are paid automatically.
 
-     • best score  — the best GLITCHBOX.score() a player posts in that game
+     • best score  - the best GLITCHBOX.score() a player posts in that game
                      while the contest runs (games that report scores only)
-     • most played — most minutes in one game, or anywhere in the arcade
+     • most played - most minutes in one game, or anywhere in the arcade
 
    When the clock runs out the server (settleContests) drops the prizes into
    the winners' gift inbox, so tokens / an unlocked game land on their hub.
@@ -131,7 +131,7 @@
     if (!c) { el.classList.remove('on'); el.innerHTML = ''; return; }
     el.classList.add('on');
     el.innerHTML = '<div class="big">🏆</div><div class="grow"><div class="t">// LIVE CONTEST' + (data.live.length > 1 ? 'S · ' + data.live.length : '') + '</div>' +
-      '<div class="d"><b>' + E(c.title) + '</b> — ' + E(what(c)) + '</div><div>' + prizeLine(c) + '</div></div>' +
+      '<div class="d"><b>' + E(c.title) + '</b> - ' + E(what(c)) + '</div><div>' + prizeLine(c) + '</div></div>' +
       '<div style="text-align:right"><div class="clock" data-ends="' + c.ends + '">' + left(c.ends) + '</div>' +
       '<div class="gbc-dim" style="font-size:13px;margin-top:6px">' + (c.mine ? 'you\'re #' + c.mine.rank : c.entrants + ' in it') + ' · tap to see</div></div>';
   }
@@ -154,16 +154,16 @@
     const rows = (c.standings || []).map((x, i) => '<div class="gbc-row' + (x.sub === me ? ' me' : '') + '"><span class="r">' + (i < 3 ? PLACES[i] : i + 1) + '</span>' + av(x) +
       '<span class="g">' + E(x.name) + (x.sub === me ? ' (you)' : '') + '</span><span>' + val(c, x.score) + '</span></div>').join('');
     const how = c.kind === 'time'
-      ? 'Play ' + (c.game === '*' ? 'anything in the arcade' : gname(c.game)) + ' — every minute until the clock runs out counts.'
-      : 'Play ' + gname(c.game) + ' — your ' + (c.low ? 'lowest' : 'best') + ' score from the start of the contest counts.';
+      ? 'Play ' + (c.game === '*' ? 'anything in the arcade' : gname(c.game)) + ' - every minute until the clock runs out counts.'
+      : 'Play ' + gname(c.game) + ' - your ' + (c.low ? 'lowest' : 'best') + ' score from the start of the contest counts.';
     return '<div class="gbc-card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div class="gbc-name">' + E(c.title) + '</div>' +
       '<div class="clock" data-ends="' + c.ends + '" style="font-family:\'Press Start 2P\',monospace;font-size:10px;color:#00f5ff">' + left(c.ends) + '</div></div>' +
       '<div>' + E(what(c)) + '</div>' + (c.note ? '<div class="gbc-dim" style="margin-top:4px">' + E(c.note) + '</div>' : '') +
       '<div>' + prizeLine(c) + '</div>' +
       '<div class="gbc-h">// STANDINGS · ' + (c.entrants || 0) + ' IN IT</div>' +
-      (rows || '<div class="gbc-dim">Nobody yet — first one in is winning.</div>') +
+      (rows || '<div class="gbc-dim">Nobody yet - first one in is winning.</div>') +
       (c.mine && c.mine.rank > 10 ? '<div class="gbc-row me"><span class="r">' + c.mine.rank + '</span><span class="g">you</span><span>' + val(c, c.mine.score) + '</span></div>' : '') +
-      '<div class="gbc-dim" style="margin-top:10px;font-size:13px">' + E(how) + (signedIn() ? '' : ' <b style="color:#ffe600">Sign in to enter — guests can\'t win prizes.</b>') + '</div>' +
+      '<div class="gbc-dim" style="margin-top:10px;font-size:13px">' + E(how) + (signedIn() ? '' : ' <b style="color:#ffe600">Sign in to enter - guests can\'t win prizes.</b>') + '</div>' +
       '<div class="gbc-acts">' + (c.game !== '*' && typeof gameURL === 'function' ? '<a class="gbc-btn y" href="' + E(gameURL(c.game)) + '">▶ Play ' + E(gname(c.game)) + '</a>' : '') +
       (isOwner() ? '<button class="gbc-btn" data-gbc="end" data-id="' + c.id + '">🏁 End now &amp; pay out</button>' +
         '<button class="gbc-btn r" data-gbc="cancel" data-id="' + c.id + '">✕ Cancel</button>' : '') + '</div></div>';
@@ -181,9 +181,9 @@
     if (!box) return;
     if (form) { box.innerHTML = formHTML(); return; }
     box.innerHTML = '<button class="x" data-gbc="close" aria-label="Close">×</button>' +
-      '<div class="gbc-title">🏆 CONTESTS</div><div class="gbc-dim">Win the contest, win the prize — it lands in your hub automatically when the clock runs out.</div>' +
+      '<div class="gbc-title">🏆 CONTESTS</div><div class="gbc-dim">Win the contest, win the prize - it lands in your hub automatically when the clock runs out.</div>' +
       (isOwner() ? '<div class="gbc-acts"><button class="gbc-btn y" data-gbc="new">＋ New contest</button></div>' : '') +
-      '<div class="gbc-h">// LIVE NOW</div>' + (data.live.length ? data.live.map(liveCard).join('') : '<div class="gbc-dim">No contest running right now — check back soon.</div>') +
+      '<div class="gbc-h">// LIVE NOW</div>' + (data.live.length ? data.live.map(liveCard).join('') : '<div class="gbc-dim">No contest running right now - check back soon.</div>') +
       (data.past.length ? '<div class="gbc-h">// RECENT WINNERS</div>' + data.past.map(pastCard).join('') : '');
   }
 
@@ -198,9 +198,9 @@
       '<div><label>GAME</label><select class="gbc-in" id="gbc-game"></select></div></div>' +
       '<div class="gbc-grid" style="margin-top:10px"><div><label>RUNS FOR</label><select class="gbc-in" id="gbc-hours">' +
         opt('1', '1 hour') + opt('6', '6 hours') + opt('24', '1 day', true) + opt('72', '3 days') + opt('168', '1 week') + opt('336', '2 weeks') + '</select></div>' +
-      '<div><label>1ST ALSO UNLOCKS (OPTIONAL)</label><select class="gbc-in" id="gbc-pgame">' + opt('', '— nothing —') +
+      '<div><label>1ST ALSO UNLOCKS (OPTIONAL)</label><select class="gbc-in" id="gbc-pgame">' + opt('', '- nothing -') +
         special.map(g => opt(g.file, (g.emoji ? g.emoji + ' ' : '') + g.name)).join('') + '</select></div></div>' +
-      '<div class="gbc-lab" style="margin-top:10px">TOKEN PRIZES — 1ST / 2ND / 3RD (0 = no prize for that place)</div>' +
+      '<div class="gbc-lab" style="margin-top:10px">TOKEN PRIZES - 1ST / 2ND / 3RD (0 = no prize for that place)</div>' +
       '<div class="gbc-grid" style="grid-template-columns:1fr 1fr 1fr"><input class="gbc-in" id="gbc-p1" type="number" min="0" value="500">' +
         '<input class="gbc-in" id="gbc-p2" type="number" min="0" value="250"><input class="gbc-in" id="gbc-p3" type="number" min="0" value="100"></div>' +
       '<div class="gbc-lab" style="margin-top:10px">NOTE (OPTIONAL)</div><input class="gbc-in" id="gbc-note" maxlength="200" placeholder="e.g. Ties go to whoever got there first">' +
@@ -227,7 +227,7 @@
     try {
       const d = await call('/api/admin/contest', { method: 'POST', body });
       data = d; form = false; render(); renderStrip();
-      if (typeof noticeToast === 'function') noticeToast('🏆 CONTEST LIVE', body.title + ' is running — everyone sees it on the hub.', 5000);
+      if (typeof noticeToast === 'function') noticeToast('🏆 CONTEST LIVE', body.title + ' is running - everyone sees it on the hub.', 5000);
     } catch (e) { err.textContent = e.message; }
   }
 

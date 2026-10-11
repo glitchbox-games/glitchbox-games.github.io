@@ -1,12 +1,12 @@
 /* ==========================================================================
-   GLITCHBOX — OWNER COMMAND LINE
+   GLITCHBOX - OWNER COMMAND LINE
    --------------------------------------------------------------------------
    A drop-down console for the one account that owns the arcade. Opens with the
    ` (backtick) key, or Ctrl+Shift+K. Type `help` for the command list.
 
    Who can use it
    --------------
-   The console only builds itself once /api/me comes back with isOwner — the
+   The console only builds itself once /api/me comes back with isOwner - the
    same server verdict the ⚙ Owner Console uses. Two honest caveats:
 
    • Server commands (players, ban, delete, reports…) are genuinely protected.
@@ -14,7 +14,7 @@
      client gets a 403 no matter what it renders.
    • Local commands (tokens, unlock, wipe) only rewrite THIS browser's
      localStorage. Hiding them behind the owner check is convenience, not
-     security — any player could already edit their own localStorage by hand.
+     security - any player could already edit their own localStorage by hand.
      Nothing here leaks onto the server or another player's device.
 
    Lives in its own file so it can be dropped or reloaded without touching the
@@ -80,7 +80,7 @@
   }
   function gameList() { return (typeof GAMES !== 'undefined' && GAMES) ? GAMES : []; }
   const gid = g => g.file.replace('.html', '');
-  // Exact id, then exact name, then a substring on either — so `play grid` works.
+  // Exact id, then exact name, then a substring on either - so `play grid` works.
   function findGame(q) {
     const s = String(q || '').toLowerCase().replace(/\.html$/, '');
     if (!s) return null;
@@ -97,7 +97,7 @@
     if (typeof renderIconPicker === 'function') renderIconPicker();
   }
   function ago(ts) {
-    if (!ts) return '—';
+    if (!ts) return '-';
     const s = Math.max(0, (Date.now() - ts) / 1000);
     if (s < 90) return 'just now';
     if (s < 3600) return Math.round(s / 60) + 'm ago';
@@ -107,9 +107,9 @@
   function pad(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : s + ' '.repeat(n - s.length); }
 
   // One player from a loose query. Prints the candidates and returns null when
-  // the query is ambiguous — never guesses at a target for a ban or a delete.
+  // the query is ambiguous - never guesses at a target for a ban or a delete.
   async function pickPlayer(q) {
-    if (!q) { bad('name somebody — a name, email or friend code'); return null; }
+    if (!q) { bad('name somebody - a name, email or friend code'); return null; }
     const list = (await call('/api/admin/players?q=' + encodeURIComponent(q))).players || [];
     if (!list.length) { bad('no player matches "' + q + '"'); return null; }
     const lq = String(q).toLowerCase();
@@ -118,28 +118,28 @@
                || list.find(p => (p.name || '').toLowerCase() === lq);
     if (exact) return exact;
     if (list.length === 1) return list[0];
-    warn(list.length + ' players match "' + q + '" — be more specific:');
-    list.slice(0, 12).forEach(p => say('   ' + pad(p.name, 18) + ' ' + pad(p.email, 28) + ' ' + (p.code || '—')));
+    warn(list.length + ' players match "' + q + '" - be more specific:');
+    list.slice(0, 12).forEach(p => say('   ' + pad(p.name, 18) + ' ' + pad(p.email, 28) + ' ' + (p.code || '-')));
     return null;
   }
 
   // One guest from a loose query: their name ("Guest 1A2B" or one you gave them),
   // the last 4 of their id, or the whole id. Same never-guess rule as pickPlayer.
   async function pickGuest(q) {
-    if (!q) { bad('name a guest — e.g. 1A2B, "Guest 1A2B", or a name you gave them'); return null; }
+    if (!q) { bad('name a guest - e.g. 1A2B, "Guest 1A2B", or a name you gave them'); return null; }
     const list = (await call('/api/admin/guests')).guests || [];
     const lq = String(q).toLowerCase().replace(/^guest\s+/, '');
     const hits = list.filter(g => g.gid.toLowerCase() === lq || g.gid.slice(-4).toLowerCase() === lq ||
       (g.name || '').toLowerCase() === String(q).toLowerCase() || (g.name || '').toLowerCase().indexOf(lq) !== -1);
-    if (!hits.length) { bad('no guest matches "' + q + '" — try  guests'); return null; }
+    if (!hits.length) { bad('no guest matches "' + q + '" - try  guests'); return null; }
     if (hits.length > 1) {
-      warn(hits.length + ' guests match "' + q + '" — be more specific:');
+      warn(hits.length + ' guests match "' + q + '" - be more specific:');
       hits.slice(0, 12).forEach(g => say('   ' + pad(g.name, 18) + ' ' + pad(g.ip || '?', 18) + ' seen ' + ago(g.last_seen)));
       return null;
     }
     return hits[0];
   }
-  // "u:<sub>" for a player, "g:<gid>" for a guest — players first, then guests.
+  // "u:<sub>" for a player, "g:<gid>" for a guest - players first, then guests.
   async function pickAnyone(q) {
     if (!/^guest\b/i.test(q) && ((await call('/api/admin/players?q=' + encodeURIComponent(q))).players || []).length) {
       const p = await pickPlayer(q); return p ? { target:'u:' + p.sub, name:p.name } : null;
@@ -147,8 +147,8 @@
     const g = await pickGuest(q); return g ? { target:'g:' + g.gid, name:g.name } : null;
   }
 
-  // Typo help. A prefix filter alone misses the common case — one wrong letter
-  // in the middle — so this ranks by edit distance and keeps the closest few.
+  // Typo help. A prefix filter alone misses the common case - one wrong letter
+  // in the middle - so this ranks by edit distance and keeps the closest few.
   function editDistance(a, b) {
     const m = a.length, n = b.length;
     if (!m) return n;
@@ -175,7 +175,7 @@
   function askConfirm(what, run) {
     pending = { what, run };
     warn('⚠ ' + what);
-    warn('   type  confirm  to go ahead — anything else cancels');
+    warn('   type  confirm  to go ahead - anything else cancels');
   }
 
   // ── commands ───────────────────────────────────────────────────────────────
@@ -191,9 +191,9 @@
       // An alias points at the same object as its canonical command; listing by
       // usage keeps `jump` from showing up as a second, identical `play` line.
       const canon = k => CMDS[k].usage.split(' ')[0] === k;
-      head('// SERVER — owner-checked on every request');
+      head('// SERVER - owner-checked on every request');
       Object.keys(CMDS).filter(k => canon(k) && CMDS[k].owner).forEach(k => say('  ' + pad(CMDS[k].usage, 26) + CMDS[k].about));
-      head('// THIS DEVICE — local storage only');
+      head('// THIS DEVICE - local storage only');
       Object.keys(CMDS).filter(k => canon(k) && !CMDS[k].owner).forEach(k => say('  ' + pad(CMDS[k].usage, 26) + CMDS[k].about));
       const aliases = Object.keys(CMDS).filter(k => !canon(k));
       if (aliases.length) say('  ' + pad('aliases', 26) + aliases.map(k => k + ' → ' + CMDS[k].usage.split(' ')[0]).join(', '));
@@ -205,9 +205,9 @@
       const u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
       if (!u) { bad('not signed in'); return; }
       head('// ' + (u.name || '?'));
-      say('  email    ' + (u.email || '—'));
-      say('  sub      ' + String(u.sub || '—').slice(0, 28) + '…');
-      say('  owner    ' + (ownerNow() ? 'yes — the server says so' : 'no'));
+      say('  email    ' + (u.email || '-'));
+      say('  sub      ' + String(u.sub || '-').slice(0, 28) + '…');
+      say('  owner    ' + (ownerNow() ? 'yes - the server says so' : 'no'));
       if (hasTokens()) {
         const owned = (() => { try { return (JSON.parse(localStorage.getItem(tokKeys().own)) || []).length; } catch (e) { return 0; } })();
         const ics = (() => { try { return (JSON.parse(localStorage.getItem(tokKeys().icons)) || []).length; } catch (e) { return 0; } })();
@@ -260,7 +260,7 @@
 
     play: { usage:'play <game>', about:'launch a game by id or name', run(a) {
       const g = findGame(a.join(' '));
-      if (!g) { bad('no game matches "' + a.join(' ') + '" — try  games'); return; }
+      if (!g) { bad('no game matches "' + a.join(' ') + '" - try  games'); return; }
       ok('launching ' + (g.name || gid(g)) + '…');
       if (!SMOKE) location.href = g.file;
     }},
@@ -270,14 +270,14 @@
         if (typeof resetEconomy === 'function') resetEconomy();
         else { const K = tokKeys(); Object.keys(K).forEach(k => localStorage.removeItem(K[k])); }
         repaint();
-        ok('economy reset — balance 0');
+        ok('economy reset - balance 0');
       });
     }},
 
     wipe: { usage:'wipe', about:'clear ALL glitchbox data here, sign-in included', run() {
       askConfirm('Erase every glitchbox.* key on this device and sign out?', () => {
         Object.keys(localStorage).filter(k => k.indexOf('glitchbox') === 0).forEach(k => localStorage.removeItem(k));
-        ok('device cleared — reloading');
+        ok('device cleared - reloading');
         if (!SMOKE) setTimeout(() => location.reload(), 500);
       });
     }},
@@ -311,15 +311,15 @@
       if (!list.length) { bad(q ? 'nobody matches "' + q + '"' : 'no players yet'); return; }
       head('// ' + list.length + ' player' + (list.length === 1 ? '' : 's'));
       list.forEach(p => say('  ' + (p.banned ? '⛔ ' : '   ') + pad(p.name, 18) + pad(p.email, 28) +
-        pad(p.code || '—', 8) + 'seen ' + ago(p.last_seen), p.banned ? 'warn' : ''));
+        pad(p.code || '-', 8) + 'seen ' + ago(p.last_seen), p.banned ? 'warn' : ''));
     }},
 
     who: { usage:'who <query>', about:'everything about one player', owner:true, async run(a) {
       const p = await pickPlayer(a.join(' '));
       if (!p) return;
       head('// ' + p.name + (p.banned ? '   ⛔ BANNED' : ''));
-      say('  email    ' + (p.email || '—'));
-      say('  code     ' + (p.code || '—'));
+      say('  email    ' + (p.email || '-'));
+      say('  code     ' + (p.code || '-'));
       say('  sub      ' + String(p.sub).slice(0, 28) + '…');
       say('  joined   ' + ago(p.created) + '     last seen ' + ago(p.last_seen));
       say('  friends  ' + p.friends + '     saves ' + p.saves + '     reports ' + p.reports);
@@ -331,7 +331,7 @@
       if (!p) return;
       const reason = a.slice(1).join(' ');
       await call('/api/admin/ban', { method:'POST', body:{ sub:p.sub, banned:true, reason } });
-      ok('banned ' + p.name + (reason ? ' — "' + reason + '"' : ''));
+      ok('banned ' + p.name + (reason ? ' - "' + reason + '"' : ''));
     }},
 
     unban: { usage:'unban <query>', about:'lift a ban', owner:true, async run(a) {
@@ -407,7 +407,7 @@
       const p = await pickPlayer(a[0]);
       if (!p) return;
       await deliver('u:' + p.sub);
-      ok('gift queued for ' + p.name + ': ' + summary + (energy ? ' — energy lands next time they\'re in Idle Universe' : ' — lands on their next check-in'));
+      ok('gift queued for ' + p.name + ': ' + summary + (energy ? ' - energy lands next time they\'re in Idle Universe' : ' - lands on their next check-in'));
     }},
 
     msg: { usage:'msg <player> <message>', about:'pop a message up on a player\'s screen', owner:true, async run(a) {
@@ -451,7 +451,7 @@
 
     reports: { usage:'reports', about:'open player reports', owner:true, async run() {
       const list = (await call('/api/admin/reports')).reports || [];
-      if (!list.length) { ok('no reports — quiet arcade'); return; }
+      if (!list.length) { ok('no reports - quiet arcade'); return; }
       head('// ' + list.length + ' report' + (list.length === 1 ? '' : 's'));
       list.forEach(r => {
         say('  #' + pad(r.id, 5) + pad(r.reported || '(deleted)', 18) + 'by ' + pad(r.reporter || '(deleted)', 18) + ago(r.created),
@@ -483,7 +483,7 @@
       const who = await pickAnyone(a[0]);
       if (!who) return;
       await call('/api/admin/kick', { method:'POST', body:{ target:who.target, reason } });
-      ok('👢 kicked ' + who.name + ' — lands within a few seconds');
+      ok('👢 kicked ' + who.name + ' - lands within a few seconds');
     }},
 
     popup: { usage:'popup <player|guest|everyone> <message>', about:'pop a message up right now, even mid-game', owner:true, async run(a) {
@@ -505,7 +505,7 @@
       const who = all ? { target:'*', name:'everyone' } : await pickAnyone(name);
       if (!who) return;
       const r = await call('/api/admin/game-gift', { method:'POST', body:{ target:who.target, game:'idle-universe.html', amount:n } });
-      ok('⚡ sent ' + a[a.length - 1] + ' energy to ' + (all ? r.sent + ' players and guests' : who.name) + ' — lands next time they\'re in Idle Universe');
+      ok('⚡ sent ' + a[a.length - 1] + ' energy to ' + (all ? r.sent + ' players and guests' : who.name) + ' - lands next time they\'re in Idle Universe');
     }},
 
     gban: { usage:'gban <guest> [net] [reason]', about:'ban a guest (add  net  to ban their network too)', owner:true, async run(a) {
@@ -513,9 +513,9 @@
       if (!g) return;
       const net = (a[1] || '').toLowerCase() === 'net';
       const reason = a.slice(net ? 2 : 1).join(' ');
-      if (net && g.sameAsYou) { bad(g.name + ' is on your own network — ban the device only'); return; }
+      if (net && g.sameAsYou) { bad(g.name + ' is on your own network - ban the device only'); return; }
       await call('/api/admin/guest-ban', { method:'POST', body:{ gid:g.gid, banned:true, reason, ip:net } });
-      ok('banned ' + g.name + (net ? ' + network ' + g.ip : '') + (reason ? ' — "' + reason + '"' : ''));
+      ok('banned ' + g.name + (net ? ' + network ' + g.ip : '') + (reason ? ' - "' + reason + '"' : ''));
     }},
 
     gunban: { usage:'gunban <guest>', about:'lift a guest ban', owner:true, async run(a) {
@@ -546,7 +546,7 @@
         say('guest play is ' + (r.guestsLocked ? 'OFF' : 'ON')); return;
       }
       await call('/api/admin/guests-lock', { method:'POST', body:{ on: w === 'off' } });
-      ok(w === 'off' ? '🚫 guest play is off — guests must sign in' : '✅ guests can play again');
+      ok(w === 'off' ? '🚫 guest play is off - guests must sign in' : '✅ guests can play again');
     }},
 
     gameoff: { usage:'gameoff <game>', about:'switch a game off for everyone but you', owner:true, async run(a) {
@@ -587,7 +587,7 @@
       const w = (a[1] || '').toLowerCase();
       if (!a[0] || (w !== 'yes' && w !== 'no')) { bad('usage: appeal <id> yes|no [reply]'); return; }
       const r = await call('/api/admin/appeal-decide', { method:'POST', body:{ id: +a[0], accept: w === 'yes', reply: a.slice(2).join(' ') } });
-      ok(w === 'yes' ? '✅ appeal #' + a[0] + ' accepted — unbanned' + (r.note || '') : '⚖ appeal #' + a[0] + ' turned down');
+      ok(w === 'yes' ? '✅ appeal #' + a[0] + ' accepted - unbanned' + (r.note || '') : '⚖ appeal #' + a[0] + ' turned down');
     }},
 
     mod: { usage:'mod <player> [off]', about:'make a player a moderator (or stop)', owner:true, async run(a) {
@@ -655,14 +655,14 @@
     }
     // Owner-only commands are refused here for a clean message; the server
     // refuses them again regardless of what this client believes.
-    if (cmd.owner && !ownerNow()) { bad('owner only — the server has to vouch for you first'); return; }
+    if (cmd.owner && !ownerNow()) { bad('owner only - the server has to vouch for you first'); return; }
     try { await cmd.run(args, line); }
     catch (e) {
       const m = e.message || 'that failed';
       // "Failed to fetch" is what a browser says for offline, CORS and a dead
       // Worker alike; none of those are worth showing in that shape.
-      if (/failed to fetch|networkerror|load failed/i.test(m)) bad("couldn't reach the arcade server — offline, or the Worker is down");
-      else if (e.status === 403) bad('the server refused that — it does not consider this account the owner');
+      if (/failed to fetch|networkerror|load failed/i.test(m)) bad("couldn't reach the arcade server - offline, or the Worker is down");
+      else if (e.status === 403) bad('the server refused that - it does not consider this account the owner');
       else bad(m);
     }
   }
@@ -709,7 +709,7 @@
       '<div class="gbc-log" id="gbc-log"></div>' +
       '<form class="gbc-form" id="gbc-form"><span class="gbc-caret">&gt;</span>' +
         '<input class="gbc-in" id="gbc-in" autocomplete="off" spellcheck="false" ' +
-          'placeholder="help — or start typing and hit Tab"></form>';
+          'placeholder="help - or start typing and hit Tab"></form>';
     document.body.appendChild(wrap);
 
     // Replay anything printed before the DOM existed.
@@ -776,7 +776,7 @@
 
   // The server decides who the owner is; until /api/me says so, the console won't
   // open. A stray backtick still reveals nothing, but the deliberate Ctrl+Shift+K
-  // chord says why it refused — a hotkey that does *literally* nothing reads as a
+  // chord says why it refused - a hotkey that does *literally* nothing reads as a
   // bug, and the first person to hit it is the owner wondering what broke.
   setInterval(() => { isOwner = ownerNow(); }, 1500);
   isOwner = ownerNow();
@@ -797,16 +797,16 @@
     const signedIn = typeof currentUser !== 'undefined' && !!currentUser;
     let why;
     if (!signedIn) {
-      why = 'Sign in first — the console follows the account, not the browser.';
+      why = 'Sign in first - the console follows the account, not the browser.';
     } else if (!st || !st.profile) {
       // /api/me hasn't landed yet (or failed). Silently refusing here is what made
       // this look broken: the answer simply wasn't back at the moment of the keypress.
-      why = 'Still talking to the server — the owner check hasn\'t come back yet. Try again in a moment.';
+      why = 'Still talking to the server - the owner check hasn\'t come back yet. Try again in a moment.';
     } else if (!st.ownerPinned) {
       why = 'No owner is configured on the server. Set the OWNER_EMAIL secret on the Worker.';
     } else {
       // The pin compares against the server's copy of the address, which can differ
-      // from the one cached in this browser — so report both when they disagree.
+      // from the one cached in this browser - so report both when they disagree.
       const c = st.ownerCheck || {};
       const srv = c.email || '';
       const local = String((currentUser && currentUser.email) || '');
@@ -814,7 +814,7 @@
         why = 'Your address matches the owner, but Google has it marked unverified, so the server rejects it.';
       else if (srv && local && srv.toLowerCase() !== local.toLowerCase())
         why = 'This browser thinks you are <b>' + esc(local) + '</b>, but the server has <b>' + esc(srv) +
-              '</b> on your account — and the owner check uses the server\'s copy. Sign out and back in.';
+              '</b> on your account - and the owner check uses the server\'s copy. Sign out and back in.';
       else
         why = 'Signed in as <b>' + esc(srv || local) + '</b>, which is not the address the arcade is pinned to.';
     }

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   GLITCHBOX — shared "quit to menu" button
+   GLITCHBOX - shared "quit to menu" button
    --------------------------------------------------------------------------
    Drop this into any game with:
        <script src="glitchbox-menu.js" defer></script>
@@ -12,7 +12,7 @@
      can reach in and break it, and none of its CSS leaks back out.
    - Rests as a small 30px corner dot so it covers as little of the game's
      own HUD as possible; expands to a labelled pill on hover/focus.
-   - Clicking asks for confirmation first — an accidental brush during a
+   - Clicking asks for confirmation first - an accidental brush during a
      mouse-driven game must never throw away someone's run.
    - Re-parents itself into the fullscreen element so it survives games
      that call requestFullscreen() on their own container.
@@ -29,7 +29,7 @@
   // Same key the hub writes when the server answers "banned".
   try { if (localStorage.getItem('glitchbox.banned') !== null) { location.replace('index.html'); return; } }
   catch (_) {}
-  // Nobody plays until they've agreed to the current terms — signed in or guest. The
+  // Nobody plays until they've agreed to the current terms - signed in or guest. The
   // hub shows them, then brings you straight back here (room code and all).
   // Keep TOS_VERSION in step with index.html.
   var TOS_VERSION = '2026-10-11.1';
@@ -45,7 +45,7 @@
       return;
     }
   } catch (_) {}
-  // The hub isn't open mid-game, so the game page asks the server itself — on load
+  // The hub isn't open mid-game, so the game page asks the server itself - on load
   // (so a refresh catches a ban) and every few seconds after. The ping also tells
   // the owner console which game you're in, and closes the game during maintenance
   // (for everyone but the owner). Self-test hashes stay offline.
@@ -111,7 +111,7 @@
     return m ? m[1].toUpperCase() : '';
   }
 
-  // Games report a score with GLITCHBOX.score(n) — or GLITCHBOX.score(n, { low:true })
+  // Games report a score with GLITCHBOX.score(n) - or GLITCHBOX.score(n, { low:true })
   // when lower is better (golf strokes, race times). Only counts for signed-in players;
   // the server keeps each player's best and the 🏆 Leaderboards show the top ten.
   window.GLITCHBOX = window.GLITCHBOX || {};
@@ -153,7 +153,7 @@
         if (d.kick != null) bounce(d.kick ? 'Kicked by the owner: ' + d.kick : 'The owner kicked you out of this game.');
         else if (d.maintenance) location.replace('index.html');       // the hub shows the closed sign
         else if ((d.disabled || []).indexOf(PING_GAME) !== -1) bounce('The owner switched this game off for now.');
-        else if (d.guestsLocked && !s) bounce('Guest play is switched off — sign in to keep playing.');
+        else if (d.guestsLocked && !s) bounce('Guest play is switched off - sign in to keep playing.');
         else if (reloadSeen === null) reloadSeen = d.reload || 0;
         else if ((d.reload || 0) > reloadSeen) location.reload();
       });
@@ -166,14 +166,14 @@
   var pos = (document.currentScript && document.currentScript.dataset.pos) || 'top-left';
 
   // Favorites are shared with the hub (index.html): same localStorage key, same
-  // shape — a JSON array of game filenames. Keep the two in step.
+  // shape - a JSON array of game filenames. Keep the two in step.
   var FAV_KEY = 'glitchbox.favs';
   var GAME_FILE = (location.pathname.split('/').pop() || '');
   function favList() {
     try { var v = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); return v instanceof Array ? v : []; }
     catch (_) { return []; }
   }
-  // Favorites are an account perk — guests get the button, but it sends them to sign in.
+  // Favorites are an account perk - guests get the button, but it sends them to sign in.
   function isGuest() {
     try { var u = JSON.parse(localStorage.getItem('glitchbox_user') || 'null'); return !(u && u.email); }
     catch (_) { return true; }
@@ -312,7 +312,7 @@
     });
     wrap.querySelector('.go').addEventListener('click', function (e) {
       e.stopPropagation();
-      // deliberately no preventDefault — the anchor's own navigation is the
+      // deliberately no preventDefault - the anchor's own navigation is the
       // thing that gets you home, so it works even if scripting is hampered
       try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {}
       fadeOut();
@@ -334,7 +334,7 @@
       wrap.addEventListener(t, function (e) { e.stopPropagation(); });
     });
 
-    // Escape closes the confirm — and only then, so games keep their own Esc.
+    // Escape closes the confirm - and only then, so games keep their own Esc.
     document.addEventListener('keydown', function (e) {
       if (open && (e.key === 'Escape' || e.key === 'Esc')) {
         e.stopPropagation(); e.preventDefault(); setOpen(false);
@@ -349,7 +349,7 @@
       (fs || document.body || document.documentElement).appendChild(host);
     });
 
-    // #menuquit — end-to-end: drive a real pointer sequence through MENU then
+    // #menuquit - end-to-end: drive a real pointer sequence through MENU then
     // QUIT and let it navigate. Catches breakage that a scripted .click() misses.
     if (location.hash === '#menuquit') {
       setTimeout(function () {
@@ -366,7 +366,7 @@
       }, 500);
     }
 
-    // #menucheck — verify the button is present, on top and clickable in this game
+    // #menucheck - verify the button is present, on top and clickable in this game
     if (location.hash === '#menucheck') {
       setTimeout(function () {
         var b = wrap.querySelector('.btn').getBoundingClientRect();
@@ -383,7 +383,7 @@
   }
 
   // Quitting fades to the arcade's dark instead of a hard cut (navigation still
-  // happens on its own — this only paints over the game while it does).
+  // happens on its own - this only paints over the game while it does).
   function fadeOut() {
     try {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -407,7 +407,7 @@
           'background:rgba(5,7,14,.94);color:#d0d8f0;font:500 15px/1.5 system-ui,sans-serif;text-align:center';
         d.innerHTML = '<div style="max-width:420px"><div style="font-size:46px">⌨️</div>' +
           '<div style="font:800 20px system-ui,sans-serif;color:#00f5ff;margin:8px 0 10px">THIS GAME NEEDS A KEYBOARD</div>' +
-          '<div>It\'s played with the keys, so it won\'t work on a phone or tablet on its own. Try it on a computer — or connect a keyboard.</div>' +
+          '<div>It\'s played with the keys, so it won\'t work on a phone or tablet on its own. Try it on a computer - or connect a keyboard.</div>' +
           '<div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
           '<a href="index.html" style="padding:11px 20px;background:#00f5ff;color:#001014;font-weight:800;text-decoration:none">◀ BACK TO THE ARCADE</a>' +
           '<button style="padding:11px 16px;background:transparent;border:1px solid #3a4a6a;color:#8b95a8;font:700 14px system-ui">Try anyway</button></div></div>';
