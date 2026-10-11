@@ -2604,6 +2604,20 @@ class Boxer{
     shl.position.y=1.15;shl.scale.set(.62,1.05,.62);shl.visible=false;this.root.add(shl);
     if(f.id==='toro'){const cm=new THREE.Mesh(new THREE.PlaneGeometry(.55,.75,6,6),new THREE.MeshStandardMaterial({color:0xd8161f,side:THREE.DoubleSide,roughness:.6,emissive:0x400000}));
       cm.geometry.translate(.3,-.35,0);cm.position.set(0,-.05,.05);cm.visible=false;this.arm[0].gl.add(cm);this.capeM=cm;this.mats.push(cm.material)}else this.capeM=null;
+    // ── the entrance robe: satin, trimmed lapels and sash, the name across the back; worn for the walk-out, off at the first bell ──
+    this.robe=null;if(!ref){const Wm=Math.max(...A.W.map(w=>w[1])),Dm=Math.max(...A.D.map(d=>d[1])),hx=c=>'#'+new THREE.Color(c).getHexString(),base=L.shorts||0x222222,trim=L.trim||0xffd23a;
+      const rt=canvasTex(512,256,(x,w,h)=>{x.fillStyle=hx(base);x.fillRect(0,0,w,h);const sg=x.createLinearGradient(0,0,w,0);for(let i=0;i<=8;i++)sg.addColorStop(i/8,i%2?'rgba(255,255,255,.13)':'rgba(0,0,0,.16)');x.fillStyle=sg;x.fillRect(0,0,w,h);
+        x.fillStyle=hx(trim);x.fillRect(0,0,22,h);x.fillRect(w-22,0,22,h);x.fillRect(0,h-20,w,20);x.fillRect(0,h*.46,w,13);x.fillStyle='rgba(255,255,255,.55)';x.fillRect(22,0,3,h);x.fillRect(w-25,0,3,h);
+        const nm=(f.short||f.name).toUpperCase();x.font=`${nm.length>7?46:58}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.lineWidth=7;x.strokeStyle='rgba(0,0,0,.65)';x.save();x.translate(w/2,0);x.scale(-1,1);x.strokeText(nm,0,h*.24);x.fillStyle=hx(trim);x.fillText(nm,0,h*.24);   // the surface runs right-to-left round the back
+        x.font=`18px ${FONT}`;x.fillStyle='rgba(255,255,255,.8)';x.fillText(f.nick||'',0,h*.36);x.restore()});this.ownTex.push(rt);
+      const rm=tm({color:0xffffff,map:rt,side:THREE.DoubleSide},{shade:SHADE.cloth,spec:.75,gloss:.93});
+      const top=.43,bot=-.66,rg=geo('robe',()=>surface((u,v,o)=>{const gap=lerp(.62,.22,Math.min(1,v*2.4)),th=Math.PI/2+gap+u*(TAU-2*gap),c=Math.cos(th),sn=Math.sin(th);
+          const w=Wm*1.13+.012+v*.075,d=Dm*1.3+.025+v*.06,y=top-v*(top-bot)-(1-v)*0*0-.09*Math.abs(c)*Math.max(0,1-v*5)-.04*v*v;
+          o.set(w*spow(c,.8),y,d*spow(sn,.8)+.01)},40,18,{closed:false}));
+      const robe=new THREE.Group();robe.add(bare(mesh(rg,rm)));spine.add(robe);
+      this.arm.forEach(Ar=>{const sl=bare(mesh(geo('rsl',()=>limbG(UA*.98,[[0,.118*aS,.12*aS,0,0],[.5,.104*aS,.108*aS,0,0],[1,.1*aS,.104*aS,0,0]],{capT:.09*aS,capB:0,nu:16,nv:4})),rm));Ar.sh.add(sl);
+        const cuff=bare(mesh(geo('rcf',()=>limbG(FA*.55,[[0,.096*aS,.096*aS,0,0],[1,.11*aS,.11*aS,0,0]],{capT:0,capB:0,nu:16,nv:2})),rm));Ar.el.add(cuff);robe.userData.parts=(robe.userData.parts||[]).concat([sl,cuff])});
+      this.robe=robe;this.robeOn=null}
     this.chains=this.arm.map(a=>{const t=new THREE.Mesh(new THREE.TorusGeometry(.12,.018,6,16),new THREE.MeshBasicMaterial({color:0xc26bff}));t.visible=false;a.gl.add(t);return t});
     this.stars=new THREE.Group();for(let i=0;i<3;i++){const s=new THREE.Mesh(new THREE.OctahedronGeometry(.035),new THREE.MeshBasicMaterial({color:0xffe14a}));s.position.set(Math.cos(i*2.1)*.17,0,Math.sin(i*2.1)*.17);this.stars.add(s)}
     this.stars.position.y=.3;this.stars.visible=false;head.add(this.stars);
@@ -2753,6 +2767,9 @@ class Boxer{
     {const d=Math.min(rdt0,.033);this.sqV=(this.sqV||0)+(-300*(this.sqX||0)-16*(this.sqV||0))*d;this.sqX=(this.sqX||0)+this.sqV*d;const q=this.sqX;const bh=mutOn('big')&&this.idx<2&&G.mode==='fight'?1.75:1;this.head.scale.set(bh*(1+q*.7),bh*(1-q),bh*(1+q*.5));
       if(!this.gsq)this.gsq=[[0,0],[0,0]];this.arm.forEach((A,i)=>{const g=this.gsq[i];g[1]+=(-420*g[0]-18*g[1])*d;g[0]+=g[1]*d;A.gl.scale.set(1+g[0]*.6,1-g[0],1+g[0]*.6)})}
     if(this.pony){this.pony.rotation.x=Math.sin(this.anT*5)*.12-h.x*1.4+P.lean*.6;this.pony.rotation.z=Math.sin(this.anT*3.1)*.08-h.z}
+    if(this.robe){const want=this.idx<2&&G.mode==='fight'&&!G.attract&&(G.phase==='walk'||G.phase==='intro');
+      if(want!==this.robeOn){const was=this.robeOn;this.robeOn=want;this.robe.visible=want;for(const o of this.robe.userData.parts||[])o.visible=want;if(this.capeG)this.capeG.visible=!want;
+        if(!want&&was&&G.mode==='fight'&&!G.attract&&this.root.visible&&this.chestW){burst(this.chestW,46,this.look.trim||0xffd23a,3.2,.7,.09,{up:1});SFX.whoosh&&SFX.whoosh(.9,this.chestW)}}}
     if(this.capeG){this.capeCloth(this.anT,Math.hypot(this.vx||0,this.vz||0)/2.3+(this.leap>0?1.2:0)+(a&&a.k==='punch'?.4:0));this.capeG.rotation.x=.12+Math.sin(this.anT*2.2)*.06+P.lean*.6+(this.leap>0?.9:0)-h.x*.4;this.capeG.rotation.z=Math.sin(this.anT*1.7)*.05}
     if(this.foxTails){this.foxTails.rotation.x=Math.sin(this.anT*2.6)*.1-P.lean*.5+h.x*.6;this.foxTails.rotation.y=Math.sin(this.anT*1.9)*.28+P.twist*.2;this.foxTails.rotation.z=Math.sin(this.anT*3.3)*.08}
     if(this.tails){this.tails.rotation.x=Math.sin(this.anT*6.3)*.18-h.x*1.6+P.lean*.5;this.tails.rotation.y=Math.sin(this.anT*4.1)*.15+P.twist*.3}
@@ -5058,6 +5075,8 @@ function runSmoke(){
     {const b=G.B[0],seen=new Set();for(const f of [...FIGHTERS,BOSS]){b.build(f);b.reset();b.x=0;b.z=0;b.yaw=0;b.act={k:'taunt',t:0,d:TAUNT_T,style:f.taunt};for(let i=0;i<20;i++)b.animate(1/60,null);const g0=b.gW[0].clone(),g1=b.gW[1].clone();let mv=0,bad=false;
       for(let i=0;i<60;i++){b.act.t+=1/60;b.animate(1/60,null);mv=Math.max(mv,b.gW[0].distanceTo(g0),b.gW[1].distanceTo(g1));if(!isFinite(b.gW[0].x+b.gW[1].y+b.headW.z))bad=true}
       ok(!bad&&mv>.08,f.id+' taunt "'+f.taunt+'" is a real pose ('+mv.toFixed(2)+')');seen.add(f.taunt)}b.act=null;ok(seen.size>=10,'signature taunts ('+seen.size+' different)')}
+    {const b=G.B[0],m0=G.mode,p0=G.phase;b.build(FBY.lucha);b.reset();G.mode='fight';G.phase='walk';b.animate(1/60,null);ok(b.robe&&b.robe.visible&&b.robe.userData.parts.every(o=>o.visible)&&!b.capeG.visible,'ENTRANCE ROBE on for the walk-out (cape tucked away)');
+      G.phase='fight';b.animate(1/60,null);ok(!b.robe.visible&&b.capeG.visible,'…and off at the bell');G.mode=m0;G.phase=p0}
     {const b=G.B[0];b.build(FBY.titan);b.reset();b.act={k:'down',t:0};b.down=true;for(let i=0;i<90;i++){b.act.t+=1/60;b.animate(1/60,null)}ok(b.headW.y<.6,'knocked-down boxer is on the canvas (head '+b.headW.y.toFixed(2)+')');b.down=false;b.act=null}
     // ── punches ──
     solo('blaze','frost');place(1.2);startPunch(G.B[0],'jab');sim(.5);
