@@ -247,6 +247,7 @@ body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{backg
 #endOv .card2{width:min(440px,44vw);animation:cardIn2 .5s cubic-bezier(.2,1.3,.4,1) both}
 @keyframes cardIn2{from{transform:translateX(120%)}to{transform:none}}
 #endHero{position:absolute;left:4vw;bottom:17vh;pointer-events:none;max-width:48vw}
+#endHero .wq{font:italic 700 clamp(14px,1.8vw,22px) Rubik;color:#fff;margin-bottom:10px;padding:8px 14px;background:rgba(0,0,0,.55);border-left:4px solid var(--c);display:inline-block;animation:qIn .4s .7s both;max-width:40vw}
 #endHero .k{font:900 clamp(12px,1.4vw,17px) Rubik;letter-spacing:.42em;color:#ffc83a;text-shadow:0 2px 0 #000}
 #endHero .n{font:400 clamp(56px,10vw,150px) Anton;line-height:.9;color:#fff;-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:8px 8px 0 var(--c,#ff3b3f);animation:heroIn .6s cubic-bezier(.2,1.5,.4,1) both}
 #endHero .s{font:900 clamp(11px,1.2vw,15px) Rubik;letter-spacing:.3em;color:#fff;opacity:.85;margin-top:8px}
@@ -3932,7 +3933,11 @@ const BIOS={blaze:'A street kid from the boiler district who learned to box in a
   grizz:'Wandered out of the forest, into a gym, and has refused to leave. Eats salmon between rounds.'};
 const RIVALS={'blaze|frost':['Fire and ice. Again.','You\'re going to melt, Blaze.'],'unit|volt':['Faster than a machine? Let\'s find out.','ELECTRICITY IS MY FOOD.'],
   'grizz|titan':['Two mountains. One ring.','GRRR.'],'kitsune|shade':['I see right through you.','There\'s nothing to see.'],
-  'toro|viper':['Big horns, slow feet.','Come here, little snake.'],'blaze|toro':['Red rag to a bull.','You\'re the one who\'ll get burned.']};
+  'toro|viper':['Big horns, slow feet.','Come here, little snake.'],'lucha|toro':['The cape is mine, señor.','I don\'t charge at masks.'],'champ|titan':['Thirty-one fights? Cute.','I never fell either, old man.'],'lucha|unit':['Can a robot feel the crowd?','CROWD NOISE: IRRELEVANT.'],'blaze|toro':['Red rag to a bull.','You\'re the one who\'ll get burned.']};
+const WINQ={blaze:['Told you it\'d get hot.','Somebody call the fire brigade — for you.'],volt:['Was that it? I barely charged up.','Too slow. Again.'],
+  titan:['The mountain stands.','You hit hard. Not hard enough.'],shade:['You were swinging at shadows.','…'],frost:['Stay down. Stay cold.','Cool, calm, champion.'],
+  viper:['The venom always wins.','Sssssweet victory.'],kitsune:['Was it me, or my illusion? Hehe~','Nine tails, zero worries.'],toro:['¡Olé!','Next time, wear red.'],
+  unit:['VICTORY LOGGED.','OPPONENT STATUS: RESTING.'],grizz:['Rrraaarrgh! (Salmon time.)','Back to hibernation.'],lucha:['¡Para mi gente!','The people\'s champion!'],champ:['Still undefeated.','Forty years, and nobody\'s close.']};
 function rivalry(a,b){const k=[a,b].sort().join('|'),L=RIVALS[k];if(!L)return null;const first=[a,b].sort()[0];return a===first?L:[L[1],L[0]]}
 function vsShow(){if(G.attract||SMOKE)return;const el=$('vs'),[A,B]=G.B,RV=rivalry(A.f.id,B.f.id),side=(b,i)=>`<div class="vport">${portrait(b.f.id,Math.min(300,innerHeight*.42)|0,i===1)}</div><div class="tag">${G.local?'PLAYER '+(i+1):i===G.ME&&!G.watch?'YOU':G.online?'RIVAL':'CPU'} · ${i?'BLUE':'RED'} CORNER</div><div class="nm">${(b.name||b.f.name).replace(/[<>&]/g,'')}</div><div class="nk">“${b.f.nick}”</div><div class="qt">${RV?RV[i]:pick(QUOTES[b.f.id]||['…'])}</div>`;
   const l=el.querySelector('.l'),r=el.querySelector('.r');l.style.setProperty('--c',A.f.col);r.style.setProperty('--c',B.f.col);l.innerHTML=side(A,0);r.innerHTML=side(B,1);
@@ -4245,7 +4250,7 @@ function showEnd(r){
     ${row('KNOCKDOWNS',(x,i)=>s[1-i].kd)}${row('DODGES',x=>x.dodged)}${row('BLOCKS',x=>x.blocked)}</table>
     <canvas id="flowC" width="400" height="90" style="width:100%;height:90px;margin-top:10px"></canvas>
     <div class="menu" id="endBtns" style="margin-top:10px"></div>`;
-  const W=w>=0?G.B[w]:null;$('endHero').innerHTML=W?`<div class="k">${G.ladder&&G.ladder.i>=G.ladder.opps.length&&w===me?'NEW GLITCHBOX CHAMPION':'AND THE WINNER'}</div><div class="n" style="--c:${W.f.col}">${W.f.name}</div><div class="s">${how}</div>`:`<div class="k">THE JUDGES CAN'T SPLIT THEM</div><div class="n">DRAW</div>`;
+  const W=w>=0?G.B[w]:null;$('endHero').innerHTML=W?`${WINQ[W.f.id]?`<div class="wq" style="--c:${W.f.col}">“${pick(WINQ[W.f.id])}”</div>`:''}<div class="k">${G.ladder&&G.ladder.i>=G.ladder.opps.length&&w===me?'NEW GLITCHBOX CHAMPION':'AND THE WINNER'}</div><div class="n" style="--c:${W.f.col}">${W.f.name}</div><div class="s">${how}</div>`:`<div class="k">THE JUDGES CAN'T SPLIT THEM</div><div class="n">DRAW</div>`;
   if(G.xpRes){const {before,gain,af}=G.xpRes;G.xpRes=null;
     $('endBody').insertAdjacentHTML('beforeend',`<div class="xpb"><div class="xpl"><b>LEVEL ${af.l}</b> ${af.title}<span>+${gain} XP</span></div><div class="xpbar"><i style="width:${(before.l<af.l?0:before.x/before.need*100).toFixed(1)}%"></i></div></div>`);
     setTimeout(()=>{const i=document.querySelector('.xpbar i');if(i)i.style.width=(af.x/af.need*100).toFixed(1)+'%'},120);
@@ -4776,6 +4781,7 @@ function runSmoke(){
      tourAdvance(true);tourAdvance(true);ok(G.tour.won&&G.tour.rounds[3][0]==='blaze','…three wins lifts the trophy');hideOv('tourOv');G.tour=null}
     {startSolo('blaze','titan','p2');G.forced=null;G.phase='fight';PAD2.pad=false;PAD2.press.length=0;dispatchEvent(new KeyboardEvent('keydown',{code:'Period'}));KEYS.ArrowLeft=true;p2KeyPoll();const it=getIntent(1,1/60);KEYS.ArrowLeft=false;
      ok(it.punch==='cross'&&PAD2.x===-1,'2 PLAYER on one keyboard: player 2 punches with . and moves with the arrows');const i1=playerIntent();ok(!i1.mx&&!i1.mz,'…and the arrows no longer move player 1');G.local=false;PAD2.on=false;G.forced=[EMPTY,EMPTY]}
+    ok([...FIGHTERS,BOSS].every(f=>WINQ[f.id]&&WINQ[f.id].length),'every fighter has victory quotes');
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
