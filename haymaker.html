@@ -731,6 +731,7 @@ const BOSS={id:'champ',name:'THE CHAMP',nick:'UNDEFEATED',col:'#ffd23a',secret:1
   e:{name:'Iron Skin',cd:12,desc:'For 4 seconds take half damage and shrug off stagger.'},
   r:{name:'Gold Rush',desc:'Three thundering straights, each one aimed afresh.'}};
 const bossOn=()=>!!REC.boss;
+FIGHTERS.forEach(f=>f.kit=f.id);BOSS.kit='champ';
 const FBY=Object.fromEntries([...FIGHTERS,BOSS].map(f=>[f.id,f]));
 const DIFF={
   bag:      {name:'TRAINING',      react:9,  block:0,  dodge:0,  aggr:0,  abil:0,  think:9,  getup:1,  parry:0,  hay:0},
@@ -2625,7 +2626,7 @@ class Boxer{
     ice.position.y=1.02;ice.visible=false;this.root.add(ice);ice.material.userData.keep=1;
     const shl=this.shieldM=new THREE.Mesh(new THREE.IcosahedronGeometry(1.05,1),new THREE.MeshStandardMaterial({color:0xbff0ff,transparent:true,opacity:.22,roughness:.1,flatShading:true,emissive:0x5fc8ff,emissiveIntensity:.5,envMap:ENV,envMapIntensity:1.5,depthWrite:false}));
     shl.position.y=1.15;shl.scale.set(.62,1.05,.62);shl.visible=false;this.root.add(shl);
-    if(f.id==='toro'){const cm=new THREE.Mesh(new THREE.PlaneGeometry(.55,.75,6,6),new THREE.MeshStandardMaterial({color:0xd8161f,side:THREE.DoubleSide,roughness:.6,emissive:0x400000}));
+    if(f.kit==='toro'){const cm=new THREE.Mesh(new THREE.PlaneGeometry(.55,.75,6,6),new THREE.MeshStandardMaterial({color:0xd8161f,side:THREE.DoubleSide,roughness:.6,emissive:0x400000}));
       cm.geometry.translate(.3,-.35,0);cm.position.set(0,-.05,.05);cm.visible=false;this.arm[0].gl.add(cm);this.capeM=cm;this.mats.push(cm.material)}else this.capeM=null;
     // ── the entrance robe: satin, trimmed lapels and sash, the name across the back; worn for the walk-out, off at the first bell ──
     this.robe=null;if(!ref){const Wm=Math.max(...A.W.map(w=>w[1])),Dm=Math.max(...A.D.map(d=>d[1])),hx=c=>'#'+new THREE.Color(c).getHexString(),base=L.shorts||0x222222,trim=L.trim||0xffd23a;
@@ -2746,7 +2747,7 @@ class Boxer{
       }else if(a.k==='getup'){
         const q=clamp(a.t/a.d,0,1);fall=1-ease(q);crouch=lerp(.45,.1,q);gL.lerp(_U.set(-.3,1.1,.3),1-q);k=10;
       }else if(a.k==='win'){
-        const q=Math.sin(this.anT*7),id=a.t>2.4&&this.f?this.f.id:'',T=this.anT,R=Math.random,pe=PA&&R()<dt*14;
+        const q=Math.sin(this.anT*7),id=a.t>2.4&&this.f?(this.f.kit||this.f.id):'',T=this.anT,R=Math.random,pe=PA&&R()<dt*14;
         gL.set(-.26,2.12+q*.04,.08);gR.set(.26,2.12-q*.04,.08);crouch=.04+Math.max(0,q)*.06;twist=0;headP=-.25;lean=-.05;k=10;
         // after the first roar, everyone celebrates their own way
         if(id==='blaze'){gL.set(-.34,1.76,.02);gR.set(.34,1.76,.02);this.flexIO=1;headP=-.15;crouch=.06+Math.max(0,Math.sin(T*5))*.04;if(pe)for(const g of this.gW)PA.emit(g.x,g.y,g.z,(R()-.5)*.6,1.2+R(),(R()-.5)*.6,.5,.14,1,.45,.1,1,-1,1)}
@@ -3035,7 +3036,7 @@ function logicBoxer(b,it,dt){
   if(b.dbuf&&G.time-b.dbuf.t>.4)b.dbuf=null;if(b.abuf&&G.time-b.abuf.t>.55)b.abuf=null;
   if(fight&&b.dbuf&&!lk&&b.dodgeCd<=0&&!b.dash&&(!b.act||inRecovery(b.act)||b.act.k==='charge')&&b.sta>=6){
     const dm=b.dbuf;b.dbuf=null;const dir=dm.mx<-.35?'L':dm.mx>.35?'R':dm.mz<-.35?'back':'duck';
-    cancelPunch(b);b.act={k:'dodge',dir,t:0,d:.42,n:(b.dgN=(b.dgN||0)+1)};b.dodgeCd=f.id==='shade'?.45:.72;b.sta-=6;b.blocking=false;
+    cancelPunch(b);b.act={k:'dodge',dir,t:0,d:.42,n:(b.dgN=(b.dgN||0)+1)};b.dodgeCd=f.kit==='shade'?.45:.72;b.sta-=6;b.blocking=false;
     if(!G.attract)SFX.whoosh(.6,b.chestW,'dodge');if(dir!=='duck'&&dir!=='back')afterimage(b,b.look.glow||0xffffff,.28,.6)}
   if(fight&&b.abuf&&!lk&&!b.dash&&(!b.act||inRecovery(b.act))){const k=b.abuf.k;b.abuf=null;castAbility(b,k)}
   b.fxBits=fxBitsOf(b);
@@ -3066,7 +3067,7 @@ function startPunch(b,kind,body,c=0){
   if(b.st.firefist>0){m*=1.4;fx.push('burn');b.st.firefist--}
   if(b.st.icefist>0){fx.push('freeze');b.st.icefist--}
   if(b.st.colossus>0)m*=1.6;
-  if(b.f.id==='frost')fx.push('chill');if(b.f.id==='viper')fx.push('poison');if(b.f.id==='blaze'&&b.combo>=2&&!fx.includes('burn'))fx.push('burn');
+  if(b.f.kit==='frost')fx.push('chill');if(b.f.kit==='viper')fx.push('poison');if(b.f.kit==='blaze'&&b.combo>=2&&!fx.includes('burn'))fx.push('burn');
   const full=hay&&c>=.97;
   launch({id:b.act.id,a:b.idx,k:'melee',cue:kind,anim:kind,sp,dmg:(hay?p.dmg+14*c:p.dmg)*m*(body?.85:1),range:p.range*b.f.reach*(b.st.colossus>0?1.25:1)*(b.f.size||1),
     guard:body?p.guard*.6:hay?p.guard-.15*c:p.guard,gbreak:hay?(full?1:0):p.gbreak,antiDuck:p.antiDuck,hs:hay?p.hs+.3*c:p.hs,kb:hay?p.kb+3.2*c:p.kb,meter:p.meter,fx,counter,
@@ -3098,7 +3099,7 @@ function resolve(spec){
   if(r==='hit'&&spec.hay&&v.act&&v.act.k==='punch'&&v.act.p==='hay'){const T=punchTimes(v.act);if(v.act.t<T.w+T.a+.05){r='clash';
       v.clashId=v.act.id;G.pending=G.pending.filter(q=>!(q.spec.a===v.idx&&q.spec.hay))}}   // the gloves meet: neither haymaker lands
   if(r==='hit'&&v.st.phase>0)r='phase';
-  if(r==='hit'&&v.f.id==='kitsune'&&!spec.unblock&&Math.random()<1/6)r='phase';   // Illusion
+  if(r==='hit'&&v.f.kit==='kitsune'&&!spec.unblock&&Math.random()<1/6)r='phase';   // Illusion
   if(r==='hit'&&v.st.cape>0&&spec.k==='melee'){r='dodge';v.st.cape=0;netAb(v,'olé')}   // Red Cape
   if(r==='hit'&&v.act&&v.act.k==='dodge'&&v.act.t>.02&&v.act.t<.38&&!spec.undodge){if(spec.antiDuck&&v.act.dir==='duck')caught=true;else r='dodge'}
   let dmg=spec.dmg*(mutOn('dmg')?2:1);
@@ -3116,7 +3117,7 @@ function resolve(spec){
       if(spec.cue==='flurry')G.pending=G.pending.filter(q=>!(q.spec.a===spec.a&&q.spec.cue==='flurry'))}
     else if(blk){r='block';dmg*=1-spec.guard;v.sta=Math.max(0,v.sta-spec.dmg*.9-(spec.stam||0));if(spec.gbreak||v.sta<=0)r='break'}
     if(v.st.iron>0)dmg*=.5;
-    if(v.f.id==='grizz'&&spec.k==='melee')dmg*=.85;   // Thick Fur
+    if(v.f.kit==='grizz'&&spec.k==='melee')dmg*=.85;   // Thick Fur
     if(v.st.shield>0){const ab=Math.min(v.st.shield,dmg);v.st.shield-=ab;dmg-=ab;if(v.st.shield<=.01){v.st.shield=0;v.st.shieldT=0;netAb(v,'shatter')}}
     if(spec.stam&&r==='hit')v.sta=Math.max(0,v.sta-spec.stam);
   }
@@ -3124,8 +3125,8 @@ function resolve(spec){
   let hs=0;
   if(r==='hit'){
     v.taken=(v.taken||0)+1;v.takenT=.9;hs=spec.hs*clamp(1-(v.taken-3)*.25,0,1);
-    if(v.st.iron>0||v.st.colossus>0||(v.f.id==='titan'&&spec.cue==='jab'))hs=Math.min(hs,.04);
-    if(v.f.id==='toro')hs*=.67;if(v.f.id==='champ')hs*=.6;
+    if(v.st.iron>0||v.st.colossus>0||(v.f.kit==='titan'&&spec.cue==='jab'))hs=Math.min(hs,.04);
+    if(v.f.kit==='toro')hs*=.67;if(v.f.kit==='champ')hs*=.6;
   }else if(r==='break')hs=.5;
   const dx=v.x-a.x,dz=v.z-a.z,dl=Math.hypot(dx,dz)||1;
   const res={id:spec.id,a:spec.a,r,dmg:(hitLike||r==='block')?Math.round(dmg*10)/10:0,cue:spec.cue,fx:r==='hit'?spec.fx:[],counter:spec.counter&&hitLike?1:0,caught:caught?1:0,
@@ -3145,7 +3146,7 @@ function applyResult(res){
     if(res.r==='break')v.st.stun=Math.max(v.st.stun,.45);
     if(res.shatter){v.st.freeze=0;netAb(v,'shatter')}
     for(const e of res.fx){
-      if(v.f.id==='unit'&&/burn|chill|poison/.test(e))continue;   // Chrome Plating
+      if(v.f.kit==='unit'&&/burn|chill|poison/.test(e))continue;   // Chrome Plating
       if(e==='burn')v.st.burn=3;if(e==='chill')v.st.slow=Math.max(v.st.slow,1.5);
       if(e==='poison'||e==='poison3'){v.st.pstk=Math.min(8,v.st.pstk+(e==='poison3'?3:1));v.st.poison=4}
       if(e==='freeze'){v.st.freeze=Math.max(v.st.freeze,res.freezeT||.9);v.act=null}
@@ -3156,11 +3157,11 @@ function applyResult(res){
     }
     if(hitLike)v.meter=Math.min(100,v.meter+3);
     if(res.r==='block'){v.meter=Math.min(100,v.meter+3);v.stats.blocked++}
-    if(res.r==='dodge'){v.counterT=.8;v.meter=Math.min(100,v.meter+8);v.stats.dodged++;if(v.f.id==='shade'){v.sta=Math.min(100,v.sta+14);v.dodgeCd=0}}
+    if(res.r==='dodge'){v.counterT=.8;v.meter=Math.min(100,v.meter+8);v.stats.dodged++;if(v.f.kit==='shade'){v.sta=Math.min(100,v.sta+14);v.dodgeCd=0}}
     if(res.r==='clash'){cancelPunch(v);v.act={k:'hurt',t:0,d:.5,big:true,parried:true};v.kx+=res.kx*3.4;v.kz+=res.kz*3.4;v.meter=Math.min(100,v.meter+20)}
     if(res.r==='parry'&&v.idx===G.ME)achGet('parry');if(res.r==='clash')achGet('clash');
     if(res.r==='parry'){v.counterT=.9;v.meter=Math.min(100,v.meter+10);v.sta=Math.min(100,v.sta+8);v.stats.parried=(v.stats.parried||0)+1;
-      if(v.f.id==='pops'){v.hp=Math.min(v.hpMax,v.hp+5);v.sta=Math.min(100,v.sta+10);floatAt('+5',v.headW,'heal')}}   // Old School
+      if(v.f.kit==='pops'){v.hp=Math.min(v.hpMax,v.hp+5);v.sta=Math.min(100,v.sta+10);floatAt('+5',v.headW,'heal')}}   // Old School
     if(res.rope){v.meter=Math.min(100,v.meter+6);v.ropeN=(v.ropeN||0)+1;if(v.ropeN>=3&&v.idx===G.ME)achGet('rope')}
     v.fxBits=fxBitsOf(v);
     if(v.hp<=0&&!v.down&&fighting())knockdown(v);
@@ -3176,7 +3177,7 @@ function applyResult(res){
     if(hitLike&&a.idx===G.ME&&!G.online&&!G.watch&&!G.bag&&!G.attract&&!SMOKE){const P=recOf(a.f.id);if(res.dmg>P.big)P.big=res.dmg;if(a.combo+1>P.combo)P.combo=a.combo+1;}
     if(hitLike&&a.idx===G.ME){if(a.combo+1>=10)achGet('combo10');if(res.ko&&res.cue==='hay'&&res.hay>=.97)achGet('hayko')}
     if(hitLike&&v.idx===G.ME){v.stats.took=(v.stats.took||0)+1;v.minHp=Math.min(v.minHp??v.hpMax,v.hp)}
-    if(hitLike){a.combo++;a.comboT=1.1;a.meter=Math.min(100,a.meter+res.meter*(mutOn('ult')?3:1)*(a.f.id==='lucha'?1.25:1));a.stats.landed++;a.stats.dmg+=res.dmg;
+    if(hitLike){a.combo++;a.comboT=1.1;a.meter=Math.min(100,a.meter+res.meter*(mutOn('ult')?3:1)*(a.f.kit==='lucha'?1.25:1));a.stats.landed++;a.stats.dmg+=res.dmg;
       if(a.st.drain>0&&res.dmg>0){const h=res.dmg*.6;a.hp=Math.min(a.hpMax,a.hp+h);floatAt('+'+Math.round(h),a.headW,'heal')}}
     else if(res.r==='block'){a.meter=Math.min(100,a.meter+2);a.combo=0}else if(res.r!=='phase'&&res.r!=='parry')a.combo=0;
   }
@@ -3188,7 +3189,7 @@ function applyResult(res){
 function castAbility(b,key){
   const f=b.f,o=other(b);
   if(key==='r'){if(b.meter<100)return false}else if(b.cd[key]>0)return false;
-  const fn=ABIL[f.id][key];if(!fn)return false;
+  const fn=ABIL[f.kit||f.id][key];if(!fn)return false;
   cancelPunch(b);
   const ok=fn(b,o);if(ok===false)return false;
   if(b.idx===G.ME)tutDone(key==='r'?'ult':'abil');
@@ -3334,7 +3335,7 @@ function startKD(i){
       for(let i=0;i<46;i++){const a=Math.random()*6.283,sp=1.5+Math.random()*2.5;PN&&PN.emit(c[0]+Math.cos(a)*.3,.05,c[1]+Math.sin(a)*.3,Math.cos(a)*sp,.4+Math.random()*.9,Math.sin(a)*sp,1,.3,.62,.6,.58,.5,1.6,2.4)}});
   }
 }
-function botUpAt(v){const d=G.bots[v.idx].D||DIFF.contender;const p=d.getup-(v.kd-1)*.28+(v.f.id==='toro'?.2:0);return Math.random()<p?3+Math.floor(Math.random()*5):99}
+function botUpAt(v){const d=G.bots[v.idx].D||DIFF.contender;const p=d.getup-(v.kd-1)*.28+(v.f.kit==='toro'?.2:0);return Math.random()<p?3+Math.floor(Math.random()*5):99}
 function stepKD(dt){
   const K=G.kdInfo;if(!K)return;const v=G.B[K.b];K.t+=dt;
   const n=Math.floor(K.t/COUNT_STEP);
@@ -3347,7 +3348,7 @@ function stepKD(dt){
   if(K.t>=COUNT_STEP*10+.3&&!K.sent){K.sent=1;countedOut(v,false)}
 }
 const getupNeed=v=>8+v.kd*5;
-function mashGetup(){const K=G.kdInfo;if(!K||K.up)return;const v=G.B[K.b];if(!owned(v)||G.bots[K.b])return;v.getup+=v.f.id==='toro'?2:1;SFX.tick()}
+function mashGetup(){const K=G.kdInfo;if(!K||K.up)return;const v=G.B[K.b];if(!owned(v)||G.bots[K.b])return;v.getup+=v.f.kit==='toro'?2:1;SFX.tick()}
 function standUp(v){if(G.kdInfo.up)return;v.hp=Math.round(v.hpMax*(v.kd===1?.5:.34));v.sta=70;v.st=Object.assign(v.st,{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0});
   if(G.online)netSend({t:'up',b:v.idx,hp:v.hp});onUp(v.idx)}
 function onUp(i){const v=G.B[i];v.down=false;v.act={k:'getup',t:0,d:1.1};if(G.kdInfo){G.kdInfo.up=true;G.kdInfo.upT=0}if(!G.attract){SFX.cheer(.6);if(i===G.ME)callout('STILL STANDING!','#7dff4a')}}
@@ -3496,7 +3497,7 @@ const ABICON={blaze:{q:'firefist',e:'comet',r:'inferno'},volt:{q:'blink',e:'shoc
   shade:{q:'phase',e:'seal',r:'fists'},frost:{q:'icefist',e:'frostshield',r:'zero'},viper:{q:'spit',e:'coil',r:'kiss'},
   kitsune:{q:'foxfire',e:'charm',r:'tails'},toro:{q:'rush',e:'cape',r:'stampede'},unit:{q:'rocket',e:'overclock',r:'beam'},grizz:{q:'maul',e:'hib',r:'roarI'},pops:{q:'rope',e:'wind',r:'bellI'},lucha:{q:'plancha',e:'showboat',r:'tornado'},champ:{q:'pound',e:'iron',r:'stampede'}};
 const ICO=(k)=>(ICONS[k]||ICONS.random)();
-const abIcon=(f,k)=>ICO(ABICON[f.id][k]);
+const abIcon=(f,k)=>ICO(ABICON[f.kit||f.id][k]);
 
 // fighter portraits: each fighter's real 3D model, rendered as a looping 12-frame sprite strip (guard bounce + a jab)
 const PORT={},PN_=12,PS=224;
@@ -3732,7 +3733,7 @@ function ghostFist(b){const o=other(b);if(!o.f)return;const m=new THREE.Mesh(new
   const from=b.chestW.clone().add(new THREE.Vector3((Math.random()-.5)*.5,(Math.random()-.2)*.4,(Math.random()-.5)*.5)),to=o.headW.clone().add(new THREE.Vector3((Math.random()-.5)*.25,(Math.random()-.5)*.3,(Math.random()-.5)*.25));
   m.position.copy(from);fxAdd(m,.16,(q,k)=>{q.position.lerpVectors(from,to,easeIn(k));q.scale.set(1,1,1+k*2);q.lookAt(to);PA&&PA.emit(q.position.x,q.position.y,q.position.z,0,0,0,.18,.12,.6,.3,1,.8,0,0)})}
 function abilityVisual(i,k,x){
-  const b=G.B[i];if(!b||!b.f)return;const id=b.f.id,q=G.attract,P=b.chestW,col=b.look.glow||0xffffff;
+  const b=G.B[i];if(!b||!b.f)return;const id=b.f.kit||b.f.id,q=G.attract,P=b.chestW,col=b.look.glow||0xffffff;
   if(k==='ult'){if(!q){cutin(b);SFX.ult();burst(P,50,col,5,.6,.1,{up:1});groundRing(b.x,b.z,2.2,col,.6,.2);wave(P,1.2);afterimage(b,col,.5,1)}return}
   if(k==='taunt'){if(!owned(b))b.act={k:'taunt',t:0,d:TAUNT_T,style:x.s||b.f.taunt};if(!q){SFX.taunt(id,P);setTimeout(()=>{if(G.mode==='fight')SFX.ooh(.5)},350)}
     if(id==='blaze')b.gW.forEach(g=>burst(g,16,0xff6a1f,2,.5,.12,{up:1}));if(id==='volt')b.gW.forEach(g=>zap(g,g.clone().add(new THREE.Vector3(0,.5,0)),0x8fe8ff,.3,.02));
@@ -3973,7 +3974,7 @@ class Bot{
     this.guardT-=dt;if(this.guardT<=0){this.guardT=.6+Math.random();this.guardUp=dist<1.45&&Math.random()<D.block*.45}
     if(this.guardUp&&!this.plan.length)it.block=true;
     if(D.aggr===0){it.mx=it.mz=0;return it}
-    if(!this.styled&&b.f){this.styled=1;this.D=styled(this.D,b.f.id)}
+    if(!this.styled&&b.f){this.styled=1;this.D=styled(this.D,b.f.kit||b.f.id)}
     // spacing
     const pn=x=>x.replace('b:','');let want=b.sta<20?2.1:this.plan.length?PUNCH[pn(this.plan[0])].range*.85:1.2+(1-D.aggr)*.5+(D.range||0);
     it.mz=Math.abs(dist-want)<.12?0:clamp((dist-want)*2.2,-1,1);
@@ -3989,7 +3990,7 @@ class Bot{
     if(this.plan.length){this.planT+=dt;const nx=pn(this.plan[0]);
       if(dist<=PUNCH[nx].range*.95){if(inRecovery(b.act)&&!locked(b)){const pp=this.plan.shift();it.punch=pn(pp);it.body=pp.startsWith('b:');it.block=false}}
       else if(this.planT>1.4)this.plan=[]}
-    this.abilT-=dt;if(this.abilT<=0){this.abilT=.45;if(Math.random()<D.abil*.6){const k=AIAB[b.f.id](b,o,dist);if(k&&(k==='r'?b.meter>=100:b.cd[k]<=0))it.abil=k}}
+    this.abilT-=dt;if(this.abilT<=0){this.abilT=.45;if(Math.random()<D.abil*.6){const k=AIAB[b.f.kit||b.f.id](b,o,dist);if(k&&(k==='r'?b.meter>=100:b.cd[k]<=0))it.abil=k}}
     // the haymaker: punish an opening (stunned, frozen, sealed, gassed, reeling), or now and then just go for it
     this.hayT=(this.hayT||0)-dt;
     if(D.hay>0&&this.hayT<=0&&!this.plan.length&&!it.abil&&b.sta>30&&dist<2.6){this.hayT=.35;
@@ -4042,7 +4043,7 @@ function p2KeyPoll(){if(!p2Keys())return;const P=PAD2;P.x=(KEYS.ArrowRight?1:0)-
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT')return;
   if(REBIND){e.preventDefault();if(e.code!=='Escape'){for(const a in BIND)if(BIND[a]===e.code&&a!==REBIND)BIND[a]=BIND[REBIND];BIND[REBIND]=e.code;SET.bind=Object.assign({},BIND);saveSet();rebuildKMAP()}REBIND=null;showSettings();return}
-  if(p2Keys()&&!e.repeat&&KMAP2[e.code]){PAD2.press.push(KMAP2[e.code]);if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&PUNCH[KMAP2[e.code]]){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.id==='toro'?2:1}KEYS[e.code]=true;e.preventDefault();return}
+  if(p2Keys()&&!e.repeat&&KMAP2[e.code]){PAD2.press.push(KMAP2[e.code]);if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&PUNCH[KMAP2[e.code]]){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.kit==='toro'?2:1}KEYS[e.code]=true;e.preventDefault();return}
   auResume();
   if(RP.play&&!e.repeat){rpEnd();e.preventDefault();return}
   if(G.phase==='walk'&&G.mode==='fight'&&!e.repeat&&e.code!=='Escape'){hostPhase('intro');e.preventDefault();return}
@@ -4099,7 +4100,7 @@ function padP2(gp){const P=PAD2;if(!gp){P.pad=false;if(!p2Keys()){P.on=false;P.x
   const b=gp.buttons.map(x=>x.pressed||x.value>.5),pr=P.prev,down=i=>b[i]&&!pr[i];P.prev=b;P.on=true;
   let x=gp.axes[0]||0,y=gp.axes[1]||0;if(Math.hypot(x,y)<.22){x=0;y=0}if(b[12]&&!b[14]&&!b[15])y=y;P.x=x;P.y=y;P.block=!!b[5];P.hay=!!b[7];P.body=!!b[10];
   const map={0:'jab',1:'cross',2:'hook',3:'upper',4:'dodge',6:'duck',14:'q',15:'e',12:'r',13:'taunt'};for(const i in map)if(down(+i))P.press.push(map[i]);
-  if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&[0,1,2,3].some(down)){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.id==='toro'?2:1}
+  if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&[0,1,2,3].some(down)){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.kit==='toro'?2:1}
   if(down(9))togglePause()}
 // a controller's intent for any boxer (screen-relative movement like the keyboard)
 function padIntent(i,P){const it={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};const rt=P.x,up=-P.y;
@@ -4640,7 +4641,7 @@ function showEnd(r){
     ${row('KNOCKDOWNS',(x,i)=>s[1-i].kd)}${row('DODGES',x=>x.dodged)}${row('BLOCKS',x=>x.blocked)}</table>
     <canvas id="flowC" width="400" height="90" style="width:100%;height:90px;margin-top:10px"></canvas>
     <div class="menu" id="endBtns" style="margin-top:10px"></div>`;
-  const W=w>=0?G.B[w]:null;$('endHero').innerHTML=W?`${WINQ[W.f.id]?`<div class="wq" style="--c:${W.f.col}">“${pick(WINQ[W.f.id])}”</div>`:''}<div class="k">${G.ladder&&G.ladder.i>=G.ladder.opps.length&&w===me?'NEW GLITCHBOX CHAMPION':'AND THE WINNER'}</div><div class="n" style="--c:${W.f.col}">${W.f.name}</div><div class="s">${how}</div>`:`<div class="k">THE JUDGES CAN'T SPLIT THEM</div><div class="n">DRAW</div>`;
+  const W=w>=0?G.B[w]:null;$('endHero').innerHTML=W?`${WINQ[W.f.kit||W.f.id]?`<div class="wq" style="--c:${W.f.col}">“${pick(W.f.winq||WINQ[W.f.kit||W.f.id])}”</div>`:''}<div class="k">${G.ladder&&G.ladder.i>=G.ladder.opps.length&&w===me?'NEW GLITCHBOX CHAMPION':'AND THE WINNER'}</div><div class="n" style="--c:${W.f.col}">${W.f.name}</div><div class="s">${how}</div>`:`<div class="k">THE JUDGES CAN'T SPLIT THEM</div><div class="n">DRAW</div>`;
   if(G.xpRes){const {before,gain,af}=G.xpRes;G.xpRes=null;
     $('endBody').insertAdjacentHTML('beforeend',`<div class="xpb"><div class="xpl"><b>LEVEL ${af.l}</b> ${af.title}<span>+${gain} XP</span></div><div class="xpbar"><i style="width:${(before.l<af.l?0:before.x/before.need*100).toFixed(1)}%"></i></div></div>`);
     setTimeout(()=>{const i=document.querySelector('.xpbar i');if(i)i.style.width=(af.x/af.need*100).toFixed(1)+'%'},120);
@@ -5043,7 +5044,7 @@ let RIBT=0;
 function trailW(b,i){const a=b.act;if(!a||!b.root.visible)return 0;
   if(a.k==='punch'||a.k==='cpunch'){const p=PUNCH[a.p];if((p.hand==='L'?0:1)!==i)return 0;const T=punchTimes(a);if(a.t<T.w*.55||a.t>T.w+T.a+T.r*.28)return 0;return {jab:.06,cross:.072,hook:.095,upper:.085,hay:.15}[a.p]}
   if(a.k==='cast'&&a.anim==='flurry')return .06;return 0}
-function trailCol(b){const x=b.fxBits;if(x&FX.firefist||(b.act&&b.act.p==='hay'&&b.f.id==='blaze'))return 0xff7a1a;if(x&FX.icefist)return 0x8fe8ff;if(x&FX.drain)return 0x6dff5a;if(x&FX.colossus)return 0x9be05a;if(x&FX.rage)return 0xff3b1a;
+function trailCol(b){const x=b.fxBits;if(x&FX.firefist||(b.act&&b.act.p==='hay'&&b.f.kit==='blaze'))return 0xff7a1a;if(x&FX.icefist)return 0x8fe8ff;if(x&FX.drain)return 0x6dff5a;if(x&FX.colossus)return 0x9be05a;if(x&FX.rage)return 0xff3b1a;
   if(b.act&&b.act.anim==='flurry')return 0xb06bff;{const cc=cosTrail(b);if(cc!=null)return cc}if(b.act&&b.act.p==='hay')return b.look.glow||0xffc83a;return b._tcol??(b._tcol=new THREE.Color(0xffffff).lerp(new THREE.Color(b.look.glow||0xffffff),.35).getHex())}
 function extras(rdt,adt){
   RIBT+=adt;const live=!RP.play;
@@ -5256,7 +5257,7 @@ function runSmoke(){
       abil('pops','titan','r',1);sim(.7);ok(G.B[0].st.prime>4,'One More Round turns back the clock');G.B[0].act=null;G.B[0].counterT=0;G.pending.length=0;startPunch(G.B[0],'jab');ok(G.pending.some(q=>q.spec.a===0&&q.spec.counter),'…every punch lands like a counter')}
     abil('grizz','frost','r',1.5);sim(.6);ok(G.B[1].st.fear>0,'Roar scares them');G.forced[1]={...EMPTY,punch:'jab'};const h0=G.B[0].hp;sim(.5);G.forced[1]=EMPTY;ok(G.B[0].hp===h0,'…and a scared fighter can\'t attack');
     abil('grizz','frost','e');G.B[0].hp=60;G.forced[0]={...EMPTY,block:true};sim(1);G.forced[0]=EMPTY;ok(G.B[0].hp>63,'Hibernate heals while blocking ('+G.B[0].hp.toFixed(1)+')');
-    {G.surv={f:'blaze',n:0,hp:null};survNext();const S=G.surv;ok(S&&G.B[0].f.id==='blaze'&&G.bots[1].diff==='rookie','SURVIVAL: bout one is against a rookie');G.B[0].hp=40;survEnd({w:G.ME});survNext();
+    {G.surv={f:'blaze',n:0,hp:null};survNext();const S=G.surv;ok(S&&G.B[0].f.kit==='blaze'&&G.bots[1].diff==='rookie','SURVIVAL: bout one is against a rookie');G.B[0].hp=40;survEnd({w:G.ME});survNext();
      ok(G.surv.n===1&&near(G.B[0].hp,40+G.B[0].hpMax*.3,.5),'…health carries over with a 30% top-up');G.surv.n=5;survNext();ok(G.bots[1].diff==='champion','…and the CPU sharpens');G.surv=null}
     {const n0=Object.keys(REC.ach||{}).length;achGet('first');ok(Object.keys(REC.ach||{}).length===n0,'achievements never unlock during self-tests');showRecords();ok($('recBody').querySelectorAll('.ai').length===ACH.length,'RECORDS lists all '+ACH.length+' achievements');hideOv('recOv')}
     {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===14,'SETTINGS lists every option');hideOv('setOv')}
