@@ -4378,6 +4378,14 @@ function drawFlow(){const c=$('flowC'),F=G.flow||[];if(!c||F.length<2)return c&&
   for(let i=1;i<F.length;i++)if(F[i][2]!==F[i-1][2]){x.strokeStyle='rgba(255,255,255,.18)';x.setLineDash([3,3]);x.beginPath();x.moveTo(X(i),16);x.lineTo(X(i),h-pad);x.stroke();x.setLineDash([]);x.fillText('R'+F[i][2],X(i)+3,24)}
   [0,1].forEach(k=>{x.strokeStyle=G.B[k].f.col;x.lineWidth=2.5;x.lineJoin='round';x.beginPath();F.forEach((p,i)=>i?x.lineTo(X(i),Y(p[k])):x.moveTo(X(i),Y(p[k])));x.stroke()});
   F.forEach((p,i)=>{if(p[3]){const k=p[3]-1;x.fillStyle='#fff';x.strokeStyle=G.B[k].f.col;x.lineWidth=2;x.beginPath();x.arc(X(i),Y(p[k]),4,0,6.3);x.fill();x.stroke()}})}
+function shareText(){const r=G.result||{},me=G.B[G.ME],o=G.B[1-G.ME],S=me.stats,w=r.w;
+  const head=w<0?`${me.f.name} and ${o.f.name} fought to a DRAW`:`${G.B[w].f.name} beat ${G.B[1-w].f.name} ${/KO/.test(r.how||'')?'by '+r.how+' · Round '+r.rnd:r.how==='FORFEIT'?'by forfeit':'on points'}`;
+  const F=(G.flow||[]),strip=F.length>2?[0,.25,.5,.75,1].map(t=>{const p=F[Math.min(F.length-1,Math.round(t*(F.length-1)))];const v=p[G.ME]-p[1-G.ME];return v>.08?'🟩':v<-.08?'🟥':'🟨'}).join(''):'';
+  const lines=['🥊 HAYMAKER — '+head,`${S.landed}/${S.thrown} landed · ${S.thrown?Math.round(S.landed/S.thrown*100):0}% · ${o.kd} knockdown${o.kd===1?'':'s'}`+(strip?' · '+strip:'')];
+  if(DAILY.on&&DAILY.c){const b=REC.daily&&REC.daily.key===DAILY.c.key?REC.daily.best:0;lines.push('DAILY CHALLENGE '+(b||0).toLocaleString())}
+  if(G.surv&&G.surv.over)lines.push('SURVIVAL STREAK '+G.surv.n);
+  lines.push(/^https?:/.test(location.href)?location.origin+location.pathname:'https://glitchbox-games.github.io/haymaker.html');return lines.join('\n')}
+async function shareResult(){const t=shareText();try{if(navigator.share&&TOUCH){await navigator.share({text:t});return}await navigator.clipboard.writeText(t);sub('RESULT COPIED — PASTE IT ANYWHERE',2.2)}catch(e){sub('COULDN\'T COPY — TRY AGAIN',1.6)}}
 function renderEndButtons(){
   const el=$('endBtns');if(!el||!$('endOv').classList.contains('on'))return;const r=G.result||{};
   let h='';
@@ -4388,13 +4396,14 @@ function renderEndButtons(){
   else if(G.tour)h=`<button class="primary" id="eTour">${G.tour.won?'LIFT THE TROPHY':G.tour.out?'SEE THE BRACKET':'NEXT ROUND'}</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
   else if(G.surv)h=G.surv.over?`<button class="primary" id="eSurv">GO AGAIN</button><button class="ghost" id="eMenu">MAIN MENU</button>`:`<button class="primary" id="eSurvN">NEXT OPPONENT</button><button class="ghost" id="eMenu">CASH OUT</button>`;
   else h=`<button class="primary" id="eRetry">REMATCH</button><button id="eSel">CHANGE FIGHTERS</button><button class="ghost" id="eMenu">MAIN MENU</button>`;
+  if(!G.attract)h+=`<button class="ghost" id="eShare">${navigator.share&&TOUCH?'SHARE':'COPY RESULT'}</button>`;
   el.innerHTML=h;
   const on=(id,f)=>{const b=$(id);if(b)b.onclick=()=>{SFX.ui();f()}};
   on('eRm',()=>{NET.rm=true;netSend({t:'rm'});renderEndButtons();checkRematch()});
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
   on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
-  on('eNext',()=>showLadder());on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
+  on('eNext',()=>showLadder());on('eShare',shareResult);on('eOnline',()=>{G.forfeit=false;showTitle();showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''});on('eTour',()=>{G.tour.done=0;showTour()});on('eBoss',()=>startSolo(G.ladder.f,'champ','champion'));on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
 // ════ DAILY CHALLENGE: the same set fight for everyone today, seeded by the date ════
 const DAILY={on:false,c:null};
@@ -4941,6 +4950,7 @@ function runSmoke(){
      REBIND='cross';dispatchEvent(new KeyboardEvent('keydown',{code:'KeyY'}));ok(BIND.cross==='KeyY'&&BIND.jab==='KeyK','…and taking a used key swaps the two');Object.assign(BIND,B0);SET.bind=null;rebuildKMAP();hideOv('setOv')}
     {const real=navigator.getGamepads;let fx=null;const pad={connected:true,mapping:'standard',axes:[0,0],buttons:[],vibrationActuator:{playEffect:(t,o)=>{fx=o}}};try{Object.defineProperty(navigator,'getGamepads',{value:()=>[pad],configurable:true})}catch(e){}
      const sm=window.SMOKE;PAD.on=true;const keep=SET.rumble;SET.rumble=true;rumble(.5,.6,100);ok(fx===null,'rumble stays off during self-tests');PAD.on=false;try{Object.defineProperty(navigator,'getGamepads',{value:real,configurable:true})}catch(e){}SET.rumble=keep}
+    {solo('volt','titan');G.result={w:0,how:'KO',rnd:2};Object.assign(G.B[0].stats,{landed:27,thrown:40});G.B[1].kd=1;const t=shareText();ok(/VOLT beat TITAN by KO · Round 2/.test(t)&&/27\/40 landed · 68%/.test(t),'the shareable result reads right');G.result=null}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
