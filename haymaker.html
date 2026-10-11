@@ -2624,6 +2624,7 @@ function cancelPunch(b){
   G.pending=G.pending.filter(p=>p.spec.id!==a.id);if(G.online)netSend({t:'cx',id:a.id});
 }
 function resolve(spec){
+  if(spec.hay&&G.B[spec.a].clashId===spec.id)return;   // this haymaker already met the other one
   const v=G.B[1-spec.a],a=G.B[spec.a];
   if(!fighting()||v.down||a.down)return;
   let r='hit',caught=false;
@@ -2633,6 +2634,8 @@ function resolve(spec){
     if(spec.shape==='cone'){const ang=Math.abs(angWrap(Math.atan2(dx,dz)-spec.yaw));if(d>spec.r+.3||ang>spec.ang+.18)r='miss'}
     else if(d>spec.r+.28)r='miss';
   }
+  if(r==='hit'&&spec.hay&&v.act&&v.act.k==='punch'&&v.act.p==='hay'){const T=punchTimes(v.act);if(v.act.t<T.w+T.a+.05){r='clash';
+      v.clashId=v.act.id;G.pending=G.pending.filter(q=>!(q.spec.a===v.idx&&q.spec.hay))}}   // the gloves meet: neither haymaker lands
   if(r==='hit'&&v.st.phase>0)r='phase';
   if(r==='hit'&&v.f.id==='kitsune'&&!spec.unblock&&Math.random()<1/6)r='phase';   // Illusion
   if(r==='hit'&&v.st.cape>0&&spec.k==='melee'){r='dodge';v.st.cape=0;netAb(v,'olé')}   // Red Cape
@@ -2690,6 +2693,7 @@ function applyResult(res){
     if(hitLike)v.meter=Math.min(100,v.meter+3);
     if(res.r==='block'){v.meter=Math.min(100,v.meter+3);v.stats.blocked++}
     if(res.r==='dodge'){v.counterT=.8;v.meter=Math.min(100,v.meter+8);v.stats.dodged++;if(v.f.id==='shade'){v.sta=Math.min(100,v.sta+14);v.dodgeCd=0}}
+    if(res.r==='clash'){cancelPunch(v);v.act={k:'hurt',t:0,d:.5,big:true,parried:true};v.kx+=res.kx*3.4;v.kz+=res.kz*3.4;v.meter=Math.min(100,v.meter+20)}
     if(res.r==='parry'){v.counterT=.9;v.meter=Math.min(100,v.meter+10);v.sta=Math.min(100,v.sta+8);v.stats.parried=(v.stats.parried||0)+1}
     v.fxBits=fxBitsOf(v);
     if(v.hp<=0&&!v.down&&fighting())knockdown(v);
@@ -2698,6 +2702,7 @@ function applyResult(res){
     if(res.hs>0)v.act={k:'hurt',t:0,d:res.hs,big:res.hs>.36,body:res.body?1:0};
   }
   // parried: the attacker is thrown off balance (applied by whoever owns the attacker)
+  if(res.r==='clash'&&owned(a)){cancelPunch(a);a.act={k:'hurt',t:0,d:.5,big:true,parried:true};a.kx-=res.kx*3.4;a.kz-=res.kz*3.4;a.meter=Math.min(100,a.meter+20);a.buf=null;a.dash=null}
   if(res.r==='parry'){if(owned(a)){cancelPunch(a);a.combo=0;a.blocking=false;a.buf=null;a.dash=null}a.act={k:'hurt',t:0,d:.55,big:true,parried:true}}
   if(owned(a)){
     if(hitLike&&a.idx===G.ME&&!G.online&&!G.watch&&!G.bag&&!G.attract&&!SMOKE){const P=recOf(a.f.id);if(res.dmg>P.big)P.big=res.dmg;if(a.combo+1>P.combo)P.combo=a.combo+1;}
@@ -3092,6 +3097,12 @@ function hitVisual(res,a,v,rp){
     const g=_hd.addVectors(v.gW[0],v.gW[1]).multiplyScalar(.5);
     burst(g,8,0xa8d8ff,2.5,.22,.05,{drag:4});impactFlash(g,0x8fc8ff,.5);hitSpark(g,0x9fd8ff,.22);v.hs.vx+=3;
     if(!quiet){SFX.block(.6,g);if(meInvolved)shake(.08);if(!rp&&(v.idx===G.ME||res.dmg>1))floatAt('BLOCK',g,'blk')}
+  }else if(res.r==='clash'){
+    const g=_hd.addVectors(a.gW[1],v.gW[1]).multiplyScalar(.5);
+    hitSpark(g,0xffffff,2);impactFlash(g,0xffe9a8,2.6);burst(g,70,0xffd27a,7,.5,.07,{drag:2});burst(g,40,0xffffff,4,.35,.05,{normal:true,grav:4});groundRing(g.x,g.z,3,0xffd27a,.6,.2);
+    a.flashT=v.flashT=.1;a.hs.vx+=10;v.hs.vx+=10;
+    if(!quiet){SFX.boom(g);SFX.parry(g);wave(g,2);zoomBlur(g,.9);impactFrame(0xffd27a);PFX.ca=Math.max(PFX.ca,1);shake(.8);photoFlash(6);ARENA.excite=1;
+      if(solo&&!rp){hitstop(.25);CAM.slow=.2;CAM.slowT=.6}comic('boom',g,1.6,true);if(!rp)callout('CLASH!','#ffd27a')}
   }else if(res.r==='parry'){
     const g=_hd.addVectors(v.gW[0],v.gW[1]).multiplyScalar(.5);
     hitSpark(g,0x7dffea,1.3);impactFlash(g,0x7dffea,1.4);burst(g,26,0xbffff4,4.5,.35,.05,{drag:3});a.flashT=.08;a.hs.vx+=9;
@@ -4392,6 +4403,8 @@ function runSmoke(){
      try{Object.defineProperty(navigator,'getGamepads',{value:real,configurable:true})}catch(e){}PAD.on=false;PAD.x=PAD.y=0;PAD.block=false;PRESS.length=0}
     {startSolo('blaze','titan','p2');G.forced=null;G.phase='fight';ok(G.local&&!G.bots[0]&&!G.bots[1],'2 PLAYER: both corners are human');PAD2.on=true;PAD2.press.push('jab');const it=getIntent(1,1/60);ok(it.punch==='jab','…and player 2\'s controller drives the blue corner');G.local=false;PAD2.on=false;G.forced=[EMPTY,EMPTY]}
     {const a=dailyToday(),b2=dailyToday();ok(a.me!==a.op&&JSON.stringify(a)===JSON.stringify(b2)&&FBY[a.me]&&FBY[a.op],'daily challenge: one fixed fight per day ('+a.me+' vs '+a.op+', '+a.venue+')')}
+    {solo('titan','toro');place(1.1);const A=G.B[0],B=G.B[1];G.forced=[{...EMPTY,hay:true},{...EMPTY,hay:true}];sim(1.05);G.forced=[EMPTY,EMPTY];sim(.9);
+     ok(A.hp===A.hpMax&&B.hp===B.hpMax&&A.meter>=20&&B.meter>=20,'two full haymakers at once CLASH: no damage, both get meter ('+A.hp.toFixed(0)+'/'+B.hp.toFixed(0)+')')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
