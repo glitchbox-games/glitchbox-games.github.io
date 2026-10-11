@@ -4380,10 +4380,10 @@ function walkTick(dt){
   const half=WALK_T/2,T=G.phT,X0=ARENA.tunnel?ARENA.tunnel.x+.4:-18,XE=-5.35;
   for(const i of [1,0]){const b=G.B[i],start=i===1?0:half,tt=T-start;
     if(tt<0){b.root.visible=false;continue}
-    b.root.visible=true;const q=clamp(tt/half,0,1);
+    b.root.visible=true;const q=clamp(tt/half,0,1);if(b.act&&b.act.walk)b.act.t=Math.min(b.act.d-.05,b.act.t+dt);
     if(tt<half&&WALK.who!==i){WALK.who=i;walkCard(b);WALK.cut=true;ARENA.cheer[i]=1.2;ARENA.excite=Math.max(ARENA.excite||0,.55);if(!G.attract)SFX.cheer(.8)}
     if(tt>=half){// done: wait in the corner, facing the ring
-      b.y=0;const h=b.home;b.x=lerp(b.x,h[0]*1.6,damp(4,dt));b.z=lerp(b.z,h[1]*1.6,damp(4,dt));b.yaw=Math.atan2(-b.x,-b.z);b.mvx=b.mvz=b.mvF=b.mvS=0;if(b.act&&b.act.k==='win'&&tt>half+.4)b.act=null;continue}
+      b.y=0;const h=b.home;b.x=lerp(b.x,h[0]*1.6,damp(4,dt));b.z=lerp(b.z,h[1]*1.6,damp(4,dt));b.yaw=Math.atan2(-b.x,-b.z);b.mvx=b.mvz=b.mvF=b.mvS=0;if(b.act&&(b.act.k==='win'||b.act.walk)&&tt>half+.4)b.act=null;continue}
     if(tt<half)ARENA.cheer[i]=Math.max(ARENA.cheer[i],.9);
     const A=.6,J=.72;   // jog the walkway until A, vault the ropes until J, then strut to the corner
     if(q<A){const u=q/A;b.x=lerp(X0,XE,u);b.z=Math.sin(u*9)*.05;b.y=-1.15;b.yaw=Math.PI/2;
@@ -4398,7 +4398,7 @@ function walkTick(dt){
     else{const u=(q-J)/(1-J),h=b.home,hx=h[0]*1.6,hz=h[1]*1.6;b.y=0;b._vault=0;
       const tx=lerp(-3.05,hx,ease(Math.min(1,u*1.6))),tz=lerp(0,hz,ease(Math.min(1,u*1.6)));b.mvx=(tx-b.x)/Math.max(dt,1e-3);b.mvz=(tz-b.z)/Math.max(dt,1e-3);b.x=tx;b.z=tz;
       const c=Math.cos(b.yaw),s=Math.sin(b.yaw);b.mvF=(b.mvx*s+b.mvz*c)/2.4;b.mvS=(b.mvx*c-b.mvz*s)/2.4;
-      if(u<.62)b.yaw=Math.atan2(hx+3.05,hz);else{b.yaw=lerp(b.yaw,Math.atan2(-b.x,-b.z),damp(6,dt));if(!b.act||b.act.k!=='win'){b.act={k:'win',t:0};
+      if(u<.62)b.yaw=Math.atan2(hx+3.05,hz);else{b.yaw=lerp(b.yaw,Math.atan2(-b.x,-b.z),damp(6,dt));if(!b.act||(b.act.k!=='win'&&b.act.k!=='taunt')){b.act={k:'taunt',t:0,d:2.4,style:b.f.taunt,walk:1};abilityVisual(i,'taunt',{s:b.f.taunt});
         const P=new THREE.Vector3(hx*1.25,1.6,hz*1.25);pyro(1.1,[i?3:0,i?2:1],.9);burst(P,40,b.look.glow||0xffc83a,4,.7,.08,{up:1});ARENA.excite=1;if(!G.attract)SFX.cheer(1)}}
       const fx=Math.sin(b.yaw),fz=Math.cos(b.yaw);_wc.set(b.x+fx*3.3+1.1,1.75,b.z+fz*3.3+.6);_wl.set(b.x,1.3,b.z);if(u<.03)WALK.cut=true;
       const S=walkSpot();S.g.position.set(b.x,0,b.z);S.beam.scale.set(1,10.5,1);S.beam.position.y=10.5}
