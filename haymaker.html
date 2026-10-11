@@ -4201,7 +4201,7 @@ function renderEndButtons(){
   const on=(id,f)=>{const b=$(id);if(b)b.onclick=()=>{SFX.ui();f()}};
   on('eRm',()=>{NET.rm=true;netSend({t:'rm'});renderEndButtons();checkRematch()});
   on('eSel',()=>{if(G.online){netSend({t:'sel'});Object.assign(NET,{myReady:false,peerReady:false});openSelect('online')}else openSelect('quick')});
-  on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}}G.surv=null;showTitle()});
+  on('eMenu',()=>{if(G.online)netLeave();if(G.surv&&!G.surv.over){const P=recOf(G.surv.f);if(G.surv.n>(P.surv||0)){P.surv=G.surv.n;saveRec()}survReport(G.surv.n)}G.surv=null;showTitle()});
   on('eRetry',()=>{if(DAILY.on){dailyStart(DAILY.c);return}if(G.ladder)startSolo(G.ladder.f,G.ladder.opps[G.ladder.i],LAD_DIFF[G.ladder.i]);else startSolo(G.B[0].f.id,G.B[1].f.id,G.diff)});
   on('eNext',()=>showLadder());on('eSurvN',()=>survNext());on('eSurv',()=>{G.surv={f:G.surv.f,n:0,hp:null};survNext()});
 }
@@ -4228,7 +4228,8 @@ function survDiff(n){return n<2?'rookie':n<5?'contender':'champion'}
 function survNext(){const S=G.surv;let o;do o=pick(FIGHTERS).id;while(o===S.f||o===S.last);S.last=o;
   startSolo(S.f,o,survDiff(S.n));G.surv=S;if(S.hp!=null){const me=G.B[0];me.hp=Math.min(me.hpMax,S.hp+me.hpMax*.3)}
   sub('SURVIVAL · BOUT '+(S.n+1)+(S.n?' · '+S.n+' DOWN':''),2.2)}
-function survEnd(r){const S=G.surv;if(!S)return;if(r.w===G.ME){S.n++;S.hp=G.B[0].hp;if(S.n>=5)achGet('surv5');if(S.n>=10)achGet('surv10')}else{const P=recOf(S.f);if(!SMOKE&&S.n>(P.surv||0)){P.surv=S.n;S.best=true;saveRec()}S.over=true}}
+function survReport(n){try{if(!SMOKE&&n>0&&window.GLITCHBOX&&GLITCHBOX.score)GLITCHBOX.score(n)}catch(e){}}   // 🏆 arcade leaderboard: survival streak
+function survEnd(r){const S=G.surv;if(!S)return;if(r.w===G.ME){S.n++;S.hp=G.B[0].hp;if(S.n>=5)achGet('surv5');if(S.n>=10)achGet('surv10')}else{const P=recOf(S.f);if(!SMOKE&&S.n>(P.surv||0)){P.surv=S.n;S.best=true;saveRec()}S.over=true;survReport(S.n)}}
 function showRoundCard(x){
   if(G.mode!=='fight')return;const A=G.B[0],B=G.B[1],r=G.rnd,rd=x.rd||[0,0];
   const cards=x.cards||[];const tot=cards.map(c=>[c[0].reduce((a,b)=>a+b,0),c[1].reduce((a,b)=>a+b,0)]);
