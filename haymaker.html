@@ -156,7 +156,7 @@ body.watching #keys::after{content:'EXHIBITION · PRESS A PUNCH KEY TO TAKE OVER
 .ab.ready{border-color:var(--gold);box-shadow:0 0 16px rgba(255,200,58,.55)}
 .ab.ult.ready{animation:ultglow 1s infinite alternate}
 @keyframes ultglow{from{box-shadow:0 0 10px #c23bff}to{box-shadow:0 0 30px #ff6bff,0 0 60px rgba(255,107,255,.4)}}
-.ab .ufill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(#ff6bff55,#c23bff99)}
+.ab .ufill{position:absolute;left:0;right:0;bottom:0;height:100%;transform-origin:50% 100%;transform:scaleY(0);will-change:transform;background:linear-gradient(#ff6bff55,#c23bff99)}
 #combo{position:absolute;right:30px;top:36%;text-align:right;opacity:0;transition:opacity .25s;display:flex;flex-direction:column;align-items:flex-end;--cc:#ffc83a}
 #combo b{display:block;font:400 76px Anton;line-height:.9;color:var(--cc);-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:5px 5px 0 #000,0 0 26px var(--cc);transform-origin:right center}
 #combo small{display:block;font:900 15px Rubik;letter-spacing:.32em;color:#fff;text-shadow:0 2px 0 #000;margin-top:2px}
@@ -3753,14 +3753,15 @@ function showHUD(on){
 }
 const setC=(key,el,prop,val)=>{if(HUDC[key]!==val){HUDC[key]=val;if(prop==='text')el.textContent=val;else if(prop==='html')el.innerHTML=val;else if(prop.startsWith('--'))el.style.setProperty(prop,val);else el.style[prop]=val}};
 const STATUS_ICONS=[['overclock','overclock'],['charm','charm'],['cape','cape'],['rage','rage'],['burn','burn'],['poison','poison'],['slow','slow'],['stun','stun'],['freeze','freeze'],['sealed','sealed'],['phase','ghost'],['iron','iron'],['colossus','grow'],['firefist','firefist'],['icefist','icefist'],['shield','shield'],['drain','heart']];
+const q240=v=>(Math.round(clamp(v,0,1)*240)/240).toFixed(4);
 function updateHUD(dt){
   if($('hud').classList.contains('hide'))return;
   G.B.forEach((b,i)=>{const el=$('hb'+i);
     if(b.hp<(b._lastHp??b.hp))b.trailT=.55;b._lastHp=b.hp;if(b.hp>b.trail)b.trail=b.hp;b.trailT-=dt;if(b.trailT<=0)b.trail=lerp(b.trail,b.hp,damp(5,dt));
-    const hf=clamp(b.hp/b.hpMax,0,1);setC('hp'+i,el.querySelector('.hp .fl'),'transform',`scaleX(${hf.toFixed(3)})`);setC('tr'+i,el.querySelector('.hp .tr'),'transform',`scaleX(${clamp(b.trail/b.hpMax,0,1).toFixed(3)})`);
+    const hf=clamp(b.hp/b.hpMax,0,1);setC('hp'+i,el.querySelector('.hp .fl'),'transform',`scaleX(${q240(hf)})`);setC('tr'+i,el.querySelector('.hp .tr'),'transform',`scaleX(${q240(b.trail/b.hpMax)})`);
     const hpb=el.querySelector('.bar.hp');const low=hf<.25;if(HUDC['low'+i]!==low){HUDC['low'+i]=low;hpb.classList.toggle('low',low)}
-    setC('st'+i,el.querySelector('.sta .fl'),'transform',`scaleX(${(b.sta/100).toFixed(3)})`);const gas=b.sta<20;if(HUDC['gas'+i]!==gas){HUDC['gas'+i]=gas;el.querySelector('.bar.sta').classList.toggle('gas',gas)}
-    setC('m'+i,el.querySelector('.met .fl'),'transform',`scaleX(${(b.meter/100).toFixed(3)})`);const full=b.meter>=100;if(HUDC['mf'+i]!==full){HUDC['mf'+i]=full;el.querySelector('.bar.met').classList.toggle('full',full)}
+    setC('st'+i,el.querySelector('.sta .fl'),'transform',`scaleX(${q240(b.sta/100)})`);const gas=b.sta<20;if(HUDC['gas'+i]!==gas){HUDC['gas'+i]=gas;el.querySelector('.bar.sta').classList.toggle('gas',gas)}
+    setC('m'+i,el.querySelector('.met .fl'),'transform',`scaleX(${q240(b.meter/100)})`);const full=b.meter>=100;if(HUDC['mf'+i]!==full){HUDC['mf'+i]=full;el.querySelector('.bar.met').classList.toggle('full',full)}
     const kds=el.querySelectorAll('.kd i');kds.forEach((k,j)=>{const on=j<b.kd;if(HUDC['kd'+i+j]!==on){HUDC['kd'+i+j]=on;k.classList.toggle('on',on)}});
     setC('sx'+i,el.querySelector('.stat'),'html',STATUS_ICONS.filter(([k])=>b.fxBits&FX[k]).map(([k,ic])=>'<span title="'+k+'">'+ICO(ic)+'</span>').join(''));
     const rg=!!(b.fxBits&FX.rage);if(HUDC['rg'+i]!==rg){HUDC['rg'+i]=rg;el.classList.toggle('rage',rg)}
@@ -3771,9 +3772,9 @@ function updateHUD(dt){
   const lowT=t<=10&&G.phase==='fight'&&!G.bag;if(HUDC.lowT!==lowT){HUDC.lowT=lowT;$('timer').classList.toggle('low',lowT)}
   setC('rn',$('rndl'),'text','ROUND '+G.rnd);
   const me=G.B[G.ME];
-  ['q','e'].forEach(k=>{const el=$(k==='q'?'abQ':'abE'),cd=me.cd[k],tot=me.f[k].cd;setC('cd'+k,el.querySelector('.cd'),'--p',(cd>0?cd/tot*100:0).toFixed(1)+'%');setC('cn'+k,el.querySelector('.cdn'),'text',cd>0?String(Math.ceil(cd)):'');const r=cd<=0;if(HUDC['r'+k]!==r){HUDC['r'+k]=r;el.classList.toggle('ready',r)}});
-  if(TOUCH)['q','e','r'].forEach(k=>{const el=document.querySelector(`#touch [data-k=${k}]`),c=el&&el.querySelector('.tcd');if(!c)return;const p=k==='r'?(100-me.meter):me.cd[k]/me.f[k].cd*100;setC('t'+k,c,'--p',Math.max(0,p).toFixed(1)+'%');const r=p<=0;if(HUDC['tr'+k]!==r){HUDC['tr'+k]=r;el.classList.toggle('rdy',r)}});
-  setC('uf',$('abR').querySelector('.ufill'),'height',me.meter.toFixed(0)+'%');const ur=me.meter>=100;if(HUDC.ur!==ur){HUDC.ur=ur;$('abR').classList.toggle('ready',ur)}
+  ['q','e'].forEach(k=>{const el=$(k==='q'?'abQ':'abE'),cd=me.cd[k],tot=me.f[k].cd;setC('cd'+k,el.querySelector('.cd'),'--p',(cd>0?Math.ceil(cd/tot*50)*2:0)+'%');setC('cn'+k,el.querySelector('.cdn'),'text',cd>0?String(Math.ceil(cd)):'');const r=cd<=0;if(HUDC['r'+k]!==r){HUDC['r'+k]=r;el.classList.toggle('ready',r)}});
+  if(TOUCH)['q','e','r'].forEach(k=>{const el=document.querySelector(`#touch [data-k=${k}]`),c=el&&el.querySelector('.tcd');if(!c)return;const p=k==='r'?(100-me.meter):me.cd[k]/me.f[k].cd*100;setC('t'+k,c,'--p',Math.max(0,Math.ceil(p/2)*2)+'%');const r=p<=0;if(HUDC['tr'+k]!==r){HUDC['tr'+k]=r;el.classList.toggle('rdy',r)}});
+  setC('uf',$('abR').querySelector('.ufill'),'transform',`scaleY(${(Math.round(me.meter/2)*2/100).toFixed(2)})`);const ur=me.meter>=100;if(HUDC.ur!==ur){HUDC.ur=ur;$('abR').classList.toggle('ready',ur)}
   const K=G.kdInfo,mash=G.phase==='kd'&&K&&K.b===G.ME&&!K.up&&me.kd<3&&!G.bots[G.ME];
   if(HUDC.mash!==mash){HUDC.mash=mash;$('mash').classList.toggle('hide',!mash)}
   if(mash)$('mashFill').style.width=Math.min(100,me.getup/getupNeed(me)*100)+'%';
