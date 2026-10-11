@@ -3806,8 +3806,8 @@ function onNet(m){
   if(m.t==='error'){const t=m.msg||'That didn\'t work.';netClose();NET.mode='off';showOv('mpOv');mpErr(t==='No game with that code.'?'No room with that code — check the letters.':t==='That game is full.'?'That room already has two boxers.':t);return}
   if(m.t==='left'||m.t==='bye'){if(NET.mode!=='off')netLost('Your opponent left the arena.');return}
   switch(m.t){
-    case 'hi':NET.peer=String(m.name||'').slice(0,12);NET.peerPick=FBY[m.f]?m.f:null;NET.peerAlt=(m.a|0)%NALT;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
-    case 'pick':NET.peerPick=FBY[m.f]?m.f:NET.peerPick;NET.peerAlt=(m.a|0)%NALT;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
+    case 'hi':NET.peer=String(m.name||'').slice(0,12);NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:null;NET.peerAlt=(m.a|0)%NALT;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
+    case 'pick':NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:NET.peerPick;NET.peerAlt=(m.a|0)%NALT;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
     case 'go':if(NET.mode==='guest')startOnlineMatch(m);break;
     case 's':applySnap(m);break;
     case 'atk':onAtk(m.s);break;
@@ -3955,7 +3955,7 @@ function showSettings(){
   showOv('setOv')}
 function showRecords(){
   const tot=REC.w+REC.l;$('recBody').innerHTML=`<div class="rt"><span><b>${REC.w}–${REC.l}</b>RECORD</span><span><b>${tot?Math.round(REC.w/tot*100):0}%</b>WINS</span><span><b>${REC.ko}</b>KOs</span><span><b>${REC.ladders}</b>BELTS</span></div>
-    <div class="rg">${FIGHTERS.map(f=>{const P=REC.per[f.id]||{};const fought=(P.w||0)+(P.l||0);
+    <div class="rg">${(bossOn()?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>{const P=REC.per[f.id]||{};const fought=(P.w||0)+(P.l||0);
       return `<div class="rc" style="--c:${f.col}">${portrait(f.id,48)}${REC.champ[f.id]?`<span class="t">${ICO('trophy')}</span>`:''}<div class="n">${f.name}</div>
         <div class="s">${fought?`<b>${P.w||0}–${P.l||0}</b> · <b>${P.ko||0}</b> KO<br>BEST HIT <b>${(P.big||0).toFixed(1)}</b> · COMBO <b>${P.combo||0}</b>`:'<span style="opacity:.5">NOT FOUGHT YET</span>'}${P.titles?`<br><b>${P.titles}×</b> CHAMPION`:''}${P.surv?`<br>SURVIVAL BEST <b>${P.surv}</b>`:''}</div></div>`}).join('')}</div>
     <div class="rt" style="margin:14px 0 0"><span><b>${Object.keys(REC.ach||{}).length}/${ACH.length}</b>ACHIEVEMENTS</span></div><div class="ag">${ACH.map(([k,n,d])=>`<div class="ai ${(REC.ach||{})[k]?'on':''}"><b>${n}</b><small>${d}</small></div>`).join('')}</div>`;
@@ -4019,7 +4019,7 @@ function startAttract(){
 }
 function openSelect(mode){
   rpStop();vsHide();clearConfetti();clearDecals();
-  SEL.mode=mode;G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;
+  SEL.mode=mode;if(mode==='online'&&FBY[SEL.f]&&FBY[SEL.f].secret)SEL.f='blaze';G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;
   hideAllOv();showOv('selOv');showHUD(false);REF.b.root.visible=false;G.B.forEach(b=>{b.down=false;b.act=null;b.fxBits=0;b.P.fall=0});
   renderSelect();placePreview();
 }
@@ -4152,10 +4152,10 @@ function showLadder(){rpStop();vsHide();clearConfetti();
     <div class="lad">${L.opps.map((id,i)=>`<div class="${i<L.i?'done':i===L.i?'cur':''}" style="${i===L.i?'border-color:'+FBY[id].col:''}">${i<L.i?ICO('check'):portrait(id,58)}<small>${DIFF[LAD_DIFF[i]].name}</small></div>`).join('')}<div style="border-color:var(--gold)">${ICO('trophy')}<small>BELT</small></div></div>
     ${STORY[L.f]?`<p class="story" style="--c:${FBY[L.f].col}">${STORY[L.f][done?2:L.i===L.opps.length-1?1:L.i===0?0:0]}</p>`:''}
     ${done?'<p class="dimt" style="text-align:center">Five fights, five wins. The belt is yours — try it with another fighter.</p>':`<p class="dimt" style="text-align:center">Next up: <b style="color:${FBY[L.opps[L.i]].col}">${FBY[L.opps[L.i]].name}</b> — “${FBY[L.opps[L.i]].nick}” (${DIFF[LAD_DIFF[L.i]].name})</p>`}
-    ${done&&!L.boss?`<div class="chal"><span>⚠ A CHALLENGER APPEARS ⚠</span><div>${portrait('champ',90,true)}<b>THE CHAMP</b><small>“${BOSS.nick}” · ${BOSS.hp} HP</small></div><i>${pick(QUOTES.champ)}</i></div>`:''}
-    <div class="menu">${done?(L.boss?'':'<button class="primary" id="ladBoss">ACCEPT THE CHALLENGE</button>'):'<button class="primary" id="ladGo">FIGHT</button>'}<button id="ladMenu">MAIN MENU</button></div>`;
+    ${done&&!L.boss&&L.f!=='champ'?`<div class="chal"><span>⚠ A CHALLENGER APPEARS ⚠</span><div>${portrait('champ',90,true)}<b>THE CHAMP</b><small>“${BOSS.nick}” · ${BOSS.hp} HP</small></div><i>${pick(QUOTES.champ)}</i></div>`:''}
+    <div class="menu">${done?(L.boss||L.f==='champ'?'':'<button class="primary" id="ladBoss">ACCEPT THE CHALLENGE</button>'):'<button class="primary" id="ladGo">FIGHT</button>'}<button id="ladMenu">MAIN MENU</button></div>`;
   if(!done)$('ladGo').onclick=()=>startSolo(L.f,L.opps[L.i],LAD_DIFF[L.i]);
-  if(done&&!L.boss)$('ladBoss').onclick=()=>{L.boss=1;L.bossFight=1;startSolo(L.f,'champ','champion')};
+  if(done&&!L.boss&&L.f!=='champ')$('ladBoss').onclick=()=>{L.boss=1;L.bossFight=1;startSolo(L.f,'champ','champion')};
   $('ladMenu').onclick=showTitle;
 }
 function onEnd(r){
