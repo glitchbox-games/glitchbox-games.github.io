@@ -2924,7 +2924,7 @@ function onOut(i,tko){
 // ════════════════════ MATCH FLOW (host decides) ════════════════════
 const HOME=[[-1.35,-1.35],[1.35,1.35]];
 function setupMatch(fids,names,alts){
-  dropBelts();G.title=false;
+  dropBelts();clearThrown();G.title=false;
   G.rnd=1;G.tl=ROUND_T;G.rdmg=[[],[]];G.rkd=[[],[]];G.result=null;G.kdInfo=null;G.cards=null;clearCombat();rpReset();clearDecals();clearConfetti();
   alts=(alts||[0,0]).map(a=>a|0);if(fids[0]===fids[1]&&alts[0]===alts[1])alts[1]=(alts[0]+1)%NALT;   // mirror match: never the same colours
   G.B.forEach((b,i)=>{if(!b.f||b.f.id!==fids[i]||b.alt!==alts[i])b.build(FBY[fids[i]],alts[i]);b.reset();if(b.ribs)b.ribs.forEach(r=>r.clear());b.name=(names&&names[i])||b.f.name;b.x=HOME[i][0]*1.6;b.z=HOME[i][1]*1.6;b.home=HOME[i];b.yaw=Math.atan2(-b.x,-b.z);b.root.visible=true});
@@ -3994,7 +3994,7 @@ function onEnd(r){
   if(G.attract){setTimeout(()=>{if(G.attract&&G.mode==='title')startAttract()},4500);return}
   const ko=r.how==='KO'||r.how==='TKO';
   if(ko){CAM.slow=.22;CAM.slowT=1.1;announce(r.how==='TKO'?'T.K.O.!':'K.O.!','red big',2.2);say(r.how==='TKO'?'Technical knockout!':'Knockout!');SFX.ko();SFX.cheer(1.3);SFX.bell(3);screenFlash('white',.5);
-    pyro(2.8,[0,1,2,3],1.2);flameJets();ARENA.excite=1;impactFrame(0xff3b3f)}
+    pyro(2.8,[0,1,2,3],1.2);flameJets();ARENA.excite=1;if(w>=0)setTimeout(()=>crowdThrow(26,G.B[w].look.glow||0xffc83a),900);impactFrame(0xff3b3f)}
   else{SFX.bell(3);announce(w<0?'DRAW!':'DECISION','gold',1.8);say(w<0?'This one is a draw!':'We go to the judges\' scorecards.');SFX.cheer(.8)}
   if(w>=0)setTimeout(()=>{if(G.phase!=='end'||G.mode!=='fight')return;confetti();SFX.fanfare(w===G.ME);if(!ko)pyro(2,[0,1,2,3])},ko?1300:900);
   if(w===G.ME&&!G.attract){const me=G.B[G.ME],o=G.B[1-G.ME];achGet('first');if(ko)achGet('ko');if(me.stats.took===0||me.hp>=me.hpMax-.01&&!me.kd)achGet('flawless');if(me.minHp!=null&&me.minHp<me.hpMax*.1)achGet('comeback');
@@ -4017,6 +4017,24 @@ function beltTex(){return BELT_TEX||(BELT_TEX=canvasTex(256,256,(x,w,h)=>{
   for(let i=0;i<16;i++){const a=i/16*6.283;x.fillStyle=i%2?'#ff3b3f':'#3fd4ff';x.beginPath();x.arc(w/2+Math.cos(a)*w*.4,h/2+Math.sin(a)*w*.4,5,0,6.3);x.fill()}
   x.fillStyle='#16110f';x.font=`${w*.13}px ${FONT}`;x.textAlign='center';x.textBaseline='middle';x.save();x.translate(w/2,h*.44);x.scale(-1,1);x.fillText('WORLD',0,0);x.translate(0,h*.13);x.fillText('CHAMPION',0,0);x.restore();
   x.fillStyle='#ffc83a';x.strokeStyle='#16110f';x.lineWidth=3;x.beginPath();for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566,b=a+.628;x.lineTo(w/2+Math.cos(a)*24,h*.25+Math.sin(a)*24);x.lineTo(w/2+Math.cos(b)*10,h*.25+Math.sin(b)*10)}x.closePath();x.fill();x.stroke()}))}
+// ════ the crowd throws things into the ring after a knockout ════
+const THROWN=[];
+function throwGeo(kind){const k='thr_'+kind;if(GEO[k])return GEO[k];let g;
+  if(kind==='rose'){const st=new THREE.CylinderGeometry(.008,.008,.32,5);st.translate(0,-.16,0);const bl=new THREE.SphereGeometry(.045,8,6);bl.scale(1,.8,1);g=[st,bl]}
+  else if(kind==='hat'){const br=new THREE.CylinderGeometry(.16,.16,.015,16),cr=new THREE.CylinderGeometry(.09,.1,.12,14);cr.translate(0,.065,0);g=[br,cr]}
+  else if(kind==='towel'){g=[new THREE.BoxGeometry(.38,.02,.24)]}
+  else{const h=new THREE.BoxGeometry(.14,.2,.05);const f=new THREE.BoxGeometry(.04,.16,.04);f.translate(.02,.17,0);g=[h,f]}
+  return GEO[k]=g}
+function crowdThrow(n,col){const kinds=['rose','rose','hat','towel','foam'],cols={rose:[0x2a8a2a,0xd8161f],hat:[0x2a2a30,0x2a2a30],towel:[0xf2f2f2],foam:[col,col]};
+  for(let i=0;i<n;i++)after(Math.random()*1.6,()=>{if(G.mode!=='fight')return;const kind=pick(kinds),gs=throwGeo(kind),grp=new THREE.Group();
+    gs.forEach((gg,j)=>{const m=new THREE.Mesh(gg,new THREE.MeshStandardMaterial({color:(cols[kind][j]??cols[kind][0]),roughness:.7}));m.castShadow=true;m.userData.keepGeo=1;grp.add(m)});
+    const a=Math.random()*TAU,r=7.5+Math.random()*3;grp.position.set(Math.cos(a)*r,1.5+Math.random()*2,Math.sin(a)*r);
+    const tx=(Math.random()-.5)*5.6,tz=(Math.random()-.5)*5.6,T=1+Math.random()*.4,v=new THREE.Vector3((tx-grp.position.x)/T,0,(tz-grp.position.z)/T);v.y=(0-grp.position.y)/T+9.8*T/2;
+    const spin=new THREE.Vector3((Math.random()-.5)*12,(Math.random()-.5)*12,(Math.random()-.5)*12);scene.add(grp);THROWN.push({grp,v,spin,rest:false,kind});
+    while(THROWN.length>40){const o=THROWN.shift();scene.remove(o.grp);o.grp.traverse(x=>x.material&&x.material.dispose())}})}
+function throwTick(dt){for(const o of THROWN){if(o.rest)continue;const p=o.grp.position;o.v.y-=9.8*dt;p.addScaledVector(o.v,dt);o.grp.rotation.x+=o.spin.x*dt;o.grp.rotation.y+=o.spin.y*dt;o.grp.rotation.z+=o.spin.z*dt;
+    const floor=Math.abs(p.x)<4.35&&Math.abs(p.z)<4.35?.02:-1.13;if(p.y<floor){p.y=floor;if(Math.abs(o.v.y)<1.2){o.rest=true;o.grp.rotation.x=o.kind==='hat'?0:Math.PI/2*(o.kind==='towel'?0:1);o.grp.rotation.z=0}else{o.v.y*=-.35;o.v.x*=.5;o.v.z*=.5;o.spin.multiplyScalar(.5)}}}}
+function clearThrown(){for(const o of THROWN){scene.remove(o.grp);o.grp.traverse(x=>x.material&&x.material.dispose())}THROWN.length=0}
 function giveBelt(b,quiet){if(!b||!b.pelvis||b.belt)return;
   const gold=new THREE.MeshStandardMaterial({color:0xf2c43a,metalness:.9,roughness:.25,envMap:ENV,envMapIntensity:1.4,emissive:0x3a2400}),strap=new THREE.MeshStandardMaterial({color:0x16110f,roughness:.5,metalness:.2});
   const g=new THREE.Group();g.position.y=.07;
@@ -4346,7 +4364,7 @@ function visuals(rdt,adt){
   ropeVisuals(adt);PA.update(adt);PN.update(adt);fxUpdate(adt);updEmit(adt);updConfetti(adt);extras(rdt,adt);updPFX(rdt);
   ARENA.excite=Math.max(0,(ARENA.excite||0)-rdt*.22);
   const ex=G.mode==='fight'?.12+ARENA.excite*.9:.18;ARENA.crowdU.uEx.value=lerp(ARENA.crowdU.uEx.value,ex,damp(3,rdt));ARENA.crowdU.uT.value+=rdt;
-  crowdTick(rdt);cornerTick(rdt);trainTick(rdt);rainTick(rdt);pitTick(rdt);ARENA.flashU.uT.value+=rdt;ARENA.flashU.uRate.value=1+ARENA.excite*7+(G.phase==='kd'||G.phase==='end'?5:0);
+  crowdTick(rdt);cornerTick(rdt);throwTick(adt);trainTick(rdt);rainTick(rdt);pitTick(rdt);ARENA.flashU.uT.value+=rdt;ARENA.flashU.uRate.value=1+ARENA.excite*7+(G.phase==='kd'||G.phase==='end'?5:0);
   ARENA.impact.intensity*=Math.exp(-16*rdt);if(ARENA.impact.intensity<.05)ARENA.impact.intensity=0;ARENA.led.offset.x+=rdt*.035;
   // the big screen only redraws (and re-uploads) when what it shows has changed
   jumboT-=rdt;if(jumboT<=0){jumboT=.25;const t=Math.max(0,Math.ceil(G.tl));
@@ -4395,7 +4413,7 @@ function init(){
   if(document.fonts)document.fonts.ready.then(()=>ARENA.texs.forEach(redrawTex));
   if(window.GBSave)GBSave.register({save:()=>(REC.w||REC.l)?JSON.parse(JSON.stringify(REC)):null,load:d=>{if(d&&typeof d==='object'){Object.assign(REC,d);saveRec();renderRec()}}});
   if(DEBUG){window.kdView=kdView;window.kdCentre=kdCentre}
-  if(DEBUG)window.__HM={achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
+  if(DEBUG)window.__HM={crowdThrow,THROWN,achGet,showRecords,applyVenue,ARENA,ANCHORS,prewarmFX,RP,rpStart,rpEnd,AU,SFX,PFX,MUS,musTick,FX,afterimage,hitSpark,comic,decal,pyro,confetti,cutin,vsShow,impactFrame,wave,TEX,FXL,EMIT,CONF,trailW,auInit,PORT,showLadder,V3:THREE.Vector3,renderer,OUTLINE_U,scene,hostPhase,onNetGo:m=>startOnlineMatch(m),updRef:updateRef,CAM,knockdown,PERF,Bot,DIFF,G,NET,REF,FBY,PUNCH,startSolo,openSelect,showTitle,step,setupMatch,setPhase,castAbility,startPunch,startAttract,netConnect,onNet,camera,SET};
   if(SMOKE){runSmoke();return}
   showTitle();
   // build the other venues while the player is on the title screen, so picking one never hitches
