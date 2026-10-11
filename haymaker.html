@@ -110,6 +110,8 @@ body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 .cadv{margin-top:12px;padding:8px 12px;border-left:3px solid var(--gold);background:rgba(255,200,58,.07);font:italic 700 13.5px Rubik;color:#fff;border-radius:0 8px 8px 0}.cadv small{display:block;font:900 9px Rubik;font-style:normal;letter-spacing:.3em;color:var(--gold);margin-bottom:3px}
 .binds{display:grid;grid-template-columns:1fr 1fr;gap:4px}.binds button{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);background:#16161e;color:#bbb;border-radius:8px;padding:6px 10px;font:800 10px Rubik;letter-spacing:.08em;cursor:pointer}.binds button b{font:400 15px Anton;color:#fff;letter-spacing:.04em}.binds button.on{border-color:var(--gold)}.binds button.on b{color:var(--gold)}
 #setOv .panel{max-height:92vh;overflow:auto}
+#titleOv .menu>button{position:relative}#titleOv .menu>button.isnew::after{content:'NEW';position:absolute;top:-7px;right:8px;background:#ff3b3f;color:#fff;font:900 9px Rubik;letter-spacing:.12em;padding:2px 6px;border-radius:6px;box-shadow:0 2px 0 #000;animation:nbump 1.6s ease-in-out infinite}
+@keyframes nbump{50%{transform:scale(1.12)}}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -4095,7 +4097,9 @@ function showRecords(){
         <div class="s">${fought?`<b>${P.w||0}–${P.l||0}</b> · <b>${P.ko||0}</b> KO<br>BEST HIT <b>${(P.big||0).toFixed(1)}</b> · COMBO <b>${P.combo||0}</b>`:'<span style="opacity:.5">NOT FOUGHT YET</span>'}${P.titles?`<br><b>${P.titles}×</b> CHAMPION`:''}${P.surv?`<br>SURVIVAL BEST <b>${P.surv}</b>`:''}${fought?`<br>MASTERY <b>${MM.tier?MM.tier[1]:'—'}</b>${MM.next?` · ${MM.xp}/${MM.next[0]}`:''}`:''}</div></div>`}).join('')}</div>
     <div class="rt" style="margin:14px 0 0"><span><b>${Object.keys(REC.ach||{}).length}/${ACH.length}</b>ACHIEVEMENTS</span></div><div class="ag">${ACH.map(([k,n,d])=>`<div class="ai ${(REC.ach||{})[k]?'on':''}"><b>${n}</b><small>${d}</small></div>`).join('')}</div>`;
   showOv('recOv')}
-function renderRec(){const X=xpInfo();$('recLine').textContent=`LEVEL ${X.l} · ${X.title}`+((REC.w||REC.l)?` · RECORD ${REC.w}–${REC.l} · ${REC.ko} KOs`+(REC.ladders?` · ${REC.ladders}× CHAMPION`:''):'')}
+const NEWMODES=['ladder','surv','tour','daily','train','online'];
+function renderNewTags(){const T=REC.tried||{};document.querySelectorAll('#titleOv [data-go]').forEach(b=>{const g=b.dataset.go;b.classList.toggle('isnew',NEWMODES.includes(g)&&!T[g])})}
+function renderRec(){renderNewTags();const X=xpInfo();$('recLine').textContent=`LEVEL ${X.l} · ${X.title}`+((REC.w||REC.l)?` · RECORD ${REC.w}–${REC.l} · ${REC.ko} KOs`+(REC.ladders?` · ${REC.ladders}× CHAMPION`:''):'')}
 const HUDC={};
 function showHUD(on){
   $('hud').classList.toggle('hide',!on);$('touch').classList.toggle('hide',!(on&&TOUCH));document.body.classList.toggle('infight',!!on);
@@ -4206,7 +4210,7 @@ function selectStep(dt){
     b.mvx=b.mvz=0}
 }
 function setupUI(){
-  document.querySelectorAll('#titleOv [data-go]').forEach(b=>b.addEventListener('click',()=>{auInit();if(AU.ctx&&AU.ctx.state!=='running')AU.ctx.resume();SFX.ui();const g=b.dataset.go;
+  document.querySelectorAll('#titleOv [data-go]').forEach(b=>b.addEventListener('click',()=>{if(NEWMODES.includes(b.dataset.go)&&!SMOKE){REC.tried=REC.tried||{};if(!REC.tried[b.dataset.go]){REC.tried[b.dataset.go]=1;saveRec();renderNewTags()}}auInit();if(AU.ctx&&AU.ctx.state!=='running')AU.ctx.resume();SFX.ui();const g=b.dataset.go;
     if(g==='surv')openSelect('surv');else if(g==='tour')openSelect('tour');else if(g==='train'){SEL.diff='bag';openSelect('quick')}else if(g==='quick'){if(SEL.diff==='bag')SEL.diff='contender';openSelect('quick')}else if(g==='ladder')openSelect('ladder');else if(g==='online'){showOv('mpOv');mpErr('');$('nameIn').value=NAME;$('codeIn').value=''}else if(g==='help')showOv('helpOv');else if(g==='records')showRecords();else if(g==='daily')showDaily();else if(g==='settings')showSettings()}));
   $('qBtn').onclick=()=>{SET.q=SET.q==='high'?'low':'high';saveSet();$('qBtn').textContent=SET.q==='high'?'HIGH':'LOW';setupPost();prewarmFX()};
   $('cBtn').onclick=()=>{SET.cam=SET.cam==='tv'?'back':'tv';saveSet();$('cBtn').textContent=SET.cam==='tv'?'BROADCAST':'BEHIND'};
