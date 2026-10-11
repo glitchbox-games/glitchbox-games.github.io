@@ -551,7 +551,7 @@ body.touch #abil,body.touch #keys{display:none}
     <p>Three rounds of a minute. Drop to zero health and you're down — mash punch to beat the ten-count. Three knockdowns is a TKO. Still standing at the end? The judges score each round on damage and knockdowns.</p>
     <p>Punches cost stamina. Throw too many and you gas out: slower, weaker, and your guard crumbles. Chain punches together for a combo bonus. Under a quarter health you go into RAGE: punches hit 15% harder.</p>
     <p>Twelve fighters, each with a passive, two abilities and an ultimate — pick one on the select screen to read them. Before the first bell both fighters walk out to the ring: press any key (or tap) to skip, or switch ENTRANCES off in SETTINGS. Win the arcade ladder to take the belt home.</p>
-    <p>Make your own boxer: tap <b>+ CREATE</b> on the fighter grid. Pick a name, build, hair, eyes, colours and emblem, and choose who they fight like — they get that fighter's stats and moves. Up to six, saved on this device (offline modes only).</p>
+    <p>Make your own boxer: tap <b>+ CREATE</b> on the fighter grid. Pick a name, build, hair, eyes, colours and emblem, and choose who they fight like — they get that fighter's stats and moves. Up to six, saved on this device — and online, your rival sees and fights the real thing.</p>
     <p>Every fight earns XP. Level up to unlock punch trails and KO finishers in the LOCKER — click your level under the title menu. Online, your opponent sees them too.</p>
     <h3>MODES</h3>
     <div class="kgrid">
@@ -4187,12 +4187,12 @@ function netLost(msg){netClose();NET.mode='off';G.online=false;G.paused=false;
 function onNet(m){
   if(m.t==='created'){openSelect('online');return}
   if(m.t==='joined'){openSelect('online');return}
-  if(m.t==='start'){netSend({t:'hi',name:myName(),f:SEL.f,a:SEL.alt,c:myCos(),ready:NET.myReady});return}
+  if(m.t==='start'){netSend({t:'hi',name:myName(),f:SEL.f,a:SEL.alt,c:myCos(),mk:myMk(),ready:NET.myReady});return}
   if(m.t==='error'){const t=m.msg||'That didn\'t work.';netClose();NET.mode='off';showOv('mpOv');mpErr(t==='No game with that code.'?'No room with that code — check the letters.':t==='That game is full.'?'That room already has two boxers.':t);return}
   if(m.t==='left'||m.t==='bye'){if(NET.mode!=='off')netLost('Your opponent left the arena.');return}
   switch(m.t){
-    case 'hi':NET.peer=String(m.name||'').slice(0,12);NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:null;NET.peerAlt=(m.a|0)%NALT;NET.peerCos=Array.isArray(m.c)?m.c.slice(0,2).map(String):null;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
-    case 'pick':NET.peerPick=FBY[m.f]&&!FBY[m.f].secret?m.f:NET.peerPick;NET.peerAlt=(m.a|0)%NALT;NET.peerCos=Array.isArray(m.c)?m.c.slice(0,2).map(String):null;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
+    case 'hi':NET.peer=String(m.name||'').slice(0,12);NET.peerPick=m.mk?netPeerMk(m):FBY[m.f]&&!FBY[m.f].secret&&!FBY[m.f].made?m.f:null;NET.peerAlt=(m.a|0)%NALT;NET.peerCos=Array.isArray(m.c)?m.c.slice(0,2).map(String):null;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
+    case 'pick':NET.peerPick=m.mk?netPeerMk(m)||NET.peerPick:FBY[m.f]&&!FBY[m.f].secret&&!FBY[m.f].made?m.f:NET.peerPick;NET.peerAlt=(m.a|0)%NALT;NET.peerCos=Array.isArray(m.c)?m.c.slice(0,2).map(String):null;NET.peerReady=!!m.ready;if(G.mode==='select'){renderSelect();placePreview()}checkStart();break;
     case 'go':if(NET.mode==='guest')startOnlineMatch(m);break;
     case 's':applySnap(m);break;
     case 'atk':onAtk(m.s);break;
@@ -4211,7 +4211,7 @@ function onNet(m){
 }
 function checkStart(){if(NET.mode==='host'&&NET.myReady&&NET.peerReady&&NET.peerPick&&G.mode==='select')hostGo()}
 function checkRematch(){if(NET.mode==='host'&&NET.rm&&NET.peerRm)hostGo()}
-function hostGo(){const m={t:'go',v:pickVenue(SEL.venue),f:[SEL.f,NET.peerPick],n:[myName()||FBY[SEL.f].name,NET.peer||FBY[NET.peerPick].name],a:[SEL.alt|0,NET.peerAlt|0],c:[myCos(),NET.peerCos||null]};netSend(m);startOnlineMatch(m)}
+function hostGo(){const m={t:'go',v:pickVenue(SEL.venue),f:[SEL.f,NET.peerPick],n:[myName()||FBY[SEL.f].name,NET.peer||FBY[NET.peerPick].name],a:[SEL.alt|0,NET.peerAlt|0],c:[myCos(),NET.peerCos||null],mk:[myMk(),FBY[NET.peerPick]&&FBY[NET.peerPick].made?FBY[NET.peerPick].spec:null]};netSend(m);startOnlineMatch(m)}
 function startOnlineMatch(m){
   if(!NET.series||NET.seriesPeer!==NET.peer){NET.series=[0,0];NET.seriesPeer=NET.peer}
   G.forfeit=false;
@@ -4221,6 +4221,7 @@ function startOnlineMatch(m){
   for(const k in MUT)MUT[k]=false;
   G.watch=false;document.body.classList.remove('watching');
   applyVenue(m.v);
+  if(Array.isArray(m.mk)){const me=NET.mode==='host'?0:1;m.f=m.f.slice();for(const i of [0,1])if(m.mk[i]){if(i===me&&FBY[SEL.f]&&FBY[SEL.f].made)m.f[i]=SEL.f;else{netPeerMk({mk:m.mk[i]});m.f[i]='net_peer'}}}
   G.online=true;G.cos=Array.isArray(m.c)?m.c:null;G.attract=false;G.bag=false;G.ME=NET.mode==='host'?0:1;G.bots=[null,null];G.ladder=null;G.paused=false;
   Object.assign(NET,{myReady:false,peerReady:false,rm:false,peerRm:false});
   rpStop();setupMatch(m.f,m.n,m.a);G.mode='fight';hideAllOv();showHUD(true);REF.b.root.visible=true;setPhase('intro');
@@ -4425,7 +4426,7 @@ function startAttract(){
 }
 function openSelect(mode){
   rpStop();vsHide();clearConfetti();clearDecals();
-  SEL.mode=mode;if(mode==='online'&&FBY[SEL.f]&&(FBY[SEL.f].secret||FBY[SEL.f].made))SEL.f='blaze';G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;
+  SEL.mode=mode;if(mode==='online'&&FBY[SEL.f]&&FBY[SEL.f].secret)SEL.f='blaze';G.mode='select';G.attract=false;clearCombat();G.phase='none';G.paused=false;
   hideAllOv();showOv('selOv');showHUD(false);REF.b.root.visible=false;G.B.forEach(b=>{b.down=false;b.act=null;b.fxBits=0;b.P.fall=0});
   renderSelect();placePreview();
 }
@@ -4440,7 +4441,7 @@ function fighterInfo(f){
 function renderSelect(){
   const on=SEL.mode==='online';
   $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
-  $('grid').innerHTML=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).concat(on?[]:madeF()).map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
+  $('grid').innerHTML=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).concat(madeF()).map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
     return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}${f.made?'<div class="mkt">YOURS</div>':''}</button>`}).join('')+(on?'':`<button class="card mkc" data-mk="new"><div class="em">+</div><div class="cn">CREATE</div></button>`);
   $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);if(FBY[SEL.f].made&&!on)$('finfo').insertAdjacentHTML('beforeend','<button class="btn small" id="mkEdit" style="margin-top:8px">EDIT FIGHTER</button>');
   if(SEL.mode==='quick'&&FBY[SEL.opp]){const H=(REC.h2h||{})[SEL.f+'>'+SEL.opp];$('finfo').insertAdjacentHTML('beforeend',`<div class="h2h">${FBY[SEL.f].short||FBY[SEL.f].name} VS <b style="color:${FBY[SEL.opp].col}">${FBY[SEL.opp].short||FBY[SEL.opp].name}</b> · ${H?`<b>${H[0]}–${H[1]}</b>`:'FIRST MEETING'}</div>`)}
@@ -4510,7 +4511,7 @@ function setupUI(){
     MKS.sp[k]=/^(skin|hairCol|shorts|trim|glove|beard|band)$/.test(k)?+v:v;mkRender();mkPreview()});
   $('mkSave').onclick=mkSave;$('mkCancel').onclick=()=>{SFX.ui();mkClose()};$('mkDel').onclick=()=>{SFX.ui();mkDelete()};
   $('grid').addEventListener('click',e=>{const mk=e.target.closest('[data-mk]');if(mk){SFX.ui();openMaker(null);return}const c=e.target.closest('[data-f]');if(!c)return;SFX.ui();
-    if(e.shiftKey&&SEL.mode==='quick'){SEL.opp=c.dataset.f}else{SEL.f=c.dataset.f;if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),ready:false})}}
+    if(e.shiftKey&&SEL.mode==='quick'){SEL.opp=c.dataset.f}else{SEL.f=c.dataset.f;if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),mk:myMk(),ready:false})}}
     saveSel();renderSelect();placePreview()});
   $('oppSeg').addEventListener('click',e=>{const c=e.target.closest('[data-o]');if(!c)return;SEL.opp=c.dataset.o;saveSel();renderSelect();placePreview()});
   $('mutSeg').addEventListener('click',e=>{const c=e.target.closest('[data-m]');if(!c)return;SFX.ui();SEL.mut[c.dataset.m]=!SEL.mut[c.dataset.m];saveSel();renderSelect()});
@@ -4523,8 +4524,8 @@ function setupUI(){
     else if(SEL.mode==='tour'){DAILY.on=false;tourStart(SEL.f)}
     else if(SEL.mode==='surv'){DAILY.on=false;G.surv={f:SEL.f,n:0,hp:null};survNext()}
     else if(SEL.mode==='ladder'){const opps=FIGHTERS.map(f=>f.id).filter(id=>id!==SEL.f).sort(()=>Math.random()-.5).slice(0,LAD_DIFF.length);G.ladder={f:SEL.f,opps,i:0};showLadder()}
-    else{NET.myReady=!NET.myReady;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),ready:NET.myReady});renderSelect();checkStart()}};
-  $('altSeg').addEventListener('click',e=>{const kc=e.target.closest('[data-kc]');if(kc){const K=kitOf(SEL.f);K[kc.dataset.kp]=+kc.dataset.kc;saveRec();SFX.ui();G.B[0].f=null;renderSelect();placePreview();return}const c=e.target.closest('[data-a]');if(!c)return;SFX.ui();if(+c.dataset.a===CUSTOM){if(SEL.mode==='online'){sub('CUSTOM KITS ARE FOR SOLO FIGHTS',2);return}SEL.kitEdit=SEL.alt===CUSTOM?!SEL.kitEdit:true;SEL.alt=CUSTOM;saveSel();renderSelect();placePreview();return}if(c.classList.contains('lock')){sub('WIN THE ARCADE LADDER WITH '+FBY[SEL.f].name+' TO UNLOCK THE LEGEND COLOURS',2.4);return}SEL.alt=+c.dataset.a;saveSel();if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),ready:false})}renderSelect();placePreview()});
+    else{NET.myReady=!NET.myReady;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),mk:myMk(),ready:NET.myReady});renderSelect();checkStart()}};
+  $('altSeg').addEventListener('click',e=>{const kc=e.target.closest('[data-kc]');if(kc){const K=kitOf(SEL.f);K[kc.dataset.kp]=+kc.dataset.kc;saveRec();SFX.ui();G.B[0].f=null;renderSelect();placePreview();return}const c=e.target.closest('[data-a]');if(!c)return;SFX.ui();if(+c.dataset.a===CUSTOM){if(SEL.mode==='online'){sub('CUSTOM KITS ARE FOR SOLO FIGHTS',2);return}SEL.kitEdit=SEL.alt===CUSTOM?!SEL.kitEdit:true;SEL.alt=CUSTOM;saveSel();renderSelect();placePreview();return}if(c.classList.contains('lock')){sub('WIN THE ARCADE LADDER WITH '+FBY[SEL.f].name+' TO UNLOCK THE LEGEND COLOURS',2.4);return}SEL.alt=+c.dataset.a;saveSel();if(SEL.mode==='online'){NET.myReady=false;netSend({t:'pick',f:SEL.f,a:SEL.alt,c:myCos(),mk:myMk(),ready:false})}renderSelect();placePreview()});
   // a switch shows OFF while M-muted, so pressing it always turns that sound ON (and un-mutes)
   document.querySelectorAll('.tgl').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.s,vis=k==='flash'||k==='walk',shown=!!SET[k]&&!(SET.mute&&!vis);if(!vis)SET.mute=false;SET[k]=!shown;saveSet();auResume();auApply();renderToggles();if(SET.snd&&!SET.mute)SFX.ui()}));
   renderToggles();
@@ -4582,6 +4583,13 @@ function mkFighter(sp,id){const B=FBY[sp.base]&&!FBY[sp.base].made?FBY[sp.base]:
   const vk=[sp.body,sp.hair,sp.beard?1:0,sp.band?1:0].join('.');f.gkey=id+'.'+vk;f.vkey=f.gkey+'.'+[sp.eye,sp.iris,sp.skin,sp.hairCol,sp.emblem,sp.shorts,sp.trim,sp.glove,mkClean(sp.name,10)].join('.');
   STYLE[id]={body:sp.body,hair:sp.hair,beard:sp.beard?1:0,band:sp.band?1:0,emblem:sp.emblem,top:sp.body==='fem'?1:0,beardCol:sp.hairCol,face:Object.assign({iris:sp.iris},MK.eyes[sp.eye]||MK.eyes.round)};
   BIOS[id]=`Your own fighter — fights like ${B.short||B.name}.`;QUOTES[id]=QUOTES[K]||['Let\'s go.'];STORY[id]=STORY[K];FBY[id]=f;return f}
+// online: a created fighter travels as its spec; every field is checked against the creator's own lists
+const myMk=()=>FBY[SEL.f]&&FBY[SEL.f].made?FBY[SEL.f].spec:null;
+function mkSafe(x){if(!x||typeof x!=='object')return null;const d=mkDefault(),inL=(v,L)=>L.includes(v)?v:null,num=(v,L)=>L.includes(+v)?+v:null;
+  return {name:mkClean(x.name,10)||'RIVAL',nick:mkClean(x.nick,18),base:FIGHTERS.some(f=>f.id===x.base)?x.base:'blaze',body:inL(x.body,MK.bodies.map(b=>b[0]))||d.body,hair:inL(x.hair,MK.hairs.map(h=>h[0]))||d.hair,
+    beard:x.beard?1:0,band:x.band?1:0,eye:MK.eyes[x.eye]?x.eye:d.eye,skin:num(x.skin,MK.skin)??d.skin,hairCol:num(x.hairCol,MK.hair)??d.hairCol,iris:inL(x.iris,MK.iris)||d.iris,
+    shorts:num(x.shorts,MK.kit)??d.shorts,trim:num(x.trim,MK.kit)??d.trim,glove:num(x.glove,MK.kit)??d.glove,emblem:inL(x.emblem,MK.embs)||d.emblem}}
+function netPeerMk(m){const sp=mkSafe(m.mk);if(!sp)return null;const prev=FBY.net_peer&&JSON.stringify(FBY.net_peer.spec);const f=mkFighter(sp,'net_peer');if(prev!==JSON.stringify(f.spec)&&G.mode==='select')setTimeout(()=>{try{makePortraits([f]);renderSelect()}catch(e){}},30);return 'net_peer'}
 function registerMade(){for(const m of MADE())if(m&&m.id&&m.spec)mkFighter(m.spec,m.id)}
 const MKS={sp:null,id:null};
 function openMaker(id){if(G.mode!=='select'||SEL.mode==='online')return;MKS.id=id&&FBY[id]&&FBY[id].made?id:null;MKS.sp=Object.assign(mkDefault(),MKS.id?FBY[MKS.id].spec:{});
@@ -5222,6 +5230,7 @@ function runSmoke(){
     ok(FIGHTERS.length===12,'twelve fighters');
     {const sp=Object.assign(mkDefault(),{name:'test<b>',base:'pops',hair:'mohawk',body:'heavy'}),f=mkFighter(sp,'mk_smoke');ok(f.made&&f.kit==='pops'&&f.name==='TESTB'&&FBY.mk_smoke===f&&STYLE.mk_smoke.hair==='mohawk','FIGHTER CREATOR: a made fighter borrows a moveset, names are sanitised');
       solo('mk_smoke','titan');ok(G.B[0].f.id==='mk_smoke'&&G.B[0].hpMax===FBY.pops.hp,'…builds and fights on that fighter\'s stats');castAbility(G.B[0],'q');ok(G.B[0].st.rope>0,'…with that fighter\'s abilities (Rope-a-Dope)');delete FBY.mk_smoke;delete STYLE.mk_smoke}
+    {const x=mkSafe({name:'<img src=x>',base:'champ',body:'giant',hair:'../x',skin:123,iris:'red;}',emblem:'nope',shorts:0x16161a});ok(x&&x.name==='IMG SRCX'&&x.base==='blaze'&&x.body==='std'&&x.hair==='flame'&&x.skin===mkDefault().skin&&x.iris===mkDefault().iris&&x.shorts===0x16161a&&!mkSafe('junk'),'online: a rival\'s fighter design is checked field by field')}
     ok([...FIGHTERS,BOSS].every(f=>{const t=tape(f);return /^\d'\d+"$/.test(t.h)&&/^\d+ LB$/.test(t.w)&&/^\d+-\d$/.test(t.rec)&&/^\d+ KO$/.test(t.ko)}),'TALE OF THE TAPE is well-formed for everyone');
     for(const f of FIGHTERS){ok(ABIL[f.id]&&ABIL[f.id].q&&ABIL[f.id].e&&ABIL[f.id].r,f.id+' has three abilities');ok(!!AIAB[f.id],f.id+' has CPU ability rules');ok(f.q.cd>0&&f.e.cd>0,f.id+' has cooldowns')}
     // ── rig ──
