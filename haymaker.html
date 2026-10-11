@@ -82,7 +82,7 @@ body.watching #keys::after{content:'EXHIBITION · PRESS A PUNCH KEY TO TAKE OVER
 #setBody .sr{display:grid;grid-template-columns:150px 1fr 46px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font:800 12px Rubik;letter-spacing:.12em;color:#ccc}
 #setBody input[type=range]{width:100%;accent-color:#ffc83a}#setBody .v{text-align:right;color:#fff;font:400 16px Anton}
 #setBody .sb{display:flex;gap:4px;grid-column:2/4}#setBody .sb button{flex:1;border:1px solid var(--line);background:#16161e;color:#bbb;border-radius:8px;padding:6px 4px;font:800 11px Rubik;letter-spacing:.08em;cursor:pointer}#setBody .sb button.on{background:var(--gold);color:#000}
-#titleOv .opts{display:none}
+#titleOv .opts,#pauseOv .opts{display:none}
 .finfo .bio{font:italic 600 11.5px Rubik;color:#bbb;line-height:1.35;margin:2px 0 6px}
 @media (max-height:520px){.finfo .bio{display:none}}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
@@ -491,6 +491,7 @@ body.touch #abil,body.touch #keys{display:none}
     <div class="menu">
       <button class="primary" id="resume">RESUME</button>
       <button id="pHelp">CONTROLS</button>
+      <button id="pReplay">INSTANT REPLAY</button>
       <button id="pPhoto">PHOTO MODE</button>
       <button id="pSet">SETTINGS</button>
       <div class="opts" style="justify-content:center;margin:4px 0 6px">SOUND <button class="tgl" data-s="snd">ON</button> MUSIC <button class="tgl" data-s="mus">OFF</button> FLASHES <button class="tgl" data-s="flash">ON</button></div>
@@ -3817,7 +3818,7 @@ function updateFloats(dt){for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i];
   _fp.copy(f.p).project(camera);if(_fp.z>1){f.el.style.opacity=0;continue}const x=(_fp.x*.5+.5)*innerWidth+f.ox,y=(-_fp.y*.5+.5)*innerHeight-f.t*70+f.dy;
   const sc=f.t<.12?1.5-f.t*4:1;f.el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;f.el.style.opacity=f.t>.6?(.95-f.t)/.35:1}}
 
-function togglePause(force){if(G.mode!=='fight')return;const on=force!=null?force:!$('pauseOv').classList.contains('on');if(on){showOv('pauseOv');$('pPhoto').style.display=G.online?'none':'';if(!G.online)G.paused=true}else{hideOv('pauseOv');hideOv('helpOv');G.paused=false}}
+function togglePause(force){if(G.mode!=='fight')return;const on=force!=null?force:!$('pauseOv').classList.contains('on');if(on){showOv('pauseOv');$('pPhoto').style.display=G.online?'none':'';$('pReplay').style.display=G.online||RP.n<30?'none':'';if(!G.online)G.paused=true}else{hideOv('pauseOv');hideOv('helpOv');G.paused=false}}
 function showSettings(){
   const sl=(k,n)=>`<div class="sr">${n}<input type="range" min="0" max="100" step="5" value="${SET[k]??100}" data-r="${k}"><span class="v" id="sv_${k}">${SET[k]??100}</span></div>`;
   const ch=(k,n,opts)=>`<div class="sr">${n}<div class="sb">${opts.map(([v,t])=>`<button data-c="${k}" data-v="${v}" class="${String(SET[k])===String(v)?'on':''}">${t}</button>`).join('')}</div></div>`;
@@ -3946,7 +3947,8 @@ function setupUI(){
   $('setBody').addEventListener('click',e=>{const c=e.target.closest('[data-c]');if(!c)return;const k=c.dataset.c,raw=c.dataset.v,v=raw==='true'?true:raw==='false'?false:raw;
     const prevQ=SET.q;SET[k]=v;if(k==='snd'||k==='mus')SET.mute=false;saveSet();auResume&&auResume();auApply();if(k==='q'&&v!==prevQ){$('qBtn').textContent=v==='high'?'HIGH':'LOW';setupPost();prewarmFX()}
     if(k==='cam')$('cBtn').textContent=v==='tv'?'BROADCAST':'BEHIND';SFX.ui();showSettings()});$('recBack').onclick=()=>hideOv('recOv');
-  $('pPhoto').onclick=()=>{SFX.ui();photoOn()};$('phSave').onclick=photoSave;$('phFilt').onclick=()=>{PHOTO.film=(PHOTO.film+1)%FILMS.length};$('phExit').onclick=photoOff;
+  $('pPhoto').onclick=()=>{SFX.ui();photoOn()};
+  $('pReplay').onclick=()=>{SFX.ui();hideOv('pauseOv');if(!rpInstant(()=>togglePause(true)))togglePause(true)};$('phSave').onclick=photoSave;$('phFilt').onclick=()=>{PHOTO.film=(PHOTO.film+1)%FILMS.length};$('phExit').onclick=photoOff;
   addEventListener('pointerdown',e=>{if(PHOTO.on&&!e.target.closest('#photoBar'))PHOTO.drag={x:e.clientX,y:e.clientY}});
   addEventListener('pointermove',e=>{const d=PHOTO.drag;if(!PHOTO.on||!d)return;PHOTO.a-=(e.clientX-d.x)*.008;PHOTO.e=clamp(PHOTO.e+(e.clientY-d.y)*.006,-.2,1.35);d.x=e.clientX;d.y=e.clientY});
   addEventListener('pointerup',()=>{PHOTO.drag=null});
@@ -4328,13 +4330,19 @@ function rpStart(done){
   document.body.classList.add('cine','replay');PFX.letter=1;PFX.desat=.28;FLOATS.forEach(f=>f.el.remove());FLOATS.length=0;
   for(const b of G.B)if(b.ribs)b.ribs.forEach(r=>r.clear());if(SET.mus)MUS.int=.2;
   return true}
+// INSTANT REPLAY (pause menu, solo): the last four seconds again, slow and cinematic
+function rpInstant(done){if(RP.n<30||RP.play)return false;
+  const fr=[];for(let k=RP.n;k>0;k--){const f=RP.buf[((RP.i-k)%RP.max+RP.max)%RP.max];if(f)fr.push(f)}if(fr.length<30)return false;
+  const t1=fr[fr.length-1].t,t0=Math.max(fr[0].t,t1-4);
+  RP.play={fr,t:t0,t0,t1,k:t1-1.2,done,ev:RP.ev.filter(e=>e.t>=t0-.02&&e.t<=t1),a0:null,vic:G.B[0].hp/G.B[0].hpMax<G.B[1].hp/G.B[1].hpMax?0:1,inst:1};
+  document.body.classList.add('cine','replay');PFX.letter=1;PFX.desat=.28;FLOATS.forEach(f=>f.el.remove());FLOATS.length=0;return true}
 function rpApply(t){const fr=RP.play.fr;let lo=0,hi=fr.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(fr[m].t<=t)lo=m;else hi=m}
   const A=fr[lo],B=fr[hi],u=B.t>A.t?clamp((t-A.t)/(B.t-A.t),0,1):0;let o=0;for(const b of [G.B[0],G.B[1],REF.b])o=rpRead(b,A.d,B.d,u,o)}
 function rpUpdate(rdt){
   const P=RP.play,k=P.k,sp=P.t<k-.5?.9:P.t<k+.3?.22:.55,prev=P.t;P.t=Math.min(P.t1,P.t+rdt*sp);
   rpApply(P.t);for(const e of P.ev)if(e.t>prev&&e.t<=P.t)hitVisual(e.res,G.B[e.res.a],G.B[1-e.res.a],true);
   // a low, slow orbit side-on to the two of them
-  const V=G.B[1-Math.max(0,G.result.w)],A=other(V),cx=V.chestW.x*.55+A.chestW.x*.45,cz=V.chestW.z*.55+A.chestW.z*.45;
+  const V=P.vic!=null?G.B[P.vic]:G.B[1-Math.max(0,G.result.w)],A=other(V),cx=V.chestW.x*.55+A.chestW.x*.45,cz=V.chestW.z*.55+A.chestW.z*.45;
   if(P.a0==null){let dx=V.chestW.x-A.chestW.x,dz=V.chestW.z-A.chestW.z;const l=Math.hypot(dx,dz)||1;let px=-dz/l,pz=dx/l;if(Math.max(Math.abs(cx+px*3),Math.abs(cz+pz*3))>RING){px=-px;pz=-pz}P.a0=Math.atan2(px,pz)}
   const a=P.a0+(P.t-P.t0)*.28;let R=3.35;while(R>1.8&&Math.max(Math.abs(cx+Math.sin(a)*R),Math.abs(cz+Math.cos(a)*R))>RING+.15)R-=.05;
   CAM.lock=[[cx+Math.sin(a)*R,1.05+(P.t-P.t0)*.07,cz+Math.cos(a)*R],[cx,Math.max(.85,(V.chestW.y+A.headW.y)/2),cz]];
@@ -4385,7 +4393,7 @@ function extras(rdt,adt){
 }
 let jumboT=0;
 function visuals(rdt,adt){
-  if(RP.play){rpUpdate(rdt);for(const b of [G.B[0],G.B[1],REF.b])if(b&&b.f)b.statusVisuals(adt)}
+  if(RP.play){rpUpdate(rdt);for(const b of [G.B[0],G.B[1],REF.b])if(b&&b.f)b.statusVisuals(G.paused?rdt*.5:adt)}
   else{for(const b of G.B)if(b.f&&b.root.visible)b.animate(adt*slowK(b.idx),other(b));
     if(REF.b&&REF.b.root.visible&&(G.mode==='fight'||G.attract))updateRef(adt);rpRecord(adt)}
   ropeVisuals(adt);PA.update(adt);PN.update(adt);fxUpdate(adt);updEmit(adt);updConfetti(adt);extras(rdt,adt);updPFX(rdt);
@@ -4553,6 +4561,7 @@ function runSmoke(){
     {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===11,'SETTINGS lists every option');hideOv('setOv')}
     {solo('blaze','frost');G.flow=[];G.flowT=0;sim(2);ok(G.flow.length>=3&&G.flow.every(p=>p[0]>0&&p[1]>0),'the fight-flow graph samples both health bars ('+G.flow.length+')')}
     ok(rivalry('frost','blaze')&&rivalry('frost','blaze')[0]===RIVALS['blaze|frost'][1]&&!rivalry('blaze','volt')&&FIGHTERS.every(f=>BIOS[f.id]),'rivalries pair up the right lines, and every fighter has a bio');
+    {solo('blaze','frost');rpReset();G.B[1].hp=100;for(let i=0;i<80;i++){step(1/60);rpRecord(1/60)}let back=0;ok(rpInstant(()=>back=1)&&RP.play&&RP.play.inst,'instant replay rolls the last seconds of tape');rpEnd();ok(back===1&&!RP.play,'…and hands back to the pause menu')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
