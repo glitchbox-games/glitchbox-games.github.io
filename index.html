@@ -2048,6 +2048,9 @@ function openTag(first){
   document.getElementById('tag-close').style.display = first ? 'none' : '';
   const inp = document.getElementById('tag-input');
   inp.value = first ? '' : (currentUser && currentUser.name) || '';
+  const owner = !!(lastState && lastState.isOwner);
+  inp.maxLength = owner ? 24 : 16;
+  document.querySelector('#tag-modal .tag-rules').textContent = owner ? 'OWNER · any nametag you like, up to 24 characters' : '3–16 characters · letters, numbers, spaces, _ - . · keep it friendly';
   document.getElementById('tag-err').textContent = '';
   document.getElementById('tag-ideas').innerHTML = '';
   document.getElementById('tag-modal').classList.add('show');
@@ -2065,7 +2068,8 @@ function pickIdea(b){ const inp = document.getElementById('tag-input'); inp.valu
 async function saveTag(){
   const inp = document.getElementById('tag-input'), err = document.getElementById('tag-err'), btn = document.getElementById('tag-save');
   const tag = inp.value.replace(/\s+/g, ' ').trim();
-  if(tag.length < 3){ err.textContent = 'Nametags are 3 to 16 characters.'; return; }
+  const owner = !!(lastState && lastState.isOwner);   // the owner can pick anything (the server checks)
+  if(tag.length < (owner ? 1 : 3)){ err.textContent = owner ? 'Type a nametag.' : 'Nametags are 3 to 16 characters.'; return; }
   btn.disabled = true; err.textContent = '';
   try {
     const r = await api('/api/nametag', { method:'POST', body:{ tag } });

@@ -312,6 +312,16 @@ export class Hub extends DurableObject {
 
   async setTag(token, raw) {
     const me = await this.verifySession(token);
+    // The owner can wear any nametag at all — no word list, no real-name check, no cooldown, even one
+    // someone else has (they get a random tag and pick again). Only markup and blank tags are refused.
+    if (this.isOwnerSub(me)) {
+      const t = String(raw || "").replace(/[\u0000-\u001f<>]/g, "").replace(/\s+/g, " ").trim();
+      if (!t || t.length > 24) throw new HttpError(400, "1 to 24 characters.");
+      const holder = this.sql.exec("SELECT sub, name FROM users WHERE LOWER(name) = LOWER(?) AND sub != ?", t, me).toArray()[0];
+      if (holder) { const nt = this.freeTag(); this.sql.exec("UPDATE users SET name = ?, tag_set = 0 WHERE sub = ?", nt, holder.sub); this.log("tag-reset", holder.sub, "owner took " + holder.name + " → " + nt); }
+      this.sql.exec("UPDATE users SET name = ?, tag_set = 1, tag_at = ? WHERE sub = ?", t, Date.now(), me);
+      return { ok: true, name: t };
+    }
     const tag = cleanTag(raw);
     const u = this.sql.exec("SELECT name, real_name, email, tag_at FROM users WHERE sub = ?", me).toArray()[0];
     if (!u) throw new HttpError(404, "no such user");
