@@ -2924,7 +2924,7 @@ function onOut(i,tko){
 // ════════════════════ MATCH FLOW (host decides) ════════════════════
 const HOME=[[-1.35,-1.35],[1.35,1.35]];
 function setupMatch(fids,names,alts){
-  dropBelts();clearThrown();G.title=false;
+  dropBelts();clearThrown();G.title=false;G.flow=[];G.flowT=0;
   G.rnd=1;G.tl=ROUND_T;G.rdmg=[[],[]];G.rkd=[[],[]];G.result=null;G.kdInfo=null;G.cards=null;clearCombat();rpReset();clearDecals();clearConfetti();
   alts=(alts||[0,0]).map(a=>a|0);if(fids[0]===fids[1]&&alts[0]===alts[1])alts[1]=(alts[0]+1)%NALT;   // mirror match: never the same colours
   G.B.forEach((b,i)=>{if(!b.f||b.f.id!==fids[i]||b.alt!==alts[i])b.build(FBY[fids[i]],alts[i]);b.reset();if(b.ribs)b.ribs.forEach(r=>r.clear());b.name=(names&&names[i])||b.f.name;b.x=HOME[i][0]*1.6;b.z=HOME[i][1]*1.6;b.home=HOME[i];b.yaw=Math.atan2(-b.x,-b.z);b.root.visible=true});
@@ -4057,13 +4057,21 @@ function showEnd(r){
     <table class="stt"><tr><td style="color:${A.f.col};font:400 20px Anton">${A.name}</td><td></td><td style="color:${B.f.col};font:400 20px Anton">${B.name}</td></tr>
     ${row('LANDED',x=>x.landed+' / '+x.thrown)}${row('ACCURACY',x=>x.thrown?Math.round(x.landed/x.thrown*100)+'%':'—')}${row('DAMAGE',x=>Math.round(x.dmg))}
     ${row('KNOCKDOWNS',(x,i)=>s[1-i].kd)}${row('DODGES',x=>x.dodged)}${row('BLOCKS',x=>x.blocked)}</table>
-    <div class="menu" id="endBtns" style="margin-top:14px"></div>`;
+    <canvas id="flowC" width="400" height="90" style="width:100%;height:90px;margin-top:10px"></canvas>
+    <div class="menu" id="endBtns" style="margin-top:10px"></div>`;
   const W=w>=0?G.B[w]:null;$('endHero').innerHTML=W?`<div class="k">${G.ladder&&G.ladder.i>=G.ladder.opps.length&&w===me?'NEW GLITCHBOX CHAMPION':'AND THE WINNER'}</div><div class="n" style="--c:${W.f.col}">${W.f.name}</div><div class="s">${how}</div>`:`<div class="k">THE JUDGES CAN'T SPLIT THEM</div><div class="n">DRAW</div>`;
   if(G.surv&&!G.online){survEnd(r);const S=G.surv,P=recOf(S.f);$('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">SURVIVAL <b>${S.n}</b> ${S.over?(S.best&&S.n?'<i>NEW BEST!</i>':'· BEST '+(P.surv||0)):'WINS SO FAR'}</div>`)}
   if(DAILY.on&&!G.online){const sc=dailyScore(r),c=DAILY.c;let best=REC.daily&&REC.daily.key===c.key?REC.daily.best:0;const nb=sc>best;if(sc>0)achGet('daily');if(nb){REC.daily={key:c.key,best:sc};saveRec();best=sc}
     $('endBody').insertAdjacentHTML('afterbegin',`<div class="dsc">DAILY SCORE <b>${sc.toLocaleString()}</b>${nb&&sc?' <i>NEW BEST!</i>':` · BEST ${best.toLocaleString()}`}</div>`)}
+  drawFlow();
   showOv('endOv');renderEndButtons();
 }
+function drawFlow(){const c=$('flowC'),F=G.flow||[];if(!c||F.length<2)return c&&(c.style.display='none');const x=c.getContext('2d'),w=c.width,h=c.height,pad=6;x.clearRect(0,0,w,h);
+  x.fillStyle='rgba(255,255,255,.04)';x.fillRect(0,0,w,h);x.font='700 9px Rubik';x.fillStyle='rgba(255,255,255,.45)';x.fillText('HEALTH THROUGH THE FIGHT',pad,11);
+  const X=i=>pad+i/(F.length-1)*(w-pad*2),Y=v=>h-pad-v*(h-24);
+  for(let i=1;i<F.length;i++)if(F[i][2]!==F[i-1][2]){x.strokeStyle='rgba(255,255,255,.18)';x.setLineDash([3,3]);x.beginPath();x.moveTo(X(i),16);x.lineTo(X(i),h-pad);x.stroke();x.setLineDash([]);x.fillText('R'+F[i][2],X(i)+3,24)}
+  [0,1].forEach(k=>{x.strokeStyle=G.B[k].f.col;x.lineWidth=2.5;x.lineJoin='round';x.beginPath();F.forEach((p,i)=>i?x.lineTo(X(i),Y(p[k])):x.moveTo(X(i),Y(p[k])));x.stroke()});
+  F.forEach((p,i)=>{if(p[3]){const k=p[3]-1;x.fillStyle='#fff';x.strokeStyle=G.B[k].f.col;x.lineWidth=2;x.beginPath();x.arc(X(i),Y(p[k]),4,0,6.3);x.fill();x.stroke()}})}
 function renderEndButtons(){
   const el=$('endBtns');if(!el||!$('endOv').classList.contains('on'))return;const r=G.result||{};
   let h='';
@@ -4171,6 +4179,7 @@ function getIntent(i,dt){
 }
 function step(dt){
   G.time+=dt;G.phT+=dt;
+  if(G.mode==='fight'&&!G.attract&&G.B[0].f&&(G.phase==='fight'||G.phase==='kd')){G.flowT=(G.flowT||0)-dt;if(G.flowT<=0){G.flowT=.5;(G.flow=G.flow||[]).push([G.B[0].hp/G.B[0].hpMax,G.B[1].hp/G.B[1].hpMax,G.rnd,G.phase==='kd'&&G.kdInfo&&G.flow.length&&!G.flow[G.flow.length-1][3]?G.kdInfo.b+1:0])}}
   if(G.mode==='fight'||G.attract){
     hostTick(dt);
     if(G.phase==='walk')walkTick(dt);
@@ -4524,6 +4533,7 @@ function runSmoke(){
      ok(G.surv.n===1&&near(G.B[0].hp,40+G.B[0].hpMax*.3,.5),'…health carries over with a 30% top-up');G.surv.n=5;survNext();ok(G.bots[1].diff==='champion','…and the CPU sharpens');G.surv=null}
     {const n0=Object.keys(REC.ach||{}).length;achGet('first');ok(Object.keys(REC.ach||{}).length===n0,'achievements never unlock during self-tests');showRecords();ok($('recBody').querySelectorAll('.ai').length===ACH.length,'RECORDS lists all '+ACH.length+' achievements');hideOv('recOv')}
     {const s0=SET.shk;SET.shk=0;CAM.trauma=0;shake(.5);ok(CAM.trauma===0,'settings: screen shake at 0% means no shake');SET.shk=s0;CAM.trauma=0;showSettings();ok($('setBody').querySelectorAll('.sr').length===11,'SETTINGS lists every option');hideOv('setOv')}
+    {solo('blaze','frost');G.flow=[];G.flowT=0;sim(2);ok(G.flow.length>=3&&G.flow.every(p=>p[0]>0&&p[1]>0),'the fight-flow graph samples both health bars ('+G.flow.length+')')}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
