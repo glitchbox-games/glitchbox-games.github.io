@@ -102,6 +102,8 @@ body.hc .bar{outline:2px solid #fff;outline-offset:1px}body.hc .bar.hp .fl{backg
 body.fontwait .logo,body.fontwait .tag,body.fontwait .menu,body.fontwait #bootMsg{visibility:hidden}
 #bootMsg{display:none;font:900 12px Rubik;letter-spacing:.35em;color:var(--gold);margin:6px 0}body.booting #bootMsg{display:block}#bootMsg i{font-style:normal;animation:blink 1s infinite}#bootMsg i:nth-child(2){animation-delay:.2s}#bootMsg i:nth-child(3){animation-delay:.4s}
 body.booting #titleOv .menu{opacity:.35;pointer-events:none}
+.mb{position:absolute;top:3px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--m);color:#111;font:900 10px Rubik;display:grid;place-items:center;box-shadow:0 0 0 2px #000,0 0 8px var(--m)}
+#recBody .rc .mb{top:auto;bottom:6px;right:6px}
 #walk{position:fixed;left:0;right:0;bottom:12vh;z-index:9;pointer-events:none;display:none}
 #walk.on{display:block}
 #walk .bar{position:relative;margin-left:5vw;padding:14px 46px 16px 26px;display:inline-block;background:linear-gradient(100deg,var(--c) 0 8px,rgba(8,8,12,.9) 8px 70%,rgba(8,8,12,0));clip-path:polygon(0 0,100% 0,94% 100%,0 100%);animation:wIn .5s cubic-bezier(.2,1.4,.4,1) both}
@@ -697,6 +699,9 @@ const xpNeed=l=>400+l*150;
 function xpInfo(){let x=REC.xp||0,l=1;while(x>=xpNeed(l)){x-=xpNeed(l);l++}return {l,x,need:xpNeed(l),title:XP_TITLES[Math.min(XP_TITLES.length-1,Math.floor((l-1)/4))]}}
 function xpGain(r){const me=G.B[G.ME],win=r.w===G.ME,ko=/KO/.test(r.how),D=(G.bots[1-G.ME]&&G.bots[1-G.ME].diff)||'contender';
   let x=100+(win?150:0)+(win&&ko?100:0)+G.B[1-G.ME].kd*40+Math.round(Math.max(0,me.hp/me.hpMax)*60);x=Math.round(x*({rookie:.7,contender:1,champion:1.5})[D]||1);return x}
+const MAST=[[1000,'BRONZE','#cd7f32'],[3000,'SILVER','#d8dde6'],[7000,'GOLD','#ffd23a']];
+function mastery(id){const x=((REC.per||{})[id]||{}).xp||0;let m=null;for(const t of MAST)if(x>=t[0])m=t;const nx=MAST.find(t=>x<t[0]);return {xp:x,tier:m,next:nx}}
+const mastBadge=id=>{const M=mastery(id).tier;return M?`<span class="mb" title="${M[1]} MASTERY" style="--m:${M[2]}">${M[1][0]}</span>`:''};
 const recOf=id=>REC.per[id]||(REC.per[id]={w:0,l:0,ko:0,big:0,combo:0,titles:0});
 const saveRec=()=>{try{localStorage.setItem('haymaker.rec',JSON.stringify(REC))}catch(e){}};
 
@@ -3997,8 +4002,8 @@ function showSettings(){
 function showRecords(){
   const tot=REC.w+REC.l;$('recBody').innerHTML=`<div class="rt"><span><b>${REC.w}–${REC.l}</b>RECORD</span><span><b>${tot?Math.round(REC.w/tot*100):0}%</b>WINS</span><span><b>${REC.ko}</b>KOs</span><span><b>${REC.ladders}</b>BELTS</span></div>
     <div class="rg">${(bossOn()?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>{const P=REC.per[f.id]||{};const fought=(P.w||0)+(P.l||0);
-      return `<div class="rc" style="--c:${f.col}">${portrait(f.id,48)}${REC.champ[f.id]?`<span class="t">${ICO('trophy')}</span>`:''}<div class="n">${f.name}</div>
-        <div class="s">${fought?`<b>${P.w||0}–${P.l||0}</b> · <b>${P.ko||0}</b> KO<br>BEST HIT <b>${(P.big||0).toFixed(1)}</b> · COMBO <b>${P.combo||0}</b>`:'<span style="opacity:.5">NOT FOUGHT YET</span>'}${P.titles?`<br><b>${P.titles}×</b> CHAMPION`:''}${P.surv?`<br>SURVIVAL BEST <b>${P.surv}</b>`:''}</div></div>`}).join('')}</div>
+      const MM=mastery(f.id);return `<div class="rc" style="--c:${f.col}">${portrait(f.id,48)}${mastBadge(f.id)}${REC.champ[f.id]?`<span class="t">${ICO('trophy')}</span>`:''}<div class="n">${f.name}</div>
+        <div class="s">${fought?`<b>${P.w||0}–${P.l||0}</b> · <b>${P.ko||0}</b> KO<br>BEST HIT <b>${(P.big||0).toFixed(1)}</b> · COMBO <b>${P.combo||0}</b>`:'<span style="opacity:.5">NOT FOUGHT YET</span>'}${P.titles?`<br><b>${P.titles}×</b> CHAMPION`:''}${P.surv?`<br>SURVIVAL BEST <b>${P.surv}</b>`:''}${fought?`<br>MASTERY <b>${MM.tier?MM.tier[1]:'—'}</b>${MM.next?` · ${MM.xp}/${MM.next[0]}`:''}`:''}</div></div>`}).join('')}</div>
     <div class="rt" style="margin:14px 0 0"><span><b>${Object.keys(REC.ach||{}).length}/${ACH.length}</b>ACHIEVEMENTS</span></div><div class="ag">${ACH.map(([k,n,d])=>`<div class="ai ${(REC.ach||{})[k]?'on':''}"><b>${n}</b><small>${d}</small></div>`).join('')}</div>`;
   showOv('recOv')}
 function renderRec(){const X=xpInfo();$('recLine').textContent=`LEVEL ${X.l} · ${X.title}`+((REC.w||REC.l)?` · RECORD ${REC.w}–${REC.l} · ${REC.ko} KOs`+(REC.ladders?` · ${REC.ladders}× CHAMPION`:''):'')}
@@ -4074,7 +4079,7 @@ function renderSelect(){
   const on=SEL.mode==='online';
   $('selTitle').textContent=on?'ROOM '+NET.code:SEL.mode==='ladder'?'ARCADE LADDER':SEL.mode==='surv'?'SURVIVAL':SEL.mode==='tour'?'TOURNAMENT':'CHOOSE YOUR FIGHTER';
   $('grid').innerHTML=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
-    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
+    return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}</button>`}).join('');
   $('finfo').innerHTML=fighterInfo(FBY[SEL.f]);
   {const f=FBY[SEL.f],hx=c=>'#'+new THREE.Color(c).getHexString();if(!altOK(f.id,SEL.alt))SEL.alt=0;$('altSeg').innerHTML=[0,1,2,3].map(a=>{const L=Object.assign({},f.look,f.alts[a]),ok2=altOK(f.id,a);return `<button data-a="${a}" class="${SEL.alt===a?'on':''} ${a===3?'leg':''} ${ok2?'':'lock'}" style="--a:${hx(L.shorts)};--b:${hx(L.glove)}" title="${a===3?(ok2?'LEGEND colours':'LEGEND — win the arcade ladder with '+f.name+' to unlock'):'Colour '+(a+1)}">${ok2?'':'🔒'}</button>`}).join('')}
   $('oppBox').classList.toggle('hide',SEL.mode!=='quick');
@@ -4214,7 +4219,7 @@ function onEnd(r){
     if(G.online)achGet('online');if(G.bots[1-G.ME]&&G.bots[1-G.ME].diff==='champion')achGet('champcpu');
     REC.vwins=REC.vwins||{};REC.vwins[ARENA.venue]=1;if(ARENA.rain&&ARENA.rain.on)achGet('storm');if(REC.vwins.arena&&REC.vwins.roof&&REC.vwins.pit)achGet('venues');
     if(!G.online&&!G.watch&&!G.local){REC.fwins=REC.fwins||{};REC.fwins[me.f.id]=1;if(FIGHTERS.every(f=>REC.fwins[f.id]))achGet('all')}}
-  G.xpRes=null;if(!SMOKE&&!G.watch&&!G.local&&!G.bag&&!G.online){const before=xpInfo(),gain=xpGain(r);REC.xp=(REC.xp||0)+gain;G.xpRes={before,gain,af:xpInfo()}}
+  G.xpRes=null;if(!SMOKE&&!G.watch&&!G.local&&!G.bag&&!G.online){const before=xpInfo(),gain=xpGain(r);REC.xp=(REC.xp||0)+gain;{const fid=G.B[G.ME].f.id,m0=mastery(fid).tier,P=recOf(fid);P.xp=(P.xp||0)+gain;const m1=mastery(fid).tier;if(m1&&m1!==m0)setTimeout(()=>sub(G.B[G.ME].f.name+' — '+m1[1]+' MASTERY',3),1400)}G.xpRes={before,gain,af:xpInfo()}}
   if(!SMOKE&&!G.watch&&!G.local){const P=recOf(G.B[G.ME].f.id);if(w===G.ME){REC.w++;P.w++;if(ko){REC.ko++;P.ko++}}else if(w>=0){REC.l++;P.l++}saveRec()}
   if(G.ladder&&G.ladder.bossFight){if(w===G.ME&&!SMOKE){const fresh=!REC.boss;REC.boss=1;saveRec();achGet('boss');if(fresh)setTimeout(()=>sub('THE CHAMP IS NOW PLAYABLE',3),2500)}}
   else if(G.ladder&&w===G.ME){G.ladder.i++;if(G.ladder.i>=G.ladder.opps.length){REC.ladders++;REC.champ[G.ladder.f]=1;achGet('champ');if(Object.keys(REC.champ).length>=3)achGet('legend3');if(!SMOKE)recOf(G.ladder.f).titles++;saveRec()}}
@@ -4831,6 +4836,7 @@ function runSmoke(){
     {solo('blaze','frost');place(1);G.forced[0]={...EMPTY,punch:'hook',body:true};sim(SIM);G.forced[0]=EMPTY;const sta0=G.B[1].sta;sim(.6);ok(G.B[1].hp<100&&G.B[1].sta<sta0-2,'a body hook lands and drains stamina ('+G.B[1].hp.toFixed(1)+' hp, '+G.B[1].sta.toFixed(0)+' sta)');
      const bot=new Bot(1,'contender');let sawBody=false;for(let i=0;i<200&&!sawBody;i++){const c=pickCombo(.9,G.B[0]);sawBody=c.some(x=>x.startsWith('b:'))}ok(sawBody,'…and the CPU throws body shots too')}
     {solo('blaze','frost');const bt=new Bot(1,'contender');G.bots[1]=bt;place(1);let blocks=0;for(let i=0;i<14;i++){G.B[0].act=null;startPunch(G.B[0],'jab');bt.intent(1/60);}ok(bt.habit&&bt.habit.jab>4,'the CPU notices a punch you keep throwing (habit '+(bt.habit?bt.habit.jab.toFixed(1):0)+')');G.bots[1]=null}
+    {const P=recOf('volt'),x0=P.xp;P.xp=3500;ok(mastery('volt').tier[1]==='SILVER'&&mastery('volt').next[1]==='GOLD','fighter mastery climbs bronze → silver → gold');P.xp=x0}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
