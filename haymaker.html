@@ -133,6 +133,7 @@ body.booting #titleOv .menu{opacity:.35;pointer-events:none}
 #vs .r .qt{margin-left:auto}
 @keyframes qIn{from{opacity:0;transform:translateY(8px)}to{opacity:.95;transform:none}}
 #vs .rival{position:absolute;left:50%;top:9vh;transform:translateX(-50%) rotate(-3deg);font:400 clamp(22px,3vw,38px) Anton;color:#ffc83a;letter-spacing:.12em;text-shadow:0 0 18px rgba(255,200,58,.7),3px 3px 0 #000;animation:qIn .4s .3s both}
+#vs .series{position:absolute;left:50%;bottom:6vh;transform:translateX(-50%);font:400 clamp(20px,2.6vw,32px) Anton;color:#fff;letter-spacing:.14em;background:rgba(0,0,0,.6);padding:4px 18px;border-radius:10px;border:2px solid var(--gold)}
 #vs .nk{position:relative;font:900 clamp(11px,1.3vw,16px) Rubik;letter-spacing:.42em;color:#fff;text-shadow:0 2px 0 #000;margin-top:8px;opacity:.85}
 #vs .tag{position:relative;font:900 11px Rubik;letter-spacing:.3em;color:#000;background:#fff;padding:3px 8px;align-self:flex-start;margin-bottom:10px;transform:skewX(-10deg)}
 #vs .r .tag{align-self:flex-end}
@@ -3951,6 +3952,7 @@ function checkStart(){if(NET.mode==='host'&&NET.myReady&&NET.peerReady&&NET.peer
 function checkRematch(){if(NET.mode==='host'&&NET.rm&&NET.peerRm)hostGo()}
 function hostGo(){const m={t:'go',v:pickVenue(SEL.venue),f:[SEL.f,NET.peerPick],n:[myName()||FBY[SEL.f].name,NET.peer||FBY[NET.peerPick].name],a:[SEL.alt|0,NET.peerAlt|0]};netSend(m);startOnlineMatch(m)}
 function startOnlineMatch(m){
+  if(!NET.series||NET.seriesPeer!==NET.peer){NET.series=[0,0];NET.seriesPeer=NET.peer}
   G.forfeit=false;
   G.surv=null;
   DAILY.on=false;
@@ -4052,6 +4054,7 @@ const WINQ={blaze:['Told you it\'d get hot.','Somebody call the fire brigade —
 function rivalry(a,b){const k=[a,b].sort().join('|'),L=RIVALS[k];if(!L)return null;const first=[a,b].sort()[0];return a===first?L:[L[1],L[0]]}
 function vsShow(){if(G.attract||SMOKE)return;const el=$('vs'),[A,B]=G.B,RV=rivalry(A.f.id,B.f.id),side=(b,i)=>`<div class="vport">${portrait(b.f.id,Math.min(300,innerHeight*.42)|0,i===1)}</div><div class="tag">${G.local?'PLAYER '+(i+1):i===G.ME&&!G.watch?'YOU':G.online?'RIVAL':'CPU'} · ${i?'BLUE':'RED'} CORNER</div><div class="nm">${(b.name||b.f.name).replace(/[<>&]/g,'')}</div><div class="nk">“${b.f.nick}”</div><div class="qt">${RV?RV[i]:pick(QUOTES[b.f.id]||['…'])}</div>`;
   const l=el.querySelector('.l'),r=el.querySelector('.r');l.style.setProperty('--c',A.f.col);r.style.setProperty('--c',B.f.col);l.innerHTML=side(A,0);r.innerHTML=side(B,1);
+  {let sr=el.querySelector('.series');if(!sr){sr=document.createElement('div');sr.className='series';el.appendChild(sr)}const S=G.online&&NET.series&&(NET.series[0]+NET.series[1])>0?NET.series:null;sr.textContent=S?`SERIES ${S[0]}–${S[1]}`:'';sr.style.display=S?'':'none'}
   {let rb=el.querySelector('.rival');if(!rb){rb=document.createElement('div');rb.className='rival';el.appendChild(rb)}rb.textContent=RV?'★ RIVALRY ★':'';rb.style.display=RV?'':'none'}
   el.className='';void el.offsetWidth;el.classList.add('on');SFX.slide();clearTimeout(vsShow.t);clearTimeout(vsShow.t2);vsShow.t2=setTimeout(()=>SFX.vs(),300);
   vsShow.t=setTimeout(vsHide,2300)}
@@ -4318,6 +4321,7 @@ function onEnd(r){
     REC.vwins=REC.vwins||{};REC.vwins[ARENA.venue]=1;if(ARENA.rain&&ARENA.rain.on)achGet('storm');if(REC.vwins.arena&&REC.vwins.roof&&REC.vwins.pit)achGet('venues');
     if(!G.online&&!G.watch&&!G.local){REC.fwins=REC.fwins||{};REC.fwins[me.f.id]=1;if(FIGHTERS.every(f=>REC.fwins[f.id]))achGet('all')}}
   G.xpRes=null;if(!SMOKE&&!G.watch&&!G.local&&!G.bag&&!G.online){const before=xpInfo(),gain=xpGain(r);REC.xp=(REC.xp||0)+gain;{const fid=G.B[G.ME].f.id,m0=mastery(fid).tier,P=recOf(fid);P.xp=(P.xp||0)+gain;const m1=mastery(fid).tier;if(m1&&m1!==m0)setTimeout(()=>sub(G.B[G.ME].f.name+' — '+m1[1]+' MASTERY',3),1400)}G.xpRes={before,gain,af:xpInfo()}}
+  if(G.online&&NET.series&&w>=0){NET.series[w===G.ME?0:1]++}
   if(!SMOKE&&!G.watch&&!G.local&&!G.forfeit){const P=recOf(G.B[G.ME].f.id);if(w===G.ME){REC.w++;P.w++;if(ko){REC.ko++;P.ko++}}else if(w>=0){REC.l++;P.l++}saveRec()}
   if(G.ladder&&G.ladder.bossFight){if(w===G.ME&&!SMOKE){const fresh=!REC.boss;REC.boss=1;saveRec();achGet('boss');if(fresh)setTimeout(()=>sub('THE CHAMP IS NOW PLAYABLE',3),2500)}}
   else if(G.ladder&&w===G.ME){G.ladder.i++;if(G.ladder.i>=G.ladder.opps.length){REC.ladders++;REC.champ[G.ladder.f]=1;achGet('champ');if(Object.keys(REC.champ).length>=3)achGet('legend3');if(!SMOKE)recOf(G.ladder.f).titles++;saveRec()}}
@@ -4371,7 +4375,7 @@ function showEnd(r){
   const cards=r.tot||(r.cards||[]).map(c=>[c[0].reduce((a,b)=>a+b,0),c[1].reduce((a,b)=>a+b,0)]);
   const judges=r.how.includes('DECISION')||w<0?`<div class="judges">${cards.map((c,i)=>`<div><small>JUDGE ${i+1}</small>${c[0]}–${c[1]}</div>`).join('')}</div>`:'';
   const s=[A.stats,B.stats],row=(k,f)=>`<tr><td>${f(s[0],0)}</td><td class="k">${k}</td><td>${f(s[1],1)}</td></tr>`;
-  $('endBody').innerHTML=`<div class="res" style="color:${col}">${title}</div><div class="how">${(w>=0?G.B[w].name+' WINS · ':'')+how}</div>${judges}
+  $('endBody').innerHTML=`<div class="res" style="color:${col}">${title}</div>${G.online&&NET.series?`<div class="how" style="color:#fff">SERIES ${NET.series[0]}–${NET.series[1]}${NET.series[0]===NET.series[1]?' · ALL SQUARE':NET.series[0]>NET.series[1]?' · YOU LEAD':' · THEY LEAD'}</div>`:''}<div class="how">${(w>=0?G.B[w].name+' WINS · ':'')+how}</div>${judges}
     <table class="stt"><tr><td style="color:${A.f.col};font:400 20px Anton">${A.name}</td><td></td><td style="color:${B.f.col};font:400 20px Anton">${B.name}</td></tr>
     ${row('LANDED',x=>x.landed+' / '+x.thrown)}${row('ACCURACY',x=>x.thrown?Math.round(x.landed/x.thrown*100)+'%':'—')}${row('DAMAGE',x=>Math.round(x.dmg))}
     ${row('KNOCKDOWNS',(x,i)=>s[1-i].kd)}${row('DODGES',x=>x.dodged)}${row('BLOCKS',x=>x.blocked)}</table>
@@ -4968,6 +4972,7 @@ function runSmoke(){
     {const real=navigator.getGamepads;let fx=null;const pad={connected:true,mapping:'standard',axes:[0,0],buttons:[],vibrationActuator:{playEffect:(t,o)=>{fx=o}}};try{Object.defineProperty(navigator,'getGamepads',{value:()=>[pad],configurable:true})}catch(e){}
      const sm=window.SMOKE;PAD.on=true;const keep=SET.rumble;SET.rumble=true;rumble(.5,.6,100);ok(fx===null,'rumble stays off during self-tests');PAD.on=false;try{Object.defineProperty(navigator,'getGamepads',{value:real,configurable:true})}catch(e){}SET.rumble=keep}
     {solo('volt','titan');G.result={w:0,how:'KO',rnd:2};Object.assign(G.B[0].stats,{landed:27,thrown:40});G.B[1].kd=1;const t=shareText();ok(/VOLT beat TITAN by KO · Round 2/.test(t)&&/27\/40 landed · 68%/.test(t),'the shareable result reads right');G.result=null}
+    {NET.series=null;NET.peer='BOB';const m={f:['blaze','frost'],n:['A','B'],a:[0,0],v:'arena'};NET.mode='host';startOnlineMatch(m);ok(NET.series&&NET.series[0]===0,'an online session starts the series at 0–0');G.forced=[EMPTY,EMPTY];G.online=false;NET.mode='off';NET.series=null;NET.peer=null}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
