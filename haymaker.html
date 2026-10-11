@@ -487,7 +487,7 @@ body.touch #abil,body.touch #keys{display:none}
       <kbd>V · M</kbd><span>Switch camera (broadcast or behind you) · mute everything.</span>
       <kbd>ESC</kbd><span>Pause</span>
       <kbd>1 2 3 4</kbd><span>Online only: quick chat — GG! · NICE ONE · OOPS · COME ON!</span>
-      <kbd>2 PLAYER</kbd><span>Pick 2 PLAYER as the difficulty in Quick Fight: player 1 on the keyboard (or the first controller), player 2 on a controller. The opponent you pick is player 2's fighter.</span>
+      <kbd>2 PLAYER</kbd><span>Pick 2 PLAYER as the difficulty in Quick Fight: player 1 on the keyboard (or the first controller), player 2 on a controller — or on the same keyboard: arrows move, , . / ' punch, ENTER block, R-SHIFT dodge, \\ haymaker, [ ] abilities, = ultimate. The opponent you pick is player 2's fighter.</span>
       <kbd>🎮 PAD</kbd><span>Stick moves · A B X Y punch · RB block · RT haymaker · LB dodge · LT duck · D-pad ← → abilities, ↑ ultimate, ↓ taunt · START pause. In menus A confirms, B goes back, D-pad picks a fighter.</span>
     </div>
     <h3>THE FIGHT</h3>
@@ -3686,8 +3686,12 @@ const EMPTY={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};
 const KMAP={KeyJ:'jab',KeyK:'cross',KeyL:'hook',KeyI:'upper',KeyU:'hook',KeyO:'upper',Numpad4:'jab',Numpad5:'cross',Numpad6:'hook',Numpad8:'upper',KeyQ:'q',KeyE:'e',KeyR:'r',ShiftLeft:'dodge',ShiftRight:'dodge',KeyC:'duck',KeyT:'taunt'};
 function toggleMute(){SET.mute=!SET.mute;saveSet();auResume();auApply();renderToggles();sub(SET.mute?'SOUND MUTED (M)':'SOUND ON',1.1)}
 addEventListener('pointerdown',()=>{if(G.phase==='walk'&&G.mode==='fight'&&!G.online)hostPhase('intro')});
+const KMAP2={Comma:'jab',Period:'cross',Slash:'hook',Quote:'upper',ShiftRight:'dodge',BracketLeft:'q',BracketRight:'e',Equal:'r',Semicolon:'taunt'};
+const p2Keys=()=>G.local&&G.mode==='fight'&&!(PAD2.on&&PAD2.pad);
+function p2KeyPoll(){if(!p2Keys())return;const P=PAD2;P.x=(KEYS.ArrowRight?1:0)-(KEYS.ArrowLeft?1:0);P.y=(KEYS.ArrowDown?1:0)-(KEYS.ArrowUp?1:0);P.block=!!(KEYS.Enter||KEYS.NumpadEnter);P.hay=!!KEYS.Backslash;P.on=true}
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT')return;
+  if(p2Keys()&&!e.repeat&&KMAP2[e.code]){PAD2.press.push(KMAP2[e.code]);if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&PUNCH[KMAP2[e.code]]){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.id==='toro'?2:1}KEYS[e.code]=true;e.preventDefault();return}
   auResume();
   if(RP.play&&!e.repeat){rpEnd();e.preventDefault();return}
   if(G.phase==='walk'&&G.mode==='fight'&&!e.repeat&&e.code!=='Escape'){hostPhase('intro');e.preventDefault();return}
@@ -3737,7 +3741,7 @@ function padPoll(){const ps=navigator.getGamepads?navigator.getGamepads():[];con
     if(G.mode==='select'&&(down(14)||down(15))){const i=FIGHTERS.findIndex(f=>f.id===SEL.f),n=(i+(down(15)?1:-1)+FIGHTERS.length)%FIGHTERS.length;const c=document.querySelector(`#grid [data-f=${FIGHTERS[n].id}]`);if(c)c.click()}
     if(down(1)){const bk=document.querySelector('.ov.on #selBack, .ov.on #helpBack, .ov.on #recBack, .ov.on #resume');if(bk)bk.click()}
     if(down(0)){const go=document.querySelector('.ov.on .primary, .ov.on #selGo');if(go)go.click()}}}
-function padP2(gp){const P=PAD2;if(!gp){P.on=false;P.x=P.y=0;P.block=P.hay=false;return}
+function padP2(gp){const P=PAD2;if(!gp){P.pad=false;if(!p2Keys()){P.on=false;P.x=P.y=0;P.block=P.hay=false}return}P.pad=true;
   const b=gp.buttons.map(x=>x.pressed||x.value>.5),pr=P.prev,down=i=>b[i]&&!pr[i];P.prev=b;P.on=true;
   let x=gp.axes[0]||0,y=gp.axes[1]||0;if(Math.hypot(x,y)<.22){x=0;y=0}if(b[12]&&!b[14]&&!b[15])y=y;P.x=x;P.y=y;P.block=!!b[5];P.hay=!!b[7];
   const map={0:'jab',1:'cross',2:'hook',3:'upper',4:'dodge',6:'duck',14:'q',15:'e',12:'r',13:'taunt'};for(const i in map)if(down(+i))P.press.push(map[i]);
@@ -3752,7 +3756,7 @@ function padIntent(i,P){const it={mx:0,mz:0,block:false,punch:null,dodge:false,a
   if(duck){it.mx=0;it.mz=0}return it}
 function playerIntent(){
   const it={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};
-  let up=(KEYS.KeyW||KEYS.ArrowUp?1:0)-(KEYS.KeyS||KEYS.ArrowDown?1:0),rt=(KEYS.KeyD||KEYS.ArrowRight?1:0)-(KEYS.KeyA||KEYS.ArrowLeft?1:0);
+  const ar=!p2Keys();let up=(KEYS.KeyW||ar&&KEYS.ArrowUp?1:0)-(KEYS.KeyS||ar&&KEYS.ArrowDown?1:0),rt=(KEYS.KeyD||ar&&KEYS.ArrowRight?1:0)-(KEYS.KeyA||ar&&KEYS.ArrowLeft?1:0);
   if(STICK.on){rt=STICK.x;up=-STICK.y}
   if(PAD.on&&(PAD.x||PAD.y)){rt=PAD.x;up=-PAD.y}
   if(up||rt){
@@ -4131,7 +4135,7 @@ function startSolo(myF,oppF,diff,watch){rpStop();G.surv=null;G.tour=null;G.local
   const oa=G.ladder?(G.ladder.i===G.ladder.opps.length-1?3:Math.floor(Math.random()*3)):myF===oppF?(SEL.alt+1)%3:0;setupMatch([myF,oppF],[FBY[myF].name,FBY[oppF].name],[SEL.alt,oa]);G.bots=[null,new Bot(1,diff)];G.diff=diff;
   applyVenue(diff==='bag'?'gym':pickVenue(SEL.venue));G.mode='fight';hideAllOv();showHUD(true);REF.b.root.visible=true;setPhase(G.bag||SMOKE||!SET.walk?'intro':'walk');
   if(G.bag){Object.assign(TR,{last:0,combo:0,comboT:0,log:[],perfect:0});TUT.on=false;trainSet(TR.dummy);tutUI()}
-  if(G.local){G.bots=[null,null];PAD2.prev=[];if(!(navigator.getGamepads&&[...navigator.getGamepads()].some(p=>p&&p.connected)))sub('PLAYER 2: CONNECT A CONTROLLER AND PRESS A BUTTON',4)}
+  if(G.local){G.bots=[null,null];PAD2.prev=[];if(!(navigator.getGamepads&&[...navigator.getGamepads()].some(p=>p&&p.connected)))sub('PLAYER 2: ARROWS MOVE · , . / \' PUNCH · ENTER BLOCK · R-SHIFT DODGE (OR PLUG IN A CONTROLLER)',5)}
   if(G.watch){G.bots[0]=new Bot(0,diff==='bag'?'contender':diff);if(G.bots[1].diff==='bag')G.bots[1]=new Bot(1,'contender')}
   // the last bout of the ladder is for the belt: the champion walks out wearing it
   G.title=!!(G.ladder&&G.ladder.i===G.ladder.opps.length-1);if(G.title&&G.phase==='walk')giveBelt(G.B[1],true);
@@ -4617,7 +4621,7 @@ function blackWatch(rdt){
 let last=performance.now();const PERF={t:0,n:0,checked:false};
 function frame(now){
   requestAnimationFrame(frame);
-  const raw=Math.max(0,(now-last)/1000),rdt=Math.min(.05,raw);last=now;padPoll();
+  const raw=Math.max(0,(now-last)/1000),rdt=Math.min(.05,raw);last=now;padPoll();p2KeyPoll();
   if(!PERF.checked&&G.mode==='fight'&&!document.hidden&&raw<.5){PERF.t+=raw;PERF.n++;if(PERF.t>4){PERF.checked=true;if(PERF.n/PERF.t<32&&SET.q==='high'){SET.q='low';saveSet();setupPost();prewarmFX();sub('GRAPHICS SET TO LOW FOR A SMOOTHER FIGHT',2.5)}}}
   let sdt=rdt;if(CAM.slowT>0){CAM.slowT-=rdt;if(!SET.calm)sdt*=CAM.slow}
   let adt=sdt;if(CAM.hitstop>0){CAM.hitstop-=rdt;if(!G.online)sdt*=.07;adt*=.07}
@@ -4767,6 +4771,8 @@ function runSmoke(){
      abil('champ','frost','q',1.2);sim(.8);ok(G.B[1].hp<100,'his Ground Pound lands ('+G.B[1].hp.toFixed(1)+')')}
     {tourStart('blaze');ok(G.tour.rounds[0].length===8&&G.tour.rounds[0].includes('blaze')&&tourMyOpp(),'TOURNAMENT: an 8-fighter bracket with you in it');tourAdvance(true);ok(G.tour.rounds[1].length===4&&G.tour.rounds[1].includes('blaze'),'…win and you reach the semis');
      tourAdvance(true);tourAdvance(true);ok(G.tour.won&&G.tour.rounds[3][0]==='blaze','…three wins lifts the trophy');hideOv('tourOv');G.tour=null}
+    {startSolo('blaze','titan','p2');G.forced=null;G.phase='fight';PAD2.pad=false;PAD2.press.length=0;dispatchEvent(new KeyboardEvent('keydown',{code:'Period'}));KEYS.ArrowLeft=true;p2KeyPoll();const it=getIntent(1,1/60);KEYS.ArrowLeft=false;
+     ok(it.punch==='cross'&&PAD2.x===-1,'2 PLAYER on one keyboard: player 2 punches with . and moves with the arrows');const i1=playerIntent();ok(!i1.mx&&!i1.mz,'…and the arrows no longer move player 1');G.local=false;PAD2.on=false;G.forced=[EMPTY,EMPTY]}
     abil('kitsune','frost','q',2.5);sim(.7);ok(G.B[1].hp<100&&G.B[1].st.burn>0,'Foxfire wisps burn ('+G.B[1].hp.toFixed(1)+')');
     abil('kitsune','frost','e',2.5);sim(.6);ok(G.B[1].st.charm>0,'Charm lands');{const d0=Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z);G.forced[1]={...EMPTY,mz:1};sim(.4);
       ok(Math.hypot(G.B[0].x-G.B[1].x,G.B[0].z-G.B[1].z)>d0+.2,'…and a charmed fighter walking in backs off instead');G.forced[1]=EMPTY}
