@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Tank War 3D',        file:'tank-war-3d.html',            emoji:'🪖',color:['#0b1a10','#1c3a52'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Tanks, ships, jets and choppers in 3D. Rack up kills to unlock variants, fight 7v7 or take on friends online'},
   {name:'Haymaker',           file:'haymaker.html',               emoji:'🥊',color:['#160805','#2e1206'],category:'multiplayer',tags:['new','hot','mp'],blurb:'3D boxing with superpowers. Charge up a HAYMAKER, block at the last second and knock your friends out. 12 fighters, a secret boss, make your own fighter, fight on a beach or in space. Play the CPU, a friend on one keyboard, or online 1v1'},
   {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil - race up to 7 friends on the same cars'},
   {name:'Heist Crew',         file:'heist-crew.html',             emoji:'💰',color:['#05070c','#162036'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hacker, locksmith, muscle, lookout. Sneak past guards and cameras, crack the vault, make the van. 1 to 4 players'},
@@ -656,6 +657,28 @@ const DRAW={
   _SC(c);
 },
 
+'tank-war-3d':(c)=>{
+  _GV(c,0,0,320,92,'#3f78bc','#9cbfdc');
+  _GV(c,0,92,320,108,'#5c8a3a','#2f5420');
+  _F(c,0,96,320,5,'#2d6aa8');                                  // river
+  c.fillStyle='#55585e';c.beginPath();c.moveTo(130,200);c.lineTo(150,101);c.lineTo(168,101);c.lineTo(205,200);c.fill();
+  for(let y=110;y<200;y+=18)_F(c,155+(y-100)*.12,y,3,9,'#d8d8c8');
+  // sandbag pit
+  c.fillStyle='#c4a46c';c.beginPath();c.ellipse(52,150,34,13,0,0,6.28);c.fill();_C(c,52,148,9,'#6b5432');_L(c,52,146,78,136,'#3a2c1a',3);
+  // jet
+  c.fillStyle='#26407a';c.beginPath();c.moveTo(250,40);c.lineTo(196,48);c.lineTo(214,44);c.lineTo(180,30);c.lineTo(196,30);c.lineTo(224,40);c.closePath();c.fill();
+  _C(c,181,38,4,'#ffd060');_C(c,181,38,7,'rgba(255,200,80,.35)');
+  // tank
+  const tk=(x,y,b,t,k)=>{c.save();c.translate(x,y);c.scale(k,k);
+    _F(c,-34,6,68,12,'#2a2a22');for(let i=0;i<6;i++)_C(c,-27+i*11,12,4.5,'#4a4a3e');
+    c.fillStyle=b;c.beginPath();c.moveTo(-36,6);c.lineTo(-30,-6);c.lineTo(32,-6);c.lineTo(38,6);c.fill();
+    c.fillStyle=t;c.beginPath();c.moveTo(-16,-6);c.lineTo(-12,-18);c.lineTo(14,-18);c.lineTo(18,-6);c.fill();
+    _F(c,14,-15,40,4,t);_F(c,52,-16,6,6,'#2a2a22');c.restore();};
+  tk(232,128,'#a89060','#c4ac78',.9);tk(120,168,'#d2bb86','#e6d29e',1.25);
+  _C(c,288,118,10,'rgba(255,140,40,.7)');_C(c,288,118,5,'#ffe070');
+  _SC(c);
+},
+
 'pixel-war':(c)=>{
   _GV(c,0,0,320,115,'#0c1a00','#1e3200');
   _GV(c,0,115,320,85,'#142800','#0e1e00');
@@ -1042,7 +1065,7 @@ const THUMB_IMGS = {};
 // Which games actually have a painted thumbs/<gid>.png. Asking for every game's file
 // meant ~43 failed downloads (404s) on every hub and play-page visit. Add a gid here
 // when a new shot goes into thumbs/.
-const THUMB_FILES = new Set(['gridlock','haymaker']);
+const THUMB_FILES = new Set(['gridlock','haymaker','tank-war-3d']);
 function drawThumb(ctx, g){
   const gid = g.file.replace('.html','');
   (DRAW[gid] || DRAW.fallback)(ctx, g);
