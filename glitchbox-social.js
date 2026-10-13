@@ -5,12 +5,12 @@
    index.html so it stays readable:
 
      • profiles + badges        (click a friend, or your own profile)
-     • 🏆 leaderboards           (most played this week + high scores)
+     • 🏆 leaderboards           (high scores per game)
      • 🔐 My Data                (see / download / delete what's kept about you)
      • ban appeals              (form on the ban screen)
      • daily challenges         (token shop)
      • continue playing row     (top of the hub)
-     • staff alerts             (owner + moderators: new reports / appeals)
+     • staff alerts             (owner + moderators: new reports / appeals; owner: ban requests)
 
    Uses the hub's globals (api, esc, GAMES, gameURL, currentUser, lastState,
    avatarHTML, noticeToast, grant, …) and exposes window.GBSocial.
@@ -262,12 +262,10 @@
     const got = (p.badges || []).filter(b => b.got).length;
     modal('<div class="gbs-head">' + av(p) + '<div><div class="gbs-name">' + E(p.name) + (p.self ? ' <span class="gbs-muted">(you)</span>' : '') + '</div>' +
         '<div class="gbs-muted">Member since ' + (p.created ? new Date(p.created).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '-') +
-        ' · ' + p.friends + ' friend' + (p.friends === 1 ? '' : 's') + (p.totalMinutes != null ? ' · ' + mins(p.totalMinutes) + ' played this month' : '') + '</div></div></div>' +
+        ' · ' + p.friends + ' friend' + (p.friends === 1 ? '' : 's') + '</div></div></div>' +
       now +
       (fr && !p.self && typeof sendTokens === 'function' ? '<div class="gbs-actions" style="margin:10px 0 0"><button class="gbs-btn" onclick="GBSocial.close();sendTokens(\'' + E(p.sub) + '\')">🪙 Send tokens</button></div>' : '') +
       '<div class="gbs-h">// BADGES · ' + got + ' / ' + (p.badges || []).length + '</div>' + badgesHTML(p.badges) +
-      (p.topGames && p.topGames.length ? '<div class="gbs-h">// FAVOURITE GAMES</div>' + p.topGames.map(g =>
-        '<a class="gbs-row" style="text-decoration:none;color:inherit" href="' + E(gameURL(g.game)) + '"><span class="grow">' + E(gname(g.game)) + '</span><span class="num">' + mins(g.minutes) + '</span></a>').join('') : '') +
       (p.scores && p.scores.length ? '<div class="gbs-h">// BEST SCORES</div>' + p.scores.map(s =>
         '<div class="gbs-row"><span class="grow">' + E(gname(s.game)) + '</span><span class="num">' + E(s.score) + '</span></div>').join('') : ''));
   }
@@ -280,7 +278,7 @@
     box.innerHTML = '<div class="profile-section-title">// YOUR BADGES <span id="gbs-own-count"></span></div>' +
       '<div class="gbs-own"><div id="gbs-own-badges" class="gbs-muted">Loading…</div>' +
       '<label class="gbs-toggle"><input type="checkbox" id="gbs-share" ' + (hide ? '' : 'checked') + ' onchange="GBSocial.setPrivacy(!this.checked)">' +
-        'Let friends and leaderboards see what I play</label>' +
+        'Let friends see what I\'m playing right now</label>' +
       '<div class="gbs-actions"><button class="gbs-btn" onclick="GBSocial.openProfile()">👤 My profile</button>' +
         '<button class="gbs-btn" onclick="GBSocial.openBoards()">🏆 Leaderboards</button>' +
         '<button class="gbs-btn" onclick="GBSocial.openMyData()">🔐 My data</button></div></div>';
@@ -296,32 +294,38 @@
     try {
       await call('/api/privacy', { method: 'POST', body: { hide: !!hide } });
       if (lastState && lastState.profile) lastState.profile.hide_activity = hide ? 1 : 0;
-      toast(hide ? '🙈 PRIVATE' : '👀 SHARING', hide ? 'Friends and leaderboards no longer see what you play.' : 'Friends can see what you play again.');
+      toast(hide ? '🙈 PRIVATE' : '👀 SHARING', hide ? 'Friends no longer see what you\'re playing.' : 'Friends can see what you\'re playing again.');
     } catch (e) { toast('⚠️', e.message); }
   }
 
   // ── leaderboards ───────────────────────────────────────────────────────────
   async function openBoards(game) {
-    game = game || '*';
-    const opts = '<option value="*">🏟️ The whole arcade</option>' + games().slice().sort((a, b) => a.name.localeCompare(b.name))
-      .map(g => '<option value="' + E(g.file) + '"' + (g.file === game ? ' selected' : '') + '>' + E((g.emoji ? g.emoji + ' ' : '') + g.name) + '</option>').join('');
-    const head = '<div class="gbs-title">🏆 LEADERBOARDS</div>' +
+    let d;
+    // No game picked yet: ask which games have scores and open the first one.
+    if (!game || game === '*') {
+      try { d = await call('/api/leaderboard?game=*'); } catch (e) { modal('<div class="gbs-title">🏆 HIGH SCORES</div><div class="gbs-muted">' + E(e.message) + '</div>'); return; }
+      boardGames = d.games || [];
+      if (!boardGames.length) { modal('<div class="gbs-title">🏆 HIGH SCORES</div><div class="gbs-muted" style="margin-top:12px">No high scores yet. ' +
+        'Games that keep score put your best one here.</div>'); return; }
+      game = boardGames[0];
+    }
+    const list = boardGames.indexOf(game) === -1 ? boardGames.concat([game]) : boardGames;
+    const opts = list.map(f => '<option value="' + E(f) + '"' + (f === game ? ' selected' : '') + '>' + E(gname(f)) + '</option>').join('');
+    const head = '<div class="gbs-title">🏆 HIGH SCORES</div>' +
       '<select class="gbs-in" id="gbs-board-pick" onchange="GBSocial.openBoards(this.value)">' + opts + '</select>';
     modal(head + '<div class="gbs-muted" style="margin-top:12px">Loading…</div>');
-    let d;
     try { d = await call('/api/leaderboard?game=' + encodeURIComponent(game)); }
     catch (e) { modal(head + '<div class="gbs-muted" style="margin-top:12px">' + E(e.message) + '</div>'); return; }
     const mine = signedIn() ? currentUser.sub : '';
-    const rows = (list, val) => list.map((x, i) =>
+    const rows = d.scores.map((x, i) =>
       '<div class="gbs-row' + (x.sub === mine ? ' me' : '') + '"><span class="rank">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) + '</span>' + av(x) +
-      '<span class="grow">' + E(x.name) + (x.sub === mine ? ' (you)' : '') + '</span><span class="num">' + val(x) + '</span></div>').join('');
+      '<span class="grow">' + E(x.name) + (x.sub === mine ? ' (you)' : '') + '</span><span class="num">' + E(x.score) + '</span></div>').join('');
     modal(head +
-      '<div class="gbs-h">// MOST PLAYED THIS WEEK</div>' +
-      (d.time.length ? rows(d.time, x => mins(x.minutes)) : '<div class="gbs-muted">Nobody yet - play a while and you\'re on it.</div>') +
-      (game !== '*' ? '<div class="gbs-h">// HIGH SCORES' + (d.low ? ' · lowest wins' : '') + '</div>' +
-        (d.scores.length ? rows(d.scores, x => E(x.score)) : '<div class="gbs-muted">No scores posted for this game yet.</div>') : '') +
-      '<div class="gbs-muted" style="margin-top:14px">Only signed-in players show up, as first name + initial. Hide yourself from your profile.</div>');
+      '<div class="gbs-h">// BEST SCORES' + (d.low ? ' · lowest wins' : '') + '</div>' +
+      (rows || '<div class="gbs-muted">No scores posted for this game yet.</div>') +
+      '<div class="gbs-muted" style="margin-top:14px">Only signed-in players show up, by nametag.</div>');
   }
+  let boardGames = [];
 
   // ── My Data ────────────────────────────────────────────────────────────────
   // Everything the server keeps about you, plus what this browser keeps, with a
@@ -348,9 +352,6 @@
     lastExport = { exported: new Date().toISOString(), server: d, thisBrowser: localData() };
     const kv = pairs => '<div class="gbs-kv">' + pairs.filter(p => p[1] !== undefined && p[1] !== null && p[1] !== '')
       .map(p => '<b>' + E(p[0]) + '</b><span>' + p[1] + '</span>').join('') + '</div>';
-    const acts = (d.activity || []).slice(0, 40).map(a =>
-      '<div class="gbs-row"><span class="gbs-muted" style="width:120px">' + when(a.at) + '</span><span class="grow">' +
-      E(a.game === '~' ? '💤 went offline' : a.game ? gname(a.game) : '🏠 the hub') + '</span></div>').join('');
     // The server keeps only the kind of device and a scrambled network code now.
     const netOf = c => { const m = /^net:([0-9a-f]{8})/.exec(String(c || '')); return m ? m[1].toUpperCase().replace(/^(.{4})/, '$1-') + ' (scrambled - your IP address isn\'t kept)' : ''; };
     const deviceOf = ua => { ua = String(ua || ''); if (ua && !/[/;(]/.test(ua)) return ua; return /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /CrOS/.test(ua) ? 'Chromebook' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'Mac' : ua ? 'Other' : ''; };
@@ -369,7 +370,7 @@
         ['Nametag (what others see)', E(a.nametag || a.name)], ['Google name (only the owner sees it)', E(a.google_name || '')], ['Email (only the owner sees it)', E(a.email)], ['Friend code', E(a.code)], ['Joined', a.created ? when(a.created) : ''],
         ['Last seen', a.last_seen ? when(a.last_seen) : ''], ['Network', E(netOf(a.network_code))], ['Device', E(deviceOf(a.device))],
         ['Terms', a.tos_version ? 'agreed (' + E(a.tos_version) + ') ' + (a.tos_at ? when(a.tos_at) : '') : 'not agreed'],
-        ['Activity', a.hide_activity ? 'hidden from friends' : 'friends can see it'], ['Role', a.role === 'mod' ? 'moderator' : '']]) +
+        ['What you\'re playing now', a.hide_activity ? 'hidden from friends' : 'friends can see it'], ['Role', a.role === 'mod' ? 'moderator' : '']]) +
         '<div class="gbs-h">// PEOPLE</div>' + kv([
           ['Friends', E((d.friends || []).join(', ') || 'none')], ['Blocked', E((d.blocked || []).join(', ') || 'nobody')],
           ['Reports you made', String((d.reportsYouMade || []).length)], ['Reports about you', String(d.reportsAboutYou || 0)]]) +
@@ -381,11 +382,8 @@
           ['Sent', E((d.tokensSent || []).map(x => x.tokens + ' to ' + (x.to || 'a deleted player')).join(', ') || 'none')],
           ['Received', E((d.tokensReceived || []).map(x => x.tokens + ' from ' + (x.from || 'a deleted player')).join(', ') || 'none')]]);
     }
-    const older = new Set((d.dailyPlay || []).map(x => x.day)).size;
-    html += '<div class="gbs-h">// WHAT YOU\'VE BEEN DOING · LAST 7 DAYS</div>' + (acts || '<div class="gbs-muted">Nothing recorded.</div>') +
-      ((d.activity || []).length > 40 ? '<div class="gbs-muted">…and ' + (d.activity.length - 40) + ' more in the download.</div>' : '') +
-      (older ? '<div class="gbs-muted">Before that, only a total per game per day is kept (' + older + ' day' + (older > 1 ? 's' : '') +
-        ', deleted after a month). It\'s in the download.</div>' : '') +
+    html += '<div class="gbs-h">// GAMES YOU PLAYED</div><div class="gbs-muted">Not kept. GLITCHBOX doesn\'t record which games you played ' +
+        'or for how long - only which game you\'re in right now, while you\'re in it.</div>' +
       '<div class="gbs-h">// IN THIS BROWSER</div><div class="gbs-muted">Tokens, unlocks, favorites and settings live only in this browser: ' +
         Object.keys(lastExport.thisBrowser).length + ' items. They\'re in the download too.</div>' +
       '<div class="gbs-actions" style="margin-top:16px"><button class="gbs-btn solid" onclick="GBSocial.download()">⬇ Download everything</button>' +
@@ -476,18 +474,20 @@
   }
   function checkAlerts(a) {
     if (!a) return;
+    const owner = !!(typeof lastState !== 'undefined' && lastState && lastState.isOwner);
     const seen = J('glitchbox.alertSeen', null);
     if (seen) {
       if (a.lastReport > seen.lastReport) notify('New report', 'A player was reported. Open the console → Reports.');
       if (a.lastAppeal > seen.lastAppeal) notify('New ban appeal', 'Someone asked to be unbanned. Open the console → Appeals.');
+      if (owner && a.lastBanRequest > (seen.lastBanRequest || 0)) notify('Ban request', 'A moderator wants to ban someone. Open the console → Reports to approve or deny it.');
     }
-    S('glitchbox.alertSeen', { lastReport: a.lastReport, lastAppeal: a.lastAppeal });
+    S('glitchbox.alertSeen', { lastReport: a.lastReport, lastAppeal: a.lastAppeal, lastBanRequest: a.lastBanRequest || 0 });
     const nav = $('adm-nav-item');
     if (nav) {
       let b = nav.querySelector('.nav-alert');
-      const n = (a.appeals || 0) + (a.reports || 0);
+      const reqs = owner ? (a.banRequests || 0) : 0, n = (a.appeals || 0) + (a.reports || 0) + reqs;
       if (!b && n) { b = document.createElement('span'); b.className = 'nav-alert'; nav.appendChild(b); }
-      if (b) { b.textContent = n; b.style.display = n ? '' : 'none'; b.title = (a.reports || 0) + ' reports · ' + (a.appeals || 0) + ' appeals waiting'; }
+      if (b) { b.textContent = n; b.style.display = n ? '' : 'none'; b.title = (a.reports || 0) + ' reports · ' + (a.appeals || 0) + ' appeals' + (owner ? ' · ' + reqs + ' ban requests' : '') + ' waiting'; }
     }
   }
   async function enableAlerts() {
@@ -517,17 +517,17 @@
     lastState.friends = [{ sub: 'f1', name: 'Dave', online: 1, playing: 'gridlock.html', room: 'AB12' },
                          { sub: 'f2', name: 'Eve', online: 1, playing: 'idle-universe.html', room: null }];
     lastState.profile = { sub: 'me', code: 'ZZZZ', hide_activity: 0 };
-    const badges = [{ id: 'first', e: '🎮', name: 'First Game', desc: 'Play any game', got: true }, { id: 'social', e: '👥', name: 'Social', desc: 'Have 3 friends', got: false }];
+    const badges = [{ id: 'saver', e: '💾', name: 'Saver', desc: 'Make a cloud save', got: true }, { id: 'social', e: '👥', name: 'Social', desc: 'Have 3 friends', got: false }];
     window.api = async (path, opts) => {
       sent.push({ path, body: opts && opts.body });
       if (path.indexOf('/api/profile') === 0) return { sub: path.indexOf('f1') !== -1 ? 'f1' : 'me', name: path.indexOf('f1') !== -1 ? 'Dave' : 'Lev',
         created: Date.now() - 864e5 * 40, friends: 3, online: true, playing: 'gridlock.html', hidden: false, self: path.indexOf('f1') === -1,
-        totalMinutes: 125, topGames: [{ game: 'gridlock.html', minutes: 90 }], scores: [{ game: 'gridlock.html', score: 300 }], badges };
-      if (path.indexOf('/api/leaderboard') === 0) return { time: [{ sub: 'f1', name: 'Dave S.', minutes: 90 }, { sub: 'me', name: 'Lev K.', minutes: 30 }],
-        scores: [{ sub: 'f1', name: 'Dave S.', score: 300 }], low: false };
+        scores: [{ game: 'gridlock.html', score: 300 }], badges };
+      if (path === '/api/leaderboard?game=*') return { game: '*', games: ['gridlock.html', 'neon-putt.html'], scores: [] };
+      if (path.indexOf('/api/leaderboard') === 0) return { game: 'gridlock.html', scores: [{ sub: 'f1', name: 'Dave', score: 300 }, { sub: 'me', name: 'Lev', score: 120 }], low: false };
       if (path === '/api/my-data') return { account: { name: 'Lev', email: 'l@x.com', code: 'ZZZZ', created: Date.now(), network_code: 'net:1a2b3c4d00000000', device: 'Windows PC', tos_version: '2026-10-07.3' },
-        activity: [{ game: 'gridlock.html', at: Date.now() }, { game: '~', at: Date.now() - 1e6 }], friends: ['Dave'], blocked: [], reportsYouMade: [], reportsAboutYou: 0, saves: [], scores: [], appeals: [],
-        dailyPlay: [{ day: '2026-10-01', game: 'gridlock.html', minutes: 30 }], tokensSent: [{ to: 'Dave', tokens: 50, created: Date.now() }], tokensReceived: [] };
+        friends: ['Dave'], blocked: [], reportsYouMade: [], reportsAboutYou: 0, saves: [], scores: [], appeals: [],
+        tokensSent: [{ to: 'Dave', tokens: 50, created: Date.now() }], tokensReceived: [] };
       if (path === '/api/delete-me') return { ok: true };
       if (path === '/api/privacy') return { ok: true };
       return { ok: true };
@@ -567,13 +567,13 @@
     }
     // profiles
     await openProfile('f1'); await wait();
-    t('a friend profile shows badges and favourites', /BADGES · 1 \/ 2/.test(body()) && /FAVOURITE GAMES/.test(body()) && /Dave/.test(body()));
+    t('a friend profile shows badges, scores and no play history', /BADGES · 1 \/ 2/.test(body()) && /BEST SCORES/.test(body()) && /Dave/.test(body()) &&
+      !/FAVOURITE GAMES/.test(body()) && !/played this/.test(body()));
     t('and a Join button when they are in a room', !!document.querySelector('#gbs-body button[onclick*="openRoom"]'));
-    t('and their play time', /2h 5m played/.test(body()));
     // own profile
     if ($('social-own')) {
       await renderOwn(); await wait(80);
-      t('your profile shows your badges', ($('social-own').textContent || '').indexOf('First Game') !== -1 || !session());
+      t('your profile shows your badges', ($('social-own').textContent || '').indexOf('Saver') !== -1 || !session());
       t('and the privacy switch', !!$('gbs-share') && $('gbs-share').checked);
     }
     sent.length = 0;
@@ -581,19 +581,18 @@
     t('hiding your activity tells the server', sent.some(s => s.path === '/api/privacy' && s.body.hide === true) && lastState.profile.hide_activity === 1);
     await setPrivacy(false);
     // leaderboards
-    await openBoards('gridlock.html'); await wait();
-    t('leaderboards show time and scores', /MOST PLAYED THIS WEEK/.test(body()) && /HIGH SCORES/.test(body()) && /Dave S\./.test(body()));
+    await openBoards(); await wait(); await wait();
+    t('high scores open on the first game that has some', /HIGH SCORES/.test(body()) && /BEST SCORES/.test(body()) && /Dave/.test(body()) &&
+      ($('gbs-board-pick') || {}).value === 'gridlock.html' && $('gbs-board-pick').options.length === 2);
+    t('no most-played board any more', !/MOST PLAYED/.test(body()));
     t('your own row is highlighted', !!document.querySelector('#gbs-body .gbs-row.me'));
-    await openBoards('*'); await wait();
-    t('the arcade-wide board has no score list', !/HIGH SCORES/.test(body()));
     // my data
     const realSess = localStorage.getItem('glitchbox_session');
     localStorage.setItem('glitchbox_session', 'fake');
     await openMyData(); await wait();
     t('my data shows the account', /l@x\.com/.test(body()) && /1A2B-3C4D \(scrambled/.test(body()) && /Windows PC/.test(body()) && !/net:/.test(body()));
     t('my data shows tokens sent to friends', /50 to Dave/.test(body()));
-    t('my data explains older history is daily totals', /only a total per game per day is kept \(1 day/.test(body()));
-    t('and the activity', /went offline/.test(body()) && /Gridlock/i.test(body()));
+    t('my data says play history isn\'t kept', /doesn't record which games you played/.test(body()) && !/went offline/.test(body()));
     t('and a download', !!lastExport && lastExport.server.account.email === 'l@x.com' && typeof lastExport.thisBrowser === 'object');
     t('the download never includes the session', !Object.keys(lastExport.thisBrowser).some(k => /session/i.test(k)));
     sent.length = 0;

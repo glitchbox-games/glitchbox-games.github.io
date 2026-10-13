@@ -11,10 +11,10 @@
 <!-- Game roster + thumbnail art, shared with play.html -->
 <script src="glitchbox-games.js"></script>
 <!-- Owner console (Ctrl+Shift+A). Deferred so it loads after the hub's own script. -->
-<script src="glitchbox-social.js?v=20261013a" defer></script>
-<script src="glitchbox-admin.js?v=20261013a" defer></script>
-<script src="glitchbox-cmd.js?v=20261008e" defer></script>
-<script src="glitchbox-contests.js?v=20261009b" defer></script>
+<script src="glitchbox-social.js?v=20261013b" defer></script>
+<script src="glitchbox-admin.js?v=20261013b" defer></script>
+<script src="glitchbox-cmd.js?v=20261013a" defer></script>
+<script src="glitchbox-contests.js?v=20261013a" defer></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -805,38 +805,38 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
         <li>No cheating, exploiting bugs on purpose, or spamming invites and reports.</li>
         <li>Pick a nametag and icon that are OK for everyone - and don't use your real name.</li>
       </ul>
-      <h4>2. The owner can see what you do on GLITCHBOX</h4>
+      <h4>2. What the owner can see, and why</h4>
       <div class="tos-key">
-        <p>To keep GLITCHBOX safe, the owner can see your activity <b>on GLITCHBOX</b> from the owner console, including:</p>
+        <p>To keep GLITCHBOX safe, the owner can see some things about you <b>on GLITCHBOX</b> from the owner console:</p>
         <ul>
-          <li>whether you're online, which game you're playing right now, and which games you've played in the last 7 days
-            (and for how long). After 7 days only a total per game per day is kept, for a month, for badges and contests.</li>
+          <li>whether you're online and which game you're playing right now. GLITCHBOX <b>doesn't</b> keep a record of
+            which games you played or for how long.</li>
           <li>your nametag, the name on your Google account, your email address and friend code.
             GLITCHBOX doesn't keep your Google photo.</li>
           <li>your friends, reports made by or about you, tokens you send or get, and cloud saves</li>
           <li>the kind of device you use (like "Chromebook" or "iPhone"), and a scrambled code for your internet connection.
             Your IP address itself is never stored, so nobody can read it, not even the owner.</li>
         </ul>
-        <p>This is <b>only used for moderation</b>, like stopping cheating, bullying or spam. It is never sold or shared.
+        <p>All of this is used <b>only for moderation</b>: keeping players safe and stopping cheating, bullying and spam.
+          It is never used for anything else, never sold and never shared, and nobody looks through it just to watch what you do.
           It only covers what you do on GLITCHBOX, nothing else on your device or anywhere else online.</p>
       </div>
       <h4>3. What other players can see</h4>
       <ul>
-        <li><b>Your friends</b> see whether you're online, which game you're playing (so they can join you),
-          and your profile: icon, badges, favourite games and play time. You can hide your activity from friends
-          in your profile.</li>
-        <li><b>Everyone else</b> only ever sees your <b>nametag</b> and your arcade icon - never your real name,
-          or your email.</li>
-        <li><b>Leaderboards</b> show your nametag, your icon, your play time this week and your best scores -
-          unless you hide your activity.</li>
+        <li><b>Your friends</b> see whether you're online, which game you're playing right now (so they can join you),
+          and your profile: icon, badges and best scores. You can hide what you're playing from friends in your profile.</li>
+        <li><b>Everyone else</b> only ever sees your <b>nametag</b> and your arcade icon - never your real name or your email.</li>
+        <li><b>Leaderboards</b> show your nametag, your icon and your best scores.</li>
       </ul>
       <h4>4. Moderation</h4>
       <p>The owner can message you, kick you back to the hub, switch games off, or ban your account, your device
         or your internet connection, for a while or for good, if you break these rules.</p>
       <p>The owner can pick <b>moderators</b> - trusted players who can see your nametag, icon, friend code, which game
         you're playing right now, reports about you and past bans. Moderators <b>never</b> see your real name, email,
-        internet connection, device or play history. They can message you, kick you, and ban you for up to a day.</p>
-      <p>If you're banned you can send an appeal, and the owner or a moderator will answer it.</p>
+        internet connection or device, and they use what they see only for moderation too.</p>
+      <p>Moderators can message you and kick you back to the hub. They <b>can't ban anyone on their own</b>: a moderator
+        can only ask the owner to ban someone, and the ban only happens if the owner approves it.</p>
+      <p>If you're banned you can send an appeal. A moderator can turn an appeal down, but only the owner can lift a ban.</p>
       <h4>5. Your account and your data</h4>
       <p>You sign in with Google. GLITCHBOX keeps your Google name and email privately, so the owner can tell accounts apart.
         Only the owner can see them; other players and moderators only see the nametag you choose.
@@ -852,7 +852,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <p>If you're under 13, ask a parent or guardian to read this with you first.</p>
     </div>
     <label class="tos-check" id="tos-check-row"><input type="checkbox" id="tos-check" onchange="document.getElementById('tos-agree').disabled=!this.checked">
-      I've read the terms and I agree to them, including that the owner can see what I do on GLITCHBOX for moderation.</label>
+      I've read the terms and I agree to them, including that the owner can see what I do on GLITCHBOX, only for moderation.</label>
     <button class="ban-btn" id="tos-agree" disabled onclick="acceptTos()">I agree</button>
     <button class="ban-btn" id="tos-decline" style="color:var(--muted);border-color:rgba(255,255,255,0.15)" onclick="declineTos()">I don't agree - sign me out</button>
     <button class="ban-btn" id="tos-close" style="display:none" onclick="document.getElementById('tos-screen').classList.remove('show')">Close</button>
@@ -1940,7 +1940,7 @@ async function backendLogin(credential){
 // ── terms of service ── bump TOS_VERSION whenever the terms text changes and every
 // player is asked to agree again. Agreement is saved per account on the server (the
 // record of consent) and cached locally so the screen doesn't flash on every visit.
-const TOS_VERSION = '2026-10-13.1';
+const TOS_VERSION = '2026-10-13.2';
 // Guests agree once per browser, under the 'guest' key.
 function tosId(){ return currentUser ? currentUser.sub : 'guest'; }
 function tosKey(){ return 'glitchbox.tos.' + tosId(); }

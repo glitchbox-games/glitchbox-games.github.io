@@ -5,7 +5,8 @@
 
      • best score  - the best GLITCHBOX.score() a player posts in that game
                      while the contest runs (games that report scores only)
-     • most played - most minutes in one game, or anywhere in the arcade
+     (• most played - gone since 2026-10-13: GLITCHBOX no longer records play time.
+        Old ones still display.)
 
    When the clock runs out the server (settleContests) drops the prizes into
    the winners' gift inbox, so tokens / an unlocked game land on their hub.
@@ -194,7 +195,7 @@
     return '<button class="x" data-gbc="back" aria-label="Back">×</button><div class="gbc-title">＋ NEW CONTEST</div>' +
       '<div class="gbc-lab" style="margin-top:12px">NAME</div><input class="gbc-in" id="gbc-title" maxlength="80" placeholder="e.g. Weekend Putt-Off">' +
       '<div class="gbc-grid" style="margin-top:10px"><div><label>TYPE</label><select class="gbc-in" id="gbc-kind">' +
-        opt('score', 'Best score', true) + opt('time', 'Most time played') + '</select></div>' +
+        opt('score', 'Best score', true) + '</select></div>' +
       '<div><label>GAME</label><select class="gbc-in" id="gbc-game"></select></div></div>' +
       '<div class="gbc-grid" style="margin-top:10px"><div><label>RUNS FOR</label><select class="gbc-in" id="gbc-hours">' +
         opt('1', '1 hour') + opt('6', '6 hours') + opt('24', '1 day', true) + opt('72', '3 days') + opt('168', '1 week') + opt('336', '2 weeks') + '</select></div>' +
@@ -310,8 +311,8 @@
       $('gbc-box').querySelector('[data-gbc="new"]').click(); await wait();
       t('form opens', !!$('gbc-title') && $('gbc-game').options.length === SCORE_GAMES.filter(g => gameOf(g.file)).length);
       t('neon putt is marked lowest-wins', /lowest wins/.test($('gbc-game').options[0].textContent));
-      $('gbc-kind').value = 'time'; $('gbc-kind').onchange();
-      t('time contests can use any game or the whole arcade', $('gbc-game').options.length === games().length + 1 && $('gbc-game').options[0].value === '*');
+      t('only best-score contests can be made (play time isn\'t recorded)', $('gbc-kind').options.length === 1 && $('gbc-kind').value === 'score');
+      const g0 = $('gbc-game').value;
       $('gbc-box').querySelector('[data-gbc="create"]').click(); await wait();
       t('nameless contest refused', /name/.test($('gbc-err').textContent) && !sent.some(s => s.path === '/api/admin/contest'));
       $('gbc-title').value = 'Grind 2'; ['gbc-p1', 'gbc-p2', 'gbc-p3'].forEach(id => $(id).value = '0');
@@ -320,7 +321,7 @@
       $('gbc-p1').value = '1000'; $('gbc-hours').value = '72';
       $('gbc-box').querySelector('[data-gbc="create"]').click(); await wait(); await wait();
       const c = (sent.filter(s => s.path === '/api/admin/contest').pop() || {}).body || {};
-      t('create posts the contest', c.title === 'Grind 2' && c.kind === 'time' && c.game === '*' && c.hours === 72 && c.prizes[0] === 1000 && c.prizes[1] === 0);
+      t('create posts the contest', c.title === 'Grind 2' && c.kind === 'score' && c.game === g0 && c.hours === 72 && c.prizes[0] === 1000 && c.prizes[1] === 0);
       t('back on the list with the new contest', /Grind 2/.test(box()) && ($('cnt-contests') || {}).textContent === '2');
       $('gbc-box').querySelector('[data-gbc="end"]').click(); await wait(); await wait();
       t('end posts and clears live', sent.some(s => s.path === '/api/admin/contest-end' && s.body.id === 7 && !s.body.cancel) && !$('gbc-strip').classList.contains('on'));

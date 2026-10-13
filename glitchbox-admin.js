@@ -35,6 +35,8 @@
   let ask = null, notice = null, gameFilter = '';
   // The 👁 View panel: { target:'u:<sub>'|'g:<gid>', name } while open; `watch` is its data.
   let viewing = null, watch = null;
+  // Moderators' ban requests (loaded with the Reports tab). The owner approves or denies them.
+  let banReqs = [];
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
     c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -232,8 +234,9 @@
     const c = overview.counts;
     const stat = (k, label) => '<div class="adm-stat"><b>' + c[k] + '</b><span>' + label + '</span></div>';
     const live = overview.live || [], liveG = overview.liveGuests || [];
-    const status = (isMod ? '<div class="adm-note">You\'re a <b>moderator</b>: you can view, message, kick and ban players and guests for up to a day, and answer appeals. ' +
-        'Real names, emails, networks, devices and play history stay hidden from you.</div>' : '') + (overview.maintenance ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">' +
+    const status = (isMod ? '<div class="adm-note">You\'re a <b>moderator</b>: you can view, message and kick players and guests, turn down appeals, ' +
+        'and ask the owner to ban someone. A ban only happens once the owner approves it. ' +
+        'Real names, emails, networks and devices stay hidden from you.</div>' : '') + (overview.maintenance ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">' +
         '🛠 Maintenance mode is ON - the arcade is closed to everyone but you. <a href="#" data-act="goarcade" style="color:inherit">Arcade tab →</a></div>' : '') +
       (overview.announce ? '<div class="adm-note" style="color:#00f5ff;border:1px solid currentColor;padding:9px 12px">📣 Live announcement: “' +
         esc(overview.announce.text) + '”</div>' : '');
@@ -246,6 +249,7 @@
       '</div>' +
       '<div class="adm-actions" style="margin-top:12px">' +
         (c.appeals ? '<button class="adm-btn warn" data-act="goappeals">⚖ ' + c.appeals + ' appeal' + (c.appeals > 1 ? 's' : '') + ' waiting</button>' : '') +
+        (isOwner && c.banRequests ? '<button class="adm-btn warn" data-act="goreports">⛔ ' + c.banRequests + ' ban request' + (c.banRequests > 1 ? 's' : '') + ' from moderators</button>' : '') +
         ('Notification' in window && Notification.permission !== 'granted'
           ? '<button class="adm-btn" data-act="alerts">🔔 Turn on desktop alerts</button>'
           : '<span class="adm-meta" style="align-self:center">🔔 New reports and appeals pop up as alerts' + ('Notification' in window ? ', even when this tab is in the background' : '') + '.</span>') +
@@ -308,20 +312,18 @@
             (p.playing ? '▶ ' + esc(gameName(p.playing)) : 'in the hub') + '</span>' : '') + '</div>' +
         '<div class="adm-meta">' + (p.real_name ? '👤 ' + esc(p.real_name) + ' · ' : '') + (p.email ? esc(p.email) + ' · ' : '') + 'code ' + esc(p.code || '-') +
           (p.tag_set ? '' : ' · <span style="color:#ffb400">🏷️ hasn\'t picked a nametag</span>') + '</div>' +
-        '<div class="adm-meta">' + p.friends + ' friends · ' + p.saves + ' saves · ' + p.reports +
+        '<div class="adm-meta">' + (p.friends != null ? p.friends + ' friends · ' + p.saves + ' saves · ' : '') + (p.reports || 0) +
           ' reports · seen ' + ago(p.last_seen) + (p.gifts ? ' · ' + p.gifts + ' gift' + (p.gifts > 1 ? 's' : '') + ' waiting' : '') +
           (p.ban_reason ? ' · “' + esc(p.ban_reason) + '”' : '') + '</div>' +
-        '<div class="adm-meta">' + (p.tos_at ? '📜 agreed to the terms (' + esc(p.tos_version) + ') ' + ago(p.tos_at)
-          : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms yet</span>') + '</div></div>' +
+        (isOwner ? '<div class="adm-meta">' + (p.tos_at ? '📜 agreed to the terms (' + esc(p.tos_version) + ') ' + ago(p.tos_at)
+          : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms yet</span>') + '</div>' : '') + '</div>' +
         viewBtn('u:' + p.sub, p.name) +
         (isOwner ? '<button class="adm-btn" data-act="give" data-sub="' + esc(p.sub) + '">🎁 Give</button>' : '') +
         (p.banned ? '' : energyBtn('u:' + p.sub, p.name)) +
         (self ? '' : msgBtn(p.sub, p.name, '✉')) +
         (self || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' : '<button class="adm-btn warn" data-act="resettag" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '" title="Give them a random nametag and make them pick a new one">🏷️ Reset tag</button>') +
         (self || p.playing == null || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' : kickBtn('u:' + p.sub, p.name)) +
-        (self || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' :
-          '<button class="adm-btn ' + (p.banned ? 'warn' : 'danger') + '" data-act="' + (p.banned ? 'unban' : 'ban') +
-            '" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '">' + (p.banned ? 'Unban' : 'Ban') + '</button>' +
+        (self || (!isOwner && (p.role === 'mod' || p.isOwner)) ? '' : banBtn(p.sub, p.name, p.banned) +
           (isOwner ? '<button class="adm-btn warn" data-act="setmod" data-sub="' + esc(p.sub) + '" data-name="' + esc(p.name) + '" data-on="' + (p.role === 'mod' ? 0 : 1) + '">' +
             (p.role === 'mod' ? 'Remove mod' : '⭐ Make mod') + '</button>' +
             '<button class="adm-btn danger" data-act="del" data-sub="' + esc(p.sub) + '">Delete</button>' : '')) +
@@ -429,24 +431,17 @@
   function viewBtn(target, name) {
     return '<button class="adm-btn view" data-act="view" data-target="' + esc(target) + '" data-name="' + esc(name) + '" title="See what ' + esc(name) + ' is doing">👁 View</button>';
   }
-  function dur(ms) {
-    const m = Math.round(ms / 60000);
-    return m < 1 ? '<1m' : m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
-  }
-  function place(game) { return game === '~' ? '💤 went offline' : game ? '▶ ' + gameName(game) : '🏠 the hub'; }
 
   function viewWatch() {
     const back = '<div class="adm-actions"><button class="adm-btn warn" data-act="unview">◀ Back</button>' +
       '<span class="adm-meta" style="align-self:center">updates by itself every few seconds</span></div>';
     if (!watch) { loadWatch(); return back + '<div class="adm-empty">Loading ' + esc(viewing.name) + '…</div>'; }
-    const w = watch.who, acts = watch.activity || [], now = watch.now || Date.now();
+    const w = watch.who;
     const guest = w.kind === 'guest', target = viewing.target;
-    const latest = acts[0];
-    const since = latest && w.playing != null && (latest.game || '') === w.playing ? now - latest.at : 0;
     const nowBox = w.online
       ? '<div class="adm-now"><div class="big">' + (w.playing ? '🎮' : '🏠') + '</div><div><span class="adm-meta">RIGHT NOW</span>' +
         '<b>' + esc(w.playing ? 'Playing ' + gameName(w.playing) : 'In the hub, picking a game') + '</b>' +
-        '<span class="adm-meta">' + (since ? 'for ' + dur(since) + ' · ' : '') + 'last check-in ' + ago(w.last_seen) + '</span></div></div>'
+        '<span class="adm-meta">last check-in ' + ago(w.last_seen) + '</span></div></div>'
       : '<div class="adm-now off"><div class="big">💤</div><div><span class="adm-meta">RIGHT NOW</span><b>Offline</b>' +
         '<span class="adm-meta">last seen ' + ago(w.last_seen) + (w.last_seen ? ' (' + when(w.last_seen) + ')' : '') + '</span></div></div>';
     const me = target === 'u:' + myId();
@@ -456,11 +451,10 @@
                (isOwner ? '<button class="adm-btn" data-act="give" data-sub="' + esc(w.sub) + '" data-name="' + esc(w.name) + '">🎁 Give</button>' : '')) +
       (w.banned ? '' : energyBtn(target, w.name)) +
       (w.online && !me && !(isMod && w.isMod) ? kickBtn(target, w.name) : '') +
-      (me || (isMod && w.isMod) ? '' : guest
+      (me || (isMod && w.isMod) || (w.banned && !isOwner) ? '' : guest
         ? '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'gunban' : 'gban') + '" data-gid="' + esc(w.gid) +
-          '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : 'Ban') + '</button>'
-        : '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'unban' : 'ban') + '" data-sub="' + esc(w.sub) +
-          '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : 'Ban') + '</button>') + '</div>';
+          '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : isOwner ? 'Ban' : 'Ask to ban') + '</button>'
+        : banBtn(w.sub, w.name, w.banned)) + '</div>';
     const row = (k, v) => v === '' || v == null || v === '?' ? '' : '<div class="adm-meta"><b style="color:#e8eefc;display:inline-block;min-width:88px">' + k + '</b> ' + v + '</div>';
     // Moderators get no device, network, email, counts or history (the server leaves them out).
     const details = (isOwner ? row('Device', esc(device(w.ua))) + row('Network', esc(netCode(w.ip))) : '') +
@@ -471,15 +465,6 @@
           : row('Reports', (w.reports || 0) + ' about them'))) +
       (isOwner ? row('Terms', w.tos_version ? 'agreed (' + esc(w.tos_version) + ')' + (w.tos_at ? ' ' + ago(w.tos_at) : '') : '<span style="color:#ffb400">not agreed yet</span>') : '') +
       (w.banned ? row('Banned', (w.ban_until ? 'until ' + when(w.ban_until) : 'permanently') + (w.ban_reason ? ' - “' + esc(w.ban_reason) + '”' : '')) : '');
-    // Time in each game this week: each entry lasts until the next one, and the newest
-    // until now (or until they were last seen). "~" rows mark when they went offline.
-    const spent = {};
-    acts.forEach((a, i) => {
-      const end = i === 0 ? (w.online ? now : w.last_seen || a.at) : acts[i - 1].at;
-      const ms = end - a.at;
-      if (a.game && a.game !== '~') spent[a.game] = (spent[a.game] || 0) + Math.max(0, ms);
-    });
-    const top = Object.keys(spent).sort((a, b) => spent[b] - spent[a]).slice(0, 6);
     return back +
       '<div class="adm-row" style="margin-bottom:12px"><div class="adm-av" style="width:44px;height:44px;font-size:20px">' + (guest ? '👤' : avatar(w)) + '</div>' +
         '<div class="adm-grow"><div class="adm-name" style="font-size:18px">' + esc(w.name) +
@@ -489,18 +474,7 @@
           : 'friend code ' + esc(w.code || '-')) + '</div></div></div>' +
       nowBox + actions +
       '<div class="adm-h">// DETAILS</div>' + details +
-      (top.length ? '<div class="adm-h">// MOST PLAYED THIS WEEK</div>' + top.map(f =>
-        '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + esc(gameName(f)) + '</div></div><span class="adm-meta">about ' + dur(spent[f]) + '</span></div>').join('') : '') +
-      trades(watch.trades, w.sub) +
-      '<div class="adm-h">// WHAT THEY\'VE BEEN DOING · LAST 7 DAYS</div>' +
-      (!isOwner ? '<div class="adm-empty">Play history is only shown to the owner.</div>' :
-       acts.length ? '<div class="adm-tl">' + acts.map((a, i) => {
-        const end = i === 0 ? (w.online ? now : w.last_seen || a.at) : acts[i - 1].at;
-        const len = end - a.at;
-        return '<span class="t">' + when(a.at) + '</span><span>' + esc(place(a.game)) + '</span>' +
-          '<span class="d">' + (a.game === '~' ? '' : i === 0 && w.online ? 'now' : dur(len)) + '</span>';
-      }).join('') + '</div>'
-        : '<div class="adm-empty">Nothing recorded yet - activity shows up here from now on.</div>');
+      trades(watch.trades, w.sub);
   }
   async function loadWatch() {
     if (!viewing) return;
@@ -512,6 +486,11 @@
   // Owner-only: drop Idle Universe energy into someone's bank (lands next time they're in it).
   function energyBtn(target, name) {
     return isOwner ? '<button class="adm-btn" data-act="energy" data-target="' + esc(target) + '" data-name="' + esc(name) + '" title="Gift Idle Universe energy">⚡ Energy</button>' : '';
+  }
+  // Owner: Ban / Unban. Moderator: "Ask to ban" (the owner approves it), and no Unban.
+  function banBtn(sub, name, banned) {
+    if (banned) return isOwner ? '<button class="adm-btn warn" data-act="unban" data-sub="' + esc(sub) + '" data-name="' + esc(name) + '">Unban</button>' : '';
+    return '<button class="adm-btn danger" data-act="ban" data-sub="' + esc(sub) + '" data-name="' + esc(name) + '">' + (isOwner ? 'Ban' : 'Ask to ban') + '</button>';
   }
   function kickBtn(target, name) {
     return '<button class="adm-btn warn" data-act="kick" data-target="' + esc(target) + '" data-name="' + esc(name) + '">👢 Kick</button>';
@@ -582,8 +561,8 @@
           (g.banned ? '' : energyBtn('g:' + g.gid, g.name)) +
           (g.online && !g.banned ? '<button class="adm-btn warn" data-act="pop" data-target="g:' + esc(g.gid) + '" data-name="' + esc(g.name) + '">✉</button>' +
             kickBtn('g:' + g.gid, g.name) : '') +
-          '<button class="adm-btn ' + (g.banned ? 'warn' : 'danger') + '" data-act="' + (g.banned ? 'gunban' : 'gban') +
-            '" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" data-same="' + (g.sameAsYou ? 1 : 0) + '">' + (g.banned ? 'Unban' : 'Ban') + '</button>' +
+          (g.banned && !isOwner ? '' : '<button class="adm-btn ' + (g.banned ? 'warn' : 'danger') + '" data-act="' + (g.banned ? 'gunban' : 'gban') +
+            '" data-gid="' + esc(g.gid) + '" data-name="' + esc(g.name) + '" data-same="' + (g.sameAsYou ? 1 : 0) + '">' + (g.banned ? 'Unban' : isOwner ? 'Ban' : 'Ask to ban') + '</button>') +
         '</div>').join('') : '<div class="adm-empty">No guests yet.</div>') +
       (!isOwner ? '' : '<div class="adm-h">// NETWORK BANS · ' + bans.length + '</div>' +
       (bans.length ? bans.map(b =>
@@ -603,7 +582,8 @@
     if (appeals === null) { loadAppeals(); return '<div class="adm-empty">Loading…</div>'; }
     const open = appeals.filter(a => a.status === 'open');
     return '<div class="adm-note">Banned players and guests can ask to be let back in from their ban screen. ' +
-        'Accepting lifts the ban (and, for the owner, any network ban on them); your reply shows on their screen.</div>' +
+        (isOwner ? 'Accepting lifts the ban (and any network ban on them); your reply shows on their screen.</div>'
+          : 'Only the owner can lift a ban. You can turn an appeal down with a reply; it shows on their screen.</div>') +
       '<div class="adm-actions"><button class="adm-btn" data-act="reload">↻ Refresh</button></div>' +
       '<div class="adm-h">// WAITING · ' + open.length + '</div>' +
       (appeals.length ? appeals.map(a => {
@@ -617,7 +597,7 @@
           '<div class="adm-meta">sent ' + ago(a.created) + (ban ? ' · ' + ban : '') + (a.networkBan ? ' · their network is banned' : '') + '</div>' +
           (a.reply ? '<div class="adm-meta">reply: “' + esc(a.reply) + '”</div>' : '') + '</div>' +
           viewBtn(a.who, a.name) +
-          (a.status === 'open' ? '<button class="adm-btn" data-act="appeal" data-id="' + a.id + '" data-ok="1" data-name="' + esc(a.name) + '">✅ Unban</button>' +
+          (a.status === 'open' ? (isOwner ? '<button class="adm-btn" data-act="appeal" data-id="' + a.id + '" data-ok="1" data-name="' + esc(a.name) + '">✅ Unban</button>' : '') +
             '<button class="adm-btn danger" data-act="appeal" data-id="' + a.id + '" data-ok="0" data-name="' + esc(a.name) + '">Keep ban</button>' : '') +
           '</div>';
       }).join('') : '<div class="adm-empty">No appeals yet.</div>');
@@ -639,26 +619,19 @@
   }
   function viewStats() {
     if (!isOwner) return claimPanel();
-    if (stats === null) { loadStats(); return '<div class="adm-empty">Crunching a month of activity…</div>'; }
-    const d = stats, T = d.totals;
+    if (stats === null) { loadStats(); return '<div class="adm-empty">Loading…</div>'; }
+    const d = stats, T = d.totals, today = d.days[d.days.length - 1];
     const tile = (v, l) => '<div class="adm-stat"><b>' + v + '</b><span>' + l + '</span></div>';
-    const days = d.days.map((x, i) => ({ a: x.players, b: x.guests, tip: x.day + ': ' + x.players + ' players, ' + x.guests + ' guests, ' + x.minutes + ' min played',
-      label: i % 5 === 4 || i === 29 ? x.day.slice(5) : '' }));
-    const ups = d.days.map((x, i) => ({ a: x.signups, tip: x.day + ': ' + x.signups + ' new accounts', label: i % 5 === 4 || i === 29 ? x.day.slice(5) : '' }));
-    const hours = d.hours.map((m, h) => ({ a: m, tip: h + ':00 - ' + m + ' min played', label: h % 3 === 0 ? String(h) : '' }));
-    const top = d.games[0] ? d.games[0].minutes : 1;
-    return '<div class="adm-grid">' + tile(T.players, 'Players · 30d') + tile(T.guests, 'Guests · 30d') + tile(T.hours, 'Hours played') +
-        tile(d.days[29].players + d.days[29].guests, 'Active today') + '</div>' +
-      '<div class="adm-h">// WHO PLAYED EACH DAY</div><div class="adm-meta"><span style="color:#00f5ff">■</span> players &nbsp; <span style="color:#ff0080">■</span> guests · hover a bar for numbers</div>' +
-      bars(days, { label: 'players per day' }) +
+    const lab = i => i % 5 === 4 || i === d.days.length - 1;
+    const days = d.days.map((x, i) => ({ a: x.players, b: x.guests, tip: x.day + ': ' + x.players + ' players, ' + x.guests + ' guests', label: lab(i) ? x.day.slice(5) : '' }));
+    const ups = d.days.map((x, i) => ({ a: x.signups, tip: x.day + ': ' + x.signups + ' new accounts', label: lab(i) ? x.day.slice(5) : '' }));
+    return '<div class="adm-note">GLITCHBOX doesn\'t record which games people play or for how long. These are just head counts: ' +
+        'how many players and guests visited each day (UTC days).</div>' +
+      '<div class="adm-grid">' + tile(T.players, 'Players · 30d') + tile(T.guests, 'Guests · 30d') +
+        tile(today.players + today.guests, 'Visitors today') + tile(d.days.reduce((a, x) => a + x.signups, 0), 'New accounts · 30d') + '</div>' +
+      '<div class="adm-h">// VISITORS EACH DAY</div><div class="adm-meta"><span style="color:#00f5ff">■</span> players &nbsp; <span style="color:#ff0080">■</span> guests · hover a bar for numbers</div>' +
+      bars(days, { label: 'visitors per day' }) +
       '<div class="adm-h">// NEW ACCOUNTS</div>' + bars(ups, { h: 60, label: 'new accounts per day' }) +
-      '<div class="adm-h">// BUSIEST HOURS (YOUR TIME)</div>' + bars(hours, { h: 80, label: 'minutes played by hour' }) +
-      '<div class="adm-h">// MOST PLAYED · 30 DAYS</div>' +
-      (d.games.length ? d.games.map(g =>
-        '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + esc(gameName(g.game)) + '</div>' +
-        '<div style="height:5px;background:rgba(255,255,255,.06);margin-top:5px"><div style="height:100%;width:' + Math.max(2, Math.round(g.minutes / top * 100)) + '%;background:#00f5ff"></div></div></div>' +
-        '<span class="adm-meta">' + (g.minutes < 60 ? g.minutes + ' min' : Math.round(g.minutes / 6) / 10 + ' h') + '</span></div>').join('')
-        : '<div class="adm-empty">No play recorded yet - this fills up as people play.</div>') +
       '<div class="adm-actions" style="margin-top:14px"><button class="adm-btn" data-act="reload">↻ Refresh</button></div>';
   }
 
@@ -669,7 +642,8 @@
                    'maintenance-on':'🛠', 'maintenance-off':'🛠', 'dismiss-report':'🧹',
                    kick:'👢', popup:'✉', 'ban-guest':'⛔', 'unban-guest':'✅', 'ban-ip':'🌐', 'unban-ip':'🌐',
                    'reload-all':'↻', games:'⏸', 'guests-off':'🚫', 'guests-on':'✅',
-                   'mod-add':'⭐', 'mod-remove':'⭐', 'appeal-accept':'⚖', 'appeal-reject':'⚖', featured:'🌟', 'self-delete':'🗑' };
+                   'mod-add':'⭐', 'mod-remove':'⭐', 'appeal-accept':'⚖', 'appeal-reject':'⚖', featured:'🌟', 'self-delete':'🗑',
+                   'ban-request':'⛔', 'ban-request-denied':'✋' };
     return '<div class="adm-actions"><button class="adm-btn" data-act="reload">↻ Refresh</button></div>' +
       (logRows.length ? logRows.map(r =>
         '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + (icon[r.action] || '•') + ' ' + esc(r.action) +
@@ -681,15 +655,30 @@
   function viewReports() {
     if (!staff()) return claimPanel();
     if (reports === null) { loadReports(); return '<div class="adm-empty">Loading…</div>'; }
-    if (!reports.length) return '<div class="adm-empty">No reports. Quiet arcade.</div>';
-    return reports.map(r =>
+    const open = banReqs.filter(b => b.status === 'open');
+    const reqs = banReqs.length ? '<div class="adm-h">// BAN REQUESTS FROM MODERATORS · ' + open.length + ' waiting</div>' +
+      (isOwner ? '' : '<div class="adm-note">Your ban requests wait here until the owner approves or denies them.</div>') +
+      banReqs.slice(0, 30).map(b => {
+        const tag = b.status === 'open' ? '<span class="adm-tag" style="background:rgba(255,200,0,.12);color:#ffc800;border-color:rgba(255,200,0,.35)">waiting</span>'
+          : b.status === 'approved' ? '<span class="adm-tag">approved - banned</span>'
+          : '<span class="adm-tag" style="background:rgba(0,255,136,.1);color:#00ff88;border-color:rgba(0,255,136,.3)">denied</span>';
+        return '<div class="adm-row' + (b.status === 'open' ? '' : ' ban') + '" style="' + (b.status === 'open' ? 'border-left-color:#ffc800' : '') + '">' +
+          '<div class="adm-grow"><div class="adm-name">' + esc(b.name) + ' <span class="adm-meta">(' + b.kind + ')</span> ' + tag + '</div>' +
+          '<div class="adm-meta">' + esc(b.by_name || 'a moderator') + ' asked for a ' + (b.hours < 24 ? b.hours + 'h' : '1 day') + ' ban · ' + ago(b.created) + '</div>' +
+          '<div class="adm-meta">' + (b.reason ? '“' + esc(b.reason) + '”' : 'no reason given') + '</div></div>' +
+          viewBtn(b.who, b.name) +
+          (isOwner && b.status === 'open' ? '<button class="adm-btn danger" data-act="breq" data-id="' + b.id + '" data-ok="1" data-name="' + esc(b.name) + '">⛔ Approve ban</button>' +
+            '<button class="adm-btn" data-act="breq" data-id="' + b.id + '" data-ok="0" data-name="' + esc(b.name) + '">Deny</button>' : '') +
+          '</div>';
+      }).join('') + '<div class="adm-h">// REPORTS</div>' : '';
+    if (!reports.length) return reqs + '<div class="adm-empty">No reports. Quiet arcade.</div>';
+    return reqs + reports.map(r =>
       '<div class="adm-row">' +
         '<div class="adm-grow"><div class="adm-name">' + esc(r.reported || '(deleted)') +
           (r.banned ? ' <span class="adm-tag">banned</span>' : '') + '</div>' +
         '<div class="adm-meta">reported by ' + esc(r.reporter || '(deleted)') + ' · ' + ago(r.created) + '</div>' +
         '<div class="adm-meta">' + (r.reason ? '“' + esc(r.reason) + '”' : 'no reason given') + '</div></div>' +
-        (r.reported_sub && !r.banned
-          ? '<button class="adm-btn danger" data-act="ban" data-sub="' + esc(r.reported_sub) + '">Ban</button>' : '') +
+        (r.reported_sub && !r.banned ? banBtn(r.reported_sub, r.reported || '', false) : '') +
         '<button class="adm-btn warn" data-act="dismiss" data-id="' + r.id + '">Dismiss</button>' +
       '</div>').join('');
   }
@@ -773,10 +762,13 @@
     catch (e) { fail(e); }
   }
   async function loadAppeals() { try { appeals = (await call('/api/admin/appeals')).appeals || []; render(); } catch (e) { fail(e); } }
-  async function loadStats() { try { stats = await call('/api/admin/stats?tz=' + new Date().getTimezoneOffset()); render(); } catch (e) { fail(e); } }
+  async function loadStats() { try { stats = await call('/api/admin/stats'); render(); } catch (e) { fail(e); } }
   async function loadGuests() { try { guests = await call('/api/admin/guests'); render(); } catch (e) { fail(e); } }
   async function loadReports() {
-    try { reports = (await call('/api/admin/reports')).reports || []; render(); }
+    try {
+      const [r, b] = await Promise.all([call('/api/admin/reports'), call('/api/admin/ban-requests').catch(() => ({ requests: [] }))]);
+      reports = r.reports || []; banReqs = b.requests || []; render();
+    }
     catch (e) { fail(e); }
   }
 
@@ -795,6 +787,7 @@
     try {
       if (act === 'reload') { overview = null; players = null; reports = null; logRows = null; guests = null; appeals = null; stats = null; render(); }
       else if (act === 'goappeals') { e.preventDefault(); tab = 'appeals'; render(); }
+      else if (act === 'goreports') { e.preventDefault(); tab = 'reports'; reports = null; render(); }
       else if (act === 'alerts') {
         const r = window.GBSocial ? await GBSocial.enableAlerts() : 'unsupported';
         notice = { text: r === 'granted' ? '🔔 Desktop alerts are on.' : r === 'denied' ? 'Your browser blocked notifications - allow them for this site in its settings.' : 'This browser can\'t show desktop alerts.', bad: r !== 'granted' };
@@ -823,7 +816,8 @@
           players = null; logRows = null; notice = { text: on ? '⭐ ' + name + ' is a moderator.' : name + ' is no longer a moderator.' };
         };
         if (on) askFor({ text:'Make ' + name + ' a moderator?\nThey can view, message, kick and ban players and guests for up to a day, and answer appeals. ' +
-          'They never see real names, emails, networks, devices or play history, and can\'t give tokens, delete accounts or change the arcade.', yes:'Make mod', run: go });
+          'They can kick players and ask you to ban someone (you approve or deny it). They never see real names, emails, networks or devices, ' +
+          'and can\'t give tokens, delete accounts or change the arcade.', yes:'Make mod', run: go });
         else { await go(); render(); }
       }
       else if (act === 'feature') {
@@ -873,15 +867,17 @@
       else if (act === 'gban') {
         const name = el.dataset.name || 'this guest', gid = el.dataset.gid;
         const same = el.dataset.same === '1';
-        askFor({ text:'Ban ' + name + '? They\'re kicked out within a few seconds, even mid-game.' +
+        askFor({ text:(isOwner ? 'Ban ' + name + '? They\'re kicked out within a few seconds, even mid-game.'
+                       : 'Ask the owner to ban ' + name + '? Nothing happens until the owner approves it.') +
                       (same ? '\nThey\'re on YOUR network, so only their device can be banned.' : ''),
                  input:'Reason (optional)', choices: !isOwner ? [['24','This device - 1 day'],['1','This device - 1 hour'],['6','This device - 6 hours']]
                    : same ? BAN_CHOICES.filter(c => !/ip$/.test(c[0])) : BAN_CHOICES,
-                 yes:'Ban ' + name, run: async (reason, pick) => {
+                 yes: isOwner ? 'Ban ' + name : 'Send request', run: async (reason, pick) => {
           const ip = /ip$/.test(pick), hours = parseInt(pick, 10) || 0;
-          await call('/api/admin/guest-ban', { method:'POST', body:{ gid, banned:true, reason, hours, ip } });
+          const r = await call('/api/admin/guest-ban', { method:'POST', body:{ gid, banned:true, reason, hours, ip } });
           guests = null; overview = null; logRows = null;
-          notice = { text: name + ' is banned' + (ip ? ' (device + network)' : '') + '.' };
+          notice = { text: r && r.pending ? '⛔ Sent to the owner. ' + name + ' is only banned if they approve it.'
+            : name + ' is banned' + (ip ? ' (device + network)' : '') + '.' };
         }});
       }
       else if (act === 'gunban') {
@@ -982,13 +978,24 @@
         const p = (players || []).find(x => x.sub === sub);
         const r = (reports || []).find(x => x.reported_sub === sub);
         const name = (p && p.name) || (r && r.reported) || el.dataset.name || 'this player';
-        askFor({ text:'Ban ' + name + '? They are kicked out within a few seconds, even mid-game.', input:'Reason (optional)',
+        askFor({ text: isOwner ? 'Ban ' + name + '? They are kicked out within a few seconds, even mid-game.'
+                   : 'Ask the owner to ban ' + name + '? Nothing happens until the owner approves it.', input:'Reason (optional)',
                  choices: isOwner ? [['0','Permanently'],['1','for 1 hour'],['24','for 1 day'],['72','for 3 days'],['168','for 1 week']]
                    : [['24','for 1 day'],['1','for 1 hour'],['6','for 6 hours']],
-                 yes:'Ban ' + name, run: async (reason, hours) => {
-          await call('/api/admin/ban', { method:'POST', body:{ sub, banned:true, reason, hours:+hours || 0 } });
+                 yes: isOwner ? 'Ban ' + name : 'Send request', run: async (reason, hours) => {
+          const r = await call('/api/admin/ban', { method:'POST', body:{ sub, banned:true, reason, hours:+hours || 0 } });
           players = null; reports = null; overview = null; logRows = null;
-          notice = { text: name + ' is banned' + (+hours ? ' for ' + (+hours < 24 ? hours + 'h' : (+hours / 24) + ' day' + (+hours > 24 ? 's' : '')) : '') + '.' };
+          notice = { text: r && r.pending ? '⛔ Sent to the owner. ' + name + ' is only banned if they approve it.'
+            : name + ' is banned' + (+hours ? ' for ' + (+hours < 24 ? hours + 'h' : (+hours / 24) + ' day' + (+hours > 24 ? 's' : '')) : '') + '.' };
+        }});
+      }
+      else if (act === 'breq') {
+        const ok = el.dataset.ok === '1', name = el.dataset.name || 'them';
+        askFor({ text: ok ? 'Approve the ban on ' + name + '? They are kicked out within a few seconds.' : 'Deny the request to ban ' + name + '?',
+                 yes: ok ? 'Approve ban' : 'Deny', run: async () => {
+          await call('/api/admin/ban-decide', { method:'POST', body:{ id: +el.dataset.id, approve: ok } });
+          reports = null; players = null; guests = null; overview = null; logRows = null;
+          notice = { text: ok ? '⛔ ' + name + ' is banned.' : 'Request denied - ' + name + ' isn\'t banned.' };
         }});
       }
       else if (act === 'askno') { ask = null; render(); }
@@ -1197,7 +1204,7 @@
       if (path === '/api/admin/log') return { log:[{ id:1, at:now, action:'ban', target:'Dave <d@x.com>', detail:'for 24h - spam' }] };
       if (path.indexOf('/api/admin/players') === 0) return { players: db.players };
       if (path === '/api/admin/overview') return { counts:{ players:3, online:1, newToday:1, friendships:0, invites:0,
-        saves:2, reports:1, banned:1 }, recent:[{ name:'Dave', created:now }], topGames:[{ game:'gridlock', players:2 }],
+        saves:2, reports:1, banned:1, banRequests:1 }, recent:[{ name:'Dave', created:now }], topGames:[{ game:'gridlock', players:2 }],
         live:[{ sub:'s1', name:'Dave', last_seen:now, playing:'gridlock.html' }, { sub:'s3', name:'Kim', last_seen:now, playing:'' }],
         liveGuests:[{ gid:'gaaaa1111', name:'Guest 1111', last_seen:now, playing:'' }],
         announce: arcade.announce, maintenance: arcade.maintenance, disabled: arcade.disabled.slice(), guestsLocked: arcade.guestsLocked };
@@ -1210,17 +1217,19 @@
         { id: 10, who: 'g:gcccc3333', name: 'Guest 3333', kind: 'guest', text: 'sorry', created: now - 9e6, status: 'rejected', reply: 'no' }] };
       if (path === '/api/admin/appeal-decide') return { ok: true, note: '' };
       if (path === '/api/admin/featured') { arcade.featured = opts.body.file || null; return { ok: true, featured: arcade.featured }; }
-      if (path.indexOf('/api/admin/stats') === 0) return { totals: { players: 4, guests: 7, hours: 12 },
-        days: Array.from({ length: 30 }, (_, i) => ({ day: '2026-09-' + String(i + 1).padStart(2, '0'), players: i % 4, guests: i % 3, signups: i % 2, minutes: i * 3 })),
-        hours: Array.from({ length: 24 }, (_, h) => h * 2), games: [{ game: 'gridlock.html', minutes: 300 }, { game: 'neon-putt.html', minutes: 45 }] };
+      if (path.indexOf('/api/admin/stats') === 0) return { totals: { players: 4, guests: 7 },
+        days: Array.from({ length: 30 }, (_, i) => ({ day: '2026-09-' + String(i + 1).padStart(2, '0'), players: i % 4, guests: i % 3, signups: i % 2 })) };
+      if (path === '/api/admin/ban-requests') return { requests: [
+        { id: 7, who: 'u:s2', name: 'Eve', kind: 'player', reason: 'spamming invites', hours: 24, by_name: 'Kim', created: now, status: 'open' },
+        { id: 6, who: 'g:gcccc3333', name: 'Guest 3333', kind: 'guest', reason: '', hours: 6, by_name: 'Kim', created: now - 9e6, status: 'denied' }] };
+      if (path === '/api/admin/ban-decide') return { ok: true };
+      if (path === '/api/admin/ban' || path === '/api/admin/guest-ban') return lastState.isMod && opts.body.banned ? { ok: true, pending: true } : { ok: true };
       if (path.indexOf('/api/admin/view') === 0) {
         const tg = decodeURIComponent(path.split('target=')[1] || '');
         return tg.indexOf('g:') === 0
-          ? { now, who:{ kind:'guest', gid:'gaaaa1111', name:'Guest 1111', ip:'net:1a2b3c4d00000000', ua:'iPhone', created:now, last_seen:now - 5e6, online:false, playing:null }, activity:[] }
+          ? { now, who:{ kind:'guest', gid:'gaaaa1111', name:'Guest 1111', ip:'net:1a2b3c4d00000000', ua:'iPhone', created:now, last_seen:now - 5e6, online:false, playing:null } }
           : { now, who:{ kind:'player', sub:'s1', name:'Dave', real_name:'Dave Smith', email:'d@x.com', code:'AAAA', created:now, last_seen:now, online:true, playing:'gridlock.html',
-                ip:'net:1a2b3c4d00000000', ua:'Windows PC', friends:1, saves:2, reports:0, tos_version:'2026-10-07', tos_at:now },
-              activity:[{ game:'gridlock.html', at:now - 12 * 60000 }, { game:'', at:now - 15 * 60000 }, { game:'neon-putt.html', at:now - 40 * 60000 },
-                        { game:'~', at:now - 864e5 }, { game:'rhyme-bomb.html', at:now - 864e5 - 20 * 60000 }] };
+                ip:'net:1a2b3c4d00000000', ua:'Windows PC', friends:1, saves:2, reports:0, tos_version:'2026-10-07', tos_at:now } };
       }
       if (path === '/api/admin/kick') return { ok:true, kicked: opts.body.target === '*' ? 3 : 1 };
       if (path === '/api/admin/popup') return { ok:true, sent: opts.body.target === '*' ? 3 : 1 };
@@ -1245,6 +1254,7 @@
     t('the sidebar gets an owner item', !!$('adm-nav-item'));
     open(); await wait(); await wait();
     t('overview loads its counts', bodyHas(/Online now/) && bodyHas(/gridlock/));
+    t('the owner sees waiting ban requests', !!document.querySelector('#adm-body [data-act="goreports"]') && bodyHas(/1 ban request from moderators/));
     t('refresh reloads the overview', await click('[data-act="reload"]') && bodyHas(/Players/));
     t('live now shows who is playing what', bodyHas(/LIVE NOW · 3/) && bodyHas(/playing .*Gridlock/i) && bodyHas(/in the hub/));
     sent.length = 0;
@@ -1329,6 +1339,18 @@
     t('and names the reported player', /Ban Dave/.test(($('adm-ask') || {}).textContent || ''));
     await answer('');
     t('ban from reports works with no player list loaded', post('/api/admin/ban') && post('/api/admin/ban').body.sub === 's1' && !alerts().length);
+    reports = null; render(); await wait(); await wait();
+    t('moderators\' ban requests are listed for the owner', bodyHas(/BAN REQUESTS FROM MODERATORS · 1 waiting/) && bodyHas(/Kim asked for a 1 day ban/) &&
+      bodyHas(/spamming invites/) && !!document.querySelector('[data-act="breq"][data-id="7"][data-ok="1"]'));
+    t('answered requests show how they ended', bodyHas(/denied/) && !document.querySelector('[data-act="breq"][data-id="6"]'));
+    sent.length = 0;
+    await click('[data-act="breq"][data-id="7"][data-ok="1"]');
+    t('approving asks first', /Approve the ban on Eve/.test(($('adm-ask') || {}).textContent || ''));
+    await answer();
+    t('then approves it on the server', post('/api/admin/ban-decide') && post('/api/admin/ban-decide').body.id === 7 && post('/api/admin/ban-decide').body.approve === true);
+    reports = null; render(); await wait(); await wait(); sent.length = 0;
+    await click('[data-act="breq"][data-id="7"][data-ok="0"]'); await answer();
+    t('or denies it', post('/api/admin/ban-decide') && post('/api/admin/ban-decide').body.approve === false);
     await click('[data-act="dismiss"]');
     t('dismiss posts the report id', post('/api/admin/dismiss-report') && post('/api/admin/dismiss-report').body.id === '7');
 
@@ -1395,11 +1417,9 @@
     tab = 'players'; players = null; render(); await wait(); await wait();
     t('every player row has a View button', !!document.querySelector('#adm-body .adm-btn.view[data-target="u:s1"]'));
     await click('.adm-btn.view[data-target="u:s1"]'); await wait();
-    t('View shows what they are doing right now', bodyHas(/RIGHT NOW/) && bodyHas(/Playing .*Gridlock/i) && bodyHas(/for 12m/));
+    t('View shows what they are doing right now', bodyHas(/RIGHT NOW/) && bodyHas(/Playing .*Gridlock/i));
     t('with their details', bodyHas(/Windows PC/) && bodyHas(/1A2B-3C4D/) && bodyHas(/Dave Smith/) && bodyHas(/d@x\.com/) && bodyHas(/agreed \(2026-10-07\)/));
-    t('and a timeline of the last week', bodyHas(/LAST 7 DAYS/) && bodyHas(/the hub/) && bodyHas(/Neon Putt/i) && bodyHas(/25m/));
-    t('and what they play most', bodyHas(/MOST PLAYED/) && bodyHas(/about 25m/) && bodyHas(/about 20m/));
-    t('going offline ends a session', bodyHas(/went offline/) && !bodyHas(/about 2\d?h/));
+    t('but no play history or play time', !bodyHas(/BEEN DOING/) && !bodyHas(/MOST PLAYED/) && !bodyHas(/for \d+m/));
     sent.length = 0;
     await click('[data-act="kick"][data-target="u:s1"]'); await answer('afk'); await wait(); await wait();
     t('you can kick from the View panel', post('/api/admin/kick') && post('/api/admin/kick').body.target === 'u:s1' && bodyHas(/RIGHT NOW/));
@@ -1409,7 +1429,7 @@
     t('clicking the player icon opens View too', bodyHas(/RIGHT NOW/));
     tab = 'guests'; viewing = null; guests = null; render(); await wait(); await wait();
     await click('.adm-btn.view[data-target="g:gaaaa1111"]'); await wait();
-    t('guests can be viewed', bodyHas(/Guest 1111/) && bodyHas(/Offline/) && bodyHas(/iPhone/) && bodyHas(/Nothing recorded yet/));
+    t('guests can be viewed', bodyHas(/Guest 1111/) && bodyHas(/Offline/) && bodyHas(/iPhone/));
     t('switching tabs leaves View', ($('adm-tabs').querySelector('[data-tab="players"]').click(), !bodyHas(/RIGHT NOW/)));
 
     // ── Guests tab ──
@@ -1480,7 +1500,8 @@
 
     // ── Stats ──
     tab = 'stats'; stats = null; render(); await wait(); await wait();
-    t('stats show totals, three charts and a game list', bodyHas(/Players · 30d/) && bodyHas(/Hours played/) && $('adm-body').querySelectorAll('svg').length === 3 && bodyHas(/MOST PLAYED/));
+    t('stats are head counts only: two charts, no play time or games', bodyHas(/Players · 30d/) && bodyHas(/Visitors today/) &&
+      $('adm-body').querySelectorAll('svg').length === 2 && !bodyHas(/MOST PLAYED/) && !bodyHas(/Hours played/) && !bodyHas(/BUSIEST/));
     t('the bars carry their numbers', !!$('adm-body').querySelector('svg title') && /players,/.test($('adm-body').querySelector('svg title').textContent));
 
     // ── Featured + mods ──
@@ -1503,9 +1524,13 @@
     t('the sidebar says Mod Console', /Mod Console/.test(($('adm-nav-item') || {}).textContent || ''));
     t('mods get no Give, Delete or Make-mod', !document.querySelector('#adm-body [data-act="give"]') && !document.querySelector('#adm-body [data-act="del"]') &&
       !document.querySelector('#adm-body [data-act="setmod"]'));
+    t('mods get "Ask to ban", never Unban', bodyHas(/Ask to ban/) && !document.querySelector('#adm-body [data-act="unban"]'));
     await click('[data-act="ban"][data-sub="s1"]');
     t('mod bans top out at a day', ![...$('adm-ask-sel').options].some(o => o.value === '0' || +o.value > 24));
-    await click('[data-act="askno"]');
+    t('and are only a request to the owner', /Ask the owner to ban/.test(($('adm-ask') || {}).textContent || ''));
+    sent.length = 0; await answer('rude'); await wait();
+    t('the request goes to the server and the mod is told it waits for the owner', post('/api/admin/ban') && post('/api/admin/ban').body.sub === 's1' &&
+      bodyHas(/Sent to the owner/));
     sent.length = 0;
     await click('[data-act="pop"][data-target="u:s1"]'); await answer('hey'); await wait();
     t('mods message by pop-up, not gift', post('/api/admin/popup') && !post('/api/admin/gift'));
@@ -1513,7 +1538,7 @@
     tab = 'players'; players = null; viewing = null; render(); await wait(); await wait();
     await click('.adm-btn.view[data-target="u:s1"]'); await wait();
     t('a mod\'s View has no real name, email, network, device or history', !bodyHas(/Dave Smith/) && !bodyHas(/d@x\.com/) &&
-      !bodyHas(/1A2B-3C4D/) && !bodyHas(/Windows PC/) && bodyHas(/only shown to the owner/) && bodyHas(/friend code AAAA/));
+      !bodyHas(/1A2B-3C4D/) && !bodyHas(/Windows PC/) && bodyHas(/friend code AAAA/));
     viewing = null; watch = null;
     tab = 'guests'; guests = null; render(); await wait(); await wait();
     t('a mod\'s guest list has no device or network', !bodyHas(/1A2B-3C4D/) && !bodyHas(/iPhone/));
@@ -1521,6 +1546,12 @@
     await click('[data-act="gban"][data-gid="gaaaa1111"]');
     t('mods can only ban a guest device for a day', ![...$('adm-ask-sel').options].some(o => /ip$/.test(o.value) || o.value === '0'));
     await click('[data-act="askno"]');
+    tab = 'reports'; reports = null; render(); await wait(); await wait();
+    t('mods see ban requests but can\'t approve them', bodyHas(/BAN REQUESTS FROM MODERATORS/) && bodyHas(/wait here until the owner/) &&
+      !document.querySelector('[data-act="breq"]'));
+    tab = 'appeals'; appeals = null; render(); await wait(); await wait();
+    t('mods can turn appeals down but not unban', !!document.querySelector('[data-act="appeal"][data-ok="0"]') &&
+      !document.querySelector('[data-act="appeal"][data-ok="1"]') && bodyHas(/Only the owner can lift a ban/));
     tab = 'stats'; render();
     t('mods cannot open owner tabs', tab === 'overview');
     lastState.isMod = false; lastState.isOwner = true; await new Promise(r => setTimeout(r, 1600));

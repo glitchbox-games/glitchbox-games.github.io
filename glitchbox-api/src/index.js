@@ -23,10 +23,9 @@ const GID_RE = /^g[a-z0-9]{8,24}$/;
 const GAME_RE = /^[a-z0-9-]{1,60}\.html$/i;
 function guestName(gid) { return "Guest " + String(gid).slice(-4).toUpperCase(); }
 const ROOM_RE = /^[A-Z0-9]{3,8}$/;
-// Exact play history (every move between games) is kept a week. After that it's folded into one
-// total per player, game and day (`play_days`), kept a month for badges, stats and contests.
-const ACTIVITY_DETAIL = 7 * 86400000;
-const ACTIVITY_KEEP = 35 * 86400000;
+// GLITCHBOX doesn't record which games people played or for how long. It only knows what
+// someone is playing right now (for friends' Join button and for moderation) and keeps a
+// count of how many people visited each day, with no names attached (`day_stats`).
 // Token trades between friends. The wallet lives in each browser, so these caps are what
 // stop an edited wallet from flooding everyone else's.
 const TRADE_MAX = 500, TRADE_DAY_SEND = 1000, TRADE_DAY_RECV = 2000;
@@ -59,20 +58,6 @@ function shortName(n) {
   return w.length > 1 ? w[0] + " " + w[w.length - 1].charAt(0).toUpperCase() + "." : w[0];
 }
 function newerVersion(a, b) { return String(a || "").localeCompare(String(b || ""), undefined, { numeric: true }) >= 0; }
-// Turn activity rows (sorted by who, then time) into play sessions. Each row lasts until
-// that person's next row, the last one until they were last seen. "~" rows mark going
-// offline; one session is capped at 6h so a tab left open overnight doesn't count.
-function segments(rows, lastSeen, now, from) {
-  const out = [];
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i], n = rows[i + 1];
-    if (!r.game || r.game === "~") continue;
-    const end = n && n.who === r.who ? n.at : Math.min(now, lastSeen[r.who] || r.at);
-    const ms = Math.min(end - Math.max(r.at, from || 0), 6 * 3600000);
-    if (ms > 0) out.push({ who: r.who, game: r.game, at: r.at, ms });
-  }
-  return out;
-}
 
 // ── small helpers ──
 function corsHeaders(origin) {
@@ -238,11 +223,6 @@ export class Hub extends DurableObject {
       try { this.sql.exec("ALTER TABLE users ADD COLUMN tos_at INTEGER"); } catch (e) { /* already there */ }
       // Guests agree to the terms too (once per browser); their ping reports the version.
       try { this.sql.exec("ALTER TABLE guests ADD COLUMN tos_version TEXT"); } catch (e) { /* already there */ }
-      // What each player has been doing: one row every time they move between games
-      // (or come online). Kept a week, for the owner console's View panel.
-      this.sql.exec(`CREATE TABLE IF NOT EXISTS activity (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, game TEXT, at INTEGER)`);
-      this.sql.exec("CREATE INDEX IF NOT EXISTS idx_activity_who ON activity(who, at)");
       try { this.sql.exec("ALTER TABLE users ADD COLUMN last_ua TEXT"); } catch (e) { /* already there */ }
       // The multiplayer room a player is in right now (so friends can join them),
       // "mod" for moderators, and the "hide what I'm playing from friends" switch.
@@ -280,10 +260,13 @@ export class Hub extends DurableObject {
       for (const u of this.sql.exec("SELECT sub, name FROM users WHERE real_name IS NULL").toArray()) {
         this.sql.exec("UPDATE users SET real_name = ?, name = ?, tag_set = 0 WHERE sub = ?", u.name || "", this.freeTag(), u.sub);
       }
-      // Daily play totals per game, for history older than a week (see ACTIVITY_DETAIL).
-      // game '' = only visited the hub that day (still counts for the Regular badge).
-      this.sql.exec(`CREATE TABLE IF NOT EXISTS play_days (
-        who TEXT, day TEXT, game TEXT, ms INTEGER, PRIMARY KEY (who, day, game))`);
+      // How many players and guests visited each day (UTC). Just the numbers, nobody's name.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS day_stats (day TEXT PRIMARY KEY, players INTEGER, guests INTEGER)`);
+      // A moderator's ban only happens once the owner approves it. `who` is "u:<sub>" or "g:<gid>";
+      // status is open / approved / denied.
+      this.sql.exec(`CREATE TABLE IF NOT EXISTS ban_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, who TEXT, name TEXT, reason TEXT, hours INTEGER,
+        by_sub TEXT, by_name TEXT, created INTEGER, status TEXT, decided_at INTEGER)`);
       // Tokens sent between friends. Kept a month, for the daily caps and the owner console.
       this.sql.exec(`CREATE TABLE IF NOT EXISTS trades (
         id INTEGER PRIMARY KEY AUTOINCREMENT, from_sub TEXT, to_sub TEXT, tokens INTEGER, created INTEGER)`);
@@ -308,13 +291,20 @@ export class Hub extends DurableObject {
         this.metaSet("netsalt", b64urlEncode(rnd));
       }
       await this.privacyMigrate();
+      // 2026-10-13 (later): play history is no longer kept at all. Drop what was there.
+      if (!this.metaGet("privacy2")) {
+        try {
+          this.sql.exec("DROP TABLE IF EXISTS activity");
+          this.sql.exec("DROP TABLE IF EXISTS play_days");
+          this.metaSet("privacy2", String(Date.now()));
+        } catch (e) { console.error("dropping play history failed, will retry:", e && e.stack || e); }
+      }
     });
   }
 
   // One-time cleanup (2026-10-13) for data stored before the privacy changes: scramble saved
   // IP addresses, cut browser strings down to the kind of device, drop Google photos, take
-  // emails and addresses out of the console log, and fold history older than a week into daily
-  // totals. Codes are worked out first, then every write happens in one transaction, so a
+  // emails and addresses out of the console log. Codes are worked out first, then every write happens in one transaction, so a
   // failure leaves the old data untouched (and the API still starts) and it retries next time.
   async privacyMigrate() {
     if (this.metaGet("privacy1")) return;
@@ -341,7 +331,6 @@ export class Hub extends DurableObject {
         for (const l of this.sql.exec("SELECT id, target FROM admin_log WHERE target LIKE '%<%@%>%'").toArray())
           this.sql.exec("UPDATE admin_log SET target = ? WHERE id = ?", String(l.target).replace(/\s*<[^>]*@[^>]*>/g, ""), l.id);
         this.sql.exec("UPDATE users SET picture = '' WHERE picture IS NOT NULL AND picture NOT LIKE 'icon:%'");
-        this.rollupActivity(Date.now());
         this.metaSet("privacy1", String(Date.now()));
       });
     } catch (e) {
@@ -583,8 +572,10 @@ export class Hub extends DurableObject {
   // reach the Durable Object?" answerable without an owner session, which is the
   // one question a locked-out owner cannot otherwise ask.
   health() {
-    // `privacy` = the 2026-10-13 cleanup of stored IPs, devices and photos has run.
-    return { ok: true, service: "glitchbox-api", ownerPinned: !!ownerPin(this.env), privacy: !!this.metaGet("privacy1"), ...this.switches() };
+    // `privacy` = both 2026-10-13 cleanups have run: stored IPs, devices and photos were
+    // scrubbed, and the old play history was deleted.
+    return { ok: true, service: "glitchbox-api", ownerPinned: !!ownerPin(this.env),
+             privacy: !!this.metaGet("privacy1") && !!this.metaGet("privacy2"), ...this.switches() };
   }
 
   // Diagnostic companion to isOwnerSub: same two conditions, reported separately.
@@ -704,6 +695,7 @@ export class Hub extends DurableObject {
     if (!info.sub) throw new HttpError(401, "no subject");
     const now = Date.now();
     const existing = this.userOf(info.sub);
+    const prevSeen = existing ? (this.sql.exec("SELECT last_seen FROM users WHERE sub = ?", info.sub).toArray()[0] || {}).last_seen : 0;
     // Signing in again must not hand a banned account a fresh session.
     const ban = this.activeBan(existing);
     if (ban) throw new HttpError(403, ban);
@@ -725,6 +717,7 @@ export class Hub extends DurableObject {
       info.sub, info.email || "", this.freeTag(), info.name || info.email || "",
       picture, now, now);
     if (ip) this.sql.exec("UPDATE users SET last_ip = ? WHERE sub = ?", ip, info.sub);
+    this.countDay("u", prevSeen, now);
     if (!existing) this.sql.exec("UPDATE users SET created = ? WHERE sub = ?", now, info.sub);
     this.sql.exec("UPDATE users SET email_verified = ? WHERE sub = ?",
       String(info.email_verified) === "false" ? 0 : 1, info.sub);
@@ -749,9 +742,9 @@ export class Hub extends DurableObject {
     const now = Date.now();
     if (!this.isOwnerSub(me)) { const nb = this.ipBan(ip); if (nb) throw new HttpError(403, nb); }
     const prev = this.sql.exec("SELECT playing, playing_at, last_seen FROM users WHERE sub = ?", me).toArray()[0];
+    this.countDay("u", prev && prev.last_seen, now);
     if (this.hubOverridden(prev, "", now)) this.sql.exec("UPDATE users SET last_seen = ? WHERE sub = ?", now, me);
     else {
-      this.track("u:" + me, prev, "", now);
       this.sql.exec("UPDATE users SET last_seen = ?, playing = '', playing_at = ?, room = '' WHERE sub = ?", now, now, me);
     }
     if (ip) this.sql.exec("UPDATE users SET last_ip = ? WHERE sub = ?", ip, me);
@@ -820,7 +813,7 @@ export class Hub extends DurableObject {
       }
       const prev = this.sql.exec("SELECT playing, playing_at, last_seen FROM users WHERE sub = ?", me).toArray()[0];
       const keep = this.hubOverridden(prev, g, now);
-      if (!keep) this.track("u:" + me, prev, g, now);
+      this.countDay("u", prev && prev.last_seen, now);
       this.sql.exec("UPDATE users SET last_seen = ?, playing = ?, playing_at = ?, last_ip = COALESCE(?, last_ip), last_ua = COALESCE(?, last_ua) WHERE sub = ?",
         now, keep ? prev.playing : g, keep ? prev.playing_at : now, ip || null, ua || null, me);
       if (!keep) {
@@ -834,7 +827,8 @@ export class Hub extends DurableObject {
     if (!GID_RE.test(String(gid || ""))) return out;
     const gprev = this.guestOf(gid);
     const gkeep = this.hubOverridden(gprev, g, now);
-    if (!gkeep) this.track("g:" + gid, gprev, g, now);
+    this.countDay("g", gprev && gprev.last_seen, now);
+    if (Math.random() < 0.02) this.prune(now);
     this.sql.exec(
       `INSERT INTO guests (gid, ip, ua, created, last_seen, playing, playing_at) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(gid) DO UPDATE SET ip = excluded.ip, ua = excluded.ua, last_seen = excluded.last_seen,
@@ -848,23 +842,25 @@ export class Hub extends DurableObject {
     return { ...out, ...this.takePending("g:" + gid), gameGifts: this.takeGameGifts("g:" + gid, g) };
   }
 
-  // Log a move to `game` ('' = the hub) when it differs from where they were, or when
-  // they're coming back after being offline. `prev` is their row before this ping.
-  // The hub pings too, so with the hub and a game open in two tabs a hub ping would
+  // What someone is playing right now. The hub pings too, so with the hub and a game open in two tabs a hub ping would
   // flip them back to "in the hub" every few seconds. A game that pinged in the last
   // 20s wins; once its tab closes (or hides — hidden tabs don't ping) the hub takes over.
   hubOverridden(prev, game, now) {
     return game === "" && !!prev && !!prev.playing && now - (prev.playing_at || 0) < 20000;
   }
-  track(who, prev, game, now) {
-    const back = !prev || !prev.playing_at || now - prev.playing_at > ONLINE_WINDOW;
-    if (!back && (prev.playing || "") === game) return;
-    // Coming back after a gap: first mark when they went offline ("~"), so the last
-    // session has a real end instead of running on until today.
-    if (back && prev && prev.last_seen)
-      this.sql.exec("INSERT INTO activity (who, game, at) VALUES (?, '~', ?)", who, prev.last_seen);
-    this.sql.exec("INSERT INTO activity (who, game, at) VALUES (?, ?, ?)", who, game, now);
-    if (Math.random() < 0.02) this.rollupActivity(now);
+  // Count a visitor once per day: their first check-in on a new UTC day adds 1 to that day's
+  // players or guests. No name, no game, no time is kept with it.
+  countDay(kind, prevSeen, now) {
+    if (prevSeen && utcDay(prevSeen) === utcDay(now)) return;
+    this.sql.exec(`INSERT INTO day_stats (day, players, guests) VALUES (?, ?, ?)
+      ON CONFLICT(day) DO UPDATE SET players = players + excluded.players, guests = guests + excluded.guests`,
+      utcDay(now), kind === "u" ? 1 : 0, kind === "g" ? 1 : 0);
+  }
+  // Housekeeping now and then: old trades, old daily counts, answered ban requests.
+  prune(now) {
+    this.sql.exec("DELETE FROM trades WHERE created < ?", now - TRADE_KEEP);
+    this.sql.exec("DELETE FROM day_stats WHERE day < ?", utcDay(now - 90 * 86400000));
+    this.sql.exec("DELETE FROM ban_requests WHERE status != 'open' AND decided_at < ?", now - 30 * 86400000);
   }
 
   // The player ticked "I agree" on the terms screen.
@@ -1012,23 +1008,72 @@ export class Hub extends DurableObject {
   async adminBan(token, sub, banned, reason, hours) {
     const st = await this.requireStaff(token), me = st.me;
     if (!sub || sub === me) throw new HttpError(400, "you can't ban yourself");
-    if (!this.userOf(sub)) throw new HttpError(404, "no such player");
+    const u = this.userOf(sub);
+    if (!u) throw new HttpError(404, "no such player");
     this.modCanTouch(st, sub);
-    // Moderators only hand out bans of up to a day; anything longer is the owner's call.
-    let h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
-    if (!st.owner && banned) h = Math.min(24, h || 24);
-    const why = banned ? String(reason || "").slice(0, 200) : null;
+    // A moderator's ban is only a request: nothing happens until the owner approves it.
+    if (!st.owner) {
+      if (!banned) throw new HttpError(403, "Only the owner can lift a ban.");
+      return this.requestBan(st, "u:" + sub, u.name, reason, hours);
+    }
+    const h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    this.banUser(sub, !!banned, h, banned ? String(reason || "").slice(0, 200) : null, "");
+    return { ok: true, sub, banned: !!banned };
+  }
+  // Apply (or lift) a ban on an account. `note` is added to the log line.
+  banUser(sub, banned, h, why, note) {
     this.sql.exec("UPDATE users SET banned = ?, ban_reason = ?, ban_until = ? WHERE sub = ?",
       banned ? 1 : null, why, banned && h ? Date.now() + h * 3600000 : null, sub);
     const also = banned ? 0 : this.liftLinkedBans("u:" + sub);
-    this.log(banned ? "ban" : "unban", sub, banned ? (h ? "for " + h + "h" : "permanent") + (why ? " — " + why : "")
-      : also ? "also lifted " + also + " linked account/device ban" + (also > 1 ? "s" : "") : "", st.actor);
-    // A ban should also stop anything already in flight.
+    this.log(banned ? "ban" : "unban", sub, (banned ? (h ? "for " + h + "h" : "permanent") + (why ? " — " + why : "")
+      : also ? "also lifted " + also + " linked account/device ban" + (also > 1 ? "s" : "") : "") + (note || ""));
+    // A ban should also stop anything already in flight, and settles any request to ban them.
     if (banned) {
+      this.sql.exec("UPDATE ban_requests SET status = 'approved', decided_at = ? WHERE who = ? AND status = 'open'", Date.now(), "u:" + sub);
       this.sql.exec("DELETE FROM invites WHERE from_sub = ? OR to_sub = ?", sub, sub);
       this.sql.exec("DELETE FROM requests WHERE from_sub = ? OR to_sub = ?", sub, sub);
     }
-    return { ok: true, sub, banned: !!banned };
+  }
+
+  // ── ban requests ── a moderator asks, the owner approves or denies.
+  requestBan(st, who, name, reason, hours) {
+    const h = Math.min(24, Math.max(1, Number(hours) || 24));   // moderators ask for a day at most
+    const why = String(reason || "").slice(0, 200), now = Date.now();
+    const open = this.sql.exec("SELECT id FROM ban_requests WHERE who = ? AND status = 'open'", who).toArray()[0];
+    if (open) this.sql.exec("UPDATE ban_requests SET reason = ?, hours = ?, by_sub = ?, by_name = ?, created = ? WHERE id = ?",
+      why, h, st.me, st.actor, now, open.id);
+    else this.sql.exec(`INSERT INTO ban_requests (who, name, reason, hours, by_sub, by_name, created, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`, who, name, why, h, st.me, st.actor, now);
+    this.log("ban-request", who[0] === "u" ? who.slice(2) : "", (who[0] === "g" ? name + " " : "") + "for " + h + "h" +
+      (why ? " — " + why : "") + " (waiting for the owner)", st.actor);
+    return { ok: true, pending: true };
+  }
+  async adminBanRequests(token) {
+    await this.requireStaff(token);
+    return { requests: this.sql.exec(
+      `SELECT id, who, name, reason, hours, by_name, created, status, decided_at FROM ban_requests
+       ORDER BY (status = 'open') DESC, id DESC LIMIT 100`).toArray()
+      .map(r => ({ ...r, kind: r.who.indexOf("u:") === 0 ? "player" : "guest" })) };
+  }
+  async adminBanDecide(token, id, approve) {
+    const me = await this.requireOwner(token);
+    const r = this.sql.exec("SELECT * FROM ban_requests WHERE id = ?", Number(id) || 0).toArray()[0];
+    if (!r) throw new HttpError(404, "no such ban request");
+    if (r.status !== "open") throw new HttpError(409, "that request was already answered");
+    if (approve) {
+      const note = r.by_name ? " (asked for by " + r.by_name + ")" : "";
+      if (r.who.indexOf("u:") === 0) {
+        if (!this.userOf(r.who.slice(2))) throw new HttpError(404, "that account is gone");
+        this.banUser(r.who.slice(2), true, r.hours, r.reason || "", note);
+      } else {
+        const g = this.guestOf(r.who.slice(2));
+        if (!g) throw new HttpError(404, "that guest is gone");
+        this.banGuest(g, true, r.hours, r.reason || "", false, me, note, "");
+      }
+    } else this.log("ban-request-denied", r.who.indexOf("u:") === 0 ? r.who.slice(2) : "", (r.who[0] === "g" ? r.name + " " : "") +
+      (r.by_name ? "asked for by " + r.by_name : ""));
+    this.sql.exec("UPDATE ban_requests SET status = ?, decided_at = ? WHERE id = ?", approve ? "approved" : "denied", Date.now(), r.id);
+    return { ok: true };
   }
 
   async adminDeletePlayer(token, sub) {
@@ -1050,8 +1095,7 @@ export class Hub extends DurableObject {
     ]) this.sql.exec(q, sub, sub);
     for (const q of ["DELETE FROM saves WHERE sub = ?", "DELETE FROM gifts WHERE sub = ?", "DELETE FROM scores WHERE sub = ?", "DELETE FROM contest_scores WHERE sub = ?"])
       this.sql.exec(q, sub);
-    this.sql.exec("DELETE FROM activity WHERE who = ?", "u:" + sub);
-    this.sql.exec("DELETE FROM play_days WHERE who = ?", "u:" + sub);
+    this.sql.exec("DELETE FROM ban_requests WHERE who = ?", "u:" + sub);
     this.sql.exec("DELETE FROM trades WHERE from_sub = ? OR to_sub = ?", sub, sub);
     this.sql.exec("DELETE FROM pending WHERE who = ?", "u:" + sub);
     this.sql.exec("DELETE FROM game_gifts WHERE who = ?", "u:" + sub);
@@ -1136,10 +1180,16 @@ export class Hub extends DurableObject {
     const st = await this.requireStaff(token), me = st.me;
     const g = this.guestOf(String(gid || ""));
     if (!g) throw new HttpError(404, "no such guest");
-    if (!st.owner && alsoIp) throw new HttpError(403, "only the owner can ban a network");
-    let h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
-    if (!st.owner && banned) h = Math.min(24, h || 24);
-    const why = banned ? String(reason || "").slice(0, 200) : null;
+    if (!st.owner) {
+      if (alsoIp) throw new HttpError(403, "only the owner can ban a network");
+      if (!banned) throw new HttpError(403, "Only the owner can lift a ban.");
+      return this.requestBan(st, "g:" + g.gid, g.label || guestName(g.gid), reason, hours);
+    }
+    const h = Math.max(0, Math.min(24 * 365, Number(hours) || 0));
+    this.banGuest(g, !!banned, h, banned ? String(reason || "").slice(0, 200) : null, alsoIp, me, "", st.actor);
+    return { ok: true };
+  }
+  banGuest(g, banned, h, why, alsoIp, me, note, actor) {
     const until = banned && h ? Date.now() + h * 3600000 : null;
     const name = g.label || guestName(g.gid);
     if (banned && alsoIp && g.ip) {
@@ -1147,6 +1197,7 @@ export class Hub extends DurableObject {
       if (mine && mine === g.ip) throw new HttpError(400, "that guest is on your own network — ban the device only");
     }
     this.sql.exec("UPDATE guests SET banned = ?, ban_reason = ?, ban_until = ? WHERE gid = ?", banned ? 1 : null, why, until, g.gid);
+    if (banned) this.sql.exec("UPDATE ban_requests SET status = 'approved', decided_at = ? WHERE who = ? AND status = 'open'", Date.now(), "g:" + g.gid);
     if (banned && alsoIp && g.ip)
       this.sql.exec(`INSERT INTO ip_bans (ip, reason, until, created, label) VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(ip) DO UPDATE SET reason = excluded.reason, until = excluded.until, created = excluded.created, label = excluded.label`,
@@ -1155,8 +1206,7 @@ export class Hub extends DurableObject {
     if (!banned && g.ip) this.sql.exec("DELETE FROM ip_bans WHERE ip = ? AND label = ?", g.ip, name);
     if (!banned) this.liftLinkedBans("g:" + g.gid);
     this.log(banned ? "ban-guest" : "unban-guest", "", name + (banned ? (alsoIp ? " + network" : "") +
-      (h ? " for " + h + "h" : " permanent") + (why ? " — " + why : "") : ""), st.actor);
-    return { ok: true };
+      (h ? " for " + h + "h" : " permanent") + (why ? " — " + why : "") : "") + (note || ""), actor);
   }
 
   async adminIpBan(token, ip, banned, reason, hours) {
@@ -1185,7 +1235,7 @@ export class Hub extends DurableObject {
   }
 
   // Everything the console's View panel shows about one player or guest: where they
-  // are right now, their details, and the last week of moves between games.
+  // are right now and their details. There's no play history to show: none is kept.
   async adminView(token, target) {
     const st = await this.requireStaff(token);
     const t = String(target || ""), now = Date.now();
@@ -1207,21 +1257,19 @@ export class Hub extends DurableObject {
     } else throw new HttpError(400, "bad target");
     who.online = !!who.last_seen && who.last_seen > now - ONLINE_WINDOW;
     who.playing = who.online && who.playing_at > now - ONLINE_WINDOW ? (who.playing || "") : null;
-    const activity = this.sql.exec("SELECT game, at FROM activity WHERE who = ? AND at > ? ORDER BY at DESC LIMIT 60",
-      t, now - 7 * 86400000).toArray();
     if (who.kind === "player") who.isMod = who.role === "mod";
     // Moderators get what they need to deal with a problem: nametag, icon, friend code, what
-    // they're playing right now, reports and bans. No email, network, device or history.
+    // they're playing right now, reports and bans. No real name, email, network or device.
     if (!st.owner) {
       for (const k of ["real_name", "email", "ip", "ua", "friends", "saves", "tos_version", "tos_at"]) delete who[k];
-      return { who, activity: [], trades: [], now };
+      return { who, trades: [], now };
     }
     const trades = who.kind === "player" ? this.sql.exec(
       `SELECT t.tokens, t.created, t.from_sub, t.to_sub, a.name AS from_name, b.name AS to_name FROM trades t
        LEFT JOIN users a ON a.sub = t.from_sub LEFT JOIN users b ON b.sub = t.to_sub
        WHERE (t.from_sub = ? OR t.to_sub = ?) AND t.created > ? ORDER BY t.created DESC LIMIT 30`,
       who.sub, who.sub, now - 7 * 86400000).toArray() : [];
-    return { who, activity, trades, now };
+    return { who, trades, now };
   }
 
   // Kick: boot someone back to the hub with a message. Not a ban — they can come
@@ -1332,7 +1380,9 @@ export class Hub extends DurableObject {
     const one = q => this.sql.exec(q).toArray()[0];
     return { reports: one("SELECT COUNT(*) AS n FROM reports").n, lastReport: one("SELECT IFNULL(MAX(id), 0) AS n FROM reports").n,
              appeals: one("SELECT COUNT(*) AS n FROM appeals WHERE status = 'open'").n,
-             lastAppeal: one("SELECT IFNULL(MAX(id), 0) AS n FROM appeals").n };
+             lastAppeal: one("SELECT IFNULL(MAX(id), 0) AS n FROM appeals").n,
+             banRequests: one("SELECT COUNT(*) AS n FROM ban_requests WHERE status = 'open'").n,
+             lastBanRequest: one("SELECT IFNULL(MAX(id), 0) AS n FROM ban_requests").n };
   }
 
   // ── moderators ── owner only.
@@ -1412,6 +1462,7 @@ export class Hub extends DurableObject {
     if (a.status !== "open") throw new HttpError(409, "that appeal was already answered");
     const r = String(reply || "").trim().slice(0, 300);
     let note = "";
+    if (accept && !st.owner) throw new HttpError(403, "Only the owner can lift a ban. You can still turn the appeal down.");
     if (accept) {
       if (a.who.indexOf("u:") === 0) {
         this.modCanTouch(st, a.who.slice(2));
@@ -1437,99 +1488,34 @@ export class Hub extends DurableObject {
     return { ok: true, featured: this.featured() };
   }
 
-  // ── stats ── a month of activity, bucketed into the owner's own days and hours
-  // (`tz` = their Date.getTimezoneOffset(), in minutes).
-  async adminStats(token, tz) {
+  // ── stats ── the Stats tab: visitors per day (players and guests, just counts, UTC days)
+  // and new accounts, for the last 30 days.
+  async adminStats(token) {
     await this.requireOwner(token);
-    const now = Date.now(), from = now - 30 * 86400000, off = (Number(tz) || 0) * 60000;
-    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE at > ? ORDER BY who, at", from).toArray();
-    const seen = this.lastSeenMap();
-    // Older than a week there are only daily totals: they count for days and games, not hours.
-    const segs = segments(rows, seen, now, from).concat(this.daySegs(null, from));
-    const older = this.sql.exec("SELECT who, day FROM play_days WHERE day >= ?", utcDay(from)).toArray();
-    const day = t => new Date(t - off).toISOString().slice(0, 10);
-    const days = {};
-    for (let i = 29; i >= 0; i--) days[day(now - i * 86400000)] = { players: new Set(), guests: new Set(), signups: 0, ms: 0 };
-    for (const r of rows) { const d = days[day(r.at)]; if (d && r.game !== "~") (r.who[0] === "u" ? d.players : d.guests).add(r.who); }
-    for (const r of older) { const d = days[r.day]; if (d) (r.who[0] === "u" ? d.players : d.guests).add(r.who); }
-    for (const u of this.sql.exec("SELECT created FROM users WHERE created > ?", from).toArray()) { const d = days[day(u.created)]; if (d) d.signups++; }
-    const hours = new Array(24).fill(0), games = {};
-    for (const sg of segs) {
-      const d = days[day(sg.at)]; if (d) d.ms += sg.ms;
-      if (!sg.rolled) hours[new Date(sg.at - off).getUTCHours()] += sg.ms;
-      games[sg.game] = (games[sg.game] || 0) + sg.ms;
+    const now = Date.now(), from = now - 30 * 86400000;
+    const counts = {};
+    for (const r of this.sql.exec("SELECT day, players, guests FROM day_stats WHERE day >= ?", utcDay(from)).toArray()) counts[r.day] = r;
+    const ups = {};
+    for (const u of this.sql.exec("SELECT created FROM users WHERE created > ?", from).toArray()) ups[utcDay(u.created)] = (ups[utcDay(u.created)] || 0) + 1;
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = utcDay(now - i * 86400000), c = counts[d] || {};
+      days.push({ day: d, players: c.players || 0, guests: c.guests || 0, signups: ups[d] || 0 });
     }
-    const whoAll = new Set(rows.filter(r => r.game !== "~").map(r => r.who).concat(older.map(r => r.who)));
-    return {
-      days: Object.keys(days).map(k => ({ day: k, players: days[k].players.size, guests: days[k].guests.size, signups: days[k].signups, minutes: Math.round(days[k].ms / 60000) })),
-      hours: hours.map(ms => Math.round(ms / 60000)),
-      games: Object.keys(games).map(g => ({ game: g, minutes: Math.round(games[g] / 60000) })).sort((a, b) => b.minutes - a.minutes).slice(0, 15),
-      totals: { players: [...whoAll].filter(w => w[0] === "u").length, guests: [...whoAll].filter(w => w[0] === "g").length,
-                hours: Math.round(segs.reduce((a, sg) => a + sg.ms, 0) / 3600000) },
-    };
-  }
-  lastSeenMap() {
-    const m = {};
-    for (const u of this.sql.exec("SELECT sub, last_seen FROM users").toArray()) m["u:" + u.sub] = u.last_seen;
-    for (const g of this.sql.exec("SELECT gid, last_seen FROM guests").toArray()) m["g:" + g.gid] = g.last_seen;
-    return m;
-  }
-  // Fold exact history older than a week into daily totals, then delete it. Also drops
-  // daily totals older than a month and trades older than TRADE_KEEP.
-  rollupActivity(now) {
-    const cut = now - ACTIVITY_DETAIL;
-    const whos = this.sql.exec("SELECT DISTINCT who FROM activity WHERE at < ?", cut).toArray().map(r => r.who);
-    const seen = whos.length ? this.lastSeenMap() : null;
-    for (const w of whos) {
-      const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE who = ? ORDER BY at", w).toArray();
-      const old = rows.filter(r => r.at < cut).length;
-      // Include the first newer row, so the last old session ends where it really ended.
-      for (const sg of segments(rows.slice(0, old + 1), seen, now, 0)) {
-        if (sg.at >= cut) continue;
-        this.sql.exec(`INSERT INTO play_days (who, day, game, ms) VALUES (?, ?, ?, ?)
-          ON CONFLICT(who, day, game) DO UPDATE SET ms = ms + excluded.ms`, w, utcDay(sg.at), sg.game, Math.round(sg.ms));
-      }
-      for (const r of rows.slice(0, old))
-        if (r.game === "") this.sql.exec("INSERT OR IGNORE INTO play_days (who, day, game, ms) VALUES (?, ?, '', 0)", w, utcDay(r.at));
-      this.sql.exec("DELETE FROM activity WHERE who = ? AND at < ?", w, cut);
-    }
-    this.sql.exec("DELETE FROM play_days WHERE day < ?", utcDay(now - ACTIVITY_KEEP));
-    this.sql.exec("DELETE FROM trades WHERE created < ?", now - TRADE_KEEP);
-  }
-  // Daily totals since `from` as play sessions (dated noon UTC), so they add straight onto
-  // segments() output. `who` null = everyone.
-  daySegs(who, from) {
-    const d = utcDay(from || 0);
-    const rows = who
-      ? this.sql.exec("SELECT who, day, game, ms FROM play_days WHERE who = ? AND day >= ? AND game != ''", who, d).toArray()
-      : this.sql.exec("SELECT who, day, game, ms FROM play_days WHERE day >= ? AND game != ''", d).toArray();
-    return rows.map(r => ({ who: r.who, game: r.game, at: Date.parse(r.day + "T12:00:00Z"), ms: r.ms, rolled: true }));
+    const n = (q, ...a) => this.sql.exec(q, ...a).toArray()[0].n;
+    return { days, totals: { players: n("SELECT COUNT(*) AS n FROM users WHERE last_seen > ?", from),
+                             guests: n("SELECT COUNT(*) AS n FROM guests WHERE last_seen > ?", from) } };
   }
 
   // ── badges ── earned from what a player has done; worked out fresh each time.
   badgesFor(sub) {
     const now = Date.now(), u = this.userOf(sub);
     if (!u) return [];
-    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE who = ? ORDER BY at", "u:" + sub).toArray();
-    const older = this.sql.exec("SELECT day, game, ms FROM play_days WHERE who = ?", "u:" + sub).toArray();
-    const last = this.sql.exec("SELECT last_seen FROM users WHERE sub = ?", sub).toArray()[0];
-    const segs = segments(rows, { ["u:" + sub]: last && last.last_seen }, now, 0).concat(this.daySegs("u:" + sub, 0));
-    const per = {};
-    segs.forEach(sg => per[sg.game] = (per[sg.game] || 0) + sg.ms);
-    // A game counts as played the moment it's opened; time only matters for Marathon.
-    const games = [...new Set(rows.map(r => r.game).concat(older.map(r => r.game)).filter(g => g && g !== "~"))], best = Math.max(0, ...Object.values(per));
-    const days = new Set(rows.filter(r => r.game !== "~").map(r => utcDay(r.at)).concat(older.map(r => r.day)));
     const one = (q, ...a) => this.sql.exec(q, ...a).toArray()[0].n;
     const friends = one("SELECT COUNT(*) AS n FROM friends WHERE a = ?", sub);
     const saves = one("SELECT COUNT(*) AS n FROM saves WHERE sub = ?", sub);
     const scores = one("SELECT COUNT(*) AS n FROM scores WHERE sub = ?", sub);
     return [
-      ["first", "🎮", "First Game", "Play any game", games.length >= 1],
-      ["explorer", "🧭", "Explorer", "Play 10 different games", games.length >= 10],
-      ["globe", "🗺️", "Globetrotter", "Play 25 different games", games.length >= 25],
-      ["marathon", "⏱️", "Marathon", "Spend 2 hours in one game", best >= 2 * 3600000],
-      ["party", "🎉", "Party Animal", "Play a multiplayer game", games.some(g => MP_FILES.includes(g))],
-      ["regular", "🔥", "Regular", "Play on 5 different days", days.size >= 5],
       ["social", "👥", "Social", "Have 3 friends", friends >= 3],
       ["popular", "🌟", "Popular", "Have 10 friends", friends >= 10],
       ["saver", "💾", "Saver", "Make a cloud save", saves >= 1],
@@ -1549,19 +1535,13 @@ export class Hub extends DurableObject {
     const now = Date.now();
     // "Hide my activity" holds for moderators too; only the owner sees past it.
     const hidden = !!u.hide_activity && !self && !this.isOwnerSub(me);
-    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE who = ? AND at > ? ORDER BY at", "u:" + target, now - ACTIVITY_KEEP).toArray();
     const row = this.sql.exec("SELECT last_seen, playing, playing_at FROM users WHERE sub = ?", target).toArray()[0] || {};
-    const segs = segments(rows, { ["u:" + target]: row.last_seen }, now, 0).concat(this.daySegs("u:" + target, now - ACTIVITY_KEEP));
-    const per = {};
-    segs.forEach(sg => per[sg.game] = (per[sg.game] || 0) + sg.ms);
     const online = row.last_seen > now - ONLINE_WINDOW;
     return {
       sub: target, name: u.name, picture: self ? u.picture : pub(u).picture, created: u.created, self,
       friends: this.sql.exec("SELECT COUNT(*) AS n FROM friends WHERE a = ?", target).toArray()[0].n,
       badges: this.badgesFor(target), hidden, online,
       playing: hidden || !online || !(row.playing_at > now - ONLINE_WINDOW) ? null : (row.playing || ""),
-      totalMinutes: hidden ? null : Math.round(segs.reduce((a, sg) => a + sg.ms, 0) / 60000),
-      topGames: hidden ? [] : Object.keys(per).sort((a, b) => per[b] - per[a]).slice(0, 5).map(g => ({ game: g, minutes: Math.round(per[g] / 60000) })),
       scores: hidden ? [] : this.sql.exec("SELECT game, score, low, at FROM scores WHERE sub = ? ORDER BY at DESC LIMIT 10", target).toArray(),
     };
   }
@@ -1593,31 +1573,18 @@ export class Hub extends DurableObject {
     }
     return { ok: true, best: better ? n : cur.score, newBest: better };
   }
-  // Who has played `game` the most this week (or the whole arcade with "*"), plus high
-  // scores. Public, so names are shortened, and players who hide their activity are left out.
+  // High scores for one game. Public, so only nametags and icons. With no game (or "*"), the list
+  // of games that have scores, so the hub can offer them.
   async leaderboard(game) {
     const g = String(game || "*");
-    if (g !== "*" && !GAME_RE.test(g)) throw new HttpError(400, "unknown game");
-    const now = Date.now(), from = now - 7 * 86400000;
-    const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE at > ? AND who LIKE 'u:%' ORDER BY who, at", from).toArray();
-    const segs = segments(rows, this.lastSeenMap(), now, from);
-    const per = {};
-    segs.forEach(sg => { if (g === "*" || sg.game === g) per[sg.who] = (per[sg.who] || 0) + sg.ms; });
-    const people = {};
-    for (const u of this.sql.exec("SELECT sub, name, CASE WHEN picture LIKE 'icon:%' THEN picture ELSE '' END AS picture FROM users WHERE NOT IFNULL(hide_activity, 0) AND NOT IFNULL(banned, 0)").toArray()) people["u:" + u.sub] = u;
-    const time = Object.keys(per).filter(w => people[w] && per[w] >= 60000).sort((a, b) => per[b] - per[a]).slice(0, 10)
-      .map(w => ({ sub: people[w].sub, name: people[w].name, picture: people[w].picture, minutes: Math.round(per[w] / 60000) }));
-    let scores = [];
-    if (g !== "*") {
-      const dir = this.sql.exec("SELECT low FROM scores WHERE game = ? GROUP BY low ORDER BY COUNT(*) DESC LIMIT 1", g).toArray()[0];
-      const low = dir && dir.low;
-      scores = this.sql.exec(
-        `SELECT s.sub, s.score, s.at, u.name, ${PUB_PIC} AS picture FROM scores s JOIN users u ON u.sub = s.sub
-         WHERE s.game = ? AND s.low = ? AND NOT IFNULL(u.banned, 0) ORDER BY s.score ${low ? "ASC" : "DESC"} LIMIT 10`, g, low ? 1 : 0).toArray()
-        .map(r => ({ ...r, name: r.name }));
-      return { game: g, time, scores, low: !!low };
-    }
-    return { game: g, time, scores };
+    if (g === "*") return { game: "*", games: this.sql.exec("SELECT DISTINCT game FROM scores ORDER BY game").toArray().map(r => r.game), scores: [] };
+    if (!GAME_RE.test(g)) throw new HttpError(400, "unknown game");
+    const dir = this.sql.exec("SELECT low FROM scores WHERE game = ? GROUP BY low ORDER BY COUNT(*) DESC LIMIT 1", g).toArray()[0];
+    const low = dir && dir.low;
+    const scores = this.sql.exec(
+      `SELECT s.sub, s.score, s.at, u.name, ${PUB_PIC} AS picture FROM scores s JOIN users u ON u.sub = s.sub
+       WHERE s.game = ? AND s.low = ? AND NOT IFNULL(u.banned, 0) ORDER BY s.score ${low ? "ASC" : "DESC"} LIMIT 10`, g, low ? 1 : 0).toArray();
+    return { game: g, scores, low: !!low };
   }
 
   // ── contests ──
@@ -1628,21 +1595,10 @@ export class Hub extends DurableObject {
   }
   // Ranked entrants (best first). Banned players and the owner never place.
   standings(c, limit) {
-    const now = Date.now(), end = Math.min(now, c.ends);
     let list;
     if (c.kind === "score") {
       list = this.sql.exec(`SELECT sub, score, at FROM contest_scores WHERE cid = ? ORDER BY score ${c.low ? "ASC" : "DESC"}, at ASC`, c.id).toArray();
-    } else {
-      const rows = this.sql.exec("SELECT who, game, at FROM activity WHERE at < ? AND who LIKE 'u:%' ORDER BY who, at", end).toArray();
-      const per = {};
-      for (const sg of segments(rows, this.lastSeenMap(), end, c.starts).concat(this.daySegs(null, c.starts).filter(s => s.who[0] === "u" && s.at < end))) {
-        if (c.game !== "*" && sg.game !== c.game) continue;
-        const st = Math.max(sg.at, c.starts), ms = Math.min(st + sg.ms, end) - st;
-        if (ms > 0) per[sg.who.slice(2)] = (per[sg.who.slice(2)] || 0) + ms;
-      }
-      list = Object.keys(per).map(sub => ({ sub, score: Math.floor(per[sub] / 60000) })).filter(x => x.score >= 1)
-        .sort((a, b) => b.score - a.score);
-    }
+    } else list = [];   // "most time played" contests ended when play time stopped being recorded
     const out = [];
     for (const x of list) {
       const u = this.userOf(x.sub);
@@ -1690,9 +1646,10 @@ export class Hub extends DurableObject {
     b = b || {};
     const title = String(b.title || "").trim().slice(0, 80);
     if (!title) throw new HttpError(400, "give the contest a name");
-    const kind = b.kind === "time" ? "time" : "score";
+    if (b.kind === "time") throw new HttpError(400, "GLITCHBOX doesn't track play time any more, so contests are best-score only.");
+    const kind = "score";
     const game = String(b.game || "");
-    if (!(kind === "time" && game === "*") && !GAME_RE.test(game)) throw new HttpError(400, "pick a game");
+    if (!GAME_RE.test(game)) throw new HttpError(400, "pick a game");
     const hours = Number(b.hours);
     if (!(hours >= 0.05 && hours <= 24 * 30)) throw new HttpError(400, "a contest runs between 3 minutes and 30 days");
     const prizes = (Array.isArray(b.prizes) ? b.prizes : []).slice(0, 5).map(x => Math.max(0, Math.min(100000, Math.trunc(Number(x) || 0))));
@@ -1730,8 +1687,6 @@ export class Hub extends DurableObject {
     const names = q => this.sql.exec(q, me).toArray();
     return {
       account: u,
-      activity: this.sql.exec("SELECT game, at FROM activity WHERE who = ? ORDER BY at DESC LIMIT 500", "u:" + me).toArray(),
-      dailyPlay: this.sql.exec("SELECT day, game, ROUND(ms / 60000) AS minutes FROM play_days WHERE who = ? AND game != '' ORDER BY day DESC", "u:" + me).toArray(),
       tokensSent: names(`SELECT u.name AS "to", t.tokens, t.created FROM trades t LEFT JOIN users u ON u.sub = t.to_sub WHERE t.from_sub = ? ORDER BY t.created DESC`),
       tokensReceived: names(`SELECT u.name AS "from", t.tokens, t.created FROM trades t LEFT JOIN users u ON u.sub = t.from_sub WHERE t.to_sub = ? ORDER BY t.created DESC`),
       friends: names("SELECT u.name FROM friends f JOIN users u ON u.sub = f.b WHERE f.a = ?").map(r => r.name),
@@ -1756,16 +1711,14 @@ export class Hub extends DurableObject {
     if (!GID_RE.test(String(gid || ""))) throw new HttpError(400, "no guest id");
     const g = this.guestOf(gid);
     return { guest: g ? { name: guestName(gid), network_code: g.ip, device: g.ua, created: g.created, last_seen: g.last_seen,
-                           tos_version: g.tos_version, banned: !!g.banned } : null,
-             activity: this.sql.exec("SELECT game, at FROM activity WHERE who = ? ORDER BY at DESC LIMIT 500", "g:" + gid).toArray(),
-             dailyPlay: this.sql.exec("SELECT day, game, ROUND(ms / 60000) AS minutes FROM play_days WHERE who = ? AND game != '' ORDER BY day DESC", "g:" + gid).toArray() };
+                           tos_version: g.tos_version, banned: !!g.banned } : null };
   }
   async guestForget(gid) {
     if (!GID_RE.test(String(gid || ""))) throw new HttpError(400, "no guest id");
     const g = this.guestOf(gid);
     if (g && g.banned) throw new HttpError(403, "a banned device can't be forgotten — appeal the ban instead");
     this.sql.exec("DELETE FROM guests WHERE gid = ?", gid);
-    for (const t of ["activity", "play_days", "pending", "appeals", "game_gifts"]) this.sql.exec("DELETE FROM " + t + " WHERE who = ?", "g:" + gid);
+    for (const t of ["pending", "appeals", "game_gifts", "ban_requests"]) this.sql.exec("DELETE FROM " + t + " WHERE who = ?", "g:" + gid);
     return { ok: true };
   }
 
@@ -2048,7 +2001,8 @@ export default {
       if (path === "/api/guest-data") return json(await stub.guestData(url.searchParams.get("gid")), 200, origin);
       if (path === "/api/appeal" && request.method === "GET") return json(await stub.appealStatus(auth, url.searchParams.get("gid")), 200, origin);
       if (path === "/api/admin/appeals") return json(await stub.adminAppeals(auth), 200, origin);
-      if (path === "/api/admin/stats") return json(await stub.adminStats(auth, url.searchParams.get("tz")), 200, origin);
+      if (path === "/api/admin/stats") return json(await stub.adminStats(auth), 200, origin);
+      if (path === "/api/admin/ban-requests") return json(await stub.adminBanRequests(auth), 200, origin);
 
       // Game saves — the cloud half of glitchbox-save.js.
       if (path === "/api/load") {
@@ -2077,6 +2031,7 @@ export default {
         if (path === "/api/guest-forget") return json(await stub.guestForget(body.gid), 200, origin);
         if (path === "/api/admin/reset-tag")     return json(await stub.adminResetTag(auth, body.sub), 200, origin);
         if (path === "/api/admin/set-mod")       return json(await stub.adminSetMod(auth, body.sub, body.on), 200, origin);
+        if (path === "/api/admin/ban-decide")    return json(await stub.adminBanDecide(auth, body.id, body.approve), 200, origin);
         if (path === "/api/admin/appeal-decide") return json(await stub.adminAppealDecide(auth, body.id, body.accept, body.reply), 200, origin);
         if (path === "/api/admin/featured")      return json(await stub.adminFeatured(auth, body.file), 200, origin);
         if (path === "/api/avatar")   return json(await stub.setAvatar(auth, body.picture), 200, origin);

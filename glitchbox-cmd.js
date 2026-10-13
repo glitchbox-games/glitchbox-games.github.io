@@ -613,10 +613,9 @@
       head('// ARCADE');
       Object.keys(c).forEach(k => say('  ' + pad(k, 14) + c[k]));
       try {
-        const st = await call('/api/admin/stats?tz=' + new Date().getTimezoneOffset());
+        const st = await call('/api/admin/stats');
         head('// LAST 30 DAYS');
-        say('  players       ' + st.totals.players + '     guests ' + st.totals.guests + '     hours played ' + st.totals.hours);
-        st.games.slice(0, 5).forEach(g => say('  ' + pad(g.game.replace('.html', ''), 18) + g.minutes + ' min'));
+        say('  players       ' + st.totals.players + '     guests ' + st.totals.guests + '     new accounts ' + st.days.reduce((n, d) => n + d.signups, 0));
       } catch (e) { /* owner-only; older servers lack it */ }
       if (o.recent && o.recent.length) {
         head('// NEWEST');
