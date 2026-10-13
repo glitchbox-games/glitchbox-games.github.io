@@ -233,7 +233,7 @@
     const stat = (k, label) => '<div class="adm-stat"><b>' + c[k] + '</b><span>' + label + '</span></div>';
     const live = overview.live || [], liveG = overview.liveGuests || [];
     const status = (isMod ? '<div class="adm-note">You\'re a <b>moderator</b>: you can view, message, kick and ban players and guests for up to a day, and answer appeals. ' +
-        'Emails and IP addresses stay hidden from you.</div>' : '') + (overview.maintenance ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">' +
+        'Real names, emails, networks, devices and play history stay hidden from you.</div>' : '') + (overview.maintenance ? '<div class="adm-note" style="color:#ffc800;border:1px solid currentColor;padding:9px 12px">' +
         '🛠 Maintenance mode is ON - the arcade is closed to everyone but you. <a href="#" data-act="goarcade" style="color:inherit">Arcade tab →</a></div>' : '') +
       (overview.announce ? '<div class="adm-note" style="color:#00f5ff;border:1px solid currentColor;padding:9px 12px">📣 Live announcement: “' +
         esc(overview.announce.text) + '”</div>' : '');
@@ -462,11 +462,14 @@
         : '<button class="adm-btn ' + (w.banned ? 'warn' : 'danger') + '" data-act="' + (w.banned ? 'unban' : 'ban') + '" data-sub="' + esc(w.sub) +
           '" data-name="' + esc(w.name) + '">' + (w.banned ? 'Unban' : 'Ban') + '</button>') + '</div>';
     const row = (k, v) => v === '' || v == null || v === '?' ? '' : '<div class="adm-meta"><b style="color:#e8eefc;display:inline-block;min-width:88px">' + k + '</b> ' + v + '</div>';
-    const details = row('Device', esc(device(w.ua))) + row('IP', esc(w.ip || '?')) +
+    // Moderators get no device, network, email, counts or history (the server leaves them out).
+    const details = (isOwner ? row('Device', esc(device(w.ua))) + row('Network', esc(netCode(w.ip))) : '') +
       (guest ? row('First seen', ago(w.created)) :
-        row('Email', esc(w.email)) + row('Friend code', esc(w.code || '-')) + row('Joined', ago(w.created)) +
-        row('Friends', w.friends + ' · ' + w.saves + ' cloud saves · ' + w.reports + ' reports about them')) +
-      row('Terms', w.tos_version ? 'agreed (' + esc(w.tos_version) + ')' + (w.tos_at ? ' ' + ago(w.tos_at) : '') : '<span style="color:#ffb400">not agreed yet</span>') +
+        (isOwner ? row('Google name', esc(w.real_name || '')) + row('Email', esc(w.email || '')) : '') +
+        row('Friend code', esc(w.code || '-')) + row('Joined', ago(w.created)) +
+        (w.friends != null ? row('Friends', w.friends + ' · ' + w.saves + ' cloud saves · ' + w.reports + ' reports about them')
+          : row('Reports', (w.reports || 0) + ' about them'))) +
+      (isOwner ? row('Terms', w.tos_version ? 'agreed (' + esc(w.tos_version) + ')' + (w.tos_at ? ' ' + ago(w.tos_at) : '') : '<span style="color:#ffb400">not agreed yet</span>') : '') +
       (w.banned ? row('Banned', (w.ban_until ? 'until ' + when(w.ban_until) : 'permanently') + (w.ban_reason ? ' - “' + esc(w.ban_reason) + '”' : '')) : '');
     // Time in each game this week: each entry lasts until the next one, and the newest
     // until now (or until they were last seen). "~" rows mark when they went offline.
@@ -482,13 +485,16 @@
         '<div class="adm-grow"><div class="adm-name" style="font-size:18px">' + esc(w.name) +
         (guest ? ' <span class="adm-tag" style="background:rgba(255,180,0,.12);color:#ffb400;border-color:rgba(255,180,0,.3)">guest</span>' : '') +
         (w.online ? ' <span style="color:#00ff88">● online</span>' : '') + (w.banned ? ' <span class="adm-tag">banned</span>' : '') + '</div>' +
-        '<div class="adm-meta">' + (guest ? 'playing without an account' : esc(w.email)) + '</div></div></div>' +
+        '<div class="adm-meta">' + (guest ? 'playing without an account' : isOwner ? esc([w.real_name, w.email].filter(Boolean).join(' · '))
+          : 'friend code ' + esc(w.code || '-')) + '</div></div></div>' +
       nowBox + actions +
       '<div class="adm-h">// DETAILS</div>' + details +
       (top.length ? '<div class="adm-h">// MOST PLAYED THIS WEEK</div>' + top.map(f =>
         '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + esc(gameName(f)) + '</div></div><span class="adm-meta">about ' + dur(spent[f]) + '</span></div>').join('') : '') +
+      trades(watch.trades, w.sub) +
       '<div class="adm-h">// WHAT THEY\'VE BEEN DOING · LAST 7 DAYS</div>' +
-      (acts.length ? '<div class="adm-tl">' + acts.map((a, i) => {
+      (!isOwner ? '<div class="adm-empty">Play history is only shown to the owner.</div>' :
+       acts.length ? '<div class="adm-tl">' + acts.map((a, i) => {
         const end = i === 0 ? (w.online ? now : w.last_seen || a.at) : acts[i - 1].at;
         const len = end - a.at;
         return '<span class="t">' + when(a.at) + '</span><span>' + esc(place(a.game)) + '</span>' +
@@ -510,9 +516,25 @@
   function kickBtn(target, name) {
     return '<button class="adm-btn warn" data-act="kick" data-target="' + esc(target) + '" data-name="' + esc(name) + '">👢 Kick</button>';
   }
+  // "net:3fa9c1d2…" → "3FA9-C1D2": a network's scrambled code, short enough to compare by eye.
+  function netCode(ip) {
+    const m = /^net:([0-9a-f]{8})/.exec(String(ip || ''));
+    return m ? m[1].toUpperCase().replace(/^(.{4})/, '$1-') : String(ip || '');
+  }
+  // Tokens this player sent or got from friends this week (owner only).
+  function trades(list, sub) {
+    if (!isOwner || !list || !list.length) return '';
+    return '<div class="adm-h">// TOKENS SENT AND RECEIVED · LAST 7 DAYS</div>' + list.map(x => {
+      const out = x.from_sub === sub;
+      return '<div class="adm-row"><div class="adm-grow"><div class="adm-name">' + (out ? '➡ sent ' : '⬅ got ') + x.tokens + ' 🪙 ' +
+        (out ? 'to ' + esc(x.to_name || 'a deleted player') : 'from ' + esc(x.from_name || 'a deleted player')) + '</div></div>' +
+        '<span class="adm-meta">' + ago(x.created) + '</span></div>';
+    }).join('');
+  }
   // "Mozilla/5.0 (iPhone; …) … Safari" → "iPhone · Safari": enough to tell devices apart.
   function device(ua) {
     ua = String(ua || '');
+    if (ua && !/[/;(]/.test(ua)) return ua;   // the server keeps just the kind of device now
     const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
       : /CrOS/.test(ua) ? 'Chromebook' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : '?';
     const br = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox'
@@ -549,9 +571,10 @@
             (g.ipBanned ? ' <span class="adm-tag">network banned</span>' : '') +
             (g.sameAsYou ? ' <span class="adm-tag" style="background:rgba(0,245,255,.14);color:#00f5ff;border-color:rgba(0,245,255,.3)">your network</span>' : '') +
           '</div>' +
-          '<div class="adm-meta">' + esc(device(g.ua)) + (g.ip ? ' · IP ' + esc(g.ip) : '') + ' · first seen ' + ago(g.created) + ' · last seen ' + ago(g.last_seen) + '</div>' +
-          '<div class="adm-meta">' + (g.tos_version ? '📜 agreed to the terms (' + esc(g.tos_version) + ')'
-            : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms</span>') + '</div>' +
+          '<div class="adm-meta">' + (isOwner ? esc(device(g.ua)) + (g.ip ? ' · network ' + esc(netCode(g.ip)) : '') + ' · ' : '') +
+            'first seen ' + ago(g.created) + ' · last seen ' + ago(g.last_seen) + '</div>' +
+          (isOwner ? '<div class="adm-meta">' + (g.tos_version ? '📜 agreed to the terms (' + esc(g.tos_version) + ')'
+            : '<span style="color:#ffb400">📜 hasn\'t agreed to the terms</span>') + '</div>' : '') +
           (g.alsoOnIp && g.alsoOnIp.length ? '<div class="adm-meta">same network as: ' + esc(g.alsoOnIp.slice(0, 5).join(', ')) + '</div>' : '') +
           (g.ban_reason ? '<div class="adm-meta">“' + esc(g.ban_reason) + '”</div>' : '') + '</div>' +
           viewBtn('g:' + g.gid, g.name) +
@@ -564,13 +587,15 @@
         '</div>').join('') : '<div class="adm-empty">No guests yet.</div>') +
       (!isOwner ? '' : '<div class="adm-h">// NETWORK BANS · ' + bans.length + '</div>' +
       (bans.length ? bans.map(b =>
-        '<div class="adm-row ban"><div class="adm-grow"><div class="adm-name">' + esc(b.ip) + (b.label ? ' <span class="adm-meta">(' + esc(b.label) + ')</span>' : '') + '</div>' +
+        '<div class="adm-row ban"><div class="adm-grow"><div class="adm-name">' + esc(netCode(b.ip)) + (b.label ? ' <span class="adm-meta">(' + esc(b.label) + ')</span>' : '') + '</div>' +
         '<div class="adm-meta">' + (b.until ? 'until ' + when(b.until) : 'permanent') + ' · since ' + ago(b.created) + (b.reason ? ' · “' + esc(b.reason) + '”' : '') + '</div></div>' +
         '<button class="adm-btn warn" data-act="ipunban" data-ip="' + esc(b.ip) + '">Unban</button></div>').join('')
         : '<div class="adm-empty">No networks banned.</div>') +
       '<div class="adm-actions" style="margin-top:10px"><input class="adm-in" id="adm-ip" placeholder="Ban an IP by hand, e.g. 203.0.113.7" style="flex:1;min-width:200px">' +
         '<button class="adm-btn danger" data-act="ipban">Ban IP</button></div>' +
-      (guests.myIp ? '<div class="adm-note">Your own network is ' + esc(guests.myIp) + ' - it can\'t be banned.</div>' : ''));
+      '<div class="adm-note">IP addresses are never stored. Each network shows as a scrambled code that matches itself, so bans ' +
+        'still work, but nobody (you included) can read the real address.</div>' +
+      (guests.myIp ? '<div class="adm-note">Your own network is ' + esc(netCode(guests.myIp)) + ' - it can\'t be banned.</div>' : ''));
   }
 
   function viewAppeals() {
@@ -798,7 +823,7 @@
           players = null; logRows = null; notice = { text: on ? '⭐ ' + name + ' is a moderator.' : name + ' is no longer a moderator.' };
         };
         if (on) askFor({ text:'Make ' + name + ' a moderator?\nThey can view, message, kick and ban players and guests for up to a day, and answer appeals. ' +
-          'They never see emails or IP addresses, and can\'t give tokens, delete accounts or change the arcade.', yes:'Make mod', run: go });
+          'They never see real names, emails, networks, devices or play history, and can\'t give tokens, delete accounts or change the arcade.', yes:'Make mod', run: go });
         else { await go(); render(); }
       }
       else if (act === 'feature') {
@@ -877,12 +902,12 @@
                  input:'Reason (optional)', choices:[['0','Permanently'],['24','for 1 day'],['168','for 1 week']], yes:'Ban network',
                  run: async (reason, hours) => {
           await call('/api/admin/ip-ban', { method:'POST', body:{ ip, banned:true, reason, hours:+hours || 0 } });
-          guests = null; logRows = null; notice = { text:'🌐 ' + ip + ' is banned.' };
+          guests = null; logRows = null; notice = { text:'🌐 ' + netCode(ip) + ' is banned.' };
         }});
       }
       else if (act === 'ipunban') {
         await call('/api/admin/ip-ban', { method:'POST', body:{ ip: el.dataset.ip, banned:false } });
-        guests = null; logRows = null; notice = { text:'🌐 ' + el.dataset.ip + ' is unbanned.' }; render();
+        guests = null; logRows = null; notice = { text:'🌐 ' + netCode(el.dataset.ip) + ' is unbanned.' }; render();
       }
       else if (act === 'guestlock') {
         const on = el.dataset.on === '1';
@@ -1161,10 +1186,10 @@
     };
     const arcade = { announce:null, maintenance:null, disabled:[], guestsLocked:false };
     const gdb = { guests:[
-        { gid:'gaaaa1111', name:'Guest 1111', ip:'1.2.3.4', ua:'Mozilla/5.0 (iPhone) Safari/1', created:now, last_seen:now, online:true, playing:'neon-putt.html', alsoOnIp:['Dave'] },
-        { gid:'gbbbb2222', name:'Guest 2222', ip:'9.9.9.9', ua:'Mozilla/5.0 (Windows) Chrome/1', created:now, last_seen:now, online:true, sameAsYou:true },
+        { gid:'gaaaa1111', name:'Guest 1111', ip:'net:1a2b3c4d00000000', ua:'iPhone', created:now, last_seen:now, online:true, playing:'neon-putt.html', alsoOnIp:['Dave'] },
+        { gid:'gbbbb2222', name:'Guest 2222', ip:'net:9a9a9a9a00000000', ua:'Windows PC', created:now, last_seen:now, online:true, sameAsYou:true },
         { gid:'gcccc3333', name:'Guest 3333', ip:'5.5.5.5', ua:'', created:now, last_seen:now - 9e6, banned:1, ban_reason:'spam' } ],
-      ipBans:[{ ip:'6.6.6.6', reason:'raid', until:0, created:now, label:'' }], myIp:'9.9.9.9' };
+      ipBans:[{ ip:'net:6b6b6b6b00000000', reason:'raid', until:0, created:now, label:'' }], myIp:'net:9a9a9a9a00000000' };
     window.api = async (path, opts) => {
       sent.push({ path, body: opts && opts.body });
       if (path === '/api/admin/announce') { arcade.announce = opts.body.text ? { id:1, text:opts.body.text, tone:opts.body.tone, until:0 } : null; return { ok:true }; }
@@ -1191,9 +1216,9 @@
       if (path.indexOf('/api/admin/view') === 0) {
         const tg = decodeURIComponent(path.split('target=')[1] || '');
         return tg.indexOf('g:') === 0
-          ? { now, who:{ kind:'guest', gid:'gaaaa1111', name:'Guest 1111', ip:'1.2.3.4', ua:'Mozilla/5.0 (iPhone) Safari/1', created:now, last_seen:now - 5e6, online:false, playing:null }, activity:[] }
-          : { now, who:{ kind:'player', sub:'s1', name:'Dave', email:'d@x.com', code:'AAAA', created:now, last_seen:now, online:true, playing:'gridlock.html',
-                ip:'1.2.3.4', ua:'Mozilla/5.0 (Windows) Chrome/1', friends:1, saves:2, reports:0, tos_version:'2026-10-07', tos_at:now },
+          ? { now, who:{ kind:'guest', gid:'gaaaa1111', name:'Guest 1111', ip:'net:1a2b3c4d00000000', ua:'iPhone', created:now, last_seen:now - 5e6, online:false, playing:null }, activity:[] }
+          : { now, who:{ kind:'player', sub:'s1', name:'Dave', real_name:'Dave Smith', email:'d@x.com', code:'AAAA', created:now, last_seen:now, online:true, playing:'gridlock.html',
+                ip:'net:1a2b3c4d00000000', ua:'Windows PC', friends:1, saves:2, reports:0, tos_version:'2026-10-07', tos_at:now },
               activity:[{ game:'gridlock.html', at:now - 12 * 60000 }, { game:'', at:now - 15 * 60000 }, { game:'neon-putt.html', at:now - 40 * 60000 },
                         { game:'~', at:now - 864e5 }, { game:'rhyme-bomb.html', at:now - 864e5 - 20 * 60000 }] };
       }
@@ -1371,7 +1396,7 @@
     t('every player row has a View button', !!document.querySelector('#adm-body .adm-btn.view[data-target="u:s1"]'));
     await click('.adm-btn.view[data-target="u:s1"]'); await wait();
     t('View shows what they are doing right now', bodyHas(/RIGHT NOW/) && bodyHas(/Playing .*Gridlock/i) && bodyHas(/for 12m/));
-    t('with their details', bodyHas(/Windows · Chrome/) && bodyHas(/d@x\.com/) && bodyHas(/agreed \(2026-10-07\)/));
+    t('with their details', bodyHas(/Windows PC/) && bodyHas(/1A2B-3C4D/) && bodyHas(/Dave Smith/) && bodyHas(/d@x\.com/) && bodyHas(/agreed \(2026-10-07\)/));
     t('and a timeline of the last week', bodyHas(/LAST 7 DAYS/) && bodyHas(/the hub/) && bodyHas(/Neon Putt/i) && bodyHas(/25m/));
     t('and what they play most', bodyHas(/MOST PLAYED/) && bodyHas(/about 25m/) && bodyHas(/about 20m/));
     t('going offline ends a session', bodyHas(/went offline/) && !bodyHas(/about 2\d?h/));
@@ -1384,14 +1409,14 @@
     t('clicking the player icon opens View too', bodyHas(/RIGHT NOW/));
     tab = 'guests'; viewing = null; guests = null; render(); await wait(); await wait();
     await click('.adm-btn.view[data-target="g:gaaaa1111"]'); await wait();
-    t('guests can be viewed', bodyHas(/Guest 1111/) && bodyHas(/Offline/) && bodyHas(/iPhone · Safari/) && bodyHas(/Nothing recorded yet/));
+    t('guests can be viewed', bodyHas(/Guest 1111/) && bodyHas(/Offline/) && bodyHas(/iPhone/) && bodyHas(/Nothing recorded yet/));
     t('switching tabs leaves View', ($('adm-tabs').querySelector('[data-tab="players"]').click(), !bodyHas(/RIGHT NOW/)));
 
     // ── Guests tab ──
     tab = 'guests'; guests = null; render(); await wait(); await wait();
-    t('guests are listed with device and IP', bodyHas(/Guest 1111/) && bodyHas(/iPhone · Safari/) && bodyHas(/1\.2\.3\.4/));
+    t('guests are listed with device and network code', bodyHas(/Guest 1111/) && bodyHas(/iPhone/) && bodyHas(/1A2B-3C4D/) && !bodyHas(/net:/));
     t('a shared network is pointed out', bodyHas(/same network as: Dave/) && bodyHas(/your network/));
-    t('network bans are listed', bodyHas(/6\.6\.6\.6/) && bodyHas(/raid/));
+    t('network bans are listed by code', bodyHas(/6B6B-6B6B/) && bodyHas(/raid/) && bodyHas(/never stored/));
     sent.length = 0;
     await click('[data-act="gban"][data-gid="gaaaa1111"]');
     t('guest ban asks first', !post('/api/admin/guest-ban') && !!$('adm-ask-sel'));
@@ -1413,8 +1438,8 @@
     await click('[data-act="ipban"]'); await answer('raid'); await wait();
     t('an IP can be banned by hand', post('/api/admin/ip-ban') && post('/api/admin/ip-ban').body.ip === '7.7.7.7' && post('/api/admin/ip-ban').body.banned === true);
     await wait(); await wait();
-    await click('[data-act="ipunban"][data-ip="6.6.6.6"]'); await wait();
-    t('a network ban can be lifted', post('/api/admin/ip-ban').body.ip === '6.6.6.6' && post('/api/admin/ip-ban').body.banned === false);
+    await click('[data-act="ipunban"][data-ip="net:6b6b6b6b00000000"]'); await wait();
+    t('a network ban can be lifted', post('/api/admin/ip-ban').body.ip === 'net:6b6b6b6b00000000' && post('/api/admin/ip-ban').body.banned === false);
     await wait(); await wait();
     await click('[data-act="guestlock"][data-on="1"]');
     t('turning guest play off asks first', !post('/api/admin/guests-lock') && !!$('adm-ask'));
@@ -1466,7 +1491,7 @@
     t('the featured game can be picked', post('/api/admin/featured') && post('/api/admin/featured').body.file === 'gridlock.html' && /Featured: .*Gridlock/i.test(($('adm-notice') || {}).textContent || ''));
     tab = 'players'; players = null; render(); await wait(); await wait();
     await click('[data-act="setmod"][data-sub="s1"]');
-    t('making a mod explains what they can do', /never see emails/.test(($('adm-ask') || {}).textContent || ''));
+    t('making a mod explains what they can do', /never see real names, emails/.test(($('adm-ask') || {}).textContent || ''));
     await answer(); await wait();
     t('then sets the role', post('/api/admin/set-mod') && post('/api/admin/set-mod').body.sub === 's1' && post('/api/admin/set-mod').body.on === true);
 
@@ -1485,7 +1510,13 @@
     await click('[data-act="pop"][data-target="u:s1"]'); await answer('hey'); await wait();
     t('mods message by pop-up, not gift', post('/api/admin/popup') && !post('/api/admin/gift'));
     t('mods get no energy gifts', !document.querySelector('#adm-body [data-act="energy"]') && !document.querySelector('#adm-body [data-act="energyall"]'));
+    tab = 'players'; players = null; viewing = null; render(); await wait(); await wait();
+    await click('.adm-btn.view[data-target="u:s1"]'); await wait();
+    t('a mod\'s View has no real name, email, network, device or history', !bodyHas(/Dave Smith/) && !bodyHas(/d@x\.com/) &&
+      !bodyHas(/1A2B-3C4D/) && !bodyHas(/Windows PC/) && bodyHas(/only shown to the owner/) && bodyHas(/friend code AAAA/));
+    viewing = null; watch = null;
     tab = 'guests'; guests = null; render(); await wait(); await wait();
+    t('a mod\'s guest list has no device or network', !bodyHas(/1A2B-3C4D/) && !bodyHas(/iPhone/));
     t('mods see no network bans or guest-play switch', !bodyHas(/NETWORK BANS/) && !document.querySelector('#adm-body [data-act="guestlock"]'));
     await click('[data-act="gban"][data-gid="gaaaa1111"]');
     t('mods can only ban a guest device for a day', ![...$('adm-ask-sel').options].some(o => /ip$/.test(o.value) || o.value === '0'));

@@ -264,6 +264,7 @@
         '<div class="gbs-muted">Member since ' + (p.created ? new Date(p.created).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '-') +
         ' · ' + p.friends + ' friend' + (p.friends === 1 ? '' : 's') + (p.totalMinutes != null ? ' · ' + mins(p.totalMinutes) + ' played this month' : '') + '</div></div></div>' +
       now +
+      (fr && !p.self && typeof sendTokens === 'function' ? '<div class="gbs-actions" style="margin:10px 0 0"><button class="gbs-btn" onclick="GBSocial.close();sendTokens(\'' + E(p.sub) + '\')">🪙 Send tokens</button></div>' : '') +
       '<div class="gbs-h">// BADGES · ' + got + ' / ' + (p.badges || []).length + '</div>' + badgesHTML(p.badges) +
       (p.topGames && p.topGames.length ? '<div class="gbs-h">// FAVOURITE GAMES</div>' + p.topGames.map(g =>
         '<a class="gbs-row" style="text-decoration:none;color:inherit" href="' + E(gameURL(g.game)) + '"><span class="grow">' + E(gname(g.game)) + '</span><span class="num">' + mins(g.minutes) + '</span></a>').join('') : '') +
@@ -350,21 +351,23 @@
     const acts = (d.activity || []).slice(0, 40).map(a =>
       '<div class="gbs-row"><span class="gbs-muted" style="width:120px">' + when(a.at) + '</span><span class="grow">' +
       E(a.game === '~' ? '💤 went offline' : a.game ? gname(a.game) : '🏠 the hub') + '</span></div>').join('');
-    const deviceOf = ua => { ua = String(ua || ''); return /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /CrOS/.test(ua) ? 'Chromebook' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'Mac' : ua ? 'Other' : ''; };
+    // The server keeps only the kind of device and a scrambled network code now.
+    const netOf = c => { const m = /^net:([0-9a-f]{8})/.exec(String(c || '')); return m ? m[1].toUpperCase().replace(/^(.{4})/, '$1-') + ' (scrambled - your IP address isn\'t kept)' : ''; };
+    const deviceOf = ua => { ua = String(ua || ''); if (ua && !/[/;(]/.test(ua)) return ua; return /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /CrOS/.test(ua) ? 'Chromebook' : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'Mac' : ua ? 'Other' : ''; };
     let html = '<div class="gbs-title">🔐 MY DATA</div>' +
       '<div class="gbs-muted">This is everything GLITCHBOX keeps about you - the same things the owner can see. ' +
         '<a href="#" onclick="viewTos();return false;" style="color:var(--cyan,#00f5ff)">Read the terms</a>.</div>';
     if (guest) {
       const g = d.guest;
       html += '<div class="gbs-h">// THIS DEVICE (GUEST)</div>' + (g ? kv([
-        ['Shown as', E(g.name)], ['Device', E(deviceOf(g.device))], ['IP address', E(g.ip)], ['First seen', when(g.created)],
+        ['Shown as', E(g.name)], ['Device', E(deviceOf(g.device))], ['Network', E(netOf(g.network_code))], ['First seen', when(g.created)],
         ['Last seen', when(g.last_seen)], ['Terms', g.tos_version ? 'agreed (' + E(g.tos_version) + ')' : 'not agreed'], ['Banned', g.banned ? 'yes' : '']]) :
         '<div class="gbs-muted">The server has nothing about this device.</div>');
     } else {
       const a = d.account || {};
       html += '<div class="gbs-h">// YOUR ACCOUNT</div>' + kv([
-        ['Nametag (what others see)', E(a.nametag || a.name)], ['Google name (private)', E(a.google_name || '')], ['Email', E(a.email)], ['Friend code', E(a.code)], ['Joined', a.created ? when(a.created) : ''],
-        ['Last seen', a.last_seen ? when(a.last_seen) : ''], ['IP address', E(a.ip)], ['Device', E(deviceOf(a.device))],
+        ['Nametag (what others see)', E(a.nametag || a.name)], ['Google name (only the owner sees it)', E(a.google_name || '')], ['Email (only the owner sees it)', E(a.email)], ['Friend code', E(a.code)], ['Joined', a.created ? when(a.created) : ''],
+        ['Last seen', a.last_seen ? when(a.last_seen) : ''], ['Network', E(netOf(a.network_code))], ['Device', E(deviceOf(a.device))],
         ['Terms', a.tos_version ? 'agreed (' + E(a.tos_version) + ') ' + (a.tos_at ? when(a.tos_at) : '') : 'not agreed'],
         ['Activity', a.hide_activity ? 'hidden from friends' : 'friends can see it'], ['Role', a.role === 'mod' ? 'moderator' : '']]) +
         '<div class="gbs-h">// PEOPLE</div>' + kv([
@@ -373,10 +376,16 @@
         '<div class="gbs-h">// GAMES</div>' + kv([
           ['Cloud saves', E((d.saves || []).map(s => gname(s.game)).join(', ') || 'none')],
           ['Best scores', E((d.scores || []).map(s => gname(s.game) + ': ' + s.score).join(', ') || 'none')],
-          ['Appeals', String((d.appeals || []).length)]]);
+          ['Appeals', String((d.appeals || []).length)]]) +
+        '<div class="gbs-h">// TOKENS WITH FRIENDS · LAST 30 DAYS</div>' + kv([
+          ['Sent', E((d.tokensSent || []).map(x => x.tokens + ' to ' + (x.to || 'a deleted player')).join(', ') || 'none')],
+          ['Received', E((d.tokensReceived || []).map(x => x.tokens + ' from ' + (x.from || 'a deleted player')).join(', ') || 'none')]]);
     }
-    html += '<div class="gbs-h">// WHAT YOU\'VE BEEN DOING</div>' + (acts || '<div class="gbs-muted">Nothing recorded.</div>') +
+    const older = new Set((d.dailyPlay || []).map(x => x.day)).size;
+    html += '<div class="gbs-h">// WHAT YOU\'VE BEEN DOING · LAST 7 DAYS</div>' + (acts || '<div class="gbs-muted">Nothing recorded.</div>') +
       ((d.activity || []).length > 40 ? '<div class="gbs-muted">…and ' + (d.activity.length - 40) + ' more in the download.</div>' : '') +
+      (older ? '<div class="gbs-muted">Before that, only a total per game per day is kept (' + older + ' day' + (older > 1 ? 's' : '') +
+        ', deleted after a month). It\'s in the download.</div>' : '') +
       '<div class="gbs-h">// IN THIS BROWSER</div><div class="gbs-muted">Tokens, unlocks, favorites and settings live only in this browser: ' +
         Object.keys(lastExport.thisBrowser).length + ' items. They\'re in the download too.</div>' +
       '<div class="gbs-actions" style="margin-top:16px"><button class="gbs-btn solid" onclick="GBSocial.download()">⬇ Download everything</button>' +
@@ -516,8 +525,9 @@
         totalMinutes: 125, topGames: [{ game: 'gridlock.html', minutes: 90 }], scores: [{ game: 'gridlock.html', score: 300 }], badges };
       if (path.indexOf('/api/leaderboard') === 0) return { time: [{ sub: 'f1', name: 'Dave S.', minutes: 90 }, { sub: 'me', name: 'Lev K.', minutes: 30 }],
         scores: [{ sub: 'f1', name: 'Dave S.', score: 300 }], low: false };
-      if (path === '/api/my-data') return { account: { name: 'Lev', email: 'l@x.com', code: 'ZZZZ', created: Date.now(), ip: '1.2.3.4', device: 'Mozilla (Windows) Chrome', tos_version: '2026-10-07.3' },
-        activity: [{ game: 'gridlock.html', at: Date.now() }, { game: '~', at: Date.now() - 1e6 }], friends: ['Dave'], blocked: [], reportsYouMade: [], reportsAboutYou: 0, saves: [], scores: [], appeals: [] };
+      if (path === '/api/my-data') return { account: { name: 'Lev', email: 'l@x.com', code: 'ZZZZ', created: Date.now(), network_code: 'net:1a2b3c4d00000000', device: 'Windows PC', tos_version: '2026-10-07.3' },
+        activity: [{ game: 'gridlock.html', at: Date.now() }, { game: '~', at: Date.now() - 1e6 }], friends: ['Dave'], blocked: [], reportsYouMade: [], reportsAboutYou: 0, saves: [], scores: [], appeals: [],
+        dailyPlay: [{ day: '2026-10-01', game: 'gridlock.html', minutes: 30 }], tokensSent: [{ to: 'Dave', tokens: 50, created: Date.now() }], tokensReceived: [] };
       if (path === '/api/delete-me') return { ok: true };
       if (path === '/api/privacy') return { ok: true };
       return { ok: true };
@@ -580,7 +590,9 @@
     const realSess = localStorage.getItem('glitchbox_session');
     localStorage.setItem('glitchbox_session', 'fake');
     await openMyData(); await wait();
-    t('my data shows the account', /l@x\.com/.test(body()) && /1\.2\.3\.4/.test(body()) && /Windows/.test(body()));
+    t('my data shows the account', /l@x\.com/.test(body()) && /1A2B-3C4D \(scrambled/.test(body()) && /Windows PC/.test(body()) && !/net:/.test(body()));
+    t('my data shows tokens sent to friends', /50 to Dave/.test(body()));
+    t('my data explains older history is daily totals', /only a total per game per day is kept \(1 day/.test(body()));
     t('and the activity', /went offline/.test(body()) && /Gridlock/i.test(body()));
     t('and a download', !!lastExport && lastExport.server.account.email === 'l@x.com' && typeof lastExport.thisBrowser === 'object');
     t('the download never includes the session', !Object.keys(lastExport.thisBrowser).some(k => /session/i.test(k)));

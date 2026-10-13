@@ -11,8 +11,8 @@
 <!-- Game roster + thumbnail art, shared with play.html -->
 <script src="glitchbox-games.js"></script>
 <!-- Owner console (Ctrl+Shift+A). Deferred so it loads after the hub's own script. -->
-<script src="glitchbox-social.js?v=20261011a" defer></script>
-<script src="glitchbox-admin.js?v=20261011a" defer></script>
+<script src="glitchbox-social.js?v=20261013a" defer></script>
+<script src="glitchbox-admin.js?v=20261013a" defer></script>
 <script src="glitchbox-cmd.js?v=20261008e" defer></script>
 <script src="glitchbox-contests.js?v=20261009b" defer></script>
 <style>
@@ -420,13 +420,6 @@ body.leaving .page-wipe { opacity:1; }
 .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:rgba(0,245,255,0.12); }
 .auth-note { color:var(--muted); font-size:12px; font-weight:500; line-height:1.6; margin-top:22px; }
 .auth-note code { color:var(--cyan); font-family:monospace; font-size:11px; word-break:break-all; }
-.auth-setup {
-  display:none; margin-top:20px; padding:16px; text-align:left; font-size:12.5px; line-height:1.7;
-  color:#9aa6c8; background:rgba(255,0,128,0.05); border:1px solid rgba(255,0,128,0.2);
-}
-.auth-setup.show { display:block; }
-.auth-setup b { color:var(--yellow); }
-.auth-setup code { color:var(--cyan); font-family:monospace; }
 
 /* ── SIDEBAR USER BLOCK ── */
 .sidebar-user {
@@ -780,14 +773,7 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <div id="g-signin-btn"></div>
     </div>
     <button id="auth-guest-btn" onclick="closeAuth()" style="margin-top:14px;background:transparent;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;">Browse as guest →</button>
-    <div class="auth-setup" id="auth-setup">
-      <b>⚙ Setup needed:</b> to enable real Google login, create a free OAuth Client ID:<br>
-      1. Go to <code>console.cloud.google.com</code> → APIs &amp; Services → Credentials<br>
-      2. Create <b>OAuth client ID</b> → type <b>Web application</b><br>
-      3. Add authorized JavaScript origin: <code>https://glitchbox-games.github.io</code><br>
-      4. Copy the Client ID and paste it into <code>GOOGLE_CLIENT_ID</code> in this file.
-    </div>
-    <div class="auth-note">🔒 Google tells us your name, email &amp; photo - those stay private. Other players only see the nametag you pick.</div>
+    <div class="auth-note">🔒 Google tells us your name and email - only the owner can see them, and your Google photo isn't kept. Other players only see the nametag you pick.</div>
     <div class="auth-note">Signing in means agreeing to the <a href="#" onclick="viewTos();return false;" style="color:var(--cyan)">Terms of Service</a>.</div>
   </div>
 </div>
@@ -823,10 +809,13 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
       <div class="tos-key">
         <p>To keep GLITCHBOX safe, the owner can see your activity <b>on GLITCHBOX</b> from the owner console, including:</p>
         <ul>
-          <li>whether you're online, which game you're playing right now, and which games you've played recently (and for how long)</li>
-          <li>your nametag, the name on your Google account, your email address, picture and friend code</li>
-          <li>your friends, reports made by or about you, and cloud saves</li>
-          <li>the kind of device and browser you use, and your IP address (your internet connection)</li>
+          <li>whether you're online, which game you're playing right now, and which games you've played in the last 7 days
+            (and for how long). After 7 days only a total per game per day is kept, for a month, for badges and contests.</li>
+          <li>your nametag, the name on your Google account, your email address and friend code.
+            GLITCHBOX doesn't keep your Google photo.</li>
+          <li>your friends, reports made by or about you, tokens you send or get, and cloud saves</li>
+          <li>the kind of device you use (like "Chromebook" or "iPhone"), and a scrambled code for your internet connection.
+            Your IP address itself is never stored, so nobody can read it, not even the owner.</li>
         </ul>
         <p>This is <b>only used for moderation</b>, like stopping cheating, bullying or spam. It is never sold or shared.
           It only covers what you do on GLITCHBOX, nothing else on your device or anywhere else online.</p>
@@ -837,23 +826,27 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
           and your profile: icon, badges, favourite games and play time. You can hide your activity from friends
           in your profile.</li>
         <li><b>Everyone else</b> only ever sees your <b>nametag</b> and your arcade icon - never your real name,
-          your email or your Google photo.</li>
+          or your email.</li>
         <li><b>Leaderboards</b> show your nametag, your icon, your play time this week and your best scores -
           unless you hide your activity.</li>
       </ul>
       <h4>4. Moderation</h4>
       <p>The owner can message you, kick you back to the hub, switch games off, or ban your account, your device
         or your internet connection, for a while or for good, if you break these rules.</p>
-      <p>The owner can pick <b>moderators</b> - trusted players who can see the same activity (but never your
-        email address or IP address), message you, kick you, and ban you for up to a day.</p>
+      <p>The owner can pick <b>moderators</b> - trusted players who can see your nametag, icon, friend code, which game
+        you're playing right now, reports about you and past bans. Moderators <b>never</b> see your real name, email,
+        internet connection, device or play history. They can message you, kick you, and ban you for up to a day.</p>
       <p>If you're banned you can send an appeal, and the owner or a moderator will answer it.</p>
       <h4>5. Your account and your data</h4>
-      <p>You sign in with Google. GLITCHBOX keeps your Google name, email and picture privately so friends and saves work; other players only see the nametag you choose.
+      <p>You sign in with Google. GLITCHBOX keeps your Google name and email privately, so the owner can tell accounts apart.
+        Only the owner can see them; other players and moderators only see the nametag you choose.
         <b>My Data</b> in the menu shows everything GLITCHBOX keeps about you, lets you download it, and lets you
         delete your account - that erases everything about you. Guests can see and erase their data there too.</p>
       <h4>6. Tokens and unlocks</h4>
-      <p>Tokens, unlocked games and icons are just for fun. They aren't worth real money, can't be traded,
-        and can be changed or reset.</p>
+      <p>Tokens are free: you earn them by playing, and they never cost real money. You can <b>send tokens to your
+        friends</b> (up to 500 at a time and 1000 a day), but you can't sell them or swap them for anything outside GLITCHBOX.</p>
+      <p>Tokens, unlocked games and icons aren't worth real money. The owner won't reset them for no reason, and if a
+        reset is ever needed it will be announced first. Tokens gotten by cheating can be taken away.</p>
       <h4>7. Changes</h4>
       <p>If these terms change, you'll be asked to agree again before you keep playing.</p>
       <p>If you're under 13, ask a parent or guardian to read this with you first.</p>
@@ -1202,6 +1195,8 @@ const REPLAY_COOL   = 10*60*1000;
 const DAILY_BASE    = 25, DAILY_STEP = 5, DAILY_MAX_STREAK = 6;
 const FRIEND_BOUNTY = 40;   // per friend who joins you on GLITCHBOX
 const REF_WELCOME   = 75;   // for arriving through someone's invite link
+const TRADE_MAX     = 500;  // tokens per send to a friend (the server enforces it too)
+const TRADE_DAY     = 1000; // tokens a player can send per day
 
 // Profile icons are the existing picker's ICON_SETS (further down this file).
 // Tokens gate them by category: one free starter set, four you buy into.
@@ -1432,7 +1427,7 @@ function applyGifts(list){
     ids.push(g.id);
     if(done.indexOf(g.id)!==-1) return;
     done.push(g.id);
-    const why = g.note ? 'From the owner - '+g.note : 'Gift from the owner';
+    const why = g.from ? 'From '+g.from : g.note ? 'From the owner - '+g.note : 'Gift from the owner';
     const n = g.tokens|0;
     if(!n && !(g.games||[]).length && !(g.icons||[]).length){ if(g.note) ownerMessage(g.note); return; }
     if(n>0) grant(n, why);
@@ -1779,13 +1774,12 @@ async function api(path, opts){
 function handleCredential(response){
   const data = decodeJwt(response.credential);
   if(!data){ noticeToast('⚠️ SIGN-IN FAILED', 'Google’s answer couldn’t be read - try again.', 6000); return; }
-  // Remember the real Google photo separately, so "use my photo" stays available after
-  // you've picked an icon - and so signing in again doesn't silently undo your choice.
-  if(data.picture) localStorage.setItem('glitchbox_gphoto', data.picture);
+  // The Google photo is never kept (not even on this device): your avatar is an arcade icon.
+  try { localStorage.removeItem('glitchbox_gphoto'); } catch(e){}
   let prev = null; try { prev = JSON.parse(localStorage.getItem('glitchbox_user')||'null'); } catch(e){}
   const keptIcon = (prev && prev.sub === data.sub && iconOf(prev.picture)) ? prev.picture : '';
   // Your Google name is never shown: until the server answers with your nametag, the sidebar says PLAYER.
-  const user = { sub:data.sub, name:(prev && prev.sub === data.sub && prev.name) || 'PLAYER', email:data.email, picture:keptIcon || data.picture || '' };
+  const user = { sub:data.sub, name:(prev && prev.sub === data.sub && prev.name) || 'PLAYER', email:data.email, picture:keptIcon };
   localStorage.setItem('glitchbox_user', JSON.stringify(user));
   applyUser(user);
   backendLogin(response.credential);
@@ -1946,7 +1940,7 @@ async function backendLogin(credential){
 // ── terms of service ── bump TOS_VERSION whenever the terms text changes and every
 // player is asked to agree again. Agreement is saved per account on the server (the
 // record of consent) and cached locally so the screen doesn't flash on every visit.
-const TOS_VERSION = '2026-10-11.1';
+const TOS_VERSION = '2026-10-13.1';
 // Guests agree once per browser, under the 'guest' key.
 function tosId(){ return currentUser ? currentUser.sub : 'guest'; }
 function tosKey(){ return 'glitchbox.tos.' + tosId(); }
@@ -2264,16 +2258,9 @@ function iconHTML(ic){ return '<span class="gb-ic" style="background:'+ic.bg+'">
 // the sidebar leaves it off because its CSS gives the <img> an explicit 36px.
 function avatarHTML(u, fill){
   const ic = iconOf(u && u.picture);
-  if(ic) return iconHTML(ic);
-  const pic = (u && u.picture) || '';
-  if(/^https?:\/\//.test(pic)){
-    return '<img src="'+esc(pic)+'" alt="" referrerpolicy="no-referrer"'+
-           (fill ? ' style="width:100%;height:100%;object-fit:cover"' : '')+'>';
-  }
-  return '';
+  return ic ? iconHTML(ic) : '';
 }
 function initialOf(u){ return esc(((u && u.name) || '?').charAt(0).toUpperCase()); }
-function googlePhoto(){ return localStorage.getItem('glitchbox_gphoto') || ''; }
 
 function renderIconPicker(){
   const box = document.getElementById('icon-grid');
@@ -2281,14 +2268,8 @@ function renderIconPicker(){
   const cur = String(currentUser.picture || '');
   const curIcon = iconOf(cur);
   const label = document.getElementById('icon-name');
-  if(label) label.textContent = curIcon ? curIcon.name : (cur ? 'Google photo' : '');
+  if(label) label.textContent = curIcon ? curIcon.name : '';
   let h = '';
-  const photo = googlePhoto();
-  if(photo){
-    h += '<div class="icon-cat">Your photo</div>' +
-         '<button class="icon-pick'+(cur === photo ? ' sel' : '')+'" title="Google photo" onclick="pickIcon(\'\')">'+
-         '<img src="'+esc(photo)+'" alt="" referrerpolicy="no-referrer"></button>';
-  }
   ICON_SETS.forEach(set => {
     const price = ICON_PRICE[set.cat] || 0;
     h += '<div class="icon-cat">'+esc(set.cat)+
@@ -2312,7 +2293,7 @@ function renderIconPicker(){
 // friends see it too. A failed sync is not fatal - the choice still sticks on this device.
 async function pickIcon(id){
   if(!currentUser) return;
-  currentUser.picture = id ? 'icon:'+id : googlePhoto();
+  currentUser.picture = id ? 'icon:'+id : '';
   try { localStorage.setItem('glitchbox_user', JSON.stringify(currentUser)); } catch(e){}
   paintSidebarAvatar();
   updateProfileHeader();
@@ -2348,6 +2329,7 @@ function renderFriends(){
     return '<div class="friend-row">'+avInitial(f)+info+
       '<div class="friend-actions">'+join+
       '<button class="friend-btn play" onclick="openPicker(\''+f.sub+'\')" title="Invite to a multiplayer game">▶ Invite</button>'+
+      '<button class="friend-btn ghost" onclick="sendTokens(\''+f.sub+'\')" title="Send '+esc(f.name)+' some of your tokens">🪙 Send</button>'+
       '<button class="friend-btn ghost" onclick="unfriend(\''+f.sub+'\')">Unfriend</button>'+
       '<button class="friend-btn ghost" onclick="block(\''+f.sub+'\')" title="Block this player">Block</button>'+
       '<button class="friend-btn ghost" onclick="report(\''+f.sub+'\')" title="Report to the owner (also blocks them)">⚑</button>'+
@@ -2565,6 +2547,28 @@ async function unfriend(sub){
   if(await act('/api/unfriend', { sub })) noticeToast('👋 UNFRIENDED', n + ' is no longer your friend.');
 }
 function unblock(sub){ act('/api/unblock', { sub }); }
+// ── trading ── send tokens to a friend. They leave this wallet first and come back if the
+// server says no; the friend's hub banks them as a gift with your nametag on it.
+async function sendTokens(sub){
+  if(guestWall('send tokens')) return;
+  const n = nameOf(sub), have = tokens();
+  if(have < 1){ noticeToast('🪙 NO TOKENS YET', 'Play some games to earn tokens, then you can send them.'); return; }
+  const v = await gbAsk({ title:'Send tokens to ' + n, text:'You have ' + have + ' 🪙. You can send up to ' + TRADE_MAX +
+    ' at a time and ' + TRADE_DAY + ' a day.', input:'How many?', yes:'Send' });
+  if(v === null) return;
+  const amt = parseInt(v, 10);
+  if(!(amt > 0)){ noticeToast('🪙 HOW MANY?', 'Type how many tokens to send.'); return; }
+  if(amt > have){ noticeToast('🪙 NOT ENOUGH', 'You only have ' + have + ' tokens.'); return; }
+  if(amt > TRADE_MAX){ noticeToast('🪙 TOO MANY', 'You can send up to ' + TRADE_MAX + ' at a time.'); return; }
+  setTokens(tokens() - amt);
+  try {
+    await api('/api/trade', { method:'POST', body:{ to: sub, tokens: amt } });
+    tokenToast('-' + amt, 'Sent to ' + n, true);
+  } catch(e){
+    setTokens(tokens() + amt);
+    noticeToast('⚠️ NOT SENT', e.message || 'Something went wrong - your tokens are back.', 6000);
+  }
+}
 async function block(sub){
   const n = nameOf(sub);
   if(await gbAsk({ title:'Block ' + n + '?', text:'They’ll be removed from your friends and can’t send you requests or invites.', yes:'Block', danger:true }) === null) return;
@@ -2663,7 +2667,7 @@ function initGoogleAuth(){
   if(ga) ga.style.display = saved ? 'none' : 'flex';
 
   const configured = GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith('PASTE_YOUR_CLIENT_ID');
-  if(!configured){ document.getElementById('auth-setup').classList.add('show'); return; }
+  if(!configured){ console.warn('GLITCHBOX: GOOGLE_CLIENT_ID is not set, so Google sign-in is off.'); return; }
   if(!(window.google && google.accounts && google.accounts.id)){ return setTimeout(initGoogleAuth, 300); }
   google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:handleCredential, auto_select:false });
   google.accounts.id.renderButton(document.getElementById('g-signin-btn'), {
@@ -2675,7 +2679,7 @@ function initGoogleAuth(){
 // Snapshots every token key first and restores it at the end, so running it never
 // costs you tokens or unlocks you anything for real.
 if(location.hash==='#tokencheck'){
-  addEventListener('load',()=>{
+  addEventListener('load',async()=>{
     const keys=Object.values(TOK).concat(['glitchbox.seen']);
     const snap={}; keys.forEach(k=>snap[k]=localStorage.getItem(k));
     const out=[]; let fails=0;
@@ -2832,6 +2836,29 @@ if(location.hash==='#tokencheck'){
     ok('a gift never banks twice', tokens()===510);
     applyGifts([{ id:902, tokens:-1000, games:[], icons:[] }]);
     ok('a negative gift takes tokens, floored at zero', tokens()===0);
+    const said=[], realTT=tokenToast; tokenToast=(a,w)=>said.push(w);
+    applyGifts([{ id:903, tokens:40, games:[], icons:[], note:'', from:'NeonFox12' }]);
+    tokenToast=realTT;
+    ok('tokens from a friend bank and say who sent them', tokens()===40 && said.indexOf('From NeonFox12')!==-1);
+
+    // sending tokens: they leave the wallet, and come back if the server says no
+    const realAsk=gbAsk, realFriends=lastState.friends, sent=[];
+    lastState.friends=[{ sub:'f1', name:'Pal' }];
+    wipe(); setTokens(100);
+    gbAsk=async()=>'30'; api=async(p,o)=>{ sent.push([p,o&&o.body]); return {ok:true}; };
+    await sendTokens('f1');
+    ok('sending takes the tokens out and tells the server', tokens()===70 && sent.length===1 && sent[0][0]==='/api/trade' && sent[0][1].to==='f1' && sent[0][1].tokens===30);
+    api=async()=>{ throw new Error('You can only send tokens to friends.'); };
+    await sendTokens('f1');
+    ok('a refused send puts the tokens back', tokens()===70);
+    sent.length=0; api=async(p,o)=>{ sent.push(p); return {ok:true}; };
+    gbAsk=async()=>'71'; await sendTokens('f1');
+    ok('you can\'t send more than you have', tokens()===70 && !sent.length);
+    setTokens(900); gbAsk=async()=>'501'; await sendTokens('f1');
+    ok('500 at a time at most', tokens()===900 && !sent.length);
+    gbAsk=async()=>null; await sendTokens('f1');
+    ok('cancel sends nothing', tokens()===900 && !sent.length);
+    gbAsk=realAsk; lastState.friends=realFriends;
     api=realApi;
 
     wipe(); setTokens(0);
