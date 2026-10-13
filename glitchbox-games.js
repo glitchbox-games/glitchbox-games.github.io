@@ -3,7 +3,6 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
-  {name:'Frontline',          file:'frontline.html',              emoji:'🦾',color:['#070a1c','#2a1622'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Start as a regular soldier. Level up, bolt on robot parts and push the machines back with friends or CPU squadmates. 1 to 4 players'},
   {name:'Tank War 3D',        file:'tank-war-3d.html',            emoji:'🪖',color:['#0b1a10','#1c3a52'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Tanks, ships, jets and choppers in 3D. Rack up kills to unlock variants, fight 7v7 or take on friends online'},
   {name:'Haymaker',           file:'haymaker.html',               emoji:'🥊',color:['#160805','#2e1206'],category:'multiplayer',tags:['new','hot','mp'],blurb:'3D boxing with superpowers. Charge up a HAYMAKER, block at the last second and knock your friends out. 12 fighters, a secret boss, make your own fighter, fight on a beach or in space. Play the CPU, a friend on one keyboard, or online 1v1'},
   {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil - race up to 7 friends on the same cars'},
@@ -60,91 +59,6 @@ const _SC=(c)=>{for(let y=0;y<200;y+=4){c.fillStyle='rgba(0,0,0,0.1)';c.fillRect
 
 // ── THUMBNAIL DRAW FUNCTIONS ──
 const DRAW={
-'frontline':(c)=>{
-  // dusk on the front line: a half-cyborg soldier aims over the sandbags, a walker comes out of the smoke
-  c.save();
-  _GV(c, 0, 0, 320, 200, '#060918', '#1f1533', '#5a2622');
-  const glow = c.createRadialGradient(226, 150, 8, 226, 150, 190);
-  glow.addColorStop(0, 'rgba(255,160,80,.75)'); glow.addColorStop(.45, 'rgba(255,100,50,.28)'); glow.addColorStop(1, 'rgba(255,80,40,0)');
-  c.fillStyle = glow; c.fillRect(0, 0, 320, 200);
-  _ST(c, 14);
-  // searchlights
-  c.globalCompositeOperation = 'lighter';
-  [[70, 160, -1.35], [140, 160, -1.95]].forEach(([x, y, a]) => {
-    const g = c.createLinearGradient(x, y, x + Math.cos(a) * 190, y + Math.sin(a) * 190);
-    g.addColorStop(0, 'rgba(160,215,255,.32)'); g.addColorStop(1, 'rgba(160,215,255,0)');
-    c.fillStyle = g; c.beginPath(); c.moveTo(x, y);
-    c.lineTo(x + Math.cos(a - .09) * 220, y + Math.sin(a - .09) * 220);
-    c.lineTo(x + Math.cos(a + .09) * 220, y + Math.sin(a + .09) * 220); c.closePath(); c.fill();
-  });
-  c.globalCompositeOperation = 'source-over';
-  // ruined towers, a few windows still lit
-  for (let i = 0; i < 17; i++) {
-    const x = i * 20 - 6, h = 22 + (i * 37) % 44, w = 13 + (i * 7) % 8;
-    c.fillStyle = '#140f22'; c.fillRect(x, 150 - h, w, h);
-    c.beginPath(); c.moveTo(x, 150 - h); c.lineTo(x + w * (.3 + (i % 3) * .2), 150 - h - 7); c.lineTo(x + w, 150 - h); c.fill();
-    for (let k = 0; k < 3; k++) if ((i * 3 + k) % 4 === 0) _F(c, x + 3 + k * 4, 150 - h + 8 + k * 9, 2, 2, (i + k) % 5 ? 'rgba(255,190,110,.8)' : 'rgba(120,225,255,.85)');
-  }
-  // the walker: a hazy silhouette in front of the towers, red eye on
-  const mk = 'rgba(58,40,66,.96)';
-  _L(c, 50, 104, 34, 150, mk, 6); _L(c, 34, 150, 44, 156, mk, 4); _L(c, 76, 104, 92, 150, mk, 6); _L(c, 92, 150, 84, 156, mk, 4);
-  c.fillStyle = mk; c.beginPath(); c.moveTo(38, 84); c.lineTo(84, 80); c.lineTo(94, 92); c.lineTo(86, 106); c.lineTo(44, 108); c.lineTo(34, 96); c.closePath(); c.fill();
-  _L(c, 86, 92, 112, 90, mk, 4);
-  _C(c, 46, 94, 7, 'rgba(255,60,60,.28)'); _C(c, 46, 94, 2.6, '#ff3030');
-  // smoke drifting over the street
-  for (let i = 0; i < 14; i++) _C(c, i * 26 - 4, 152 + (i % 3) * 3, 16 + (i * 7) % 10, 'rgba(16,12,24,.55)');
-  // a drone, and tracers both ways
-  _F(c, 120, 44, 26, 3, '#1c1626'); _C(c, 133, 46, 6, '#1c1626'); _C(c, 133, 47, 2, '#ff4a3a');
-  c.save(); c.lineCap = 'round';
-  [[30, 70, 160, 104, 'rgba(255,170,80,'], [96, 92, 176, 120, 'rgba(255,170,80,'], [170, 118, 64, 90, 'rgba(120,240,255,'], [168, 120, 22, 118, 'rgba(120,240,255,']]
-    .forEach(([x1, y1, x2, y2, col]) => {
-      const g = c.createLinearGradient(x1, y1, x2, y2); g.addColorStop(0, col + '0)'); g.addColorStop(1, col + '.95)');
-      c.strokeStyle = g; c.lineWidth = 2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
-    });
-  c.restore();
-  // sandbag parapet
-  _GV(c, 0, 164, 320, 36, '#2a2230', '#0e0b14');
-  for (let i = 0; i < 12; i++) {
-    const x = i * 28 - 8, y = 168 + (i % 2) * 3;
-    c.fillStyle = i % 2 ? '#4a3e3a' : '#40352f'; c.beginPath(); c.ellipse(x + 14, y, 16, 7, 0, 0, 6.283); c.fill();
-    c.fillStyle = 'rgba(255,160,90,.22)'; c.beginPath(); c.ellipse(x + 12, y - 3, 10, 2.5, 0, 0, 6.283); c.fill();
-  }
-  // the soldier, in profile facing left
-  const ink = '#11131a', cloth = '#232833';
-  _F(c, 248, 118, 20, 50, ink); _L(c, 262, 118, 278, 72, '#2a2e38', 2); _C(c, 278, 72, 2, '#34e2ff');   // backpack + antenna (seat-colour tip)
-  const tg = c.createLinearGradient(198, 0, 262, 0); tg.addColorStop(0, '#0f1118'); tg.addColorStop(.75, '#1a1d26'); tg.addColorStop(1, '#3a2a26');
-  c.fillStyle = tg; c.beginPath(); c.moveTo(206, 120); c.lineTo(248, 114); c.lineTo(262, 150); c.lineTo(258, 200); c.lineTo(204, 200); c.lineTo(198, 152); c.closePath(); c.fill();
-  _F(c, 212, 132, 30, 3, '#2b313d'); _F(c, 214, 142, 26, 3, '#2b313d');      // armour plate edges
-  _F(c, 236, 126, 10, 3, '#34e2ff');                                         // squad stripe (seat colour: friends glow cool)
-  _F(c, 216, 100, 12, 16, ink);                                              // neck
-  c.fillStyle = ink; c.beginPath(); c.arc(224, 92, 15, Math.PI * .95, Math.PI * 2.2); c.closePath(); c.fill();
-  c.beginPath(); c.moveTo(210, 90); c.lineTo(203, 96); c.lineTo(212, 103); c.closePath(); c.fill();
-  c.fillStyle = '#34e2ff'; c.beginPath(); c.moveTo(204, 95); c.lineTo(216, 92); c.lineTo(216, 97); c.lineTo(207, 99); c.closePath(); c.fill();   // visor
-  _C(c, 209, 96, 7, 'rgba(52,226,255,.28)');
-  c.save(); c.translate(238, 124); c.rotate(.05);                            // rifle, shouldered, pointing left
-  c.fillStyle = '#394050'; c.fillRect(-112, -4, 116, 8); c.fillRect(-30, -10, 20, 6); c.fillRect(-56, 4, 8, 12); c.fillRect(-4, -3, 14, 12);
-  _F(c, -112, -4, 116, 1.5, '#7c869a'); _F(c, -30, -10, 20, 1.2, '#9aa4b8');
-  _F(c, -108, 1, 66, 1.6, '#34e2ff');
-  _C(c, -116, 0, 3, 'rgba(160,250,255,1)'); _C(c, -116, 0, 9, 'rgba(52,226,255,.3)');
-  c.restore();
-  c.lineCap = 'round'; _L(c, 238, 124, 236, 142, cloth, 8); _L(c, 236, 142, 214, 132, cloth, 7); _C(c, 212, 131, 4.5, '#2e333e');   // human arm
-  _L(c, 212, 122, 196, 140, '#9aa6b8', 7); _L(c, 196, 140, 166, 124, '#9aa6b8', 6);                                               // cyborg arm
-  _L(c, 212, 121, 197, 138, '#e3ebf5', 2); _L(c, 196, 138, 168, 122, '#e3ebf5', 2);
-  [[212, 122, 3.4], [196, 140, 3.2], [168, 124, 2.8]].forEach(([x, y, r]) => { _C(c, x, y, r * 2.6, 'rgba(52,226,255,.25)'); _C(c, x, y, r, '#34e2ff'); });
-  _C(c, 164, 123, 4, '#b8c3d2');
-  c.strokeStyle = 'rgba(255,160,90,.9)'; c.lineWidth = 1.4;                 // rim light from the fires behind
-  c.beginPath(); c.arc(224, 92, 15, -1.7, .2); c.stroke();
-  c.beginPath(); c.moveTo(268, 118); c.lineTo(268, 168); c.stroke();
-  c.beginPath(); c.moveTo(248, 114); c.lineTo(262, 150); c.stroke();
-  c.font = '800 12px system-ui,sans-serif'; c.textAlign = 'left'; c.fillStyle = '#34e2ff';   // level-up ping
-  c.fillText('LV 12', 268, 24); _F(c, 268, 29, 40, 3, 'rgba(52,226,255,.25)'); _F(c, 268, 29, 27, 3, '#34e2ff');
-  const vg = c.createRadialGradient(180, 110, 70, 160, 100, 220);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
-  c.fillStyle = vg; c.fillRect(0, 0, 320, 200);
-  c.restore();
-  _SC(c);
-},
-
 'idle-universe':(c)=>{
   const g=c.createRadialGradient(160,104,0,160,104,190); g.addColorStop(0,'#1c1238'); g.addColorStop(1,'#04030c'); c.fillStyle=g; c.fillRect(0,0,320,200);
   _ST(c,60);
@@ -1150,7 +1064,7 @@ const THUMB_IMGS = {};
 // Which games actually have a painted thumbs/<gid>.png. Asking for every game's file
 // meant ~43 failed downloads (404s) on every hub and play-page visit. Add a gid here
 // when a new shot goes into thumbs/.
-const THUMB_FILES = new Set(['gridlock','haymaker','tank-war-3d','frontline']);
+const THUMB_FILES = new Set(['gridlock','haymaker','tank-war-3d']);
 function drawThumb(ctx, g){
   const gid = g.file.replace('.html','');
   (DRAW[gid] || DRAW.fallback)(ctx, g);
