@@ -6247,7 +6247,7 @@ function runSmoke(){
       {solo('frost','blaze');G.pure=true;place(1.2);G.B[0].meter=100;ok(castAbility(G.B[0],'q')===false&&castAbility(G.B[0],'r')===false,'PURE BOXING: no abilities');startPunch(G.B[0],'jab');sim(.5);ok(G.B[1].st.slow===0&&G.B[1].hp<FBY.blaze.hp,'…and no passives (Frostbite)');G.pure=false}
       // ── the CPU reads how you defend ──
       {const bt=new Bot(1,'champion');bt.dh={slip:6,duck:0,block:0,none:1};let hk=0;for(let i=0;i<300;i++){const p=pickCombo(1,G.B[0],bt);if(p.some(x=>/hook/.test(x)))hk++}ok(hk>180,'a CPU that sees you slip a lot throws hooks ('+hk+'/300)');
-        bt.dh={slip:0,duck:0,block:7,none:1};let cl=0;for(let i=0;i<300;i++){const p=pickCombo(1,G.B[0],bt);if(p[0]==='clinch'||p[0]==='upper')cl++}ok(cl>180,'…and one that sees you block clinches or splits the guard ('+cl+'/300)')}
+        bt.dh={slip:0,duck:0,block:7,none:1};let cl=0;for(let i=0;i<300;i++){const p=pickCombo(1,G.B[0],bt);if(p.includes('clinch')||p.includes('upper'))cl++}ok(cl>180,'…and one that sees you block clinches or splits the guard ('+cl+'/300)')}
       ok(Object.keys(STRINGS).every(k=>k.split('-').every((t,i,a)=>{if(!i)return true;const P=x=>({1:'jab',2:'cross',3:'hook',6:'upper'})[x[0]];return chainOK(P(a[i-1]),P(t),/b/.test(a[i-1]),/b/.test(t))})),'every named string can actually be chained')}
     solo('titan','frost');place(1.1);{const v=G.B[1];v.hp=v.hpMax=999;for(let i=0;i<8;i++){place(1.1);G.B[0].sta=100;startPunch(G.B[0],'cross');sim(.3)}
       ok(v.taken>=6,'consecutive hits counted ('+v.taken+')');ok(!v.act||v.act.k!=='hurt','combo breaker: no more hitstun after six')}
