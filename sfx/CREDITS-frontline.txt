@@ -1,0 +1,87 @@
+FRONTLINE - SOUND CREDITS
+
+Every sound in frontline-sfx.m4a is a real recording released under Creative Commons Zero (public domain).
+No attribution is required, but here is where they came from. Thank you!
+
+Kenney - Impact Sounds (www.kenney.nl, CC0): footsteps on grass, concrete and snow; metal, plate, glass, tin and soft impacts; heavy punches
+
+Freesound.org (all CC0):
+  bad explosion by deleted_user_364925 - https://freesound.org/people/deleted_user_364925/sounds/47252/
+  End radio transmission by ReadeOnly - https://freesound.org/people/ReadeOnly/sounds/47646/
+  SWOSH-01 44.1kHz by qubodup - https://freesound.org/people/qubodup/sounds/59988/
+  Whoosh by qubodup - https://freesound.org/people/qubodup/sounds/60013/
+  MechanicalClamp.wav by Skullsmasha - https://freesound.org/people/Skullsmasha/sounds/123253/
+  ELECTRIC_ZAP_001.wav by JoelAudio - https://freesound.org/people/JoelAudio/sounds/136542/
+  Distant Boom.wav by Henrythetrain - https://freesound.org/people/Henrythetrain/sounds/142598/
+  ricochet.mp3 by cedarstudios - https://freesound.org/people/cedarstudios/sounds/148840/
+  Muffled Distant Explosion by NenadSimic - https://freesound.org/people/NenadSimic/sounds/149966/
+  typewriter.wav by BMacZero - https://freesound.org/people/BMacZero/sounds/160678/
+  Pistol Shot by LeMudCrab - https://freesound.org/people/LeMudCrab/sounds/163456/
+  Sniper Shot by LeMudCrab - https://freesound.org/people/LeMudCrab/sounds/163460/
+  Heavy Machine Gun by ShawnyBoy - https://freesound.org/people/ShawnyBoy/sounds/165394/
+  Spark by elliott.klein - https://freesound.org/people/elliott.klein/sounds/189630/
+  ship horn.wav by monotraum - https://freesound.org/people/monotraum/sounds/208714/
+  Sniper Scope zoom in by Supakid13 - https://freesound.org/people/Supakid13/sounds/210018/
+  3-Legged Robot Walker.mp3 by AGMoneyTrigga - https://freesound.org/people/AGMoneyTrigga/sounds/231347/
+  Steam/hiss by wubitog - https://freesound.org/people/wubitog/sounds/234782/
+  Explosion_01.wav by tommccann - https://freesound.org/people/tommccann/sounds/235968/
+  Rifle Shooting by qubodup - https://freesound.org/people/qubodup/sounds/238916/
+  Helicopter Flyby / Pass by mil0001 - https://freesound.org/people/mil0001/sounds/241190/
+  Incoming mortar 3 by Zagge28 - https://freesound.org/people/Zagge28/sounds/241838/
+  Incoming mortar 1 by Zagge28 - https://freesound.org/people/Zagge28/sounds/241840/
+  ANI Big Pipe Hit by ani_music - https://freesound.org/people/ani_music/sounds/244983/
+  Light Switch ON / OFF by FillSoko - https://freesound.org/people/FillSoko/sounds/257958/
+  MIG Welding by unfa - https://freesound.org/people/unfa/sounds/264827/
+  defibrillator.wav by reg7783 - https://freesound.org/people/reg7783/sounds/321800/
+  Deep Horn by Vendarro - https://freesound.org/people/Vendarro/sounds/328541/
+  road flare ignite burns.wav by frankelmedico - https://freesound.org/people/frankelmedico/sounds/348767/
+  Woosh (stick swung in the air) by Dalesome - https://freesound.org/people/Dalesome/sounds/352719/
+  Camera shutter and flash combined by montclairguy - https://freesound.org/people/montclairguy/sounds/353044/
+  Machine gun reload by SamsterBirdies - https://freesound.org/people/SamsterBirdies/sounds/363168/
+  Distant Explosion by Mr_KeybOred - https://freesound.org/people/Mr_KeybOred/sounds/372086/
+  Typewriter - single key - type 2.wav by yottasounds - https://freesound.org/people/yottasounds/sounds/380137/
+  Swing Woosh by Jofae - https://freesound.org/people/Jofae/sounds/389590/
+  Ricochet 2.wav by morganpurkis - https://freesound.org/people/morganpurkis/sounds/392975/
+  Welding_Electric Sparks.wav by weaveofkev - https://freesound.org/people/weaveofkev/sounds/396240/
+  Electricity by FlashTrauma - https://freesound.org/people/FlashTrauma/sounds/398274/
+  AssaultRifle1.wav by SuperPhat - https://freesound.org/people/SuperPhat/sounds/404562/
+  Submachine gun automatic fire.wav by SuperPhat - https://freesound.org/people/SuperPhat/sounds/417689/
+  Hard Glass Impact by deleted_user_3656686 - https://freesound.org/people/deleted_user_3656686/sounds/418194/
+  acess denied buzz by Jacco18 - https://freesound.org/people/Jacco18/sounds/419023/
+  Basic Melee Swing / Miss / Whoosh by SypherZent - https://freesound.org/people/SypherZent/sounds/420668/
+  9mm pistol shot by michorvath - https://freesound.org/people/michorvath/sounds/427592/
+  AR15 rifle shot by michorvath - https://freesound.org/people/michorvath/sounds/427596/
+  PistolReloadSound.wav by MaximBomba - https://freesound.org/people/MaximBomba/sounds/432139/
+  Rifle-or-shotgun-reload.wav by MaximBomba - https://freesound.org/people/MaximBomba/sounds/432141/
+  G39-16-Bugle Call.wav by craigsmith - https://freesound.org/people/craigsmith/sounds/438633/
+  Camera with Flash Sound and then Charge (fast) by RegoneFF - https://freesound.org/people/RegoneFF/sounds/456988/
+  Air (or steam) pressure release by brunoboselli - https://freesound.org/people/brunoboselli/sounds/457294/
+  Small_Flashlight_Click_on_02.wav by Rudmer_Rotteveel - https://freesound.org/people/Rudmer_Rotteveel/sounds/457463/
+  Beep Short by florianreichelt - https://freesound.org/people/florianreichelt/sounds/459992/
+  Shotgun Shot 03.wav by LilMati - https://freesound.org/people/LilMati/sounds/473846/
+  Clean Machine Gun Burst by qubodup - https://freesound.org/people/qubodup/sounds/482122/
+  Opening and closing a small metal hatch by Irolan - https://freesound.org/people/Irolan/sounds/488221/
+  Submarine Sonar by Breviceps - https://freesound.org/people/Breviceps/sounds/493162/
+  Whizzby by Daleonfire - https://freesound.org/people/Daleonfire/sounds/505238/
+  Electric zap.wav by michael_grinnell - https://freesound.org/people/michael_grinnell/sounds/512471/
+  Sniper Rifle by SuperPhat - https://freesound.org/people/SuperPhat/sounds/514228/
+  Radio Sign Off / Squelch by JovianSounds - https://freesound.org/people/JovianSounds/sounds/524205/
+  Droid falls over (messy).mp3 by J.R.Mythical - https://freesound.org/people/J.R.Mythical/sounds/589621/
+  Grenade Explosion SFX (medium-sized, meaty, realistic) by unfa - https://freesound.org/people/unfa/sounds/609587/
+  9mm Handgun Being Dry Fired by serøutōnin--deprivəd - https://freesound.org/people/ser%C3%B8ut%C5%8Dnin--depriv%C9%99d/sounds/674568/
+  Big falling debris (crash) by xkeril - https://freesound.org/people/xkeril/sounds/703247/
+  Fall debris (crash) by xkeril - https://freesound.org/people/xkeril/sounds/703248/
+  Metal_Hatch_Small_Open_03 by Rudmer_Rotteveel - https://freesound.org/people/Rudmer_Rotteveel/sounds/718445/
+  A rifle being dry fired once by serøutōnin--deprivəd - https://freesound.org/people/ser%C3%B8ut%C5%8Dnin--depriv%C9%99d/sounds/725402/
+  Robot walk, looped by Magnesus - https://freesound.org/people/Magnesus/sounds/729437/
+  Walkie-talkie end of transmission by LukaCafuka - https://freesound.org/people/LukaCafuka/sounds/760245/
+  shotgun shoot by MrGungus - https://freesound.org/people/MrGungus/sounds/773873/
+  Big robot footstep 002 by AudioPapkin - https://freesound.org/people/AudioPapkin/sounds/813053/
+  Big robot footstep by AudioPapkin - https://freesound.org/people/AudioPapkin/sounds/813056/
+  Big robot footstep 005 by AudioPapkin - https://freesound.org/people/AudioPapkin/sounds/815039/
+  Heavy Robot Footsteps by Artem_Zaitsev - https://freesound.org/people/Artem_Zaitsev/sounds/837389/
+  Real Bullet Flyby Sound by qubodup - https://freesound.org/people/qubodup/sounds/855248/
+
+The score (frontline-music.m4a): Versilian Studios Chamber Orchestra 2, Community Edition (CC0) - https://github.com/sgossner/VSCO-2-CE
+  snare drum, bass drum, crash cymbal, timpani, anvil, tambourine, French horn, tenor trombone, tuba, trumpet,
+  cello section, violin section (sustained, spiccato and pizzicato)
