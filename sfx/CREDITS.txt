@@ -1,0 +1,54 @@
+HAYMAKER - SOUND CREDITS
+
+Every sound in haymaker-sfx.m4a is a real recording released under Creative Commons Zero (public domain).
+No attribution is required, but here is where they came from. Thank you!
+
+Kenney - Impact Sounds (www.kenney.nl, CC0): impactPunch_heavy/medium, impactSoft_heavy/medium, impactPlate_light
+
+Freesound.org (all CC0):
+  PRO_Boxing Pads by Sami_Zadoud - https://freesound.org/people/Sami_Zadoud/sounds/755836/
+  Major punch by janbezouska - https://freesound.org/people/janbezouska/sounds/399183/
+  PUNCH-BOXING-02.wav by newagesoup - https://freesound.org/people/newagesoup/sounds/348243/
+  boxing gloves small hits slides.flac by kyles - https://freesound.org/people/kyles/sounds/637252/
+  Whoosh by qubodup - https://freesound.org/people/qubodup/sounds/60013/
+  SWOSH-01 44.1kHz by qubodup - https://freesound.org/people/qubodup/sounds/59988/
+  Basic Melee Swing / Miss / Whoosh by SypherZent - https://freesound.org/people/SypherZent/sounds/420668/
+  Woosh (stick swung in the air) by Dalesome - https://freesound.org/people/Dalesome/sounds/352719/
+  Swing Woosh by Jofae - https://freesound.org/people/Jofae/sounds/389590/
+  Boxing Bell Signals by Mateusz_Chenc - https://freesound.org/people/Mateusz_Chenc/sounds/520998/
+  Crowd Ooohs and Ahhhs in Excitement by noah0189 - https://freesound.org/people/noah0189/sounds/264499/
+  Crowd shock.wav by deleted_user_2104797 - https://freesound.org/people/deleted_user_2104797/sounds/324898/
+  gasps small crowd.wav by dreamstobecome - https://freesound.org/people/dreamstobecome/sounds/439258/
+  Cheer 1 short.wav by jayfrosting - https://freesound.org/people/jayfrosting/sounds/333405/
+  Short Crowd Cheer.flac by qubodup - https://freesound.org/people/qubodup/sounds/182571/
+  Body fall.wav by DylanTheFish - https://freesound.org/people/DylanTheFish/sounds/417994/
+  Body fall_02.wav by deleted_user_2104797 - https://freesound.org/people/deleted_user_2104797/sounds/346694/
+  BODY FALL - V HVY - DIRT by leonelmail - https://freesound.org/people/leonelmail/sounds/504626/
+  Cloth Grab by alegemaate - https://freesound.org/people/alegemaate/sounds/667271/
+  GrabItemCloth.wav by CJspellsfish - https://freesound.org/people/CJspellsfish/sounds/609569/
+  Basic Fire whoosh by LookIMadeAThing - https://freesound.org/people/LookIMadeAThing/sounds/260554/
+  fire-whoosh.wav by hnhnh - https://freesound.org/people/hnhnh/sounds/244926/
+  Freeze sound effect FX by antonsoederberg - https://freesound.org/people/antonsoederberg/sounds/685253/
+  Hard Glass Impact by deleted_user_3656686 - https://freesound.org/people/deleted_user_3656686/sounds/418194/
+  ELECTRIC_ZAP_001.wav by JoelAudio - https://freesound.org/people/JoelAudio/sounds/136542/
+  Electric zap.wav by michael_grinnell - https://freesound.org/people/michael_grinnell/sounds/512471/
+  Spark by elliott.klein - https://freesound.org/people/elliott.klein/sounds/189630/
+  Energy Blast by Kinoton - https://freesound.org/people/Kinoton/sounds/369516/
+  Laser bolt by peepholecircus - https://freesound.org/people/peepholecircus/sounds/169989/
+  hit - metallic 01.wav by Anthousai - https://freesound.org/people/Anthousai/sounds/406562/
+  Metal Hit Cartoon by Johnnyfarmer - https://freesound.org/people/Johnnyfarmer/sounds/209771/
+  Roar.wav by waxsocks - https://freesound.org/people/waxsocks/sounds/410343/
+  growl3.wav by lendrick - https://freesound.org/people/lendrick/sounds/77634/
+  Snake Hiss by xoiziox - https://freesound.org/people/xoiziox/sounds/553374/
+  Snake hissing.mp3 by schreibsel - https://freesound.org/people/schreibsel/sounds/540162/
+  Cartoon Splat by Breviceps - https://freesound.org/people/Breviceps/sounds/445117/
+  Splat!.wav by Whiprealgood - https://freesound.org/people/Whiprealgood/sounds/87535/
+  Closeup Thunder Strike 01 by loganzsound - https://freesound.org/people/loganzsound/sounds/840628/
+  Short Explosion.wav by animationIsaac - https://freesound.org/people/animationIsaac/sounds/207322/
+  Explosion, short [sidohzen 165808] by qubodup - https://freesound.org/people/qubodup/sounds/171971/
+  Whip Crack.m4a by SciFiSounds - https://freesound.org/people/SciFiSounds/sounds/529925/
+  whip and crack sound by JayRom01 - https://freesound.org/people/JayRom01/sounds/615761/
+  Chains.wav by cribbler - https://freesound.org/people/cribbler/sounds/370877/
+  GLEAM-GLOW-SFX-CHIME.wav by newagesoup - https://freesound.org/people/newagesoup/sounds/351408/
+  iPhone Camera Capture.wav by pooky1 - https://freesound.org/people/pooky1/sounds/431588/
+  SFX UI Button Click by suntemple - https://freesound.org/people/suntemple/sounds/253168/
