@@ -929,7 +929,7 @@ body.pure .bar.met{visibility:hidden}
     <h3>THE FIGHT</h3>
     <p>Three rounds of a minute. Drop to zero and you're down: mash punch to beat the count. Three knockdowns is a TKO. Still standing at the end? The judges score each round.</p>
     <p>Punches cost stamina, and a whiff costs the same as a hit. Gas out and you're slow, weak and easy to clinch.</p>
-    <p><b>RULES</b> on the select screen: SUPER ABILITIES, or PURE BOXING: every boxer at the same weight, no abilities, nothing but how you fight.</p>
+    <p><b>RULES</b> on the select screen: SUPER ABILITIES, or PURE BOXING: every boxer at the same weight and the same fighting style, no abilities, nothing but how you fight.</p>
     <h3>MODES</h3>
     <div class="kgrid">
       <kbd>QUICK FIGHT</kbd><span>Any fighter, any venue (Arena, Rooftop - clear, storm or snow - The Pit, The Gym, The Beach at sunset, a space station in ORBIT), any difficulty. Add MUTATORS for chaos, WATCH two CPUs, or pick 2 PLAYER.</span>
@@ -1038,6 +1038,8 @@ const STRINGS={'1-2':'ONE-TWO','1-1-2':'DOUBLE JAB, CROSS','1-2-3':'ONE-TWO-THRE
 const SIG={blaze:['1-2-3','3b-3'],volt:['1-1-2','1-6'],titan:['2-3','3-6'],shade:['1-6-3','2-3-2'],frost:['1-2-3-2','1-1-2'],viper:['1-6','1-1-6'],
   kitsune:['6-3','1-6-3'],toro:['3-6','2-3b-6'],unit:['1-2-1-2','1-2-3'],grizz:['3b-3','2-3'],lucha:['1-6-3-2','6-3'],pops:['1-1-2','1-2-3b-3'],champ:['1-6-3-2','2-3b-6']};
 const SIGP={'1':'jab','2':'cross','3':'hook','6':'upper'};
+// PURE BOXING: every CPU boxer throws the same strings (equal, and as dangerous as the best signatures)
+const PURE_SIG=['1-2-3','1-2-1-2','3b-3','2-3-2'];
 const sigPlan=k=>k.split('-').map(t=>(t.endsWith('b')?'b:':'')+SIGP[t[0]]);
 const sigOf=f=>f&&(SIG[f.kit||f.id]||SIG[f.id]);
 const TAUNT_FACE={wave:['half','grin'],cool:['half','set'],shimmy:['happy','grin'],kiss:['blink','grin'],horns:['angry','grit'],scan:['open','set'],roar:['angry','shout'],crowd:['happy','shout'],shrug:['half','grin'],wag:['half','grin']};
@@ -1049,7 +1051,7 @@ const FIGHTERS=[
  {id:'blaze',name:'BLAZE',nick:'KID INFERNO',col:'#ff6a1f',
   look:{skin:0xb9794f,shorts:0xe0461a,trim:0xffcc33,glove:0xd11f1a,hair:'spikes',hairCol:0xff4a12,glow:0xff5a10},
   taunt:'flex',alts:[{},{shorts:0x1c1c24,trim:0xff5a10,glove:0x1c1c24,hairCol:0xffd21f},{shorts:0xf2f2f2,trim:0xe0461a,glove:0xf2f2f2,hairCol:0xff2a2a}],
-  size:1,hp:110,pow:1.24,spd:1.02,reach:1,stats:[4,3,3],
+  size:1,hp:110,pow:1.2,spd:1.02,reach:1,stats:[4,3,3],
   passive:{name:'Hot Hands',desc:'Every third hit of a combo sets the target on fire.'},
   q:{name:'Fire Fist',cd:9,desc:'Your next 3 punches hit 40% harder and set the target on fire.'},
   e:{name:'Flame Dash',cd:8,desc:'Rocket forward with a flaming straight. Blockable.'},
@@ -1065,7 +1067,7 @@ const FIGHTERS=[
  {id:'titan',name:'TITAN',nick:'THE MOUNTAIN',col:'#9be05a',
   look:{skin:0x5c3a26,shorts:0x3d5a2a,trim:0xd9c27b,glove:0x70757c,hair:'bald',beard:1,hairCol:0x1a1008,glow:0x9be05a},
   taunt:'beat',alts:[{},{shorts:0x7a1d1d,trim:0xffc83a,glove:0xc8a032},{shorts:0x1a1a1e,trim:0x9be05a,glove:0x2a2a30}],
-  size:1.12,hp:129,pow:1.12,spd:.93,pspd:.94,reach:1.06,stats:[5,1,5],
+  size:1.12,hp:124,pow:1.12,spd:.93,pspd:.94,reach:1.06,stats:[5,1,5],
   passive:{name:'Granite Chin',desc:'The deepest health bar in the division, and jabs never stagger him.'},
   q:{name:'Iron Skin',cd:11,desc:'For 4 seconds take half damage and shrug off stagger.'},
   e:{name:'Ground Pound',cd:11,desc:'Slam the canvas: a shockwave hits anyone close and throws them back. Dodge it!'},
@@ -1073,7 +1075,7 @@ const FIGHTERS=[
  {id:'shade',name:'SHADE',nick:'THE GHOST',col:'#b06bff',
   look:{skin:0xc9bdd4,shorts:0x4b1f7a,trim:0xb06bff,glove:0x2a1438,hair:'hood',hairCol:0x1c1026,mask:1,glow:0xb06bff},
   taunt:'wave',alts:[{},{shorts:0x141414,trim:0xff3b6b,glove:0x5a0f22,hairCol:0x2a0a12},{shorts:0xd9d2e8,trim:0x6b2bd9,glove:0xece6f6,hairCol:0x3a2a5a}],
-  size:.98,hp:90,pow:1.03,spd:1.06,reach:1,stats:[3,4,2],
+  size:.98,hp:94,pow:1.03,spd:1.06,reach:1,stats:[3,4,2],
   passive:{name:'Smoke Step',desc:'Dodges recharge 60% faster and give stamina back.'},
   q:{name:'Phase',cd:8,desc:'Go intangible for 1.3 seconds. Punches pass straight through you.'},
   e:{name:'Guard Seal',cd:12,desc:'Chain your opponent\'s gloves: they can\'t block for 3 seconds.'},
@@ -3963,7 +3965,7 @@ function startKD(i){
       for(let i=0;i<46;i++){const a=Math.random()*6.283,sp=1.5+Math.random()*2.5;PN&&PN.emit(c[0]+Math.cos(a)*.3,.05,c[1]+Math.sin(a)*.3,Math.cos(a)*sp,.4+Math.random()*.9,Math.sin(a)*sp,1,.3,.62,.6,.58,.5,1.6,2.4)}});
   }
 }
-function botUpAt(v){const d=G.bots[v.idx].D||DIFF.contender;const p=d.getup-(v.kd-1)*.28+(v.f.kit==='toro'?.2:0);return Math.random()<p?2+Math.floor(Math.random()*4):99}   // up at 2–5: long counts were most of a fight's real time
+function botUpAt(v){const d=G.bots[v.idx].D||DIFF.contender;const p=d.getup-(v.kd-1)*.28+(v.f.kit==='toro'&&!G.pure?.2:0);return Math.random()<p?2+Math.floor(Math.random()*4):99}   // up at 2–5: long counts were most of a fight's real time
 function stepKD(dt){
   const K=G.kdInfo;if(!K)return;const v=G.B[K.b];K.t+=dt;
   const n=Math.floor(K.t/COUNT_STEP);
@@ -3976,7 +3978,7 @@ function stepKD(dt){
   if(K.t>=COUNT_STEP*10+.3&&!K.sent){K.sent=1;countedOut(v,false)}
 }
 const getupNeed=v=>8+v.kd*5;
-function mashGetup(){const K=G.kdInfo;if(!K||K.up)return;const v=G.B[K.b];if(!owned(v)||G.bots[K.b])return;v.getup+=v.f.kit==='toro'?2:1;SFX.tick()}
+function mashGetup(){const K=G.kdInfo;if(!K||K.up)return;const v=G.B[K.b];if(!owned(v)||G.bots[K.b])return;v.getup+=v.f.kit==='toro'&&!G.pure?2:1;SFX.tick()}
 function standUp(v){if(G.kdInfo.up)return;v.hp=Math.round(v.hpMax*(v.kd===1?.5:.34));v.sta=70;v.st=Object.assign(v.st,{burn:0,poison:0,pstk:0,slow:0,stun:0,freeze:0,sealed:0,charm:0});
   if(G.online)netSend({t:'up',b:v.idx,hp:v.hp});onUp(v.idx)}
 function onUp(i){const v=G.B[i];v.down=false;v.act={k:'getup',t:0,d:1.1};if(G.kdInfo){G.kdInfo.up=true;G.kdInfo.upT=0}
@@ -4673,7 +4675,7 @@ const CPU_STYLE={volt:{aggr:1.05,block:.8,dodge:1.4,range:.35,label:'hit and run
   toro:{aggr:1.25,block:.85,dodge:.8,range:-.25},blaze:{aggr:1.08,block:1,dodge:1,range:-.08},viper:{aggr:1,block:1,dodge:1.15,range:.15},
   frost:{aggr:1,block:1.1,dodge:1,range:0},lucha:{aggr:1.1,block:.9,dodge:1.1,range:.05},champ:{aggr:1.05,block:1.2,dodge:.8,range:-.1},pops:{aggr:.95,block:1.15,dodge:1.05,range:-.05},unit:{aggr:1.05,block:1.05,dodge:.9,range:.05}};
 function styled(D,id){let S=CPU_STYLE[id];if(!S||D.aggr===0)return D;
-  if(G.pure){const h=v=>1+(v-1)*.5;S={aggr:h(S.aggr),block:h(S.block),dodge:h(S.dodge),range:S.range*.5}}   // PURE BOXING: styles lean, they don't decide (CPU vs CPU they spread 23-77%)
+  if(G.pure)return D;   // PURE BOXING: nothing but how you fight - every CPU boxer fights the same way (styles and signatures made CPU-vs-CPU 21-77%)
   return Object.assign({},D,{aggr:clamp(D.aggr*S.aggr,0,.97),block:clamp(D.block*S.block,0,.95),dodge:clamp(D.dodge*S.dodge,0,.7),range:S.range})}
 class Bot{
   constructor(idx,diff){this.idx=idx;this.diff=diff;this.D=DIFF[diff]||DIFF.contender;this.plan=[];this.think=1;this.react=null;this.strafe=Math.random()<.5?1:-1;this.strafeT=0;this.blockT=0;this.seen=null;this.abilT=1.5;this.planT=0;this.guardT=0}
@@ -4770,7 +4772,9 @@ function pickCombo(dist,o,bot){
       if(m==='duck')return pick([['upper'],['jab','upper'],['upper','hook'],['b:cross']]).slice();
       return R()<.4+(D.clinch||0)?['clinch']:pick([['upper'],['jab','upper'],['upper','hook']]).slice()}}}
   if(o.blocking&&dist<1.15&&R()<(D.clinch||0)*2.5)return ['clinch'];   // a turtle gets tied up
-  {const sg=bot&&D.aggr>0&&sigOf(G.B[bot.idx].f);if(sg&&dist<1.2&&R()<.45)return sigPlan(pick(sg))}   // its signature strings
+  // its signature strings - only one that reaches from here, every punch of it (picked from range, an uppercut-led string left the
+  // CPU standing still and a jab-uppercut fanned air: Kitsune and Shade, whose strings carry uppercuts, won 17-32% at one weight)
+  {const sg=bot&&D.aggr>0&&(G.pure?PURE_SIG:sigOf(G.B[bot.idx].f));if(sg&&R()<.45){const f=G.B[bot.idx].f,ok=sg.map(sigPlan).filter(P=>dist<=Math.min(...P.map(p=>PUNCH[p.replace('b:','')].range))*f.reach*(f.size||1)*.95);if(ok.length)return pick(ok).slice()}}
   if(o.blocking&&close&&R()<.45)return ['upper','hook'];
   const opts=close?[['jab','cross'],['jab','cross','hook'],['hook','upper'],['cross','hook','cross'],['jab','upper','hook'],['b:hook','hook'],['jab','jab','cross'],['hook'],['upper'],['jab','cross','hook','cross'],['jab','b:cross']]
     :mid?[['jab'],['jab','jab'],['jab','cross'],['cross'],['jab','jab','cross'],['jab','cross','hook']]:[['jab'],['jab','cross']];
@@ -4856,7 +4860,7 @@ function p2KeyPoll(){if(!p2Keys())return;const P=PAD2;P.x=(KEYS.ArrowRight?1:0)-
 addEventListener('keydown',e=>{
   if(e.target&&e.target.tagName==='INPUT')return;
   if(REBIND){e.preventDefault();if(e.code!=='Escape'){for(const a in BIND)if(BIND[a]===e.code&&a!==REBIND)BIND[a]=BIND[REBIND];BIND[REBIND]=e.code;SET.bind=Object.assign({},BIND);saveSet();rebuildKMAP()}REBIND=null;showSettings();return}
-  if(p2Keys()&&!e.repeat&&KMAP2[e.code]){PAD2.press.push(KMAP2[e.code]);if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&PUNCH[KMAP2[e.code]]){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.kit==='toro'?2:1}KEYS[e.code]=true;e.preventDefault();return}
+  if(p2Keys()&&!e.repeat&&KMAP2[e.code]){PAD2.press.push(KMAP2[e.code]);if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&PUNCH[KMAP2[e.code]]){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.kit==='toro'&&!G.pure?2:1}KEYS[e.code]=true;e.preventDefault();return}
   auResume();
   if(RP.play&&!e.repeat){rpEnd();e.preventDefault();return}
   if(G.phase==='walk'&&G.mode==='fight'&&!e.repeat&&e.code!=='Escape'){hostPhase('intro');e.preventDefault();return}
@@ -4913,7 +4917,7 @@ function padP2(gp){const P=PAD2;if(!gp){P.pad=false;if(!p2Keys()){P.on=false;P.x
   const b=gp.buttons.map(x=>x.pressed||x.value>.5),pr=P.prev,down=i=>b[i]&&!pr[i];P.prev=b;P.on=true;
   let x=gp.axes[0]||0,y=gp.axes[1]||0;if(Math.hypot(x,y)<.22){x=0;y=0}if(b[12]&&!b[14]&&!b[15])y=y;P.x=x;P.y=y;P.block=!!b[5];P.hay=!!b[7];P.body=!!b[10];
   const map={0:'jab',1:'cross',2:'hook',3:'upper',4:'dodge',6:'duck',11:'clinch',14:'q',15:'e',12:'r',13:'taunt'};for(const i in map)if(down(+i))P.press.push(map[i]);
-  if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&[0,1,2,3].some(down)){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.kit==='toro'?2:1}
+  if(G.phase==='kd'&&G.kdInfo&&G.kdInfo.b===1&&[0,1,2,3].some(down)){const v=G.B[1];if(!G.kdInfo.up)v.getup+=v.f.kit==='toro'&&!G.pure?2:1}
   if(down(9))togglePause()}
 // a controller's intent for any boxer (screen-relative movement like the keyboard)
 function padIntent(i,P){const it={mx:0,mz:0,block:false,punch:null,dodge:false,abil:null};const rt=P.x,up=-P.y;
@@ -5267,7 +5271,7 @@ function fighterInfo(f){
     ${sigHTML(f)}${ab('PASSIVE',{html:portrait(f.id,44),name:f.passive.name,desc:f.passive.desc})}${ab('Q',Object.assign({html:abIcon(f,'q')},f.q))}${ab('E',Object.assign({html:abIcon(f,'e')},f.e))}${ab('R',{html:abIcon(f,'r'),name:f.r.name+' - ULTIMATE',desc:f.r.desc})}</div>`;
 }
 // the signature strings as punch chips in the tells' colours: paper straights, red hooks, yellow uppercuts
-function sigHTML(f){const sg=sigOf(f);if(!sg)return'';const T={'1':['s','JAB'],'2':['s','CROSS'],'3':['h','HOOK'],'6':['u','UPPER']};
+function sigHTML(f){const sg=sigOf(f);if(!sg||SEL.pure)return'';const T={'1':['s','JAB'],'2':['s','CROSS'],'3':['h','HOOK'],'6':['u','UPPER']};
   return `<div class="sig"><b>SIGNATURE STRINGS</b>${sg.map(k=>`<div>${k.split('-').map(t=>{const [c,n]=T[t[0]];return `<span class="t ${c}">${t.endsWith('b')?'BODY ':''}${n}</span>`}).join('<i>›</i>')}</div>`).join('')}</div>`}
 function selMoreUpd(){const L=document.querySelector('.selL'),m=$('selMore');if(!L||!m)return;const more=L.scrollHeight>L.clientHeight+6&&L.scrollTop+L.clientHeight<L.scrollHeight-4;m.classList.toggle('on',more)}
 function renderSelect(){setTimeout(selMoreUpd,0);
@@ -5276,7 +5280,7 @@ function renderSelect(){setTimeout(selMoreUpd,0);
   const GL_=(bossOn()&&SEL.mode!=='online'?[...FIGHTERS,BOSS]:FIGHTERS).concat(madeF()),many=GL_.length+(on?0:1)>12;$('grid').classList.toggle('many',many);
   $('grid').innerHTML=GL_.map(f=>{const opp=(SEL.mode==='quick'&&SEL.opp===f.id)||(on&&NET.peerPick===f.id);
     return `<button class="card ${SEL.f===f.id?'sel':''} ${opp?'opp'+(on?' netopp':''):''}" style="--c:${f.col}" data-f="${f.id}"><div class="em">${portrait(f.id,many?50:64)}</div><div class="cn">${f.short||f.name}</div>${mastBadge(f.id)}${REC.champ[f.id]?'<div title="Arcade ladder champion" style="position:absolute;top:3px;left:4px;width:22px;height:22px">'+ICO('trophy')+'</div>':''}${f.made?'<div class="mkt">YOURS</div>':''}</button>`}).join('')+(on?'':`<button class="card mkc" data-mk="new"><div class="em">+</div><div class="cn">CREATE</div></button>`);
-  $('finfo').innerHTML=fighterInfo(SEL.pure?pureF(FBY[SEL.f]):FBY[SEL.f]);document.body.classList.toggle('pure-sel',!!SEL.pure);if(SEL.pure)$('finfo').insertAdjacentHTML('afterbegin','<div class="puren">PURE BOXING · EVERY BOXER AT THE SAME WEIGHT · NO ABILITIES</div>');if(FBY[SEL.f].made&&!on)$('finfo').insertAdjacentHTML('beforeend','<button class="btn small" id="mkEdit" style="margin-top:8px">EDIT FIGHTER</button>');
+  $('finfo').innerHTML=fighterInfo(SEL.pure?pureF(FBY[SEL.f]):FBY[SEL.f]);document.body.classList.toggle('pure-sel',!!SEL.pure);if(SEL.pure)$('finfo').insertAdjacentHTML('afterbegin','<div class="puren">PURE BOXING · SAME WEIGHT, SAME STYLE · NO ABILITIES</div>');if(FBY[SEL.f].made&&!on)$('finfo').insertAdjacentHTML('beforeend','<button class="btn small" id="mkEdit" style="margin-top:8px">EDIT FIGHTER</button>');
   if(SEL.mode==='quick'&&FBY[SEL.opp]){const H=(REC.h2h||{})[SEL.f+'>'+SEL.opp];$('finfo').insertAdjacentHTML('beforeend',`<div class="h2h">${FBY[SEL.f].short||FBY[SEL.f].name} VS <b style="color:${FBY[SEL.opp].col}">${FBY[SEL.opp].short||FBY[SEL.opp].name}</b> · ${H?`<b>${H[0]}–${H[1]}</b>`:'FIRST MEETING'}</div>`)}
   {const f=FBY[SEL.f],hx=c=>'#'+new THREE.Color(c).getHexString();if(f.made)SEL.alt=0;$('altSeg').parentNode.style.display=f.made?'none':'';if(!altOK(f.id,SEL.alt))SEL.alt=0;$('altSeg').innerHTML=[0,1,2,3,4].map(a=>{const L=Object.assign({},f.look,a===CUSTOM?kitOf(f.id):f.alts[a]),ok2=altOK(f.id,a);return `<button data-a="${a}" class="${SEL.alt===a?'on':''} ${a===3?'leg':''} ${ok2?'':'lock'}" style="--a:${hx(L.shorts)};--b:${hx(L.glove)}" title="${a===CUSTOM?'Your own kit - tap again to edit':a===3?(ok2?'LEGEND colours':'LEGEND - win the arcade ladder with '+f.name+' to unlock'):'Colour '+(a+1)}">${a===CUSTOM?'✎':ok2?'':'🔒'}</button>`}).join('')+(SEL.alt===CUSTOM&&SEL.kitEdit?kitEditor(f.id):'')}
   $('oppBox').classList.toggle('hide',SEL.mode!=='quick');
@@ -5756,7 +5760,7 @@ function cornerAdvice(){const me=G.B[G.ME],o=G.B[1-G.ME],S=me.stats,O=o.stats;
   if((S.stuffed||0)>=2)tips.push('Your big shots are getting beaten to the punch. Lead with a jab.');
   if((O.blocked||0)>=6&&!(S.clinch||0))tips.push('They\'re hiding behind the guard. Clinch them, or split it with an uppercut.');
   if(S.thrown>=10&&(S.beat||0)<2)tips.push('Let each punch land before you throw the next one - on the beat it chains with no gap.');
-  {const sg=G.bots[o.idx]&&sigOf(o.f);if(sg&&G.rnd<=2){const k=sg[G.rnd%sg.length],t=k.split('-'),N={'1':'jab','2':'cross','3':'hook','6':'uppercut'},a=t[t.length-2],z=t[t.length-1],zc=z[0]==='3'?'duck it':z[0]==='6'?'slip it':'keep the guard up';
+  {const sg=G.bots[o.idx]&&!G.pure&&sigOf(o.f);if(sg&&G.rnd<=2){const k=sg[G.rnd%sg.length],t=k.split('-'),N={'1':'jab','2':'cross','3':'hook','6':'uppercut'},a=t[t.length-2],z=t[t.length-1],zc=z[0]==='3'?'duck it':z[0]==='6'?'slip it':'keep the guard up';
     tips.push((o.name||o.f.name)+' loves the '+(STRINGS[k]||k).toLowerCase()+'. When the '+(a.endsWith('b')?'body ':'')+N[a[0]]+' lands, the '+(z.endsWith('b')?'body ':'')+N[z[0]]+' is next: '+zc+'.')}}
   if(me.meter>=100&&!G.pure)tips.push('Your ultimate is READY. Use it! (R)');
   if(S.thrown>=8&&acc<.35)tips.push('You\'re swinging at air. Step in before you throw.');
@@ -6518,10 +6522,11 @@ function runSmoke(){
     const wins={};FIGHTERS.forEach(f=>wins[f.id]=[0,0]);let ended=0,bad=0,kos=0;
     const REPS=+((HASH.match(/balance(\d+)/)||[])[1]||1);   // #smoke-balance5 = every pairing five times, for tuning
     for(let rep=0;rep<REPS;rep++)for(const a of FIGHTERS)for(const b of FIGHTERS){if(a===b)continue;
-      solo(a.id,b.id);G.pure=/pure/.test(HASH);G.forced=null;{const BD=/champ/.test(HASH)?'champion':'contender';G.bots=[new Bot(0,BD),new Bot(1,BD)]}G.phase='ready';
+      // (pure is set before the boxers are built, as startSolo does)
+      solo(a.id,b.id);G.pure=/pure/.test(HASH);if(G.pure)setupMatch([a.id,b.id]);G.forced=null;{const BD=/champ/.test(HASH)?'champion':'contender';G.bots=[new Bot(0,BD),new Bot(1,BD)]}G.phase='ready';
       let n=0;while(G.phase!=='end'&&n<60*400){step(SIM);n++;if(n%600===0)fxUpdate(99);if(!isFinite(G.B[0].x+G.B[1].x+G.B[0].hp+G.B[1].hp)){bad++;break}}fxUpdate(99);   // flush hit effects: no frames run here to retire them
       if(G.phase==='end'){ended++;const w=G.result.w;if(/KO/.test(G.result.how))kos++;if(w>=0){wins[[a.id,b.id][w]][0]++;wins[[a.id,b.id][1-w]][1]++}}}
-    const NP=REPS*FIGHTERS.length*(FIGHTERS.length-1);ok(ended===NP,NP+' CPU-vs-CPU fights finish ('+ended+')');ok(bad===0,'no NaN anywhere');
+    const NP=REPS*FIGHTERS.length*(FIGHTERS.length-1);ok(ended===NP,NP+' CPU-vs-CPU fights finish ('+ended+')');ok(bad===0,'no NaN anywhere');ok(kos>=NP*.3,'…and they are real fights: '+kos+' of '+NP+' end in a knockout');
     out.push('balance ('+(/champ/.test(HASH)?'champion':'contender')+' CPUs'+(/pure/.test(HASH)?', PURE BOXING':'')+', W-L): '+FIGHTERS.map(f=>f.id+' '+wins[f.id][0]+'-'+wins[f.id][1]).join(' · ')+' · KOs '+kos+'/'+NP);
   }catch(e){fail++;out.push('EXCEPTION '+e.message+'\n'+e.stack)}
   HP_K=HPK0;G.forced=null;
