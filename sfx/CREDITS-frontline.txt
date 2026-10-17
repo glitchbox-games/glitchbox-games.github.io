@@ -85,3 +85,7 @@ Freesound.org (all CC0):
 The score (frontline-music.m4a): Versilian Studios Chamber Orchestra 2, Community Edition (CC0) - https://github.com/sgossner/VSCO-2-CE
   snare drum, bass drum, crash cymbal, timpani, anvil, tambourine, French horn, tenor trombone, tuba, trumpet,
   cello section, violin section (sustained, spiccato and pizzicato)
+
+The story score (frontline-story.m4a, THE GLASS BIRD): Versilian Studios Chamber Orchestra 2, Community Edition (CC0) - https://github.com/sgossner/VSCO-2-CE
+  upright piano, solo violin, cello section, viola section, harp, glockenspiel, French horn
+  The Glass Bird theme is original. The story's other sounds (typewriter key, pencil, glass, dog tags, bugle, the Kestrel) reuse the recordings credited above.
