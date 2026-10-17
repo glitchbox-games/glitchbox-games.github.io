@@ -129,6 +129,17 @@ body::before {
 .featured-emoji { font-size:22px; margin-right:6px; filter:drop-shadow(0 0 8px rgba(255,255,255,.35)); }
 .featured-info { position:relative; z-index:2; padding:24px 28px; background:linear-gradient(to top,rgba(0,0,0,0.9),rgba(0,0,0,0.4) 60%,transparent); width:100%; }
 .featured-tag { font-family:'Press Start 2P',monospace; font-size:7px; letter-spacing:2px; color:var(--pink); text-shadow:0 0 10px var(--pink); margin-bottom:10px; }
+.mp-wrap { padding:0 24px; margin-top:18px; }
+.mp-head { display:flex; align-items:baseline; gap:12px; margin-bottom:8px; }
+.mp-head b { font-family:'Press Start 2P',monospace; font-size:12px; color:#00ff88; letter-spacing:.06em; text-shadow:0 0 12px rgba(0,255,136,.35); }
+.mp-head span { color:#8b95a8; font-size:12px; font-weight:600; }
+.mp-list { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; }
+.mp-card { flex-shrink:0; width:200px; display:flex; gap:10px; align-items:flex-start; padding:10px 12px; text-decoration:none; color:#e8eefc;
+  background:#0e1422; border:1px solid rgba(0,255,136,.28); }
+.mp-card:hover { border-color:#00ff88; box-shadow:0 0 14px rgba(0,255,136,.22); }
+.mp-card .e { font-size:24px; line-height:1; }
+.mp-card b { display:block; font-size:14px; font-weight:800; }
+.mp-card small { display:block; font-size:11px; color:#8b95a8; font-weight:600; line-height:1.3; margin-top:2px; }
 .featured h2 { font-family:'Press Start 2P',monospace; font-size:18px; color:#fff; text-shadow:0 0 20px rgba(255,255,255,0.4); margin-bottom:8px; line-height:1.4; }
 .featured p { color:#8090b0; font-size:14px; font-weight:500; max-width:480px; }
 .featured-play {
@@ -1073,6 +1084,8 @@ body::before { content:''; position:fixed; inset:-20%; z-index:-1; pointer-event
         <p id="featured-blurb">War Thunder-style vehicle combat - pilot tanks, planes, ships and AA guns against the CPU. Armor pen, module damage, B-2 bombers.</p>
       </div>
     </a>
+    <!-- a friend's review: "online multiplayer to play with your friends should be front and center" - so it comes first -->
+    <div id="mp-row"></div>
     <div id="recent-row"></div>
     <div class="section">
       <div class="section-header">
@@ -1094,7 +1107,7 @@ const PLAY_MODE_KEY='glitchbox.playmode';
 function playMode(){ return localStorage.getItem(PLAY_MODE_KEY)==='full'?'full':'framed'; }
 function setPlayMode(m){
   try{ localStorage.setItem(PLAY_MODE_KEY,m); }catch(e){}
-  paintPlayMode(); renderGames();
+  paintPlayMode(); renderGames(); try{renderMpRow()}catch(e){}
 }
 function togglePlayMode(){ setPlayMode(playMode()==='full'?'framed':'full'); }
 // hash is optional and carries deep links (multiplayer rooms) through the wrapper
@@ -1751,6 +1764,11 @@ const MP_GAMES = [
   { file:'mic-drop.html',  name:'Mic Drop',  emoji:'🎤', desc:'2 players · karaoke sing-off, highest score wins' },
 ];
 const MP_BY_FILE = Object.fromEntries(MP_GAMES.map(g => [g.file, g]));
+setTimeout(()=>{try{renderMpRow()}catch(e){console.warn('mp row',e)}},0);
+// PLAY WITH FRIENDS: every online game in one row under the featured banner, with how many can play and what it is
+function renderMpRow(){const el=document.getElementById('mp-row');if(!el)return;
+  el.innerHTML='<div class="mp-wrap"><div class="mp-head"><b>PLAY WITH FRIENDS</b><span>make a room, send the link, they\'re in</span></div><div class="mp-list">'+
+    MP_GAMES.map(g=>{const [n,...d]=g.desc.split(' · ');return '<a class="mp-card" href="'+esc(gameURL(g.file))+'"><span class="e">'+g.emoji+'</span><span><b>'+esc(g.name)+'</b><small>'+esc(n.toUpperCase())+'</small><small>'+esc(d.join(' · '))+'</small></span></a>'}).join('')+'</div></div>'}
 function gameName(file){ return (MP_BY_FILE[file] && MP_BY_FILE[file].name) || file.replace(/\.html$/,''); }
 function gameEmoji(file){ return (MP_BY_FILE[file] && MP_BY_FILE[file].emoji) || '🎮'; }
 
