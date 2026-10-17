@@ -9,7 +9,6 @@ const GAMES=[
   {name:'Car Mechanic',       file:'car-mechanic.html',           emoji:'🔧',color:['#1b1d20','#2a2014'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Run a garage: scan codes, pull plugs, swap belts and brakes, change oil - race up to 7 friends on the same cars'},
   {name:'Heist Crew',         file:'heist-crew.html',             emoji:'💰',color:['#05070c','#162036'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hacker, locksmith, muscle, lookout. Sneak past guards and cameras, crack the vault, make the van. 1 to 4 players'},
   {name:'Bomb Squad',         file:'bomb-squad.html',             emoji:'💣',color:['#141617','#2a1410'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One of you has the bomb, everyone else has the manual. Talk it through before it blows. 2 to 8 players'},
-  {name:'Snack Monsters',     file:'snack-monsters.html',         emoji:'🍩',color:['#ffd6e6','#ffb3cf'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Hungry monsters want snacks! Count, match and serve - race up to 5 friends. Made for younger players'},
   {name:'Midnight Post',      file:'midnight-post.html',          emoji:'🔦',color:['#07090a','#1a140a'],category:'puzzle',     tags:['new','hot'],blurb:'Guard the base gate from midnight to six. Check papers, catch the Hollows wearing soldiers\' faces'},
   {name:'Imposter',           file:'imposter.html',               emoji:'🕵️',color:['#0e0610','#200a14'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Everyone knows the secret word except one. Give clues, find the faker. 3 to 16 players'},
   {name:'Most Likely To',     file:'most-likely-to.html',         emoji:'🫵',color:['#120c06','#22101c'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Who\'s most likely to…? Everyone votes, the winner gets crowned. 3 to 16 players'},
@@ -23,31 +22,22 @@ const GAMES=[
   {name:'Seven Liars',         file:'seven-liars.html',            emoji:'🕶️',color:['#06080b','#101a24'],category:'puzzle',     tags:['new','hot']},
   {name:'Fatespine',           file:'fatespine.html',              emoji:'\u23f3',color:['#0a0410','#24103a'],category:'action',     tags:['new','hot']},
   {name:'Blast Radius',        file:'blast-radius.html',            emoji:'💥',color:['#03040c','#141d44'],category:'multiplayer',tags:['new','hot','mp'],price:120},
-  {name:'Neon Frag',           file:'neon-frag.html',              emoji:'🔫',color:['#05070e','#101b33'],category:'multiplayer',tags:['new','hot','mp']},
-  {name:'Mic Drop',            file:'mic-drop.html',               emoji:'🎤',color:['#12061f','#2a0f4a'],category:'multiplayer',tags:['new','mp']},
-  {name:'Wet Paint',           file:'wet-paint.html',              emoji:'🎨',color:['#1a0e08','#2e1a10'],category:'adventure',  tags:['new','hot']},
   {name:'Neon Putt',           file:'neon-putt.html',              emoji:'⛳',color:['#04120f','#0a2620'],category:'puzzle',     tags:['new','hot'],price:80},
-  {name:'Barrier',             file:'barrier.html',                emoji:'🚧',color:['#02140f','#04241b'],category:'action',     tags:['new','hot']},
   {name:'Quoridor',            file:'quoridor.html',               emoji:'🧱',color:['#0a1428','#12233f'],category:'strategy',   tags:['new','mp']},
   {name:'Pixel War',           file:'pixel-war.html',              emoji:'🪖',color:['#0a1800','#1a3008'],category:'action',     tags:['hot']},
   {name:'War Combined',        file:'war-combined.html',           emoji:'🛡️',color:['#180000','#300808'],category:'action',     tags:['hot'],blurb:'Two arsenals in one battlefield - subs, carriers, jets and armor'},
   {name:'Nuclear DEFCON',      file:'nuclear.html',                emoji:'☢️',color:['#141000','#242000'],category:'strategy',   tags:['hot']},
   {name:'Spaceship',           file:'spaceship-solo.html',         emoji:'🚀',color:['#020510','#060f28'],category:'action',     tags:['hot']},
   {name:'Spaceship MP',        file:'spaceship-mp.html',           emoji:'🛸',color:['#040610','#080f26'],category:'multiplayer',tags:['mp']},
-  {name:'Build a Bridge',      file:'build-a-bridge.html',         emoji:'🌉',color:['#060c18','#0c1830'],category:'puzzle',     tags:['hot']},
   {name:'Red Horizon',         file:'mars-colony.html',            emoji:'🔴',color:['#180400','#301000'],category:'simulation', tags:['new'],blurb:'Red Horizon - build a colony that survives the Martian night'},
   {name:'Untamed',             file:'national-park-tycoon.html',   emoji:'🏞️',color:['#041200','#082400'],category:'simulation', tags:['new']},
-  {name:'Park Simulator',      file:'national-park-simulator.html',emoji:'⛺',color:['#060e00','#0e1c00'],category:'simulation', tags:[]},
   {name:'Virus',               file:'virus.html',                  emoji:'🦠',color:['#0a0414','#180828'],category:'strategy',   tags:['hot']},
   {name:'Last Transmission',   file:'last-transmission.html',      emoji:'📡',color:['#040a14','#081424'],category:'adventure',  tags:['new']},
-  {name:'Last Transmission 3D',file:'last-transmission-3d.html',   emoji:'🌌',color:['#02040e','#060c1e'],category:'adventure',  tags:['new'],blurb:'The deep-space story, rebuilt in 3D'},
   {name:'Cheese Heist 3D',     file:'cheese-heist-3d.html',        emoji:'🧀',color:['#1a1500','#2a2200'],category:'action',     tags:[],blurb:'Full 3D stealth heist - grab the cheese, stay out of sight'},
   {name:'Fib Factory',         file:'fib-factory.html',            emoji:'🎭',color:['#1a001a','#2a002a'],category:'multiplayer',tags:['mp']},
-  {name:'Yellowstone Carnage', file:'yellowstone-carnage.html',    emoji:'🌋',color:['#1a0a00','#2a1500'],category:'action',     tags:['new'],blurb:'Supervolcano chaos, no survivors guaranteed'},
   {name:'Speed Stars',         file:'speed-stars.html',            emoji:'🏎️',color:['#000a1a','#001030'],category:'action',     tags:[]},
   {name:'DJ',                  file:'dj.html',                     emoji:'🎧',color:['#0a001a','#15002a'],category:'other',      tags:[]},
   {name:'Case Board',          file:'case-board.html',             emoji:'🔎',color:['#0a0a0a','#141414'],category:'puzzle',     tags:[]},
-  {name:'Roach Rave',          file:'roach-rave.html',             emoji:'🪳',color:['#0d0a00','#1a1400'],category:'other',      tags:[],blurb:'Paste a YouTube link, watch roaches dance to it'},
 ];
 
 // ── CANVAS DRAWING HELPERS ──
@@ -450,27 +440,6 @@ const DRAW={
   c.fillStyle='#3ddc84';c.beginPath();c.arc(206,54,3,0,6.283);c.fill();
   _SC(c);
 },
-'snack-monsters':(c)=>{
-  // pastel snack counter: a big round monster with its mouth open, an order bubble, snacks on a plate
-  _GV(c,0,0,320,200,'#ffe2ee','#fff3dc');
-  c.fillStyle='rgba(255,170,200,.22)';for(let x=0;x<320;x+=30)c.fillRect(x,0,15,140);
-  const ol='#3b2a4a';c.lineWidth=4;c.strokeStyle=ol;
-  // monster
-  c.fillStyle='#5fd3e0';c.beginPath();c.ellipse(222,104,64,62,0,0,6.283);c.fill();c.stroke();
-  c.fillStyle='#b5eef4';c.beginPath();c.ellipse(222,132,36,26,0,0,6.283);c.fill();
-  for(const x of[198,246]){c.fillStyle='#fff';c.beginPath();c.arc(x,84,15,0,6.283);c.fill();c.stroke();c.fillStyle='#2b1d36';c.beginPath();c.arc(x-4,87,8,0,6.283);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(x-1,83,3,0,6.283);c.fill()}
-  c.fillStyle='#5a1f3a';c.beginPath();c.ellipse(222,118,20,15,0,0,6.283);c.fill();c.stroke();c.fillStyle='#ff7aa2';c.beginPath();c.ellipse(222,126,11,5,0,0,6.283);c.fill();
-  c.fillStyle='rgba(255,120,160,.5)';c.beginPath();c.ellipse(182,108,9,6,0,0,6.283);c.ellipse(262,108,9,6,0,0,6.283);c.fill();
-  // counter + plate
-  _F(c,0,140,320,60,'#f6a96b');_F(c,0,140,320,9,'#ffc08a');c.fillStyle='#e8935a';for(let x=14;x<320;x+=60)c.fillRect(x,158,34,34);
-  c.fillStyle='#fff';c.strokeStyle='#d8c6e4';c.lineWidth=3;c.beginPath();c.ellipse(96,143,62,9,0,0,6.283);c.fill();c.stroke();
-  c.font='26px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';c.textAlign='center';c.textBaseline='middle';
-  c.fillText('🍎',70,128);c.fillText('🍪',98,126);c.fillText('🍌',126,128);
-  // order bubble
-  c.fillStyle='#fff';c.strokeStyle=ol;c.lineWidth=4;c.beginPath();c.moveTo(30,20);c.lineTo(140,20);c.quadraticCurveTo(152,20,152,32);c.lineTo(152,58);c.quadraticCurveTo(152,70,140,70);c.lineTo(132,70);c.lineTo(150,84);c.lineTo(116,70);c.lineTo(30,70);c.quadraticCurveTo(18,70,18,58);c.lineTo(18,32);c.quadraticCurveTo(18,20,30,20);c.fill();c.stroke();
-  c.font='24px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';c.fillText('🍎',46,46);c.fillText('🍪',78,46);c.fillText('🍌',112,46);
-  c.font='18px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';c.fillText('⭐',290,26);c.fillText('💖',300,62);
-},
 'midnight-post':(c)=>{
   // the gate window at night: a face under the sodium lamp, torch-lit eyes shining back, the red barrier arm
   _GV(c,0,0,320,200,'#05070b','#0c0f10','#1a140a');
@@ -625,89 +594,7 @@ const DRAW={
   _SC(c);
 },
 
-'neon-frag':(c)=>{
-  _GV(c,0,0,320,100,'#0a0f22','#1b2448');
-  _GV(c,0,100,320,100,'#0b1020','#050810');
-  // corridor walls in one-point perspective, meeting at the vanishing point
-  const vp=[160,100];
-  [[0,-1],[320,1]].forEach(([x,dir])=>{
-    c.fillStyle=dir<0?'#0d5f80':'#0a4a66';
-    c.beginPath(); c.moveTo(x,20); c.lineTo(x,180);
-    c.lineTo(vp[0]-dir*54,vp[1]+34); c.lineTo(vp[0]-dir*54,vp[1]-34); c.closePath(); c.fill();
-  });
-  _F(c,106,66,108,68,'#7a0f3e');                       // back wall
-  _F(c,106,66,108,4,'#ff2b8a');
-  for(let i=1;i<5;i++) _L(c,0,100+i*i*3,320,100+i*i*3,'rgba(0,245,255,.09)',1);
-  _C(c,160,104,7,'#ff2b8a');                            // opponent, mid-corridor
-  _F(c,155,104,10,20,'#c9145f');
-  // crosshair + gun
-  _L(c,160,88,160,96,'#00f5ff',2); _L(c,160,112,160,120,'#00f5ff',2);
-  _L(c,148,104,156,104,'#00f5ff',2); _L(c,164,104,172,104,'#00f5ff',2);
-  c.fillStyle='#0d1526'; c.strokeStyle='#00f5ff'; c.lineWidth=2;
-  c.beginPath(); c.moveTo(196,200); c.lineTo(204,158); c.lineTo(232,146);
-  c.lineTo(250,152); c.lineTo(246,178); c.lineTo(258,200); c.closePath(); c.fill(); c.stroke();
-  _SC(c);
-},
 
-'mic-drop':(c)=>{
-  _GV(c,0,0,320,200,'#3a1160','#07030f');
-  _ST(c,22);
-  // note highway
-  [[18,120,52],[78,96,38],[124,140,46],[178,74,56],[240,110,60]].forEach(([x,y,w],i)=>{
-    c.fillStyle=i===3?'#ffe600':'#a44bff';
-    c.globalAlpha=i===3?1:.75;
-    c.beginPath(); c.roundRect ? c.roundRect(x,y,w,11,6) : c.rect(x,y,w,11); c.fill();
-  });
-  c.globalAlpha=1;
-  _L(c,96,44,96,168,'rgba(255,255,255,.5)',2);          // now-line
-  _C(c,96,101,6,'#00f5ff');
-  // mic
-  c.fillStyle='#e9e2ff'; c.beginPath(); c.roundRect ? c.roundRect(268,120,20,38,10) : c.rect(268,120,20,38); c.fill();
-  _F(c,276,158,4,18,'#8a7fb0'); _F(c,266,176,24,5,'#8a7fb0');
-  c.fillStyle='rgba(255,0,128,.25)'; c.beginPath(); c.arc(278,139,26,0,6.28); c.fill();
-  c.fillStyle='#ffe600'; c.font='bold 15px monospace'; c.textAlign='left';
-  c.fillText('♪  ♫   ♪', 16, 34);
-  _SC(c);
-},
-
-'wet-paint':(c)=>{
-  // brick wall, and a Blank half-painted into it
-  _F(c,0,0,320,200,'#6E3A2C');
-  const BR=['#6E3A2C','#A85C3E','#3B1F1A'];
-  for(let ry=0;ry<12;ry++){
-    const off=(ry%2)*16;
-    for(let rx=-1;rx<12;rx++){
-      const bx=rx*32+off, by=ry*18;
-      _F(c,bx+1,by+1,30,16,((rx*7+ry*3)%5<2)?BR[0]:BR[1]);
-      _F(c,bx+3+((rx*5+ry)%22),by+4+((rx+ry*3)%10),2,2,BR[2]);
-    }
-    _F(c,0,ry*18,320,1,BR[2]);
-  }
-  // the body: left half painted to match, right half still primer white
-  const BX=118,BY=54,BW=84,BH=104;
-  for(let y=0;y<BH;y++)for(let x=0;x<BW;x++){
-    const wx=BX+x, wy=BY+y;
-    if(x<BW*0.52){
-      const ry=((wy/18)|0), rx=(((wx-(ry%2)*16)/32)|0);
-      c.fillStyle=(((wy%18)===0)?BR[2]:(((rx*7+ry*3)%5<2)?BR[0]:BR[1]));
-    } else c.fillStyle='#FFFFFF';
-    c.fillRect(wx,wy,1,1);
-  }
-  // eyes, so it reads as a creature
-  _F(c,BX+52,BY+22,8,10,'#111'); _F(c,BX+70,BY+22,8,10,'#111');
-  // a dripping brush and three sampled swatches
-  _F(c,26,120,10,54,'#3B1F1A'); _F(c,24,112,14,10,'#838C9E');
-  _F(c,27,168,8,16,'#A85C3E'); _F(c,29,186,3,8,'#A85C3E');
-  ['#A85C3E','#4E7C47','#357C82'].forEach((col,i)=>{
-    _F(c,258,20+i*24,40,18,'#000'); _F(c,260,22+i*24,36,14,col);
-  });
-  // title plate
-  _F(c,0,0,320,22,'rgba(0,0,0,0.72)');
-  c.fillStyle='#F5D648';c.font='bold 15px ui-monospace,monospace';
-  c.fillText('WET PAINT',10,16);
-  c.fillStyle='#B4B4B4';c.font='11px ui-monospace,monospace';
-  c.fillText('HIDE BY HAND',196,16);
-},
 
 
 'neon-putt':(c)=>{
@@ -852,21 +739,6 @@ const DRAW={
   _SC(c);
 },
 
-'build-a-bridge':(c)=>{
-  _GV(c,0,0,320,100,'#0d2a4a','#1a3a5a');
-  for(let i=0;i<8;i++){c.fillStyle=`rgba(150,180,220,${0.08+i%3*0.04})`;c.beginPath();c.ellipse(28+i*38,28+i%3*14,18+i%3*6,5,0,0,6.28);c.fill();}
-  _GV(c,0,155,320,45,'#041830','#082040');
-  for(let w=0;w<3;w++){c.strokeStyle=`rgba(0,120,200,${0.2+w*0.1})`;c.lineWidth=1;c.beginPath();for(let x=0;x<=320;x+=16)c.lineTo(x,159+w*8+Math.sin(x*0.2)*3);c.stroke();}
-  c.fillStyle='#1a1a1a';
-  c.beginPath();c.moveTo(0,200);c.lineTo(0,88);c.lineTo(58,98);c.lineTo(74,155);c.lineTo(0,155);c.fill();
-  c.beginPath();c.moveTo(320,200);c.lineTo(320,88);c.lineTo(262,98);c.lineTo(246,155);c.lineTo(320,155);c.fill();
-  c.strokeStyle='#7dd3fc';c.lineWidth=2;
-  _L(c,74,93,160,73,'#7dd3fc',2);_L(c,160,73,246,93,'#7dd3fc',2);
-  for(let i=0;i<7;i++){const bx=84+i*24,yc=73+Math.pow((i-3)/3,2)*20;_L(c,bx,yc,bx,133,'rgba(125,211,252,0.6)',1);}
-  _F(c,74,131,172,9,'#334455');_F(c,74,137,172,4,'#2a3a4a');
-  _F(c,142,121,28,11,'#ff6600');_F(c,145,114,22,8,'#ff8800');
-  _SC(c);
-},
 
 'mars-colony':(c)=>{
   _GV(c,0,0,320,90,'#120808','#2a1006');_GV(c,0,90,320,110,'#3a1505','#260e04');
@@ -895,40 +767,6 @@ const DRAW={
   _SC(c);
 },
 
-'national-park-simulator':(c)=>{
-  // Yellowstone at golden hour: Old Faithful erupting, lodgepole pines, a bison, a camera frame
-  _GV(c,0,0,320,200,'#f0a35a','#f6d28a');
-  const sun=c.createRadialGradient(250,70,0,250,70,90); sun.addColorStop(0,'rgba(255,245,200,.9)'); sun.addColorStop(1,'rgba(255,245,200,0)'); c.fillStyle=sun; c.fillRect(0,0,320,200);
-  // far ridges
-  c.fillStyle='#8a6f8f'; c.beginPath(); c.moveTo(0,110); [[40,88],[90,104],[140,80],[200,100],[250,84],[320,104]].forEach(([x,y])=>c.lineTo(x,y)); c.lineTo(320,200); c.lineTo(0,200); c.fill();
-  c.fillStyle='#5d5a6e'; c.beginPath(); c.moveTo(0,124); [[60,108],[120,122],[180,112],[260,126],[320,116]].forEach(([x,y])=>c.lineTo(x,y)); c.lineTo(320,200); c.lineTo(0,200); c.fill();
-  // geyser basin (pale mineral crust + steaming plume)
-  c.fillStyle='#e9e1cf'; c.beginPath(); c.ellipse(118,150,60,12,0,0,6.283); c.fill();
-  c.fillStyle='#4fb3c9'; c.beginPath(); c.ellipse(118,150,16,4,0,0,6.283); c.fill();
-  // a narrow jet of water that blooms into billowing steam drifting with the wind
-  const jet=c.createLinearGradient(0,150,0,70); jet.addColorStop(0,'rgba(255,255,255,.95)'); jet.addColorStop(1,'rgba(255,255,255,.5)');
-  c.fillStyle=jet; c.beginPath(); c.moveTo(112,150); c.lineTo(115,78); c.lineTo(121,78); c.lineTo(124,150); c.fill();
-  [[118,74,15],[106,62,14],[128,58,16],[114,46,18],[134,40,15],[122,30,19],[142,26,16],[110,30,13],[150,16,15],[130,14,17],[100,50,11],[160,30,12]]
-    .forEach(([x,y,r],i)=>{ c.fillStyle=`rgba(255,255,255,${.92-i*.04})`; c.beginPath(); c.arc(x,y,r,0,6.283); c.fill(); });
-  for(let i=0;i<10;i++){ c.fillStyle='rgba(255,255,255,.75)'; c.beginPath(); c.arc(106+i*2.6,148-((i*7)%10),3,0,6.283); c.fill(); }
-  // meadow
-  _GV(c,0,156,320,44,'#7d8a3e','#4e5a24');
-  // lodgepole pines
-  [[18,150,1],[36,156,.8],[268,150,1.1],[292,158,.85],[306,150,.95]].forEach(([x,y,k])=>{
-    c.fillStyle='#22381f'; for(let j=0;j<5;j++){ c.beginPath(); c.moveTo(x,y-58*k+j*10*k); c.lineTo(x-(7+j*3)*k,y-40*k+j*10*k); c.lineTo(x+(7+j*3)*k,y-40*k+j*10*k); c.fill(); }
-    _F(c,x-1.5,y-12*k,3,14*k,'#3b2a1c'); });
-  // bison
-  c.fillStyle='#3a2416'; c.beginPath(); c.ellipse(222,166,22,12,0,0,6.283); c.fill();
-  c.fillStyle='#2a180e'; c.beginPath(); c.ellipse(204,160,13,13,0,0,6.283); c.fill();
-  c.fillStyle='#1f120a'; c.beginPath(); c.ellipse(195,168,8,7,0,0,6.283); c.fill();
-  [[210,174],[218,176],[232,176],[240,174]].forEach(([x,y])=>_F(c,x,y,4,10,'#1f120a'));
-  _L(c,198,154,194,148,'#d9cbb0',2); _L(c,208,152,212,146,'#d9cbb0',2);
-  // camera viewfinder
-  c.strokeStyle='rgba(255,255,255,.9)'; c.lineWidth=2.5;
-  [[70,26,1,1],[250,26,-1,1],[70,182,1,-1],[250,182,-1,-1]].forEach(([x,y,dx,dy])=>{ c.beginPath(); c.moveTo(x,y+dy*16); c.lineTo(x,y); c.lineTo(x+dx*16,y); c.stroke(); });
-  _C(c,82,170,4,'#ff3b3b'); c.font='bold 10px monospace'; c.fillStyle='#fff'; c.textAlign='left'; c.fillText('REC',90,174);
-  c.font='900 15px sans-serif'; c.fillStyle='#fff3c0'; c.textAlign='right'; c.fillText('YELLOWSTONE',304,22);
-},
 
 'virus':(c)=>{
   _F(c,0,0,320,200,'#030a04');_ST(c,20);
@@ -959,17 +797,6 @@ const DRAW={
   _F(c,165,130,40,2,'rgba(111,214,200,0.5)');_SC(c);
 },
 
-'last-transmission-3d':(c)=>{
-  _F(c,0,0,320,200,'#040608');_ST(c,30);
-  const vx=160,vy=100;
-  c.strokeStyle='rgba(40,80,120,0.35)';c.lineWidth=1;
-  for(let i=0;i<=7;i++){const x=i*46-12;_L(c,x,200,vx,vy,'rgba(40,80,120,0.25)',1);}
-  for(let d=0;d<5;d++){const t=d/5,w2=(1-t)*155;c.strokeStyle=`rgba(40,80,120,${0.1+d*.04})`;c.lineWidth=0.5;c.strokeRect(vx-w2,vy+(1-t)*98-6,w2*2,6);}
-  const pg=c.createRadialGradient(vx,vy,0,vx,vy,38);pg.addColorStop(0,'rgba(0,180,200,0.5)');pg.addColorStop(.5,'rgba(0,100,150,0.2)');pg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=pg;c.fillRect(vx-38,vy-38,76,76);
-  c.strokeStyle='rgba(0,200,220,0.6)';c.lineWidth=1.5;c.shadowColor='#00c8dc';c.shadowBlur=10;c.beginPath();c.arc(vx,vy,15,0,6.28);c.stroke();c.shadowBlur=0;
-  c.fillStyle='rgba(60,80,100,0.8)';c.beginPath();c.moveTo(188,200);c.lineTo(150,158);c.lineTo(160,147);c.lineTo(170,158);c.lineTo(132,200);c.fill();
-  _SC(c);
-},
 
 'cheese-heist-3d':(c)=>{
   _F(c,0,0,320,200,'#080808');
@@ -997,15 +824,6 @@ const DRAW={
   _SC(c);
 },
 
-'yellowstone-carnage':(c)=>{
-  _GV(c,0,0,320,110,'#0d0800','#200c00','#3a1000');_GV(c,0,110,320,90,'#1a0f00','#0d0800');
-  c.fillStyle='#0a0600';c.beginPath();c.moveTo(0,200);c.lineTo(0,130);c.lineTo(40,110);c.lineTo(80,90);c.lineTo(120,105);c.lineTo(160,60);c.lineTo(200,90);c.lineTo(240,85);c.lineTo(280,100);c.lineTo(320,110);c.lineTo(320,200);c.fill();
-  const vg=c.createRadialGradient(160,60,0,160,60,58);vg.addColorStop(0,'rgba(255,150,0,0.9)');vg.addColorStop(.3,'rgba(255,80,0,0.5)');vg.addColorStop(.7,'rgba(200,30,0,0.2)');vg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=vg;c.fillRect(100,0,120,130);
-  [[154,57,3,'#ff8800'],[147,44,4,'#ffaa00'],[167,49,3,'#ff6600'],[139,37,2,'#ff4400'],[171,33,3,'#ffcc00'],[133,54,2,'#ff8800'],[179,46,3,'#ff5500'],[161,28,2,'#ffdd00'],[144,23,4,'#ff6600']].forEach(([x,y,r,col])=>_C(c,x,y,r,col));
-  c.strokeStyle='rgba(255,80,0,0.55)';c.lineWidth=2;c.beginPath();c.moveTo(160,60);c.quadraticCurveTo(140,100,124,130);c.stroke();c.beginPath();c.moveTo(160,60);c.quadraticCurveTo(175,96,190,126);c.stroke();
-  for(let i=0;i<5;i++){c.fillStyle=`rgba(50,30,10,${.18+i*.04})`;c.beginPath();c.arc(154+i*12,44-i*5,14+i*5,0,6.28);c.fill();}
-  _SC(c);
-},
 
 'speed-stars':(c)=>{
   // night stadium, a red running track in perspective, a sprinter clearing a hurdle
@@ -1076,43 +894,7 @@ const DRAW={
   _SC(c);
 },
 
-'roach-rave':(c)=>{
-  _GV(c,0,0,320,200,'#0a0612','#060310');
-  for(let x=0;x<8;x++)for(let y=3;y<5;y++){const h=(x+y)*45%360;_F(c,x*40,y*40,40,40,`hsla(${h},55%,12%,0.7)`);c.strokeStyle=`hsla(${h},55%,22%,0.25)`;c.lineWidth=0.5;c.strokeRect(x*40,y*40,40,40);}
-  _C(c,160,24,18,'#c0c8d0');for(let i=0;i<6;i++)for(let j=0;j<3;j++){const a=i/6*6.28,d=j/3*3.14;c.fillStyle=`rgba(255,255,255,${.08+i%2*.14})`;c.fillRect(160+Math.cos(a)*14-2,24+Math.sin(d)*10-1,5,3);}
-  [['#ff2bd6',45],['#2bf0ff',100],['#b6ff3b',155],['#ff2bd6',210],['#2bf0ff',265]].forEach(([col,lx])=>{c.strokeStyle=col+'44';c.lineWidth=2;c.shadowColor=col;c.shadowBlur=5;c.beginPath();c.moveTo(160,30);c.lineTo(lx,185);c.stroke();c.shadowBlur=0;});
-  const roach=(rx,ry,ang)=>{c.save();c.translate(rx,ry);c.rotate(ang);c.fillStyle='#1a1206';c.beginPath();c.ellipse(0,0,13,7,0,0,6.28);c.fill();c.beginPath();c.ellipse(4,-2,7,5,.3,0,6.28);c.fill();c.strokeStyle='#0f0c06';c.lineWidth=1;_L(c,9,-2,20,-9,'#0f0c06',1);_L(c,9,-2,22,-4,'#0f0c06',1);for(let l=0;l<3;l++){_L(c,-3+l*5,7,-9+l*5,15,'#0f0c06',1);_L(c,-3+l*5,-7,-9+l*5,-15,'#0f0c06',1);}c.restore();};
-  [[58,140,0.3],[108,163,-0.2],[158,150,.3],[208,160,.4],[258,143,-0.3],[84,178,Math.PI],[198,173,Math.PI*.9],[140,168,Math.PI*1.8]].forEach(([rx,ry,a])=>roach(rx,ry,a));
-  _SC(c);
-},
 
-
-'barrier':(c)=>{
-  // a runway into the distance: two gates (×3 good, −8 bad) and a numbered wall, a crowd surging forward
-  _GV(c,0,0,320,200,'#031410','#062a20');
-  // road in perspective
-  c.fillStyle='#0b1f2a'; c.beginPath(); c.moveTo(130,16); c.lineTo(190,16); c.lineTo(310,200); c.lineTo(10,200); c.closePath(); c.fill();
-  c.strokeStyle='rgba(61,255,192,.22)'; c.lineWidth=1;
-  for(let i=0;i<9;i++){ const t=i/8, y=16+184*t*t; c.beginPath(); c.moveTo(130-120*t*t,y); c.lineTo(190+120*t*t,y); c.stroke(); }
-  _L(c,160,16,160,200,'rgba(255,255,255,.12)',2);
-  // the numbered barrier far away
-  c.save(); c.shadowColor='#ff4d6d'; c.shadowBlur=10; _F(c,128,30,64,18,'#ff4d6d'); c.restore();
-  c.font='900 13px sans-serif'; c.textAlign='center'; c.fillStyle='#fff'; c.fillText('42',160,44);
-  // the two gates
-  const gate=(x,w,col,txt)=>{ c.save(); c.fillStyle=col.replace('1)','.22)'); c.fillRect(x,70,w,36); c.shadowColor=col; c.shadowBlur=12; c.strokeStyle=col; c.lineWidth=3; c.strokeRect(x,70,w,36); c.restore();
-    c.font='900 22px sans-serif'; c.fillStyle='#fff'; c.textAlign='center'; c.fillText(txt,x+w/2,96); };
-  gate(92,66,'rgba(61,255,192,1)','×3'); gate(162,66,'rgba(255,77,109,1)','−8');
-  // the crowd: little glowing runners, tighter near the front
-  c.save(); c.shadowColor='#7dfcff'; c.shadowBlur=6;
-  for(let i=0;i<34;i++){ const r=(i*0.618)%1, row=Math.floor(i/7), x=118+r*84+Math.sin(i)*6, y=150+row*9+Math.cos(i*2.1)*3;
-    c.fillStyle=i%5? '#7dfcff' : '#ffffff'; c.beginPath(); c.arc(x,y-6,3,0,6.283); c.fill(); c.fillRect(x-2,y-3,4,7); }
-  c.restore();
-  // HUD
-  c.font='800 16px sans-serif'; c.textAlign='left'; c.fillStyle='#7dfcff'; c.fillText('34',12,26);
-  c.font='600 9px sans-serif'; c.fillStyle='rgba(200,255,240,.7)'; c.fillText('CROWD',12,37);
-  c.font='800 14px sans-serif'; c.textAlign='right'; c.fillStyle='#eafff8'; c.fillText('418 m',308,26);
-  _SC(c);
-},
 'quoridor':(c)=>{
   // 9×9 board seen at an angle-free top view: two pawns racing, walls cutting off the path
   _GV(c,0,0,320,200,'#0a1428','#12233f');
