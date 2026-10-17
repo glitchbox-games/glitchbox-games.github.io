@@ -400,8 +400,8 @@
       '<div class="adm-actions"><button class="adm-btn ' + (overview.guestsLocked ? '' : 'danger') + '" data-act="guestlock" data-on="' +
         (overview.guestsLocked ? '0' : '1') + '">' + (overview.guestsLocked ? '✅ Let guests play again' : '🚫 Turn guest play off') + '</button></div>' +
       '<div class="adm-h">// GAMES · ' + offList.length + ' switched off</div>' +
-      '<div class="adm-note">A switched-off game can\'t be opened by anyone but you, and players already in it are sent back to the hub. ' +
-        'Handy when a game is broken.</div>' +
+      '<div class="adm-note">A switched-off game disappears from the home screen, nobody but you can open it, and players already in it are sent back to the hub. ' +
+        'Handy when a game is broken. Use Open to test one while it\'s off.</div>' +
       '<div class="adm-actions"><input class="adm-in" id="adm-gsearch" placeholder="Filter games…" style="flex:1;min-width:180px" value="' + esc(gameFilter) + '">' +
         (offList.length ? '<button class="adm-btn warn" data-act="allon">Switch all back on</button>' : '') + '</div>' +
       (typeof GAMES !== 'undefined' ? GAMES : []).filter(g => !gameFilter || (g.name || g.file).toLowerCase().indexOf(gameFilter.toLowerCase()) !== -1)
@@ -409,6 +409,7 @@
           const off = offList.indexOf(g.file) !== -1;
           return '<div class="adm-row' + (off ? ' ban' : '') + '"><div class="adm-grow"><div class="adm-name">' + esc(gameName(g.file)) +
             (off ? ' <span class="adm-tag">off</span>' : '') + '</div></div>' +
+            (off ? '<a class="adm-btn" style="text-decoration:none" href="' + esc(typeof gameURL === 'function' ? gameURL(g.file) : g.file) + '">Open</a>' : '') +
             '<button class="adm-btn ' + (off ? '' : 'danger') + '" data-act="gametoggle" data-file="' + esc(g.file) + '">' + (off ? 'Switch on' : 'Switch off') + '</button></div>';
         }).join('');
   }
@@ -927,6 +928,7 @@
         const next = act === 'allon' ? [] : cur.indexOf(f) !== -1 ? cur.filter(x => x !== f) : cur.concat([f]);
         const r = await call('/api/admin/games', { method:'POST', body:{ disabled: next } });
         if (overview) overview.disabled = r.disabled || next;
+        if (typeof setDisabled === 'function') setDisabled(r.disabled || next);   // home screen updates now, not on the next ping
         logRows = null;
         notice = { text: act === 'allon' ? 'Every game is back on.' : gameName(f) + (next.indexOf(f) !== -1 ? ' is switched off.' : ' is back on.') };
         render();

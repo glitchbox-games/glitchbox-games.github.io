@@ -9,12 +9,12 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="glitchbox-config.js"></script>
 <!-- Game roster + thumbnail art, shared with play.html -->
-<script src="glitchbox-games.js"></script>
+<script src="glitchbox-games.js?v=20261017a"></script>
 <!-- Owner console (Ctrl+Shift+A). Deferred so it loads after the hub's own script. -->
 <script src="glitchbox-social.js?v=20261013b" defer></script>
-<script src="glitchbox-admin.js?v=20261013b" defer></script>
+<script src="glitchbox-admin.js?v=20261017a" defer></script>
 <script src="glitchbox-cmd.js?v=20261013a" defer></script>
-<script src="glitchbox-contests.js?v=20261013a" defer></script>
+<script src="glitchbox-contests.js?v=20261017a" defer></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -1620,7 +1620,7 @@ function setSort(sort,btn,colorClass){
 }
 function renderGames(){
   const q=document.getElementById('search').value.toLowerCase().trim();
-  let games=GAMES;
+  let games=GAMES.filter(g=>!isOff(g.file));   // switched-off games leave the home screen
   if(activeCategory==='favorites')games=games.filter(g=>isFav(g.file));
   else if(activeCategory==='special')games=games.filter(g=>g.price);
   else if(activeCategory!=='all')games=games.filter(g=>g.category===activeCategory);
@@ -1640,16 +1640,14 @@ function renderGames(){
   }
   noRes.classList.remove('show');
   games.forEach(g=>{
-    const off=isOff(g.file);
-    const locked=isLocked(g)||off;
+    const locked=isLocked(g);
     const a=document.createElement('a');
     a.className='game-card'+(locked?' locked':'');
     a.style.setProperty('--i', Math.min(grid.children.length, 24));
     a.href=locked?'#':gameURL(g.file);        // locked tiles open the shop, not the game
     const badges=g.tags.map(t=>`<span class="game-tag ${t}">${t==='hot'?'▲ HOT':t==='new'?'★ NEW':t==='mp'?'⬡ MULTI':t}</span>`).join('')
       +(g.price?`<span class="game-tag special">${locked?'🔒 '+g.price:'✦ OWNED'}</span>`:'');
-    const veil=off?`<div class="lock-veil"><div class="lv-icon">⏸</div><div class="lv-price">OFF</div><div class="lv-hint">Switched off</div></div>`
-      :locked?`<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 ${g.price}</div><div class="lv-hint">${isGuest()?'Sign in':'Unlock'}</div></div>`:'';
+    const veil=locked?`<div class="lock-veil"><div class="lv-icon">🔒</div><div class="lv-price">🪙 ${g.price}</div><div class="lv-hint">${isGuest()?'Sign in':'Unlock'}</div></div>`:'';
     const on=isFav(g.file);
     // a <span>, not a <button>: the card itself is an <a> and nesting a button
     // inside a link is invalid HTML
@@ -1658,8 +1656,7 @@ function renderGames(){
     if(locked) a.addEventListener('click',ev=>{
       if(ev.target.closest('.fav-btn')) return;
       ev.preventDefault();
-      if(off) noticeToast('⏸ SWITCHED OFF', g.name+' is switched off for now - try again later.');
-      else openShop(g.file);
+      openShop(g.file);
     });
     grid.appendChild(a);
     const canvas=a.querySelector('.thumb-canvas'),ctx=canvas.getContext('2d');
@@ -1765,7 +1762,7 @@ setTimeout(()=>{try{renderMpRow()}catch(e){console.warn('mp row',e)}},0);
 // PLAY WITH FRIENDS: every online game in one row under the featured banner, with how many can play and what it is
 function renderMpRow(){const el=document.getElementById('mp-row');if(!el)return;
   el.innerHTML='<div class="mp-wrap"><div class="mp-head"><b>PLAY WITH FRIENDS</b><span>make a room, send the link, they\'re in</span></div><div class="mp-list">'+
-    MP_GAMES.map(g=>{const [n,...d]=g.desc.split(' · ');return '<a class="mp-card" href="'+esc(gameURL(g.file))+'"><span class="e">'+g.emoji+'</span><span><b>'+esc(g.name)+'</b><small>'+esc(n.toUpperCase())+'</small><small>'+esc(d.join(' · '))+'</small></span></a>'}).join('')+'</div></div>'}
+    MP_GAMES.filter(g=>!isOff(g.file)).map(g=>{const [n,...d]=g.desc.split(' · ');return '<a class="mp-card" href="'+esc(gameURL(g.file))+'"><span class="e">'+g.emoji+'</span><span><b>'+esc(g.name)+'</b><small>'+esc(n.toUpperCase())+'</small><small>'+esc(d.join(' · '))+'</small></span></a>'}).join('')+'</div></div>'}
 function gameName(file){ return (MP_BY_FILE[file] && MP_BY_FILE[file].name) || file.replace(/\.html$/,''); }
 function gameEmoji(file){ return (MP_BY_FILE[file] && MP_BY_FILE[file].emoji) || '🎮'; }
 
@@ -1877,12 +1874,18 @@ function guestId(){
 // play off, and the "reload everyone" stamp.
 // var, not let: renderGames() runs (and calls isOff) before this line is reached.
 var arcadeDisabled = [], guestsLockedNow = false, reloadSeen = null;
-function isOff(file){ return (arcadeDisabled||[]).indexOf(file)!==-1 && !(typeof lastState!=='undefined' && lastState && lastState.isOwner); }
+// Switched-off games are hidden from the home screen for everyone, the owner too.
+// The owner can still open one from the console's game list (menu.js lets them in).
+function isOff(file){ return (arcadeDisabled||[]).indexOf(file)!==-1; }
+function setDisabled(dis){
+  if(dis.join() === arcadeDisabled.join()) return;
+  arcadeDisabled = dis; renderGames(); try{renderMpRow()}catch(e){}
+  if(window.GBSocial) GBSocial.renderRecent();
+}
 function applySwitches(h){
   if(!h) return;
   if('featured' in h) applyFeatured(h.featured);
-  const dis = Array.isArray(h.disabled) ? h.disabled : [];
-  if(dis.join() !== arcadeDisabled.join()){ arcadeDisabled = dis; renderGames(); if(window.GBSocial) GBSocial.renderRecent(); }
+  setDisabled(Array.isArray(h.disabled) ? h.disabled : []);
   guestsLockedNow = !!h.guestsLocked;
   const gb = document.getElementById('auth-guest-btn');
   if(gb) gb.style.display = guestsLockedNow ? 'none' : '';
