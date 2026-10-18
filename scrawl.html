@@ -7,6 +7,7 @@
 <script src="glitchbox-config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <style>
   :root{ --cyan:#00f5ff; --pink:#ff0080; --yellow:#ffe600; --green:#00ff88; --red:#ff3355;
          --bg:#05060f; --bg2:#0a0e1d; --panel:#0b1022; --line:rgba(0,245,255,.16); --muted:#6a76a0; --text:#dfe7ff; }
@@ -150,22 +151,128 @@
   .toast{ position:fixed; left:50%; top:70px; transform:translateX(-50%); background:rgba(9,13,28,.96); border:1px solid var(--pink);
     padding:10px 18px; font-weight:700; z-index:50; transition:opacity .3s; }
 
+  #conn{ position:fixed; left:50%; top:10px; transform:translateX(-50%); z-index:70; background:#3a0d16; border:1px solid var(--red);
+    color:#ffd6dc; padding:8px 16px; font-weight:700; font-size:14px; white-space:nowrap; }
+  .lb-tv{ margin:0 0 14px; padding:10px 12px; border:1px solid rgba(255,230,0,.35); background:rgba(255,230,0,.06); font-weight:700; font-size:15px; line-height:1.4; }
+  .card.joining .not-join{ display:none; }
+  #join-big{ font-size:18px; padding:16px; }
+
   @media (max-width:900px){
-    body{ overflow:auto; }
-    #app{ position:static; min-height:100%; }
-    #main{ grid-template-columns:1fr; grid-template-rows:auto auto auto; }
-    #stage{ order:1; }
-    #players{ order:2; flex-direction:row; overflow-x:auto; }
-    .pl{ min-width:140px; }
-    #game-chat-slot{ order:3; }
-    #game-chat-slot #chat{ height:260px; }
-    #board-wrap{ max-width:100%; }
-    #top{ flex-wrap:wrap; padding-left:54px; }
-    #top .logo, #roomlbl{ display:none; }
+    body:not(.tvmode){ overflow:auto; }
+    body:not(.tvmode) #app{ position:static; min-height:100%; }
+    body:not(.tvmode) #main{ grid-template-columns:1fr; grid-template-rows:auto auto auto; }
+    body:not(.tvmode) #stage{ order:1; }
+    body:not(.tvmode) #players{ order:2; flex-direction:row; overflow-x:auto; }
+    body:not(.tvmode) .pl{ min-width:140px; }
+    body:not(.tvmode) #game-chat-slot{ order:3; }
+    body:not(.tvmode) #game-chat-slot #chat{ height:260px; }
+    body:not(.tvmode) #board-wrap{ max-width:100%; }
+    body:not(.tvmode) #top{ flex-wrap:wrap; padding-left:54px; justify-content:center; row-gap:4px; }
+    body:not(.tvmode) #word{ flex:1 1 100%; order:3; letter-spacing:.25em; font-size:20px; }
+    body:not(.tvmode) #top .logo, body:not(.tvmode) #roomlbl{ display:none; }
     .lobby-grid{ grid-template-columns:1fr; }
-    #palette{ grid-template-columns:repeat(12,20px); }
-    .sw{ width:20px; height:20px; }
+    body:not(.tvmode) #palette{ grid-template-columns:repeat(12,20px); }
+    body:not(.tvmode) .sw{ width:20px; height:20px; }
   }
+
+  /* ── phone as a controller (a TV is showing the game) ── */
+  body.padmode{ overflow:auto; }
+  #app.pad{ position:static; min-height:100%; }
+  #app.pad #main{ grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); width:100%; max-width:720px; margin:0 auto; padding-bottom:72px; }
+  #app.pad #game-chat-slot #chat{ height:100%; min-height:230px; }
+  #app.pad #board-wrap{ max-width:100%; }
+  #app.pad #players{ display:none; }
+  #app.watch #board{ display:none; }
+  #app.watch #board-wrap{ aspect-ratio:auto; background:transparent; box-shadow:none; max-width:none; }
+  #app.watch #overlay{ position:relative; inset:auto; min-height:190px; background:var(--panel); border:1px solid var(--line); }
+  #overlay .mine{ font-size:15px; font-weight:700; color:var(--cyan); letter-spacing:1px; text-transform:uppercase; }
+  #app.pad #msg{ font-size:18px; padding:14px 12px; }
+  #app.pad #palette{ grid-template-columns:repeat(12,minmax(0,1fr)); width:100%; }
+  #app.pad .sw{ width:auto; height:28px; }
+  #app.pad .tb{ width:48px; height:48px; }
+
+  /* ── the TV: everything is laid out on a 1920×1080 stage, scaled to fit the screen ── */
+  .tvstage{ position:fixed; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; }
+  body.tvmode{ overflow:hidden; }
+  body.tvmode.idle, body.tvmode.idle *{ cursor:none !important; }
+  [data-tv]:focus{ outline:none; border-color:var(--yellow) !important; box-shadow:0 0 0 3px var(--yellow),0 0 34px rgba(255,230,0,.35); }
+
+  #tv-lobby{ z-index:10; display:flex; flex-direction:column; padding:44px 72px 34px; }
+  .tvl-head{ display:flex; align-items:baseline; gap:40px; }
+  .tvl-logo{ font-family:'Press Start 2P',monospace; font-size:76px; letter-spacing:4px;
+    background:linear-gradient(90deg,var(--yellow),var(--pink),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tvl-tag{ font-size:30px; color:var(--muted); font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+  .tvl-body{ flex:1; min-height:0; display:grid; grid-template-columns:640px 1fr; gap:60px; margin-top:36px; }
+  .tvl-join{ display:flex; flex-direction:column; align-items:center; padding:30px 30px 20px; background:rgba(9,13,28,.94); border:2px solid rgba(0,245,255,.18);
+    box-shadow:0 0 60px rgba(0,245,255,.08); }
+  .tvl-step{ font-family:'Press Start 2P',monospace; font-size:22px; color:var(--pink); letter-spacing:2px; }
+  .tvl-qr{ margin:26px 0 18px; width:396px; height:396px; padding:18px; background:#fff; }
+  .tvl-qr img, .tvl-qr canvas{ display:block; width:360px !important; height:360px !important; }
+  .tvl-url{ font-size:30px; font-weight:700; text-align:center; }
+  .tvl-or{ font-size:24px; color:var(--muted); text-transform:uppercase; letter-spacing:3px; margin-top:16px; font-weight:700; }
+  .tvl-code{ font-family:'Press Start 2P',monospace; font-size:96px; color:var(--yellow); letter-spacing:18px; margin-top:14px; padding-left:18px;
+    text-shadow:0 0 30px rgba(255,230,0,.35); }
+  .tvl-right{ display:flex; flex-direction:column; min-height:0; }
+  .tvl-players{ display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:170px; gap:20px; margin:22px 0 24px; }
+  .tvl-slot{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:var(--panel);
+    border:2px solid rgba(255,255,255,.06); position:relative; padding:0 10px; }
+  .tvl-slot.empty{ border:2px dashed rgba(0,245,255,.14); background:transparent; color:#3a4468; font-size:26px; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+  .tvl-slot .nm{ font-size:32px; font-weight:700; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tvl-slot .vip{ position:absolute; top:8px; right:12px; font-size:30px; }
+  .tvl-slot.away{ opacity:.45; }
+  .tvl-slot.new{ animation:tvpop .55s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes tvpop{ from{ transform:scale(.3); opacity:0; } }
+  .tvl-ctl{ display:grid; grid-template-columns:1fr 440px; gap:20px; }
+  .tvl-sets{ display:flex; flex-direction:column; gap:12px; }
+  .tvl-set{ display:flex; align-items:center; justify-content:space-between; height:64px; padding:0 22px; background:var(--panel);
+    border:2px solid var(--line); color:var(--text); font-size:30px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+  .tvl-set .v{ display:flex; align-items:center; gap:16px; color:var(--yellow); font-family:'Press Start 2P',monospace; font-size:24px; }
+  .tvl-set .v i{ font-style:normal; color:var(--cyan); font-size:20px; padding:8px 10px; }
+  .tvl-start{ font-family:'Press Start 2P',monospace; font-size:46px; letter-spacing:3px; background:var(--cyan); color:#021014;
+    border:2px solid var(--cyan); box-shadow:0 0 40px rgba(0,245,255,.35); }
+  .tvl-start:disabled{ background:#121a30; color:#56608a; border-color:#1f2a48; box-shadow:none; font-size:24px; line-height:1.6; cursor:default; }
+  .tvl-hint{ font-size:26px; color:var(--muted); margin-top:18px; font-weight:600; }
+  .tvl-hint b{ color:var(--text); }
+  .tvl-foot{ display:flex; gap:16px; align-items:center; margin-top:22px; font-size:22px; color:var(--muted); font-weight:600; }
+  .tvl-foot button{ font-size:22px; padding:10px 22px; background:transparent; border:2px solid var(--line); color:var(--text); font-weight:700; letter-spacing:1px; }
+  .tvl-foot .sp{ flex:1; }
+
+  #app.tv{ right:auto; bottom:auto; width:1920px; height:1080px; }
+  #app.tv #top{ height:132px; min-height:0; padding:0 44px; gap:36px; border-bottom:2px solid var(--line); }
+  #app.tv #top .logo{ font-size:26px; }
+  #app.tv #roundlbl{ font-size:30px; }
+  #app.tv #clock{ width:104px; height:104px; }
+  #app.tv #clock span{ font-size:28px; }
+  #app.tv #word{ letter-spacing:.3em; line-height:1; }
+  #app.tv #word .hint{ font-size:22px; letter-spacing:4px; margin-bottom:16px; }
+  #app.tv #word small{ font-size:28px; letter-spacing:2px; margin-left:12px; }
+  #app.tv #roomlbl{ font-size:26px; color:var(--text); letter-spacing:2px; }
+  #app.tv #roomlbl b{ font-family:'Press Start 2P',monospace; color:var(--yellow); font-size:30px; letter-spacing:6px; margin-left:12px; }
+  #app.tv #main{ grid-template-columns:minmax(0,1fr) 1120px minmax(0,1fr); gap:28px; padding:26px 28px; align-items:start; }
+  #app.tv #board-wrap{ width:1120px; height:840px; max-width:none; aspect-ratio:auto; box-shadow:0 0 0 2px rgba(0,245,255,.3),0 0 50px rgba(0,245,255,.15); }
+  #app.tv #players{ gap:10px; overflow:hidden; max-height:840px; }
+  #app.tv .pl{ padding:12px 14px; gap:14px; border-width:2px; }
+  #app.tv .pl .rank{ font-size:16px; width:40px; }
+  #app.tv .pl .pn{ font-size:30px; }
+  #app.tv .pl .ps{ font-size:22px; }
+  #app.tv .pl .pen{ font-size:34px; }
+  #app.tv .pl .gain{ font-size:24px; right:12px; top:8px; }
+  #app.tv #game-chat-slot{ height:840px; }
+  #app.tv #chat{ border-width:2px; }
+  #app.tv #log{ font-size:26px; padding:14px; line-height:1.3; }
+  #app.tv #log div{ padding:5px 8px; }
+  #app.tv #chatform{ display:none; }
+  #app.tv #overlay{ gap:22px; }
+  #app.tv #overlay .big{ font-size:46px; }
+  #app.tv #overlay .sub{ font-size:34px; }
+  #app.tv .gains{ min-width:520px; max-width:680px; }
+  #app.tv .gains div{ font-size:32px; padding:4px 0; }
+  #app.tv .podium{ gap:28px; }
+  #app.tv .podium .blk{ width:170px; font-size:32px; }
+  #app.tv .podium .nm{ font-size:30px; max-width:200px; }
+  #app.tv .podium .col > div:last-child{ font-size:30px; }
+  #tvpop{ position:absolute; left:50%; bottom:28px; transform:translateX(-50%); padding:14px 30px; background:var(--green); color:#03140b;
+    font-family:'Press Start 2P',monospace; font-size:26px; white-space:nowrap; box-shadow:0 0 40px rgba(0,255,136,.5); transition:opacity .4s; pointer-events:none; }
   #smokeout{ position:fixed; inset:0; z-index:999; background:#000; color:#0f0; font:12px/1.5 monospace; padding:12px; overflow:auto; white-space:pre-wrap; }
 </style>
 </head>
@@ -173,7 +280,7 @@
 
 <!-- ── HOME ── -->
 <div class="screen" id="screen-home">
-  <div class="card">
+  <div class="card" id="home-card">
     <h1>SCRAWL</h1>
     <div class="tag">one draws · everyone guesses · 2-8 players</div>
     <div class="avpick">
@@ -184,15 +291,17 @@
     </div>
     <label class="lbl">Your name</label>
     <input class="in" id="myname" maxlength="14" placeholder="Doodler" autocomplete="off"/>
-    <button class="btn pri" onclick="hostRoom()">Create a room</button>
-    <label class="lbl">Or join with a code</label>
-    <div class="row">
+    <button class="btn pri hidden" id="join-big" onclick="joinRoom()">Join</button>
+    <button class="btn pri not-join" onclick="hostRoom()">Create a room</button>
+    <button class="btn not-join" onclick="hostTV()">📺 Play on a TV</button>
+    <label class="lbl not-join">Or join with a code</label>
+    <div class="row not-join">
       <input class="in" id="joincode" maxlength="4" placeholder="CODE" autocomplete="off" style="text-transform:uppercase;letter-spacing:4px"/>
       <button class="btn" style="margin-top:0" onclick="joinRoom()">Join</button>
     </div>
     <div class="note" id="home-status"></div>
-    <button class="btn" onclick="startPractice()">Practice sketchpad</button>
-    <button class="btn pink" onclick="show('screen-howto')">How to play</button>
+    <button class="btn not-join" onclick="startPractice()">Practice sketchpad</button>
+    <button class="btn pink not-join" onclick="show('screen-howto')">How to play</button>
   </div>
 </div>
 
@@ -207,6 +316,7 @@
       <li>Letters get revealed as hints while the clock runs down. Almost there? You'll see <b>"is close!"</b>.</li>
       <li>Once you've guessed it, your messages only go to others who guessed it too — no spoilers.</li>
       <li>The drawer scores for every player who gets it. Most points after the last round wins.</li>
+      <li><b>Got a big TV?</b> Open SCRAWL on the TV and press <b>Play on a TV</b>. Everyone scans the code with their phone. The drawer draws on their phone, everyone guesses on theirs, and the TV shows the picture.</li>
     </ul>
     <button class="btn pri" onclick="show('screen-home')">Got it</button>
   </div>
@@ -215,6 +325,8 @@
 <!-- ── LOBBY ── -->
 <div class="screen hidden" id="screen-lobby">
   <div class="card wide">
+    <div class="lb-tv hidden" id="lobby-tv"><span id="lobby-tv-msg"></span>
+      <button class="btn pri hidden" id="lobby-tv-start" onclick="hostStart()">Start</button></div>
     <div class="lobby-grid">
       <div>
         <h2>ROOM CODE</h2>
@@ -251,6 +363,36 @@
     <button class="btn" onclick="leaveRoom()">Leave room</button>
   </div>
 </div>
+
+<!-- ── TV LOBBY (the TV hosts the room; everybody joins on a phone) ── -->
+<div id="tv-lobby" class="tvstage hidden">
+  <div class="tvl-head"><span class="tvl-logo">SCRAWL</span><span class="tvl-tag">draw on your phone · guess on your phone · watch it here</span></div>
+  <div class="tvl-body">
+    <div class="tvl-join">
+      <div class="tvl-step">JOIN ON YOUR PHONE</div>
+      <div class="tvl-qr" id="tv-qr"></div>
+      <div class="tvl-url" id="tv-url"></div>
+      <div class="tvl-or">room code</div>
+      <div class="tvl-code" id="tv-code">····</div>
+    </div>
+    <div class="tvl-right">
+      <div class="tvl-step" id="tv-count">PLAYERS 0 / 8</div>
+      <div class="tvl-players" id="tv-players"></div>
+      <div class="tvl-ctl">
+        <div class="tvl-sets" id="tv-sets"></div>
+        <button class="tvl-start" id="tv-start" data-tv onclick="hostStart()">START</button>
+      </div>
+      <div class="tvl-hint" id="tv-hint"></div>
+    </div>
+  </div>
+  <div class="tvl-foot">
+    <button data-tv id="tv-full" onclick="toggleFull()">⛶ Full screen</button>
+    <button data-tv onclick="leaveRoom()">Close room</button>
+    <span class="sp"></span><span>Arrow keys or the TV remote work here too</span>
+  </div>
+</div>
+
+<div id="conn" class="hidden"></div>
 
 <!-- ── GAME ── -->
 <div id="app" class="hidden">
@@ -301,7 +443,10 @@ const SMOKE = location.hash.indexOf('smoke') !== -1;
 const DEBUG = location.hash.indexOf('debug') !== -1;
 const W = 800, H = 600;
 const MAX_PLAYERS = 8;
-const PICK_MS = 15000, REVEAL_MS = 6000, OVER_MS = 14000, HOST_TIMEOUT = 12000, GUEST_TIMEOUT = 10000;
+const PICK_MS = 15000, REVEAL_MS = 6000, OVER_MS = 14000, HOST_GIVEUP = 180000, GUEST_TIMEOUT = 10000;
+// A sleeping phone keeps its seat this long before it's let go (lobby / mid-game).
+const AWAY_DROP_LOBBY = 45000, AWAY_DROP_GAME = 300000;
+const TVW = 1920, TVH = 1080;
 const now = () => Date.now();
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; };
@@ -424,10 +569,13 @@ function bumpAvatar(d){
 function randomAvatar(){ myAv = [ (Math.random()*360)|0, (Math.random()*EYES)|0, (Math.random()*MOUTHS)|0 ]; paintAvatar(); }
 
 // ══════════════ SOUND ══════════════
+// With a TV in the room the TV makes the noise; phones only beep for their own player.
+const padQuiet = () => MODE === 'guest' && G.tv;
 const Sound = (() => {
   let ac = null;
   const ctx = () => { if(!ac){ try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} } return ac; };
-  function beep(f, d, type, vol, delay){
+  function beep(f, d, type, vol, delay, shared){
+    if(shared && padQuiet()) return;
     const a = ctx(); if(!a || SMOKE) return;
     const t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
     o.type = type || 'sine'; o.frequency.value = f;
@@ -437,13 +585,13 @@ const Sound = (() => {
   return {
     wake(){ const a = ctx(); if(a && a.state === 'suspended') a.resume(); },
     correct(){ beep(660,.12,'triangle',.1); beep(990,.2,'triangle',.1,.1); },
-    other(){ beep(820,.1,'sine',.05); },
+    other(){ beep(820,.1,'sine',.05,0,1); },
     close(){ beep(440,.12,'square',.03); },
-    tick(){ beep(1200,.04,'square',.025); },
-    turn(){ beep(520,.1,'triangle',.07); beep(780,.14,'triangle',.07,.1); },
-    reveal(){ beep(392,.18,'sawtooth',.04); beep(330,.25,'sawtooth',.04,.16); },
-    win(){ [523,659,784,1046].forEach((f,i) => beep(f,.22,'triangle',.08,i*.12)); },
-    join(){ beep(700,.06,'sine',.05); },
+    tick(){ beep(1200,.04,'square',.025,0,1); },
+    turn(mine){ beep(520,.1,'triangle',.07,0,!mine); beep(780,.14,'triangle',.07,.1,!mine); },
+    reveal(){ beep(392,.18,'sawtooth',.04,0,1); beep(330,.25,'sawtooth',.04,.16,1); },
+    win(){ [523,659,784,1046].forEach((f,i) => beep(f,.22,'triangle',.08,i*.12,1)); },
+    join(){ beep(700,.06,'sine',.05,0,1); },
   };
 })();
 
@@ -591,8 +739,10 @@ document.addEventListener('keydown', e => {
 
 // ══════════════ NET ══════════════
 const CODE_A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-function code4(){ let s = ''; const r = new Uint8Array(4); crypto.getRandomValues(r); for(const b of r) s += CODE_A[b % CODE_A.length]; return s; }
-const MY_CID = (() => { let s = ''; const r = new Uint8Array(6); crypto.getRandomValues(r); for(const b of r) s += CODE_A[b % CODE_A.length]; return s; })();
+function rcode(n){ let s = ''; const r = new Uint8Array(n); crypto.getRandomValues(r); for(const b of r) s += CODE_A[b % CODE_A.length]; return s; }
+const code4 = () => rcode(4);
+// Kept per browser tab, so a phone that reloads or reconnects is still the same player.
+const MY_CID = (() => { try { let c = sessionStorage.getItem('scrawl.cid'); if(!c || SMOKE){ c = rcode(6); sessionStorage.setItem('scrawl.cid', c); } return c; } catch(e){ return rcode(6); } })();
 function wsURL(room, role){
   const base = window.GLITCHBOX_WS && !/PLACEHOLDER/i.test(window.GLITCHBOX_WS)
     ? window.GLITCHBOX_WS : (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws';
@@ -600,39 +750,72 @@ function wsURL(room, role){
 }
 let MODE = 'off';   // off | host | guest | solo
 const net = {
-  ws:null, code:'', online:false,
+  ws:null, code:'', role:'', online:false, want:false, tries:0, timer:0, onOpen:null, heard:0, openedAt:0,
   connect(room, role, onOpen){
-    this.close(); this.code = room; this.online = true;
-    homeStatus('Connecting…');
+    this.close(); this.code = room; this.role = role; this.onOpen = onOpen; this.want = true; this.tries = 0;
+    homeStatus('Connecting…'); this.open();
+  },
+  open(){
+    clearTimeout(this.timer);
+    if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; }
     let ws;
-    try { ws = new WebSocket(wsURL(room, role)); }
-    catch(e){ homeStatus('Couldn’t reach the game server.', true); this.online = false; return; }
-    this.ws = ws;
-    ws.onopen = () => onOpen && onOpen();
-    ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch(e){ return; } handleNet(m); };
-    ws.onerror = () => homeStatus('Couldn’t reach the game server. Check your connection.', true);
-    ws.onclose = () => { if(!this.online) return; this.online = false; dropToHome('Lost the connection to the game server.'); };
+    try { ws = new WebSocket(wsURL(this.code, this.role)); } catch(e){ this.lost(); return; }
+    this.ws = ws; this.openedAt = this.heard = Date.now();
+    ws.onopen = () => { this.online = true; this.heard = Date.now(); this.onOpen && this.onOpen(); };
+    ws.onmessage = ev => { this.heard = Date.now(); let m; try { m = JSON.parse(ev.data); } catch(e){ return; } handleNet(m); };
+    ws.onclose = () => { if(this.ws !== ws) return; this.ws = null; this.online = false; this.lost(); };
+  },
+  // Phones drop the connection whenever the screen locks or you switch apps, so
+  // once you're in a game it keeps quietly reconnecting instead of throwing you out.
+  lost(){
+    if(!this.want) return;
+    if(G.phase === 'off'){ this.want = false; MODE = 'off'; G.tv = false; homeStatus('Couldn’t reach the game server. Check your connection.', true); return; }
+    this.tries++;
+    if(this.tries > 45){ dropToHome('Lost the connection to the game server.'); return; }
+    setConn('📡 Reconnecting…');
+    clearTimeout(this.timer); this.timer = setTimeout(() => this.open(), Math.min(4000, 300 * this.tries));
+  },
+  retry(){ if(!this.want) return; if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; } this.online = false; this.lost(); },
+  nudge(){ if(this.want && !this.online){ clearTimeout(this.timer); this.open(); } },
+  // A socket can look open after a phone wakes up but carry nothing. Both sides speak
+  // every 2s, so a long silence means it's dead: throw it away and reconnect.
+  stale(limit){
+    if(!this.want || !this.ws) return false;            // a reconnect is already on its way
+    if(this.ws.readyState === 0) return Date.now() - this.openedAt > 8000;
+    return this.ws.readyState !== 1 || Date.now() - this.heard > limit;
   },
   send(o){ if(this.online && this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(o)); },
-  close(){ this.online = false; if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; } },
+  close(){ this.want = false; this.online = false; clearTimeout(this.timer); if(this.ws){ this.ws.onclose = null; try { this.ws.close(); } catch(e){} this.ws = null; } },
 };
+function setConn(t){ const e = $('conn'); e.textContent = t || ''; e.classList.toggle('hidden', !t); }
 
 // ══════════════ SHARED STATE ══════════════
 // G is what everyone sees (the host broadcasts it). HS is the host's secrets.
+// `tv` = the host is a TV: it shows the game but doesn't play, and phones are the controllers.
 const G = { phase:'off', players:[], round:0, rounds:3, drawer:'', mask:'', lens:'', deadline:0, total:80, turn:0,
-            settings:{ rounds:3, time:80, choices:3, hints:1, custom:'', only:0 }, host:'' };
+            settings:{ rounds:3, time:80, choices:3, hints:1, custom:'', only:0 }, host:'', tv:false };
 const HS = { word:'', choices:[], order:[], turnStart:0, pickUntil:0, revealUntil:0, overUntil:0, shown:new Set(),
-             seen:{}, used:new Set(), firstDone:false, drawn:new Set() };
+             seen:{}, used:new Set(), firstDone:false };
 let myWord = '', myChoices = [], lastHostMsg = 0, lastTurnSeen = -1;
 const P = cid => G.players.find(p => p.cid === cid);
 const meP = () => P(MY_CID);
 function myName(){ return (($('myname').value || '').trim().slice(0,14)) || 'Doodler'; }
+// In a TV room the first phone that's awake is the VIP: it can change the settings and press Start.
+function vipCid(){ if(!G.tv) return ''; const p = G.players.find(q => !q.away); return p ? p.cid : ''; }
+function uniqueName(name, cid){
+  name = String(name || 'Doodler').trim().slice(0,14) || 'Doodler';
+  let n = name, k = 2;
+  while(G.players.some(p => p.cid !== cid && p.name.toLowerCase() === n.toLowerCase())) n = name.slice(0,11) + ' ' + k++;
+  return n;
+}
+// `fresh` = this tab just (re)connected and may have missed things.
+function hiMsg(fresh){ return { t:'hi', cid:MY_CID, name:myName(), av:myAv, fresh:fresh ? 1 : 0 }; }
 
 // ── host: the only simulation ──
 function packState(){
-  return { t:'st', ph:G.phase, pl:G.players.map(p => [p.cid, p.name, p.av, p.score, p.guessed ? 1 : 0, p.gain|0]),
+  return { t:'st', ph:G.phase, pl:G.players.map(p => [p.cid, p.name, p.av, p.score, p.guessed ? 1 : 0, p.gain|0, p.away ? 1 : 0]),
            r:G.round, dr:G.drawer, mk:G.mask, ln:G.lens, left:Math.max(0, G.deadline - now()), tot:G.total,
-           tn:G.turn, set:G.settings, h:G.host };
+           tn:G.turn, set:G.settings, h:G.host, tv:G.tv ? 1 : 0 };
 }
 // Host output: goes out on the wire AND through the host's own client code, so
 // the host sees exactly what everyone else sees.
@@ -640,16 +823,34 @@ function hostOut(o){ net.send(o); clientHandle(o); }
 function pushState(){ hostOut(packState()); }
 function sysChat(text, k, to){ hostOut({ t:'ch', k:k || 'sys', m:text, to:to || undefined }); }
 
-function hostAddPlayer(cid, name, av){
+function hostAddPlayer(cid, name, av, fresh){
   HS.seen[cid] = now();
   const p = P(cid);
-  if(p){ p.name = String(name || p.name).slice(0,14); p.av = safeAv(av) || p.av; pushState(); return; }
+  if(p){
+    if(G.phase === 'lobby') p.name = uniqueName(name || p.name, cid);
+    p.av = safeAv(av) || p.av; p.away = false;
+    pushState();
+    if(fresh) hostCatchUp(cid);
+    return;
+  }
   if(G.players.length >= MAX_PLAYERS){ net.send({ t:'full', to:cid }); return; }
-  G.players.push({ cid, name:String(name || 'Doodler').slice(0,14), av:safeAv(av) || [200,0,0], score:0, guessed:false, gain:0 });
-  sysChat(String(name || 'Someone').slice(0,14) + ' joined the room.');
+  const nm = uniqueName(name, cid);
+  G.players.push({ cid, name:nm, av:safeAv(av) || [200,0,0], score:0, guessed:false, gain:0, away:false });
+  sysChat(nm + ' joined the room.');
   pushState();
-  // A mid-turn arrival needs the picture so far.
-  if(ops.length) net.send({ t:'sync', to:cid, ops:ops.slice() });
+  hostCatchUp(cid);
+}
+// Someone arriving (or coming back) mid-turn needs the picture so far, and their own secrets.
+function hostCatchUp(cid){
+  sendSync(cid);
+  if(cid === G.drawer && G.phase === 'choose' && HS.choices.length) net.send({ t:'c3', to:cid, x:enc(JSON.stringify(HS.choices)) });
+  const p = P(cid);
+  if(G.phase === 'draw' && HS.word && (cid === G.drawer || (p && p.guessed))) net.send({ t:'wd', to:cid, x:enc(HS.word) });
+}
+// The relay takes up to 1 MB a message, so a big picture goes over in slices.
+function sendSync(to){
+  if(!ops.length) return;
+  for(let i = 0; i < ops.length; i += 20000) net.send({ t:'sync', to, ops:ops.slice(i, i + 20000), add:i ? 1 : 0 });
 }
 function safeAv(av){ return Array.isArray(av) && av.length === 3 ? av.map(n => Math.abs(n|0) % 360) : null; }
 function hostRemove(cid, why){
@@ -695,17 +896,18 @@ function hostStartGame(){
   return true;
 }
 function nextTurn(){
-  // Find the next drawer who is still here; start a new round when the list runs out.
+  // Find the next drawer who is still here and awake; start a new round when the list runs out.
   let drawer = null;
   while(!drawer){
     if(!HS.order.length){
+      if(!G.players.some(p => !p.away)){ toLobby(); return; }
       G.round++;
       if(G.round > G.rounds){ gameOver(); return; }
       HS.order = G.players.map(p => p.cid);
       sysChat('Round ' + G.round + ' of ' + G.rounds, 'draw');
     }
-    const c = HS.order.shift();
-    if(P(c)) drawer = c;
+    const c = HS.order.shift(), p = P(c);
+    if(p && !p.away) drawer = c;
   }
   G.turn++;
   G.drawer = drawer; G.phase = 'choose'; G.mask = ''; G.lens = '';
@@ -730,7 +932,7 @@ function hostPick(cid, i){
   sysChat(P(cid).name + ' is drawing now!', 'draw');
   pushState();
 }
-function allGuessed(){ const g = G.players.filter(p => p.cid !== G.drawer); return g.length > 0 && g.every(p => p.guessed); }
+function allGuessed(){ const g = G.players.filter(p => p.cid !== G.drawer && !p.away); return g.length > 0 && g.every(p => p.guessed); }
 function hostGuess(cid, text){
   const p = P(cid);
   text = String(text || '').replace(/\s+/g,' ').trim().slice(0,100);
@@ -763,13 +965,14 @@ function hostGuess(cid, text){
   hostOut({ t:'ch', k:'msg', n:p.name, c:cid, m:text });
 }
 function endTurn(why){
-  if(G.phase !== 'draw' && G.phase !== 'choose') return;
+  if(G.phase === 'choose'){ nextTurn(); return; }   // no word yet, nothing to reveal: on to the next drawer
+  if(G.phase !== 'draw') return;
   const word = HS.word;
   G.players.forEach(p => { p.score += p.gain|0; });
   G.phase = 'reveal'; HS.revealUntil = now() + REVEAL_MS;
   G.deadline = HS.revealUntil; G.total = REVEAL_MS / 1000;
   G.mask = word;
-  hostOut({ t:'rv', w:word, why, g:G.players.map(p => [p.cid, p.gain|0]) });
+  hostOut({ t:'rv', w:word, why, tn:G.turn, g:G.players.map(p => [p.cid, p.gain|0]) });
   pushState();
 }
 function gameOver(){
@@ -802,72 +1005,113 @@ function hostTick(){
   }
   else if(G.phase === 'reveal' && t >= HS.revealUntil) nextTurn();
   else if(G.phase === 'over' && t >= HS.overUntil) toLobby();
-  // Anyone silent for a while has gone.
-  for(const p of G.players.slice()) if(p.cid !== MY_CID && t - (HS.seen[p.cid] || 0) > GUEST_TIMEOUT) hostRemove(p.cid, 'gone');
+  for(const p of G.players.slice()){
+    if(p.cid === MY_CID) continue;
+    const quiet = t - (HS.seen[p.cid] || t);
+    // A locked phone keeps its seat and score; the game just stops waiting for it.
+    if(quiet > GUEST_TIMEOUT && !p.away){
+      p.away = true;
+      if(p.cid === G.drawer && (G.phase === 'choose' || G.phase === 'draw')){
+        sysChat(p.name + '’s phone went quiet, so this turn ends.', 'bad');
+        endTurn('left');
+      } else if(G.phase === 'draw' && allGuessed()) endTurn('all');
+      else pushState();
+    }
+    if(p.away && quiet > (G.phase === 'lobby' || G.phase === 'over' ? AWAY_DROP_LOBBY : AWAY_DROP_GAME)) hostRemove(p.cid, 'gone');
+  }
 }
 setInterval(hostTick, 250);
 // Heartbeats: the host re-sends the state; guests say they're still here.
 setInterval(() => {
-  if(MODE === 'host' && G.phase !== 'off') pushState();
-  else if(MODE === 'guest' && G.phase !== 'off'){
-    net.send({ t:'hb', cid:MY_CID });
-    if(lastHostMsg && now() - lastHostMsg > HOST_TIMEOUT) dropToHome('The host left the room.');
+  if(MODE === 'host' && G.phase !== 'off'){
+    pushState(); saveSession();
+    if(G.players.some(p => p.cid !== MY_CID && !p.away) && net.stale(7000)) net.retry();
+    return;
   }
+  if(MODE !== 'guest') return;
+  if(G.phase !== 'off' && net.stale(6500)){ net.retry(); return; }
+  if(net.online) net.send({ t:'hb', cid:MY_CID });
+  if(!lastHostMsg || G.phase === 'off') return;
+  const quiet = now() - lastHostMsg;
+  if(quiet > HOST_GIVEUP) dropToHome('The host’s game has ended.');
+  else if(net.online) setConn(quiet > 7000 ? (G.tv ? '📡 Waiting for the TV to come back…' : '📡 Waiting for the host to come back…') : '');
 }, 2000);
 
 // ── what arrives from the relay ──
 function handleNet(m){
   switch(m.t){
     case 'created':
-      homeStatus('');
+      homeStatus(''); setConn(''); net.tries = 0;
+      if(G.phase !== 'off' && G.host === MY_CID){
+        // Back after a dropped connection (or a page refresh): carry on where we were.
+        G.players.forEach(p => { HS.seen[p.cid] = now(); });
+        pushState(); saveSession();
+        // Strokes drawn while we were gone only reached the others; ask the drawer for the lot.
+        if(G.phase === 'draw' && G.drawer && G.drawer !== MY_CID) net.send({ t:'rs', to:G.drawer });
+        return;
+      }
       G.phase = 'lobby'; G.host = MY_CID; HS.seen = {};
-      G.players = [{ cid:MY_CID, name:myName(), av:myAv, score:0, guessed:false, gain:0 }];
-      pushState(); loadLobbyFriends();
+      // A TV hosts the room but never takes a seat.
+      G.players = G.tv ? [] : [{ cid:MY_CID, name:myName(), av:myAv, score:0, guessed:false, gain:0, away:false }];
+      pushState(); saveSession(); if(!G.tv) loadLobbyFriends();
       return;
     case 'joined':
-      homeStatus('Joined — waiting for the host…');
-      lastHostMsg = now();
-      net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv });
+      homeStatus('Joined. Waiting for the host…'); setConn(''); net.tries = 0;
+      lastHostMsg = now(); saveSession();
+      net.send(hiMsg(true));
       return;
     case 'start':
-      if(MODE === 'guest') net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv });
+      if(MODE === 'guest') net.send(hiMsg(false));
       return;
     case 'error':
+      // Mid-game this usually means the host is reconnecting: keep trying.
+      if(G.phase !== 'off' && net.want){ net.retry(); return; }
+      clearSession();
       homeStatus(m.msg || 'That didn’t work.', true);
-      net.close(); MODE = 'off'; G.phase = 'off'; show('screen-home');
+      net.close(); MODE = 'off'; G.phase = 'off'; G.tv = false; show('screen-home');
       return;
     case 'left': return;
   }
   if(MODE === 'host'){
-    if(m.t === 'hi') hostAddPlayer(m.cid, m.name, m.av);
-    else if(m.t === 'hb'){ if(P(m.cid)) HS.seen[m.cid] = now(); else net.send({ t:'who', to:m.cid }); }
+    const p = m.cid && P(m.cid), wasAway = !!(p && p.away);
+    if(p){ HS.seen[m.cid] = now(); if(p.away && m.t !== 'bye'){ p.away = false; pushState(); } }
+    if(m.t === 'hi') hostAddPlayer(m.cid, m.name, m.av, m.fresh || wasAway);
+    else if(m.t === 'hb'){ if(!p) net.send({ t:'who', to:m.cid }); }
     else if(m.t === 'g') hostGuess(m.cid, m.m);
     else if(m.t === 'pick') hostPick(m.cid, m.i);
-    else if(m.t === 'd'){ if(P(m.cid)) HS.seen[m.cid] = now(); clientHandle(m); }
+    else if(m.t === 'd') clientHandle(m);
+    else if(m.t === 'set'){ if(m.cid === vipCid() && G.phase === 'lobby') hostSettings(Object.assign({}, G.settings, m.s || {})); }
+    else if(m.t === 'go'){ if(m.cid === vipCid() && G.phase === 'lobby') hostStartGame(); }
+    else if(m.t === 'ops'){ if(m.cid === G.drawer && G.phase === 'draw' && Array.isArray(m.ops)){ resetBoard(); addOps(m.ops); } }
+    else if(m.t === 'bye') hostRemove(m.cid, 'left');
     return;
   }
   if(MODE === 'guest') clientHandle(m);
 }
 
 // ── every client (the host included) ──
+let shownPhase = 'off';
 function clientHandle(m){
   if(m.to && m.to !== MY_CID) return;
   switch(m.t){
     case 'st': {
       lastHostMsg = now();
-      const wasPhase = G.phase;
-      G.phase = m.ph; G.round = m.r; G.drawer = m.dr; G.mask = m.mk || ''; G.lens = m.ln || '';
-      G.total = m.tot || 80; G.deadline = now() + (m.left || 0); G.host = m.h;
-      if(MODE === 'guest') G.settings = m.set || G.settings;
-      G.rounds = (m.set && m.set.rounds) || G.rounds;
-      G.players = m.pl.map(r => ({ cid:r[0], name:r[1], av:r[2], score:r[3], guessed:!!r[4], gain:r[5] }));
+      // The host's own G is the real thing; everybody else copies it from the packet.
+      if(MODE !== 'host'){
+        G.phase = m.ph; G.round = m.r; G.drawer = m.dr; G.mask = m.mk || ''; G.lens = m.ln || '';
+        G.total = m.tot || 80; G.deadline = now() + (m.left || 0); G.host = m.h; G.tv = !!m.tv;
+        G.settings = m.set || G.settings;
+        G.rounds = (m.set && m.set.rounds) || G.rounds;
+        G.players = m.pl.map(r => ({ cid:r[0], name:r[1], av:r[2], score:r[3], guessed:!!r[4], gain:r[5], away:!!r[6] }));
+      }
+      const wasPhase = shownPhase; shownPhase = m.ph;
       if(m.tn !== lastTurnSeen){
         // New turn: fresh board, forget last turn's word.
         if(lastTurnSeen !== -1 || m.ph === 'choose') { resetBoard(); }
         lastTurnSeen = m.tn; myWord = ''; myChoices = [];
-        if(m.ph === 'choose'){ Sound.turn(); if(m.dr === MY_CID) toast('Your turn to draw!'); }
+        if(m.ph === 'choose'){ Sound.turn(m.dr === MY_CID); if(m.dr === MY_CID) toast('Your turn to draw!'); }
       }
-      if(MODE === 'guest' && !meP() && G.phase !== 'off') net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv });
+      if(MODE === 'guest' && !meP() && G.phase !== 'off') net.send(hiMsg(true));
       if(wasPhase !== G.phase && G.phase === 'over') Sound.win();
       render();
       return;
@@ -877,8 +1121,9 @@ function clientHandle(m){
     case 'ch': chatLine(m); return;
     case 'rv': revealInfo = m; Sound.reveal(); render(); return;
     case 'd': if(m.cid === G.drawer && m.cid !== MY_CID) addOps(m.ops || []); return;
-    case 'sync': resetBoard(); addOps(m.ops || []); return;
-    case 'who': net.send({ t:'hi', cid:MY_CID, name:myName(), av:myAv }); return;
+    case 'sync': if(!m.add) resetBoard(); addOps(m.ops || []); return;
+    case 'rs': if(G.drawer === MY_CID) net.send({ t:'ops', cid:MY_CID, ops:ops.slice(0, 40000) }); return;
+    case 'who': net.send(hiMsg(true)); return;
     case 'full': dropToHome('That room is full (8 players).'); return;
     case 'kick': dropToHome('The host removed you from the room.'); return;
   }
@@ -887,7 +1132,7 @@ let revealInfo = null;
 
 // ══════════════ UI ══════════════
 function show(id){
-  ['screen-home','screen-howto','screen-lobby'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  ['screen-home','screen-howto','screen-lobby','tv-lobby'].forEach(s => $(s).classList.toggle('hidden', s !== id));
   $('app').classList.toggle('hidden', id !== 'app');
 }
 function homeStatus(t, bad){ const s = $('home-status'); s.textContent = t || ''; s.classList.toggle('err', !!bad); }
@@ -900,11 +1145,23 @@ function toast(t){
 }
 function placeChat(slot){ const c = $('chat'); if(c.parentNode !== $(slot)) $(slot).appendChild(c); }
 
+const isTV = () => MODE === 'host' && G.tv;
 function render(){
   if(MODE === 'solo') return;
-  if(G.phase === 'lobby'){ show('screen-lobby'); placeChat('lobby-chat-slot'); paintLobby(); return; }
+  document.body.classList.toggle('tvmode', isTV());
+  document.body.classList.toggle('padmode', MODE === 'guest' && G.tv && G.phase !== 'lobby');
   if(G.phase === 'off') return;
+  if(G.phase === 'lobby'){
+    if(isTV()){ show('tv-lobby'); paintTvLobby(); fitStage(); return; }
+    show('screen-lobby'); placeChat('lobby-chat-slot'); paintLobby(); return;
+  }
   show('app'); placeChat('game-chat-slot');
+  // TV: one big 1920×1080 picture. Phone in a TV room: a controller (the drawer keeps the board).
+  const app = $('app'), pad = MODE === 'guest' && G.tv;
+  const drawSide = G.drawer === MY_CID && (G.phase === 'choose' || G.phase === 'draw');
+  app.classList.toggle('tv', isTV()); app.classList.toggle('tvstage', isTV());
+  app.classList.toggle('pad', pad); app.classList.toggle('watch', pad && !drawSide);
+  if(isTV()) fitStage(); else app.style.transform = '';
   paintPlayers(); paintTop(); paintOverlay();
   const drawing = canDraw();
   $('tools').classList.toggle('hidden', !drawing);
@@ -916,43 +1173,72 @@ function render(){
 }
 function paintLobby(){
   $('lobby-code').textContent = net.code || '····';
-  const isHost = MODE === 'host';
+  const isHost = MODE === 'host', vip = vipCid(), amVip = !!vip && vip === MY_CID, canEdit = isHost || amVip;
   $('lobby-count').textContent = 'Players · ' + G.players.length + ' / ' + MAX_PLAYERS;
   $('lobby-list').innerHTML = G.players.map(p =>
     '<div class="lrow" style="border-left-color:hsl('+p.av[0]+',85%,60%)">' + avatarSVG(p.av, 30) +
-    '<span class="nm">' + esc(p.name) + '</span>' +
+    '<span class="nm">' + esc(p.name) + (p.cid === vip ? ' 👑' : '') + (p.away ? ' 💤' : '') + '</span>' +
     '<span class="badge">' + (p.cid === G.host ? 'host' : '') + (p.cid === MY_CID ? (p.cid === G.host ? ' · you' : 'you') : '') + '</span>' +
     (isHost && p.cid !== MY_CID ? '<button class="kick" data-kick="'+esc(p.cid)+'">Kick</button>' : '') + '</div>').join('');
-  const s = G.settings, sel = (id, v) => { const el = $(id); if(document.activeElement !== el) el.value = String(v); el.disabled = !isHost; };
+  const s = G.settings, sel = (id, v) => { const el = $(id); if(document.activeElement !== el) el.value = String(v); el.disabled = !canEdit; };
   sel('set-rounds', s.rounds); sel('set-time', s.time); sel('set-choices', s.choices); sel('set-hints', s.hints); sel('set-only', s.only);
-  const ta = $('set-custom'); if(document.activeElement !== ta) ta.value = s.custom || ''; ta.disabled = !isHost;
-  $('lobby-start').classList.toggle('hidden', !isHost);
+  const ta = $('set-custom'); if(document.activeElement !== ta) ta.value = s.custom || ''; ta.disabled = !canEdit;
+  $('lobby-start').classList.toggle('hidden', !canEdit);
   $('lobby-start').disabled = G.players.length < 2;
-  $('lobby-start').textContent = G.players.length < 2 ? 'Need at least 2 players' : 'Start — ' + G.players.length + ' players';
-  $('lobby-wait').classList.toggle('hidden', isHost);
+  $('lobby-start').textContent = G.players.length < 2 ? 'Need at least 2 players' : 'Start · ' + G.players.length + ' players';
+  $('lobby-wait').classList.toggle('hidden', canEdit);
+  const vp = P(vip);
+  $('lobby-wait').textContent = G.tv ? 'Waiting for ' + (vp ? vp.name : 'the VIP') + ' to start (or press Start on the TV)…' : 'Waiting for the host to start…';
+  $('lobby-tv').classList.toggle('hidden', !G.tv);
+  $('lobby-tv-msg').textContent = amVip ? '📺 You’re on the TV! 👑 You’re the VIP: pick the settings and press Start when everyone’s in.'
+                                        : '📺 You’re on the TV! When the game starts, guess on this phone and watch the TV.';
+  // The VIP's Start sits up top too, so it's not buried under the settings on a phone.
+  const ts = $('lobby-tv-start');
+  ts.classList.toggle('hidden', !amVip);
+  ts.disabled = $('lobby-start').disabled; ts.textContent = $('lobby-start').textContent;
 }
 function paintPlayers(){
   const ranked = G.players.slice().sort((a,b) => b.score - a.score);
   const rank = cid => ranked.findIndex(p => p.cid === cid) + 1;
+  const big = isTV();
   $('players').innerHTML = G.players.map(p =>
     '<div class="pl' + (p.guessed ? ' guessed' : '') + (p.cid === MY_CID ? ' me' : '') + '">' +
-    '<span class="rank">#' + rank(p.cid) + '</span>' + avatarSVG(p.av, 34) +
-    '<div class="pinfo"><div class="pn">' + esc(p.name) + (p.cid === MY_CID ? ' (you)' : '') + '</div>' +
+    '<span class="rank">#' + rank(p.cid) + '</span>' + avatarSVG(p.av, big ? 62 : 34) +
+    '<div class="pinfo"><div class="pn">' + esc(p.name) + (p.cid === MY_CID ? ' (you)' : '') + (p.away ? ' 💤' : '') + '</div>' +
     '<div class="ps">' + p.score + ' points</div></div>' +
     (p.cid === G.drawer && (G.phase === 'draw' || G.phase === 'choose') ? '<span class="pen" title="drawing">✏️</span>' : '') +
     (p.gain && G.phase === 'draw' && p.guessed ? '<span class="gain">+' + p.gain + '</span>' : '') + '</div>').join('');
 }
 function paintTop(){
   $('roundlbl').textContent = G.phase === 'over' ? 'Game over' : 'Round ' + Math.max(1, G.round) + ' of ' + G.rounds;
-  $('roomlbl').textContent = net.code ? 'Room ' + net.code : '';
+  if(isTV()) $('roomlbl').innerHTML = net.code ? 'Join with code<b>' + esc(net.code) + '</b>' : '';
+  else $('roomlbl').textContent = net.code ? 'Room ' + net.code : '';
   const w = $('word');
+  let text = '';
   if(G.phase === 'draw'){
-    if(myWord) w.innerHTML = '<span class="hint">' + (G.drawer === MY_CID ? 'Draw this' : 'You got it') + '</span>' + esc(myWord.toUpperCase());
-    else w.innerHTML = '<span class="hint">Guess this</span>' + esc(G.mask.replace(/_/g,'_')) + '<small>' + esc(G.lens) + '</small>';
-  } else if(G.phase === 'choose') w.innerHTML = '<span class="hint">Waiting</span>' + (G.drawer === MY_CID ? 'PICK A WORD' : '…');
-  else if(G.phase === 'reveal') w.innerHTML = '<span class="hint">The word was</span>' + esc((revealInfo && revealInfo.w || G.mask).toUpperCase());
+    if(myWord){ text = myWord.toUpperCase(); w.innerHTML = '<span class="hint">' + (G.drawer === MY_CID ? 'Draw this' : 'You got it') + '</span>' + esc(text); }
+    else { text = G.mask; w.innerHTML = '<span class="hint">Guess this</span>' + esc(G.mask) + '<small>' + esc(G.lens) + '</small>'; }
+  } else if(G.phase === 'choose'){
+    const d = P(G.drawer);
+    text = G.drawer === MY_CID ? 'PICK A WORD' : '…';
+    w.innerHTML = '<span class="hint">' + (isTV() && d ? esc(d.name) + ' is choosing' : 'Waiting') + '</span>' + text;
+  }
+  else if(G.phase === 'reveal'){ text = (revealNow().w || '').toUpperCase(); w.innerHTML = '<span class="hint">The word was</span>' + esc(text); }
   else w.innerHTML = '';
+  // On the TV the blanks are as big as they can be and still fit across the screen;
+  // on a narrow phone a long word shrinks until it fits, so no hint letter is cut off.
+  if(isTV()) w.style.fontSize = Math.max(30, Math.min(66, Math.floor(1060 / (Math.max(4, text.length) * 1.3)))) + 'px';
+  else {
+    w.style.fontSize = '';
+    let fs = parseFloat(getComputedStyle(w).fontSize);
+    while(w.scrollWidth > w.clientWidth + 1 && fs > 10) w.style.fontSize = (--fs) + 'px';
+  }
   paintClock();
+}
+// The reveal for this turn (rebuilt from the state if the 'rv' packet was missed, e.g. after a reconnect).
+function revealNow(){
+  if(revealInfo && revealInfo.tn === lastTurnSeen) return revealInfo;
+  return { w:G.mask, why:'time', g:G.players.map(p => [p.cid, p.gain|0]) };
 }
 let lastTick = -1;
 function paintClock(){
@@ -967,28 +1253,41 @@ function paintClock(){
 setInterval(() => { if(G.phase !== 'off' && G.phase !== 'lobby' && MODE !== 'solo') paintClock(); }, 250);
 function paintOverlay(){
   const o = $('overlay');
-  const drawer = P(G.drawer);
+  const drawer = P(G.drawer), tv = isTV(), k = tv ? 2 : 1;   // the TV draws everything twice the size
+  const watch = $('app').classList.contains('watch');
   let h = '';
   if(G.phase === 'choose'){
     if(G.drawer === MY_CID){
       h = '<div class="big">Choose a word</div><div class="choices">' +
         (myChoices.length ? myChoices.map((w,i) => '<button class="choice" data-pick="'+i+'">' + esc(w) + '</button>').join('') : '<div class="sub">Dealing…</div>') +
         '</div><div class="sub" style="color:var(--muted);font-size:14px">One is picked for you when the clock runs out.</div>';
-    } else h = (drawer ? avatarSVG(drawer.av, 70) : '') + '<div class="sub">' + esc(drawer ? drawer.name : 'Someone') + ' is choosing a word…</div>';
-  } else if(G.phase === 'reveal' && revealInfo){
-    const why = revealInfo.why === 'all' ? 'Everybody got it!' : revealInfo.why === 'left' ? 'The drawer left.' : 'Time’s up!';
-    const gains = (revealInfo.g || []).map(g => [P(g[0]), g[1]]).filter(g => g[0]).sort((a,b) => b[1] - a[1]);
-    h = '<div class="sub" style="color:var(--muted)">' + why + '</div><div class="big">The word was<br>' + esc(String(revealInfo.w || '').toUpperCase()) + '</div>' +
+    } else h = (drawer ? avatarSVG(drawer.av, 70 * k) : '') + '<div class="sub">' + esc(drawer ? drawer.name : 'Someone') + ' is choosing a word…</div>';
+  } else if(G.phase === 'draw' && watch){
+    // A phone in a TV room: the picture is on the TV, this is just where you type.
+    const me = meP();
+    h = me && me.guessed
+      ? '<div class="big" style="color:var(--green)">You got it!</div><div class="sub">+' + (me.gain|0) + ' · the word is <b>' + esc(myWord.toUpperCase()) + '</b></div>' +
+        '<div class="sub" style="color:var(--muted);font-size:14px">Chat with the others who got it, below.</div>'
+      : '<div class="big">📺 Watch the TV</div><div class="sub">' + esc(drawer ? drawer.name : 'Someone') + ' is drawing. Type your guesses below!</div>';
+  } else if(G.phase === 'reveal'){
+    const rv = revealNow();
+    const why = rv.why === 'all' ? 'Everybody got it!' : rv.why === 'left' ? 'The drawer left.' : 'Time’s up!';
+    const gains = (rv.g || []).map(g => [P(g[0]), g[1]]).filter(g => g[0]).sort((a,b) => b[1] - a[1]);
+    h = '<div class="sub" style="color:var(--muted)">' + why + '</div><div class="big">The word was<br>' + esc(String(rv.w || '').toUpperCase()) + '</div>' +
       '<div class="gains">' + gains.map(g => '<div><span>' + esc(g[0].name) + '</span><span class="' + (g[1] ? 'p' : 'z') + '">' +
         (g[1] ? '+' + g[1] : '0') + '</span></div>').join('') + '</div>';
   } else if(G.phase === 'over'){
     const r = G.players.slice().sort((a,b) => b.score - a.score);
-    const col = (p, place, hgt, c) => p ? '<div class="col">' + avatarSVG(p.av, place === 1 ? 64 : 48) + '<div class="nm">' + esc(p.name) + '</div>' +
-      '<div class="blk" style="height:'+hgt+'px;background:'+c+'">' + place + '</div><div style="font-weight:700">' + p.score + '</div></div>' : '';
+    const col = (p, place, hgt, c) => p ? '<div class="col">' + avatarSVG(p.av, (place === 1 ? 64 : 48) * k) + '<div class="nm">' + esc(p.name) + '</div>' +
+      '<div class="blk" style="height:'+(hgt * k)+'px;background:'+c+'">' + place + '</div><div style="font-weight:700">' + p.score + '</div></div>' : '';
     h = '<div class="big">' + (r[0] ? esc(r[0].name) + ' wins!' : 'Game over') + '</div>' +
       '<div class="podium">' + col(r[1], 2, 70, '#c9ccd6') + col(r[0], 1, 100, '#ffe600') + col(r[2], 3, 50, '#e08a4a') + '</div>' +
       (r.length > 3 ? '<div class="gains">' + r.slice(3).map((p,i) => '<div><span>#' + (i+4) + ' ' + esc(p.name) + '</span><span>' + p.score + '</span></div>').join('') + '</div>' : '') +
-      '<div class="sub" style="color:var(--muted);font-size:14px">Back to the lobby in a moment…</div>';
+      '<div class="sub" style="color:var(--muted);font-size:' + (14 * k) + 'px">Back to the lobby in a moment…</div>';
+  }
+  if(h && watch){
+    const me = meP(), ranked = G.players.slice().sort((a,b) => b.score - a.score);
+    if(me) h += '<div class="mine">You: #' + (ranked.indexOf(me) + 1) + ' of ' + ranked.length + ' · ' + me.score + ' points</div>';
   }
   o.innerHTML = h;
   o.classList.toggle('hidden', !h);
@@ -1018,6 +1317,7 @@ function chatLine(m){
   log.appendChild(d);
   while(log.children.length > 200) log.removeChild(log.firstChild);
   log.scrollTop = log.scrollHeight;
+  if(k === 'ok' && isTV()) tvPop('✓ ' + m.m.replace(/ guessed the word!$/, ' got it!'));
   if(k === 'ok'){ if(m.c === MY_CID){ Sound.correct(); } else Sound.other(); }
   else if(k === 'close') Sound.close();
   else if(k === 'sys' && /joined/.test(m.m)) Sound.join();
@@ -1042,40 +1342,209 @@ $('lobby-list').addEventListener('click', e => {
   if(id === 'set-custom') $(id).addEventListener('input', () => { clearTimeout(readSettings.t); readSettings.t = setTimeout(readSettings, 500); });
 });
 function readSettings(){
-  if(MODE !== 'host') return;
-  hostSettings({ rounds:$('set-rounds').value, time:$('set-time').value, choices:$('set-choices').value,
-                 hints:$('set-hints').value === '1', custom:$('set-custom').value, only:$('set-only').value === '1' });
+  const s = { rounds:$('set-rounds').value, time:$('set-time').value, choices:$('set-choices').value,
+              hints:$('set-hints').value === '1', custom:$('set-custom').value, only:$('set-only').value === '1' };
+  if(MODE === 'host') hostSettings(s);
+  else if(MODE === 'guest' && vipCid() === MY_CID) net.send({ t:'set', cid:MY_CID, s });   // the VIP's phone runs a TV room's lobby
 }
 
 // ══════════════ FLOW ══════════════
 function rememberName(){ try { localStorage.setItem('scrawl.name', myName()); } catch(e){} }
+// `resume` asks the relay to replace our old (possibly half-dead) host socket. The room
+// holds a few more sockets than seats, so a phone that's reconnecting isn't told it's full.
+function hostCreate(code){ net.send({ t:'create', code, max:MAX_PLAYERS + 4, resume:G.phase !== 'off' ? 1 : 0 }); }
 function hostRoom(){
-  Sound.wake(); rememberName();
-  MODE = 'host';
+  Sound.wake(); rememberName(); keepAwake();
+  MODE = 'host'; G.tv = false;
   const room = code4();
-  net.connect(room, 'host', () => net.send({ t:'create', code:room, max:MAX_PLAYERS }));
+  net.connect(room, 'host', () => hostCreate(room));
+}
+// The TV hosts the room and shows the game; everyone plays on their phone.
+function hostTV(){
+  Sound.wake(); keepAwake();
+  MODE = 'host'; G.tv = true;
+  const room = code4();
+  net.connect(room, 'host', () => hostCreate(room));
 }
 function joinRoom(code){
   Sound.wake();
   const room = String(code || $('joincode').value || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
   if(room.length !== 4){ homeStatus('Room codes are four characters.', true); return; }
-  rememberName();
-  MODE = 'guest'; G.phase = 'off'; lastHostMsg = 0;
+  rememberName(); keepAwake(); joinPrompt('');
+  MODE = 'guest'; G.phase = 'off'; G.tv = false; lastHostMsg = 0;
   net.connect(room, 'guest', () => net.send({ t:'join', code:room }));
 }
 function hostStart(){
+  if(MODE === 'guest'){ if(vipCid() === MY_CID) net.send({ t:'go', cid:MY_CID }); return; }
   if(!hostStartGame()) toast('You need at least 2 players.');
 }
-function leaveRoom(){ dropToHome(''); }
+function leaveRoom(){ if(MODE === 'guest') net.send({ t:'bye', cid:MY_CID }); dropToHome(''); }
 function dropToHome(msg){
-  net.close(); MODE = 'off'; G.phase = 'off'; G.players = []; myWord = ''; myChoices = []; lastHostMsg = 0; lastTurnSeen = -1;
+  clearSession(); setConn('');
+  net.close(); MODE = 'off'; G.phase = 'off'; G.tv = false; G.players = []; myWord = ''; myChoices = []; lastHostMsg = 0; lastTurnSeen = -1;
+  revealInfo = null; shownPhase = 'off'; tvQrFor = '';
   resetBoard(); $('log').innerHTML = '';
   $('tools').classList.add('hidden');
+  $('app').classList.remove('tv', 'tvstage', 'pad', 'watch'); $('app').style.transform = '';
+  document.body.classList.remove('tvmode', 'padmode');
   show('screen-home');
   homeStatus(msg || '', !!msg);
 }
+// Arriving from a link or the TV's QR code without a name yet: ask for one, then join.
+function joinPrompt(room){
+  $('home-card').classList.toggle('joining', !!room);
+  $('join-big').classList.toggle('hidden', !room);
+  if(!room) return;
+  $('joincode').value = room;
+  $('join-big').textContent = 'Join room ' + room;
+  show('screen-home');
+  homeStatus('Pick a name and a face, then join.');
+  try { $('myname').focus(); } catch(e){}
+}
+
+// ══════════════ TV ══════════════
+// Everything on the TV is laid out on a 1920×1080 stage and scaled to fit whatever screen it's on.
+function fitStage(){
+  const s = Math.min(innerWidth / TVW, innerHeight / TVH);
+  const t = 'translate(' + ((innerWidth - TVW * s) / 2).toFixed(1) + 'px,' + ((innerHeight - TVH * s) / 2).toFixed(1) + 'px) scale(' + s.toFixed(4) + ')';
+  document.querySelectorAll('.tvstage').forEach(el => { el.style.transform = t; });
+}
+addEventListener('resize', fitStage);
+// Settings you can change from the sofa: up/down picks a row, left/right changes it.
+const TV_SETS = [
+  { key:'rounds',  label:'Rounds',       vals:[2,3,4,5,6,8],          fmt:v => v },
+  { key:'time',    label:'Draw time',    vals:[40,60,80,100,120,150], fmt:v => v + 's' },
+  { key:'choices', label:'Word choices', vals:[2,3,4,5],              fmt:v => v },
+  { key:'hints',   label:'Letter hints', vals:[1,0],                  fmt:v => v ? 'On' : 'Off' },
+];
+function buildTv(){
+  $('tv-sets').innerHTML = TV_SETS.map(s => '<button class="tvl-set" data-tv data-key="' + s.key + '"><span>' + s.label + '</span>' +
+    '<span class="v"><i data-d="-1">◀</i><b></b><i data-d="1">▶</i></span></button>').join('');
+  $('tv-sets').onclick = e => {
+    const b = e.target.closest('.tvl-set'); if(!b) return;
+    const arrow = e.target.closest('[data-d]');
+    tvStep(b.dataset.key, arrow ? +arrow.dataset.d : 1);
+  };
+}
+function tvStep(key, d){
+  const s = TV_SETS.find(x => x.key === key);
+  if(!s || !isTV() || G.phase !== 'lobby') return;
+  let i = s.vals.indexOf(+G.settings[key]); if(i < 0) i = 0;
+  hostSettings(Object.assign({}, G.settings, { [key]: s.vals[(i + d + s.vals.length) % s.vals.length] }));
+}
+let tvQrFor = '', tvSeen = new Set();
+function inviteURL(){ return location.origin + location.pathname + '#room=' + net.code; }
+function paintTvLobby(){
+  const code = net.code || '····';
+  $('tv-code').textContent = code;
+  const web = /^https?:/.test(location.protocol);
+  $('tv-url').textContent = web ? (location.host + location.pathname).replace(/\/index\.html$/, '/') : 'Open SCRAWL on your phone and join with:';
+  if(tvQrFor !== code && web && window.QRCode && net.code){
+    const box = $('tv-qr'); box.innerHTML = '';
+    try { new QRCode(box, { text:inviteURL(), width:360, height:360, correctLevel:QRCode.CorrectLevel.M }); tvQrFor = code; } catch(e){}
+  }
+  $('tv-qr').classList.toggle('hidden', !web);
+  const vip = vipCid(), vp = P(vip);
+  $('tv-count').textContent = 'PLAYERS ' + G.players.length + ' / ' + MAX_PLAYERS;
+  const slots = [];
+  for(let i = 0; i < MAX_PLAYERS; i++){
+    const p = G.players[i];
+    if(!p){ slots.push('<div class="tvl-slot empty">' + (i === G.players.length ? 'waiting…' : '') + '</div>'); continue; }
+    slots.push('<div class="tvl-slot' + (tvSeen.has(p.cid) ? '' : ' new') + (p.away ? ' away' : '') + '">' + avatarSVG(p.av, 92) +
+      '<div class="nm">' + esc(p.name) + (p.away ? ' 💤' : '') + '</div>' + (p.cid === vip ? '<span class="vip" title="VIP">👑</span>' : '') + '</div>');
+  }
+  const html = slots.join('');
+  if($('tv-players').__h !== html){ $('tv-players').__h = html; $('tv-players').innerHTML = html; }
+  G.players.forEach(p => tvSeen.add(p.cid));
+  $('tv-players').querySelectorAll('.new').forEach(el => setTimeout(() => el.classList.remove('new'), 700));
+  $('tv-sets').querySelectorAll('.tvl-set').forEach(b => { const s = TV_SETS.find(x => x.key === b.dataset.key); b.querySelector('b').textContent = s.fmt(G.settings[s.key]); });
+  const st = $('tv-start'), ready = G.players.length >= 2;
+  st.disabled = !ready;
+  st.textContent = ready ? 'START' : 'Need 2 players';
+  $('tv-hint').innerHTML = !G.players.length ? 'Scan the code with your phone camera to join. The first one in is the VIP 👑.'
+    : vp ? '<b>' + esc(vp.name) + '</b> 👑 can change the settings and start from their phone too.' : '';
+  // Something on the TV always has focus, so the remote's OK button does something.
+  const a = document.activeElement;
+  if(!a || a === document.body || (a.disabled) || !$('tv-lobby').contains(a)) (ready ? st : $('tv-sets').querySelector('.tvl-set')).focus({ preventScroll:true });
+}
+// Remote / keyboard on the TV lobby: one list of controls, top to bottom.
+function tvNav(d){
+  const els = [...$('tv-lobby').querySelectorAll('[data-tv]')].filter(e => !e.disabled);
+  const i = els.indexOf(document.activeElement);
+  const next = els[i < 0 ? 0 : Math.max(0, Math.min(els.length - 1, i + d))];
+  if(next) next.focus({ preventScroll:true });
+}
+document.addEventListener('keydown', e => {
+  if(!isTV()) return;
+  if(e.key === 'f' || e.key === 'F'){ toggleFull(); return; }
+  if(G.phase !== 'lobby') return;
+  const a = document.activeElement, onSet = a && a.classList && a.classList.contains('tvl-set');
+  if(e.key === 'ArrowUp' || e.key === 'ArrowDown'){ e.preventDefault(); tvNav(e.key === 'ArrowUp' ? -1 : 1); }
+  else if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){ e.preventDefault(); if(onSet) tvStep(a.dataset.key, e.key === 'ArrowLeft' ? -1 : 1); else tvNav(e.key === 'ArrowLeft' ? -1 : 1); }
+});
+function toggleFull(){
+  try {
+    if(document.fullscreenElement) document.exitFullscreen();
+    else (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen).call(document.documentElement);
+  } catch(e){}
+}
+// "✓ Mia got it!" across the bottom of the TV's board.
+let tvPopT = 0;
+function tvPop(text){
+  let el = $('tvpop');
+  if(!el){ el = document.createElement('div'); el.id = 'tvpop'; $('board-wrap').appendChild(el); }
+  el.textContent = text; el.style.opacity = '1';
+  clearTimeout(tvPopT); tvPopT = setTimeout(() => { el.style.opacity = '0'; }, 1800);
+}
+// The mouse pointer gets out of the way on the TV.
+let idleT = 0;
+addEventListener('mousemove', () => {
+  document.body.classList.remove('idle'); clearTimeout(idleT);
+  idleT = setTimeout(() => document.body.classList.add('idle'), 2500);
+});
+
+// ── staying connected at a party ──
+const SKEY = 'scrawl.session';
+function saveSession(){
+  if(SMOKE || !net.code) return;
+  try {
+    if(MODE === 'host') sessionStorage.setItem(SKEY, JSON.stringify({ at:now(), mode:'host', code:net.code, G, ops,
+      HS:Object.assign({}, HS, { seen:{}, shown:[...HS.shown], used:[...HS.used] }) }));
+    else if(MODE === 'guest') sessionStorage.setItem(SKEY, JSON.stringify({ at:now(), mode:'guest', code:net.code }));
+  } catch(e){}
+}
+function clearSession(){ try { sessionStorage.removeItem(SKEY); } catch(e){} }
+// A refreshed tab picks the game back up: the host (or TV) restores the whole game, a phone rejoins.
+function resumeSession(){
+  let s = null; try { s = JSON.parse(sessionStorage.getItem(SKEY) || 'null'); } catch(e){}
+  if(!s || now() - s.at > 3 * 3600e3 || !s.code) return false;
+  const want = (new URLSearchParams(location.hash.replace(/^#/,'')).get('room') || '').toUpperCase();
+  if(want && want !== s.code){ clearSession(); return false; }    // a link to a different room wins
+  if(s.mode === 'guest'){ joinRoom(s.code); return true; }
+  if(s.mode !== 'host' || !s.G || !s.G.phase || s.G.phase === 'off') return false;
+  Object.assign(G, s.G);
+  const hs = s.HS || {};
+  Object.assign(HS, hs, { seen:{}, shown:new Set(hs.shown || []), used:new Set(hs.used || []) });
+  MODE = 'host'; net.code = s.code; keepAwake();
+  resetBoard(); addOps(s.ops || []);
+  net.connect(s.code, 'host', () => hostCreate(s.code));
+  render();
+  return true;
+}
+// Keep phones (and the TV) from going to sleep mid-game, where the browser allows it.
+let wakeLock = null;
+async function keepAwake(){
+  try { if(!wakeLock && navigator.wakeLock && document.visibilityState === 'visible'){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch(e){}
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState !== 'visible' || MODE === 'off' || MODE === 'solo') return;
+  keepAwake();
+  if(net.stale(3000)) net.retry(); else net.nudge();
+  if(MODE === 'guest' && net.online) net.send({ t:'hb', cid:MY_CID });
+});
+
 function copyInvite(){
-  const url = location.origin + location.pathname + '#room=' + net.code;
+  const url = inviteURL();
   const b = $('copy-btn');
   (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(
     () => { b.textContent = 'Link copied!'; }, () => { b.textContent = url; });
@@ -1134,19 +1603,22 @@ async function loadLobbyFriends(){
   });
 }
 // Straight into a room from a hub invite or a shared link (#room=CODE[&host=1]).
+// #tv opens straight into a TV room (handy as a bookmark on the TV itself).
 function autoRoom(){
   const h = new URLSearchParams(location.hash.replace(/^#/,''));
+  if(h.has('tv')){ hostTV(); return true; }
   const room = (h.get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);
   if(room.length !== 4) return false;
   if(h.get('host') === '1'){
-    MODE = 'host'; rememberName();
-    net.connect(room, 'host', () => net.send({ t:'create', code:room, max:MAX_PLAYERS }));
-  } else joinRoom(room);
+    MODE = 'host'; G.tv = false; rememberName();
+    net.connect(room, 'host', () => hostCreate(room));
+  } else if(!$('myname').value.trim()) joinPrompt(room);   // first time here: a name first, so the TV shows a real one
+  else joinRoom(room);
   return true;
 }
 
-Object.assign(window, { hostRoom, joinRoom, hostStart, leaveRoom, show, bumpAvatar, randomAvatar, startPractice,
-                        copyInvite, setTool, drawUndo, drawClear });
+Object.assign(window, { hostRoom, hostTV, joinRoom, hostStart, leaveRoom, show, bumpAvatar, randomAvatar, startPractice,
+                        copyInvite, setTool, drawUndo, drawClear, toggleFull });
 
 // ── boot ──
 try { $('myname').value = localStorage.getItem('scrawl.name') || ''; } catch(e){}
@@ -1154,10 +1626,11 @@ if(!$('myname').value){
   try { const u = JSON.parse(localStorage.getItem('glitchbox_user') || 'null'); if(u && u.name && u.name !== 'PLAYER') $('myname').value = String(u.name).slice(0,14); } catch(e){}   // your GLITCHBOX nametag, never a real name
 }
 $('joincode').addEventListener('keydown', e => { if(e.key === 'Enter') joinRoom(); });
-$('myname').addEventListener('keydown', e => { if(e.key === 'Enter') hostRoom(); });
-buildTools(); paintAvatar();
-if(DEBUG) window.__SC = { G, HS, net, get ops(){ return ops; }, hostStartGame, hostGuess, hostPick, MY_CID, get myWord(){ return myWord; }, emit, dropToHome };
-if(!SMOKE) autoRoom();
+$('myname').addEventListener('keydown', e => { if(e.key === 'Enter'){ if($('home-card').classList.contains('joining')) joinRoom(); else hostRoom(); } });
+buildTools(); buildTv(); paintAvatar();
+if(DEBUG) window.__SC = { G, HS, net, get ops(){ return ops; }, hostStartGame, hostGuess, hostPick, hostTick, MY_CID, get myWord(){ return myWord; },
+                          get MODE(){ return MODE; }, emit, dropToHome, render, fitStage };
+if(!SMOKE && !resumeSession()) autoRoom();
 
 // ══════════════ SELF-TESTS (#smoke) ══════════════
 // Real functions, real canvas, a fake wire. The host logic is driven exactly as
@@ -1289,11 +1762,15 @@ if(SMOKE) window.addEventListener('load', () => setTimeout(() => {
   const L = letterIdx(HS.word).length;
   HS.turnStart = now() - G.total * 1000 * 0.95; G.deadline = now() + 60000; hostTick();
   ok('hints reveal letters late in the turn', HS.shown.size === hintsDue(HS.word, 0.95) && (L < 3 || G.mask.indexOf('_') !== -1));
-  // a guest dropping out
+  // a phone going quiet
   HS.seen['CCCCCC'] = now() - GUEST_TIMEOUT - 1; HS.seen['BBBBBB'] = now();
   hostTick();
-  ok('a silent guest is dropped', !P('CCCCCC'));
-  HS.seen['BBBBBB'] = now() - GUEST_TIMEOUT - 1; hostTick();
+  ok('a silent guest is marked away, not dropped', P('CCCCCC') && P('CCCCCC').away);
+  handleNet({ t:'hb', cid:'CCCCCC' });
+  ok('…and is back the moment their phone speaks', P('CCCCCC') && !P('CCCCCC').away);
+  HS.seen['CCCCCC'] = now() - AWAY_DROP_GAME - 1; hostTick();
+  ok('a phone gone for minutes loses its seat', !P('CCCCCC'));
+  HS.seen['BBBBBB'] = now() - AWAY_DROP_GAME - 1; hostTick();
   ok('down to one player, back to the lobby', G.phase === 'lobby' && G.players.length === 1);
 
   // ── the guest side ──
@@ -1323,6 +1800,91 @@ if(SMOKE) window.addEventListener('load', () => setTimeout(() => {
   ok('picking sends the choice to the host', sent.some(s => s.t === 'pick' && s.i === 0));
   clientHandle(Object.assign({}, st, { ph:'draw', tn:6, dr:MY_CID }));
   ok('the drawer gets the tools', !$('tools').classList.contains('hidden') && canDraw());
+
+  // ── a TV room: the TV hosts and shows the game, the phones play ──
+  dropToHome('');
+  MODE = 'host'; G.tv = true; net.code = 'TVTV';
+  handleNet({ t:'created' });
+  ok('a TV room opens the TV lobby, and the TV takes no seat', G.phase === 'lobby' && G.players.length === 0 &&
+     !$('tv-lobby').classList.contains('hidden') && document.body.classList.contains('tvmode'));
+  ok('the TV shows the room code', $('tv-code').textContent === 'TVTV');
+  handleNet({ t:'hi', cid:'PPPPP1', name:'Pia', av:[10,1,1], fresh:1 });
+  handleNet({ t:'hi', cid:'PPPPP2', name:'pia', av:[20,2,2], fresh:1 });
+  ok('two phones with the same name are told apart', P('PPPPP2') && P('PPPPP2').name === 'pia 2');
+  ok('the first phone in is the VIP', vipCid() === 'PPPPP1' && /👑/.test($('tv-players').textContent));
+  ok('the TV lobby shows each phone', $('tv-players').querySelectorAll('.tvl-slot:not(.empty)').length === 2);
+  handleNet({ t:'set', cid:'PPPPP2', s:{ rounds:5 } });
+  ok('only the VIP changes the settings', G.settings.rounds !== 5);
+  handleNet({ t:'set', cid:'PPPPP1', s:{ rounds:2, time:60, hints:true } });
+  ok('the VIP changes the settings from their phone', G.settings.rounds === 2 && G.settings.time === 60);
+  tvStep('rounds', 1);
+  ok('the TV remote changes them too', G.settings.rounds === 3 && $('tv-sets').querySelector('[data-key="rounds"] b').textContent === '3');
+  tvStep('rounds', -1);
+  ok('the TV has something focused for the remote', $('tv-lobby').contains(document.activeElement));
+  handleNet({ t:'go', cid:'PPPPP2' });
+  ok('only the VIP starts from a phone', G.phase === 'lobby');
+  handleNet({ t:'hi', cid:'PPPPP3', name:'Raj', av:[30,3,3], fresh:1 });
+  handleNet({ t:'go', cid:'PPPPP1' });
+  ok('the VIP starts the game from their phone', G.phase === 'choose' && G.round === 1);
+  ok('the TV never draws or plays', G.drawer !== MY_CID && !canDraw() && !P(MY_CID));
+  ok('the TV switches to the big-screen layout', $('app').classList.contains('tv') && !$('app').classList.contains('hidden') && $('tools').classList.contains('hidden'));
+  const tvr = $('app').getBoundingClientRect(), tvs = Math.min(innerWidth / TVW, innerHeight / TVH);
+  ok('the TV picture scales to fit the screen', Math.abs(tvr.width - TVW * tvs) < 2 && Math.abs(tvr.height - TVH * tvs) < 2 && tvr.left >= -1 && tvr.top >= -1);
+  const tvd = G.drawer;
+  HS.choices = ['quokkaroo', 'quokkaroo', 'quokkaroo'];
+  handleNet({ t:'pick', cid:tvd, i:0 });
+  const tvText = () => $('app').textContent.toLowerCase();
+  ok('the TV shows the blanks, never the word', G.phase === 'draw' && tvText().indexOf('quokkaroo') === -1 && /_{9}/.test($('word').textContent));
+  const [tg1, tg2] = ['PPPPP1','PPPPP2','PPPPP3'].filter(c => c !== tvd);
+  sent.length = 0;
+  handleNet({ t:'g', cid:tg1, m:'Quokkaroo' });
+  ok('a phone guesses it and the TV still hides it', P(tg1).guessed && tvText().indexOf('quokkaroo') === -1 && sent.some(s => s.t === 'wd' && s.to === tg1));
+  ok('the TV flashes who got it', $('tvpop') && /got it/.test($('tvpop').textContent));
+  sent.length = 0;
+  handleNet({ t:'hi', cid:tvd, name:P(tvd).name, av:P(tvd).av, fresh:1 });
+  ok('a drawer whose phone reloads gets the word back', sent.some(s => s.t === 'wd' && s.to === tvd && dec(s.x) === 'quokkaroo'));
+  HS.seen[tg2] = now() - GUEST_TIMEOUT - 1; HS.seen[tvd] = HS.seen[tg1] = now(); hostTick();
+  ok('a sleeping phone is marked away and the turn stops waiting for it', P(tg2).away && G.phase === 'reveal');
+  ok('the TV reveals the word when the turn ends', /QUOKKAROO/.test($('overlay').textContent));
+  const tvDrawers = [tvd];
+  let guard2 = 0;
+  while(G.phase !== 'over' && guard2++ < 30){
+    HS.seen[tvd] = HS.seen[tg1] = now(); HS.pickUntil = HS.revealUntil = 0; G.deadline = 0; hostTick();
+    if(G.phase === 'choose' && tvDrawers[tvDrawers.length - 1] !== G.drawer) tvDrawers.push(G.drawer);
+  }
+  ok('a sleeping phone is skipped when its turn to draw comes', G.phase === 'over' && tvDrawers.indexOf(tg2) === -1 && tvDrawers.length === 4);
+  handleNet({ t:'hb', cid:tg2 });
+  ok('it wakes up when the phone does', !P(tg2).away);
+  ok('the TV shows the podium', /wins!/.test($('overlay').textContent));
+
+  // ── a phone in a TV room ──
+  dropToHome('');
+  MODE = 'guest'; G.phase = 'off'; lastTurnSeen = -1;
+  const tst = { t:'st', tv:1, ph:'lobby', pl:[[MY_CID,'Me',[2,2,2],0,0,0,0],['PPPPP1','Pia',[1,1,1],0,0,0,0]], r:0, dr:'', mk:'', ln:'', left:0, tot:80, tn:0,
+                set:{ rounds:3, time:80, choices:3, hints:1, custom:'', only:0 }, h:'TVHOST' };
+  clientHandle(tst);
+  ok('the first phone in a TV room gets the VIP controls', !$('screen-lobby').classList.contains('hidden') && !$('lobby-start').classList.contains('hidden') &&
+     !$('set-rounds').disabled && /VIP/.test($('lobby-tv').textContent));
+  sent.length = 0; hostStart();
+  ok('the VIP’s Start asks the TV to start', sent.some(s => s.t === 'go' && s.cid === MY_CID));
+  sent.length = 0; $('set-rounds').value = '5'; $('set-rounds').dispatchEvent(new Event('change'));
+  ok('the VIP’s settings go to the TV', sent.some(s => s.t === 'set' && s.s && String(s.s.rounds) === '5'));
+  clientHandle(Object.assign({}, tst, { pl:[['PPPPP1','Pia',[1,1,1],0,0,0,0],[MY_CID,'Me',[2,2,2],0,0,0,0]] }));
+  ok('other phones wait for the VIP', $('lobby-start').classList.contains('hidden') && $('set-rounds').disabled && /Pia/.test($('lobby-wait').textContent));
+  clientHandle(Object.assign({}, tst, { ph:'draw', dr:'PPPPP1', mk:'___', ln:'3', left:30000, tn:1 }));
+  ok('a guessing phone hides the board and points at the TV', $('app').classList.contains('watch') && getComputedStyle(cv).display === 'none' &&
+     /Watch the TV/.test($('overlay').textContent));
+  ok('…and keeps the guess box', getComputedStyle($('chatform')).display !== 'none' && !$('msg').disabled);
+  sent.length = 0;
+  clientHandle(Object.assign({}, tst, { ph:'draw', dr:MY_CID, mk:'___', ln:'3', left:30000, tn:2 }));
+  ok('the drawing phone gets the board and the tools', !$('app').classList.contains('watch') && getComputedStyle(cv).display !== 'none' && !$('tools').classList.contains('hidden'));
+  clientHandle({ t:'rs', to:MY_CID });
+  ok('the drawer resends the picture when the TV asks', sent.some(s => s.t === 'ops' && s.cid === MY_CID));
+  dropToHome('');
+  joinPrompt('WXYZ');
+  ok('a phone arriving from the QR code with no name is asked for one first', $('home-card').classList.contains('joining') &&
+     !$('join-big').classList.contains('hidden') && /WXYZ/.test($('join-big').textContent));
+  joinPrompt('');
 
   const pre = document.createElement('pre');
   pre.id = 'smokeout';

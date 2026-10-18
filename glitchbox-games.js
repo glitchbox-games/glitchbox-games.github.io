@@ -17,7 +17,7 @@ const GAMES=[
   {name:'Be the Dungeon',     file:'be-the-dungeon.html',         emoji:'🕳️',color:['#0a0508','#1e0a12'],category:'strategy',   tags:['new','hot'],price:150,blurb:'You are the dungeon. The adventurers learn from every raid'},
   {name:'Idle Universe',      file:'idle-universe.html',          emoji:'🌌',color:['#04030c','#140b2c'],category:'simulation', tags:['new','hot'],blurb:'One tap, one particle. Grow it into stars, life and minds, then crunch it all'},
   {name:'Shape Conquest',     file:'shape-conquest.html',         emoji:'🌍',color:['#0d1624','#152238'],category:'strategy',   tags:['new','hot'],blurb:'Pick any country, build an army of shapes, invade the world'},
-  {name:'Scrawl',             file:'scrawl.html',                 emoji:'🖍️',color:['#0a0614','#1c1030'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One player draws, everyone races to guess the word - 2 to 8 players'},
+  {name:'Scrawl',             file:'scrawl.html',                 emoji:'🖍️',color:['#0a0614','#1c1030'],category:'multiplayer',tags:['new','hot','mp'],blurb:'One player draws, everyone races to guess the word - 2 to 8 players, or put it on a TV and play with phones'},
   {name:'Gridlock',           file:'gridlock.html',               emoji:'\u26a1',color:['#04060e','#0a1a34'],category:'multiplayer',tags:['new','hot','mp'],price:100,blurb:'Three to eight light cycles, one grid, nobody stops'},
   {name:'Patch Notes',        file:'patch-notes.html',            emoji:'🩹',color:['#07090c','#121922'],category:'strategy',   tags:['new','hot']},
   {name:'Seven Liars',         file:'seven-liars.html',            emoji:'🕶️',color:['#06080b','#101a24'],category:'puzzle',     tags:['new','hot']},
