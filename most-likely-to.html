@@ -1363,7 +1363,7 @@ Object.assign(window, { hostRoom, joinRoom, hostStart, leaveRoom, show, copyInvi
 
 try { $('myname').value = localStorage.getItem('mlt.name') || ''; } catch(e){}
 if(!$('myname').value){
-  try { const u = JSON.parse(localStorage.getItem('glitchbox_user') || 'null'); if(u && u.name && u.name !== 'PLAYER') $('myname').value = String(u.name).slice(0,14);   // your GLITCHBOX nametag, never a real name } catch(e){}
+  try { const u = JSON.parse(localStorage.getItem('glitchbox_user') || 'null'); if(u && u.name && u.name !== 'PLAYER') $('myname').value = String(u.name).slice(0,14); } catch(e){}   // your GLITCHBOX nametag, never a real name
 }
 $('joincode').addEventListener('keydown', e => { if(e.key === 'Enter') joinRoom(); });
 requestAnimationFrame(frame);
