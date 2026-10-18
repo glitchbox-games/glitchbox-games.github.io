@@ -3,6 +3,7 @@
 // roster and its canvas art only ever live in one place.
 
 const GAMES=[
+  {name:'Rocket Roadster',    file:'rocket-roadster.html',        emoji:'🏎️',color:['#2b1418','#d06a3a'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Drive, hop and fly a rocket car over a mountain range. Race up to 7 friends to the summit pad, or winch them out of trouble'},
   {name:'Frontline',          file:'frontline.html',              emoji:'🦾',color:['#070a1c','#2a1622'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Start as a regular soldier. Level up, bolt on robot parts and push the machines back with friends or CPU squadmates. 1 to 4 players'},
   {name:'Tank War 3D',        file:'tank-war-3d.html',            emoji:'🪖',color:['#0b1a10','#1c3a52'],category:'multiplayer',tags:['new','hot','mp'],blurb:'Tanks, ships, jets and choppers in 3D. Rack up kills to unlock variants, fight 7v7 or take on friends online'},
   {name:'Haymaker',           file:'haymaker.html',               emoji:'🥊',color:['#160805','#2e1206'],category:'multiplayer',tags:['new','hot','mp'],blurb:'3D boxing with superpowers. Charge up a HAYMAKER, block at the last second and knock your friends out. 12 fighters, a secret boss, make your own fighter, fight on a beach or in space. Play the CPU, a friend on one keyboard, or online 1v1'},
@@ -50,6 +51,48 @@ const _SC=(c)=>{for(let y=0;y<200;y+=4){c.fillStyle='rgba(0,0,0,0.1)';c.fillRect
 
 // ── THUMBNAIL DRAW FUNCTIONS ──
 const DRAW={
+'rocket-roadster':(c)=>{
+  // late afternoon in canyon country: a red roadster hovers over a gap on white jets
+  c.save();
+  _GV(c, 0, 0, 320, 200, '#2f62b8', '#86aee0', '#f4c79a');
+  const sun = c.createRadialGradient(262, 70, 4, 262, 70, 120);
+  sun.addColorStop(0, 'rgba(255,230,180,.95)'); sun.addColorStop(.25, 'rgba(255,200,140,.35)'); sun.addColorStop(1, 'rgba(255,190,130,0)');
+  c.fillStyle = sun; c.fillRect(0, 0, 320, 200);
+  // far mesas with snowy caps
+  c.fillStyle = '#c98a6a';
+  c.beginPath(); c.moveTo(0, 112); c.lineTo(30, 70); c.lineTo(52, 74); c.lineTo(78, 96); c.lineTo(120, 64); c.lineTo(150, 70); c.lineTo(190, 92); c.lineTo(232, 58); c.lineTo(262, 62); c.lineTo(320, 96); c.lineTo(320, 130); c.lineTo(0, 130); c.fill();
+  c.fillStyle = '#f3ece6';
+  [[30, 70, 8], [120, 64, 10], [232, 58, 10]].forEach(([x, y, w]) => { c.beginPath(); c.moveTo(x - w, y + 6); c.lineTo(x, y); c.lineTo(x + w, y + 6); c.fill(); });
+  // the two canyon rims, banded sandstone
+  const band = (x0, x1, top, flip) => {
+    for (let y = top; y < 200; y += 5) {
+      c.fillStyle = ['#b85a3a', '#cf7445', '#a64c33', '#d88a5a', '#9a4b38'][((y / 5) | 0) % 5];
+      c.beginPath(); c.moveTo(x0, y); c.lineTo(x1 + (flip ? -(y - top) * .08 : (y - top) * .08), y); c.lineTo(x1 + (flip ? -(y + 5 - top) * .08 : (y + 5 - top) * .08), y + 5); c.lineTo(x0, y + 5); c.fill();
+    }
+  };
+  band(0, 110, 132, false); band(320, 214, 124, true);
+  _F(c, 0, 128, 112, 5, '#d9a27a'); _F(c, 212, 120, 108, 5, '#d9a27a');
+  // the gap: depth and a sliver of green far below
+  _GV(c, 110, 132, 104, 68, '#6a3a2e', '#2a1a1a');
+  _F(c, 128, 192, 70, 8, '#3d5a2a');
+  // a glowing route ring over the gap
+  c.strokeStyle = '#ff8a3d'; c.lineWidth = 3; c.beginPath(); c.ellipse(178, 92, 15, 22, 0, 0, 6.283); c.stroke();
+  // cold gas plumes
+  for (let i = 0; i < 9; i++) {
+    _C(c, 140 + i * 2, 112 + i * 9, 6 + i * 1.6, `rgba(250,252,255,${.75 - i * .07})`);
+    _C(c, 166 + i * 1.5, 112 + i * 9, 6 + i * 1.6, `rgba(250,252,255,${.75 - i * .07})`);
+  }
+  for (let i = 0; i < 6; i++) _C(c, 116 - i * 9, 100 + i, 4 + i * 2, `rgba(250,252,255,${.6 - i * .09})`);
+  // the roadster, 3/4 rear view
+  c.fillStyle = '#7a0d14'; c.beginPath(); c.ellipse(152, 104, 34, 11, -.06, 0, 6.283); c.fill();
+  c.fillStyle = '#c0141c'; c.beginPath(); c.moveTo(118, 104); c.quadraticCurveTo(122, 88, 150, 86); c.quadraticCurveTo(182, 86, 188, 100); c.lineTo(186, 108); c.quadraticCurveTo(150, 116, 120, 110); c.closePath(); c.fill();
+  c.fillStyle = '#121a24'; c.beginPath(); c.moveTo(136, 90); c.quadraticCurveTo(152, 80, 170, 89); c.lineTo(166, 96); c.quadraticCurveTo(152, 92, 140, 96); c.closePath(); c.fill();
+  _F(c, 124, 100, 60, 3, '#ff2a3a');
+  _C(c, 128, 110, 6, '#141414'); _C(c, 178, 108, 6, '#141414');
+  _C(c, 141, 108, 3, 'rgba(160,220,255,.9)'); _C(c, 166, 108, 3, 'rgba(160,220,255,.9)');
+  c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(158, 90, 14, 2.5, -.05, 0, 6.283); c.fill();
+  c.restore();
+},
 'frontline':(c)=>{
   // dusk on the front line: a half-cyborg soldier aims over the sandbags, a walker comes out of the smoke
   c.save();
@@ -932,7 +975,7 @@ const THUMB_IMGS = {};
 // Which games actually have a painted thumbs/<gid>.png. Asking for every game's file
 // meant ~43 failed downloads (404s) on every hub and play-page visit. Add a gid here
 // when a new shot goes into thumbs/.
-const THUMB_FILES = new Set(['gridlock','haymaker','tank-war-3d','frontline']);
+const THUMB_FILES = new Set(['gridlock','haymaker','tank-war-3d','frontline','rocket-roadster']);
 function drawThumb(ctx, g){
   const gid = g.file.replace('.html','');
   (DRAW[gid] || DRAW.fallback)(ctx, g);
